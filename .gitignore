@@ -1,5 +1,5 @@
-# Build output
-bitbottle
+# Build output (root-level binary only)
+/bitbottle
 
 # TDD cycle artifacts
 .tdd-cycle/
