@@ -19,15 +19,15 @@ import (
 // Factory is the single dependency container threaded through every command.
 // Commands receive it via their constructor.
 type Factory struct {
-	IOStreams   *iostreams.IOStreams
-	Config      func() (*config.Config, error)
-	HttpClient  func(hostname string) (*api.Client, error)
-	GitRunner   func() run.Runner
-	Keyring     keyring.Keyring
-	Browser     cmdutil.BrowserLauncher
-	Editor      cmdutil.EditorLauncher
-	BaseURL     func(hostname string) string
-	Now         func() time.Time
+	IOStreams  *iostreams.IOStreams
+	Config     func() (*config.Config, error)
+	HttpClient func(hostname string) (*api.Client, error)
+	GitRunner  func() run.Runner
+	Keyring    keyring.Keyring
+	Browser    cmdutil.BrowserLauncher
+	Editor     cmdutil.EditorLauncher
+	BaseURL    func(hostname string) string
+	Now        func() time.Time
 }
 
 // New constructs a Factory wired with live dependencies.
@@ -68,12 +68,12 @@ func New() *Factory {
 			auth := api.AuthConfig{Token: hostCfg.OAuthToken}
 			return api.NewClient(hc, baseURL(hostname), auth), nil
 		},
-		GitRunner:  func() run.Runner { return &run.SystemRunner{} },
-		Keyring:    &keyring.OSKeyring{},
-		Browser:    &cmdutil.SystemBrowser{},
-		Editor:     &cmdutil.SystemEditor{},
-		BaseURL:    baseURL,
-		Now:        time.Now,
+		GitRunner: func() run.Runner { return &run.SystemRunner{} },
+		Keyring:   &keyring.OSKeyring{},
+		Browser:   &cmdutil.SystemBrowser{},
+		Editor:    &cmdutil.SystemEditor{},
+		BaseURL:   baseURL,
+		Now:       time.Now,
 	}
 }
 

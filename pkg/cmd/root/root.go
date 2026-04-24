@@ -10,9 +10,9 @@ import (
 
 func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "bitbottle",
-		Short: "Bitbucket CLI",
-		Long:  "bitbottle is a CLI for self-hosted Bitbucket Server/Data Center.",
+		Use:           "bitbottle",
+		Short:         "Bitbucket CLI",
+		Long:          "bitbottle is a CLI for self-hosted Bitbucket Server/Data Center.",
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}

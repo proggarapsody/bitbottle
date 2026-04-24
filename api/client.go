@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,7 +56,7 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 
 // GetJSON GETs path and decodes JSON into v.
 func (c *Client) GetJSON(path string, v any) error {
-	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, c.baseURL+path, nil)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (c *Client) GetJSON(path string, v any) error {
 
 // GetText GETs path and returns the raw body as a string.
 func (c *Client) GetText(path string) (string, error) {
-	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, c.baseURL+path, nil)
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +105,7 @@ func (c *Client) doJSON(method, path string, body any, v any) error {
 		}
 		bodyReader = bytes.NewReader(b)
 	}
-	req, err := http.NewRequest(method, c.baseURL+path, bodyReader)
+	req, err := http.NewRequestWithContext(context.Background(), method, c.baseURL+path, bodyReader)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func (c *Client) doJSON(method, path string, body any, v any) error {
 
 // Delete sends a DELETE request to path.
 func (c *Client) Delete(path string) error {
-	req, err := http.NewRequest(http.MethodDelete, c.baseURL+path, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodDelete, c.baseURL+path, nil)
 	if err != nil {
 		return err
 	}

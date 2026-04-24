@@ -30,7 +30,7 @@ type TestFactoryOpts struct {
 	Keyring       keyring.Keyring
 	Browser       cmdutil.BrowserLauncher
 	Editor        cmdutil.EditorLauncher
-	IOStreams      *iostreams.IOStreams
+	IOStreams     *iostreams.IOStreams
 	Hostname      string
 	Now           func() time.Time
 }

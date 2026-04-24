@@ -6,9 +6,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/test/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestFakeKeyring_GetMissing(t *testing.T) {

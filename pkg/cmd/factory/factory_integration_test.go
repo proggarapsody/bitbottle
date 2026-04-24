@@ -8,16 +8,17 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/api"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 // TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient verifies that:
-// 1. hosts.yml written to disk is accessible via Config().Get(), and
-// 2. The factory-built client makes real HTTP requests (the test-token is wired,
-//    not the pipeline-token — NewTestFactory always uses "test-token" for isolation).
+//  1. hosts.yml written to disk is accessible via Config().Get(), and
+//  2. The factory-built client makes real HTTP requests (the test-token is wired,
+//     not the pipeline-token — NewTestFactory always uses "test-token" for isolation).
 func TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient(t *testing.T) {
 	t.Parallel()
 
@@ -35,9 +36,9 @@ func TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(configDir, "hosts.yml"), []byte(hostsYML), 0o600))
 
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		ConfigDir: configDir,
+		ConfigDir:  configDir,
 		HTTPClient: srv.Client(),
-		BaseURL: func(hostname string) string { return srv.URL },
+		BaseURL:    func(hostname string) string { return srv.URL },
 	})
 
 	client, err := f.HttpClient("bb.example.com")
