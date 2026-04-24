@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aleksey/bitbottle/internal/text"
+	"github.com/proggarapsody/bitbottle/internal/text"
 	"github.com/stretchr/testify/assert"
 )
 

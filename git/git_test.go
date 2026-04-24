@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aleksey/bitbottle/git"
-	"github.com/aleksey/bitbottle/test/testhelpers"
+	"github.com/proggarapsody/bitbottle/git"
+	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestGit_CurrentBranch(t *testing.T) {

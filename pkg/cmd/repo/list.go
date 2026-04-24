@@ -3,8 +3,8 @@ package repo
 import (
 	"fmt"
 
-	"github.com/aleksey/bitbottle/internal/tableprinter"
-	"github.com/aleksey/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/internal/tableprinter"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/spf13/cobra"
 )
 

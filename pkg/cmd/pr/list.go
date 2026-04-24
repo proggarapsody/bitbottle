@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aleksey/bitbottle/git"
-	"github.com/aleksey/bitbottle/internal/bbrepo"
-	"github.com/aleksey/bitbottle/internal/tableprinter"
-	"github.com/aleksey/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/git"
+	"github.com/proggarapsody/bitbottle/internal/bbrepo"
+	"github.com/proggarapsody/bitbottle/internal/tableprinter"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/spf13/cobra"
 )
 

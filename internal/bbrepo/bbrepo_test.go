@@ -3,7 +3,7 @@ package bbrepo_test
 import (
 	"testing"
 
-	"github.com/aleksey/bitbottle/internal/bbrepo"
+	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

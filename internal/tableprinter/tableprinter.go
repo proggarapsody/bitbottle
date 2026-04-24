@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/aleksey/bitbottle/internal/text"
+	"github.com/proggarapsody/bitbottle/internal/text"
 )
 
 // TablePrinter renders aligned tabular output.

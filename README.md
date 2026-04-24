@@ -5,13 +5,13 @@
 ## Installation
 
 ```bash
-go install github.com/aleksey/bitbottle/cmd/bitbottle@latest
+go install github.com/proggarapsody/bitbottle/cmd/bitbottle@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/aleksey/bitbottle
+git clone https://github.com/proggarapsody/bitbottle
 cd bitbottle
 make build
 ```

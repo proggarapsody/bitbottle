@@ -1,10 +1,10 @@
 package root
 
 import (
-	"github.com/aleksey/bitbottle/pkg/cmd/auth"
-	"github.com/aleksey/bitbottle/pkg/cmd/factory"
-	"github.com/aleksey/bitbottle/pkg/cmd/pr"
-	"github.com/aleksey/bitbottle/pkg/cmd/repo"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/spf13/cobra"
 )
 

@@ -1,4 +1,4 @@
-module github.com/aleksey/bitbottle
+module github.com/proggarapsody/bitbottle
 
 go 1.22
 

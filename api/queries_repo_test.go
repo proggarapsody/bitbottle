@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aleksey/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,8 +3,8 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/aleksey/bitbottle/pkg/cmd/auth"
-	"github.com/aleksey/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

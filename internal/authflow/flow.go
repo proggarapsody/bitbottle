@@ -1,10 +1,10 @@
 package authflow
 
 import (
-	"github.com/aleksey/bitbottle/api"
-	"github.com/aleksey/bitbottle/internal/config"
-	"github.com/aleksey/bitbottle/internal/keyring"
-	"github.com/aleksey/bitbottle/pkg/iostreams"
+	"github.com/proggarapsody/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/internal/config"
+	"github.com/proggarapsody/bitbottle/internal/keyring"
+	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
 
 // Flow orchestrates the auth login sequence.

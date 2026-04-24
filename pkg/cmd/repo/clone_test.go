@@ -3,8 +3,8 @@ package repo_test
 import (
 	"testing"
 
-	"github.com/aleksey/bitbottle/pkg/cmd/factory"
-	"github.com/aleksey/bitbottle/pkg/cmd/repo"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

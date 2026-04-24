@@ -3,7 +3,7 @@ package bbinstance_test
 import (
 	"testing"
 
-	"github.com/aleksey/bitbottle/internal/bbinstance"
+	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/stretchr/testify/assert"
 )
 

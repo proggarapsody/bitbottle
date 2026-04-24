@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aleksey/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/internal/run"
 )
 
 // Git provides git operations via the Runner.

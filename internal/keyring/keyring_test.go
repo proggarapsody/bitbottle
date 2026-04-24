@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/aleksey/bitbottle/test/testhelpers"
+	"github.com/proggarapsody/bitbottle/test/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

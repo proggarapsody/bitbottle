@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aleksey/bitbottle/api"
-	"github.com/aleksey/bitbottle/internal/config"
-	"github.com/aleksey/bitbottle/internal/keyring"
-	"github.com/aleksey/bitbottle/internal/run"
-	"github.com/aleksey/bitbottle/pkg/cmdutil"
-	"github.com/aleksey/bitbottle/pkg/iostreams"
-	"github.com/aleksey/bitbottle/test/testhelpers"
+	"github.com/proggarapsody/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/internal/config"
+	"github.com/proggarapsody/bitbottle/internal/keyring"
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
+	"github.com/proggarapsody/bitbottle/pkg/iostreams"
+	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 // TestFactoryOpts overrides individual factory components in tests.

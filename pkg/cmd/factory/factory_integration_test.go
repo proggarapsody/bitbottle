@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/aleksey/bitbottle/api"
-	"github.com/aleksey/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

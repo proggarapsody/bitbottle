@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aleksey/bitbottle/internal/tableprinter"
+	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
