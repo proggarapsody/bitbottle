@@ -1,0 +1,29 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck       # unchecked errors
+    - govet          # go vet checks
+    - staticcheck    # static analysis
+    - gosimple       # simplification suggestions
+    - ineffassign    # ineffectual assignments
+    - unused         # unused code
+    - gofmt          # formatting
+    - goimports      # import ordering
+    - misspell       # spelling in comments/strings
+    - unconvert      # unnecessary type conversions
+    - noctx          # http requests without context
+    - bodyclose      # HTTP response body not closed
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/aleksey/bitbottle
+
+issues:
+  exclude-rules:
+    # Test files may use assert without checking return values.
+    - path: "_test\\.go"
+      linters:
+        - errcheck
