@@ -1,5 +1,7 @@
 package testhelpers
 
+import "github.com/proggarapsody/bitbottle/api/backend"
+
 // RepoOption mutates a Bitbucket repository fixture.
 type RepoOption func(map[string]any)
 
@@ -149,4 +151,149 @@ func PRWithBaseBranch(branch string) PROption {
 			"displayId": branch,
 		}
 	}
+}
+
+// --- Cloud fixture factories ---
+
+// CloudRepoOption mutates a Bitbucket Cloud repository fixture.
+type CloudRepoOption func(map[string]any)
+
+// CloudRepoFactory returns a default Bitbucket Cloud repository object.
+func CloudRepoFactory(opts ...CloudRepoOption) map[string]any {
+	repo := map[string]any{
+		"type":      "repository",
+		"full_name": "myworkspace/default-repo",
+		"slug":      "default-repo",
+		"name":      "default-repo",
+		"scm":       "git",
+		"is_private": true,
+		"links": map[string]any{
+			"html": map[string]any{
+				"href": "https://bitbucket.org/myworkspace/default-repo",
+			},
+			"clone": []map[string]any{},
+		},
+	}
+	for _, opt := range opts {
+		opt(repo)
+	}
+	return repo
+}
+
+// CloudRepoWithSlug sets the slug, name, and full_name of the cloud repo.
+func CloudRepoWithSlug(workspace, slug string) CloudRepoOption {
+	return func(r map[string]any) {
+		r["slug"] = slug
+		r["name"] = slug
+		r["full_name"] = workspace + "/" + slug
+	}
+}
+
+// CloudPROption mutates a Bitbucket Cloud pull request fixture.
+type CloudPROption func(map[string]any)
+
+// CloudPRFactory returns a default Bitbucket Cloud pull request object.
+func CloudPRFactory(opts ...CloudPROption) map[string]any {
+	pr := map[string]any{
+		"type":        "pullrequest",
+		"id":          1,
+		"title":       "Default Cloud PR title",
+		"description": "",
+		"state":       "OPEN",
+		"draft":       false,
+		"author": map[string]any{
+			"display_name": "Alice",
+			"account_id":   "alice-uuid",
+			"nickname":     "alice",
+		},
+		"source": map[string]any{
+			"branch": map[string]any{"name": "feat/my-feature"},
+		},
+		"destination": map[string]any{
+			"branch": map[string]any{"name": "main"},
+		},
+		"links": map[string]any{
+			"html": map[string]any{
+				"href": "https://bitbucket.org/myworkspace/default-repo/pull-requests/1",
+			},
+		},
+	}
+	for _, opt := range opts {
+		opt(pr)
+	}
+	return pr
+}
+
+// CloudPRWithID sets the Cloud PR id.
+func CloudPRWithID(id int) CloudPROption {
+	return func(p map[string]any) { p["id"] = id }
+}
+
+// CloudPRWithTitle sets the Cloud PR title.
+func CloudPRWithTitle(title string) CloudPROption {
+	return func(p map[string]any) { p["title"] = title }
+}
+
+// CloudPRWithState sets the Cloud PR state.
+func CloudPRWithState(state string) CloudPROption {
+	return func(p map[string]any) { p["state"] = state }
+}
+
+// CloudPRWithDraft sets the draft flag on a Cloud PR.
+func CloudPRWithDraft(draft bool) CloudPROption {
+	return func(p map[string]any) { p["draft"] = draft }
+}
+
+// CloudPRWithAuthor sets the Cloud PR author account_id and display_name.
+func CloudPRWithAuthor(accountID, displayName string) CloudPROption {
+	return func(p map[string]any) {
+		p["author"] = map[string]any{
+			"account_id":   accountID,
+			"display_name": displayName,
+			"nickname":     accountID,
+		}
+	}
+}
+
+// --- backend domain factories ---
+
+// BackendRepoOption mutates a backend.Repository.
+type BackendRepoOption func(*backend.Repository)
+
+// BackendRepoFactory returns a default backend.Repository with options applied.
+func BackendRepoFactory(opts ...BackendRepoOption) backend.Repository {
+	r := backend.Repository{
+		Slug:      "default-repo",
+		Name:      "default-repo",
+		Namespace: "PROJ",
+		SCM:       "git",
+		WebURL:    "https://bitbucket.example.com/projects/PROJ/repos/default-repo/browse",
+	}
+	for _, opt := range opts {
+		opt(&r)
+	}
+	return r
+}
+
+// BackendPROption mutates a backend.PullRequest.
+type BackendPROption func(*backend.PullRequest)
+
+// BackendPRFactory returns a default backend.PullRequest with options applied.
+func BackendPRFactory(opts ...BackendPROption) backend.PullRequest {
+	pr := backend.PullRequest{
+		ID:         1,
+		Title:      "Default PR title",
+		State:      "OPEN",
+		Draft:      false,
+		FromBranch: "feat/my-feature",
+		ToBranch:   "main",
+		Author: backend.User{
+			Slug:        "alice",
+			DisplayName: "Alice",
+		},
+	}
+	for _, opt := range opts {
+		opt(&pr)
+	}
+	return pr
 }

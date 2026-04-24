@@ -6,6 +6,61 @@ import (
 	"strings"
 )
 
+// Recognised values for HostConfig.BackendType. Empty string means "infer
+// from hostname".
+const (
+	BackendTypeCloud  = "cloud"
+	BackendTypeServer = "server"
+)
+
+// cloudHostname is the canonical Bitbucket Cloud hostname.
+const cloudHostname = "bitbucket.org"
+
+// IsCloud returns true when the hostname or backendType indicates Bitbucket Cloud.
+// Rules (in order):
+//  1. backendType == "cloud"  → always true
+//  2. backendType is any non-empty, non-"cloud" value (e.g. "server", "datacenter") → false
+//  3. No backendType: hostname == "bitbucket.org" (exact, no port) → true
+//  4. Everything else → false
+func IsCloud(hostname, backendType string) bool {
+	switch backendType {
+	case BackendTypeCloud:
+		return true
+	case "":
+		return hostname == cloudHostname
+	default:
+		return false
+	}
+}
+
+// cloudAPIHostname is the canonical Bitbucket Cloud REST API hostname.
+const cloudAPIHostname = "api.bitbucket.org"
+
+// CloudRESTBase returns the Bitbucket Cloud REST API v2.0 base URL.
+func CloudRESTBase() string {
+	return "https://" + cloudAPIHostname + "/2.0"
+}
+
+// CloudSSHURL builds git@bitbucket.org:NAMESPACE/SLUG.git
+func CloudSSHURL(namespace, slug string) string {
+	return fmt.Sprintf("git@%s:%s/%s.git", cloudHostname, namespace, slug)
+}
+
+// CloudHTTPSURL builds https://bitbucket.org/NAMESPACE/SLUG.git
+func CloudHTTPSURL(namespace, slug string) string {
+	return fmt.Sprintf("https://%s/%s/%s.git", cloudHostname, namespace, slug)
+}
+
+// CloudWebRepoURL builds https://bitbucket.org/NAMESPACE/SLUG
+func CloudWebRepoURL(namespace, slug string) string {
+	return fmt.Sprintf("https://%s/%s/%s", cloudHostname, namespace, slug)
+}
+
+// CloudWebPRURL builds https://bitbucket.org/NAMESPACE/SLUG/pull-requests/ID
+func CloudWebPRURL(namespace, slug string, id int) string {
+	return fmt.Sprintf("https://%s/%s/%s/pull-requests/%d", cloudHostname, namespace, slug, id)
+}
+
 // SSHURL builds git@HOST:PROJECT/REPO.git
 func SSHURL(host, project, slug string) string {
 	return fmt.Sprintf("git@%s:%s/%s.git", host, project, slug)

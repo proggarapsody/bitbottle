@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -41,7 +41,7 @@ func TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient(t *testing.T) {
 		BaseURL:    func(hostname string) string { return srv.URL },
 	})
 
-	client, err := f.HttpClient("bb.example.com")
+	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
 
 	// The test factory wires the config but uses test-token. To test the real
@@ -52,14 +52,14 @@ func TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, "pipeline-token", hc.OAuthToken)
 
-	// The test factory's HttpClient uses "test-token" (see testing.go:118).
+	// The test factory's Backend uses "test-token" (see testing.go).
 	// Verify the client is wired correctly by making a real request.
 	_, err = client.GetCurrentUser()
 	require.NoError(t, err)
 	assert.Equal(t, "Bearer test-token", gotAuth)
 }
 
-// TestFactory_Integration_MissingConfigNotAnError verifies that HttpClient
+// TestFactory_Integration_MissingConfigNotAnError verifies that Backend
 // succeeds even when hosts.yml does not exist (unauthenticated scenario).
 func TestFactory_Integration_MissingConfigNotAnError(t *testing.T) {
 	t.Parallel()
@@ -76,14 +76,14 @@ func TestFactory_Integration_MissingConfigNotAnError(t *testing.T) {
 		BaseURL:    func(hostname string) string { return srv.URL },
 	})
 
-	// HttpClient must not error when config file is absent.
-	client, err := f.HttpClient("bb.example.com")
+	// Backend must not error when config file is absent.
+	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
 	assert.NotNil(t, client)
 }
 
 // TestFactory_Integration_MultipleClosureCallsShareConfig verifies that calling
-// Config() and HttpClient() multiple times does not cause double-load races.
+// Config() and Backend() multiple times does not cause double-load races.
 func TestFactory_Integration_MultipleClosureCallsShareConfig(t *testing.T) {
 	t.Parallel()
 
@@ -125,7 +125,7 @@ func TestFactory_Integration_BaseURLNoDoubleSlash(t *testing.T) {
 		BaseURL:    func(hostname string) string { return srv.URL + "/" },
 	})
 
-	client, err := f.HttpClient("bb.example.com")
+	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
 
 	_, err = client.ListRepos(10)
@@ -134,7 +134,7 @@ func TestFactory_Integration_BaseURLNoDoubleSlash(t *testing.T) {
 }
 
 // TestFactory_Integration_HTTPClientUsesProvidedHTTPClient verifies that the
-// api.HTTPClient injected via TestFactoryOpts is actually used for requests
+// HTTPClient injected via TestFactoryOpts is actually used for requests
 // (not the default transport). This ensures test isolation is guaranteed.
 func TestFactory_Integration_HTTPClientUsesProvidedHTTPClient(t *testing.T) {
 	t.Parallel()
@@ -152,7 +152,7 @@ func TestFactory_Integration_HTTPClientUsesProvidedHTTPClient(t *testing.T) {
 		BaseURL:    func(hostname string) string { return srv.URL },
 	})
 
-	client, err := f.HttpClient("bb.example.com")
+	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
 
 	_, err = client.GetCurrentUser()
@@ -167,13 +167,123 @@ func TestFactory_Integration_noopHTTPClientPreventsRealNetwork(t *testing.T) {
 	t.Parallel()
 
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
-	client, err := f.HttpClient("bb.example.com")
+	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
 
 	// The noop client returns 404 for everything.
 	_, err = client.GetCurrentUser()
 	require.Error(t, err)
-	var httpErr *api.HTTPError
+	var httpErr *backend.HTTPError
 	require.ErrorAs(t, err, &httpErr)
 	assert.Equal(t, 404, httpErr.StatusCode)
+}
+
+// TestBackend_Dispatch_BitbucketOrgRoutesToCloud verifies that bitbucket.org
+// hostname with no backendType routes to a cloud.Client.
+func TestBackend_Dispatch_BitbucketOrgRoutesToCloud(t *testing.T) {
+	t.Parallel()
+
+	var gotPath string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"account_id":"u123","display_name":"User"}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		HTTPClient: srv.Client(),
+		BaseURL:    func(hostname string) string { return srv.URL },
+	})
+
+	client, err := f.Backend("bitbucket.org")
+	require.NoError(t, err)
+
+	_, err = client.GetCurrentUser()
+	require.NoError(t, err)
+	// Cloud uses /user path (not /users/~)
+	assert.Equal(t, "/user", gotPath)
+}
+
+// TestBackend_Dispatch_CustomHostRoutesToServer verifies that a custom hostname
+// with no backendType routes to a server.Client.
+func TestBackend_Dispatch_CustomHostRoutesToServer(t *testing.T) {
+	t.Parallel()
+
+	var gotPath string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"slug":"alice","displayName":"Alice"}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		HTTPClient: srv.Client(),
+		BaseURL:    func(hostname string) string { return srv.URL },
+	})
+
+	client, err := f.Backend("git.example.com")
+	require.NoError(t, err)
+
+	_, err = client.GetCurrentUser()
+	require.NoError(t, err)
+	// Server uses /users/~ path
+	assert.Equal(t, "/users/~", gotPath)
+}
+
+// TestBackend_Dispatch_BackendTypeCloudOverride verifies that setting
+// BackendType="cloud" forces cloud routing even for a non-bitbucket.org host.
+func TestBackend_Dispatch_BackendTypeCloudOverride(t *testing.T) {
+	t.Parallel()
+
+	var gotPath string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"account_id":"u","display_name":"U"}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		HTTPClient:  srv.Client(),
+		BaseURL:     func(hostname string) string { return srv.URL },
+		BackendType: "cloud",
+	})
+
+	client, err := f.Backend("git.example.com")
+	require.NoError(t, err)
+
+	_, err = client.GetCurrentUser()
+	require.NoError(t, err)
+	// Cloud uses /user path
+	assert.Equal(t, "/user", gotPath)
+}
+
+// TestBackend_Dispatch_BackendTypeServerOverride verifies that setting
+// BackendType="server" forces server routing even for bitbucket.org.
+func TestBackend_Dispatch_BackendTypeServerOverride(t *testing.T) {
+	t.Parallel()
+
+	var gotPath string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"slug":"alice","displayName":"Alice"}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		HTTPClient:  srv.Client(),
+		BaseURL:     func(hostname string) string { return srv.URL },
+		BackendType: "server",
+	})
+
+	client, err := f.Backend("bitbucket.org")
+	require.NoError(t, err)
+
+	_, err = client.GetCurrentUser()
+	require.NoError(t, err)
+	// Server uses /users/~ path
+	assert.Equal(t, "/users/~", gotPath)
 }

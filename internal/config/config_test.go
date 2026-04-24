@@ -148,3 +148,73 @@ func TestConfig_SkipTLSVerify(t *testing.T) {
 	require.True(t, ok)
 	assert.True(t, got.SkipTLSVerify)
 }
+
+func TestHostConfig_BackendType_LoadCloud(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHostsFile(t, dir, "bb.example.com:\n  user: alice\n  git_protocol: https\n  backend_type: cloud\n")
+	c := config.New(dir)
+	require.NoError(t, c.Load())
+	hc, ok := c.Get("bb.example.com")
+	require.True(t, ok)
+	assert.Equal(t, "cloud", hc.BackendType)
+}
+
+func TestHostConfig_BackendType_LoadServer(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHostsFile(t, dir, "bb.example.com:\n  user: alice\n  git_protocol: https\n  backend_type: server\n")
+	c := config.New(dir)
+	require.NoError(t, c.Load())
+	hc, ok := c.Get("bb.example.com")
+	require.True(t, ok)
+	assert.Equal(t, "server", hc.BackendType)
+}
+
+func TestHostConfig_BackendType_LoadMissing(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHostsFile(t, dir, "bb.example.com:\n  user: alice\n  git_protocol: https\n")
+	c := config.New(dir)
+	require.NoError(t, c.Load())
+	hc, ok := c.Get("bb.example.com")
+	require.True(t, ok)
+	assert.Empty(t, hc.BackendType)
+}
+
+func TestHostConfig_BackendType_RoundTrip_Empty(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	c := config.New(dir)
+	c.Set("a.example.com", config.HostConfig{User: "a", GitProtocol: "https"})
+	require.NoError(t, c.Save())
+
+	c2 := config.New(dir)
+	require.NoError(t, c2.Load())
+	got, ok := c2.Get("a.example.com")
+	require.True(t, ok)
+	assert.Empty(t, got.BackendType)
+}
+
+func TestHostConfig_BackendType_RoundTrip_Cloud(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	c := config.New(dir)
+	c.Set("a.example.com", config.HostConfig{
+		User:        "a",
+		GitProtocol: "https",
+		BackendType: "cloud",
+	})
+	require.NoError(t, c.Save())
+
+	c2 := config.New(dir)
+	require.NoError(t, c2.Load())
+	got, ok := c2.Get("a.example.com")
+	require.True(t, ok)
+	assert.Equal(t, "cloud", got.BackendType)
+}

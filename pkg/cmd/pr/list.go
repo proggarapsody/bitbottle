@@ -28,7 +28,7 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			client, err := f.HttpClient(ref.Host)
+			client, err := f.Backend(ref.Host)
 			if err != nil {
 				return err
 			}
@@ -50,7 +50,7 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 			tp.AddHeader("TITLE", "AUTHOR", "STATE")
 			for _, p := range prs {
 				tp.AddField(p.Title)
-				tp.AddField(p.Author.User.Slug)
+				tp.AddField(p.Author.Slug)
 				tp.AddField(p.State)
 				tp.EndRow()
 			}

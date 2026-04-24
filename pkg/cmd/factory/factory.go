@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/proggarapsody/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/cloud"
+	"github.com/proggarapsody/bitbottle/api/server"
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/internal/keyring"
@@ -19,15 +21,15 @@ import (
 // Factory is the single dependency container threaded through every command.
 // Commands receive it via their constructor.
 type Factory struct {
-	IOStreams  *iostreams.IOStreams
-	Config     func() (*config.Config, error)
-	HttpClient func(hostname string) (*api.Client, error)
-	GitRunner  func() run.Runner
-	Keyring    keyring.Keyring
-	Browser    cmdutil.BrowserLauncher
-	Editor     cmdutil.EditorLauncher
-	BaseURL    func(hostname string) string
-	Now        func() time.Time
+	IOStreams *iostreams.IOStreams
+	Config    func() (*config.Config, error)
+	Backend   func(hostname string) (backend.Client, error)
+	GitRunner func() run.Runner
+	Keyring   keyring.Keyring
+	Browser   cmdutil.BrowserLauncher
+	Editor    cmdutil.EditorLauncher
+	BaseURL   func(hostname string) string
+	Now       func() time.Time
 }
 
 // New constructs a Factory wired with live dependencies.
@@ -54,19 +56,13 @@ func New() *Factory {
 			}
 			return cfg, nil
 		},
-		HttpClient: func(hostname string) (*api.Client, error) {
-			// Ensure config is loaded before reading host settings.
+		Backend: func(hostname string) (backend.Client, error) {
 			if err := loadConfig(); err != nil {
 				return nil, err
 			}
 			hostCfg, _ := cfg.Get(hostname)
-			transport := http.DefaultTransport.(*http.Transport).Clone()
-			if hostCfg.SkipTLSVerify {
-				transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
-			}
-			hc := &http.Client{Transport: transport}
-			auth := api.AuthConfig{Token: hostCfg.OAuthToken}
-			return api.NewClient(hc, baseURL(hostname), auth), nil
+			hc := newHTTPClient(hostCfg.SkipTLSVerify)
+			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 		},
 		GitRunner: func() run.Runner { return &run.SystemRunner{} },
 		Keyring:   &keyring.OSKeyring{},
@@ -83,4 +79,24 @@ func configHomeDir() string {
 	}
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".config")
+}
+
+// newHTTPClient returns an *http.Client configured with a clone of the default
+// transport. If skipTLSVerify is true, TLS certificate verification is
+// disabled (for self-signed DC instances).
+func newHTTPClient(skipTLSVerify bool) *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	if skipTLSVerify {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
+	}
+	return &http.Client{Transport: transport}
+}
+
+// newBackendClient selects and constructs the backend.Client implementation
+// appropriate for hostname (Cloud vs. Data Center).
+func newBackendClient(hc *http.Client, hostname string, hostCfg config.HostConfig, dcBaseURL func(string) string) backend.Client {
+	if bbinstance.IsCloud(hostname, hostCfg.BackendType) {
+		return cloud.NewClient(hc, bbinstance.CloudRESTBase(), hostCfg.OAuthToken, hostCfg.User)
+	}
+	return server.NewClient(hc, dcBaseURL(hostname), hostCfg.OAuthToken, hostCfg.User)
 }

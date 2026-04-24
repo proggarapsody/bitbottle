@@ -23,7 +23,7 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			client, err := f.HttpClient(host)
+			client, err := f.Backend(host)
 			if err != nil {
 				return err
 			}
@@ -45,8 +45,8 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 			tp.AddHeader("SLUG", "PROJECT", "TYPE")
 			for _, r := range repos {
 				tp.AddField(r.Slug)
-				tp.AddField(r.Project.Key)
-				tp.AddField(r.ScmID)
+				tp.AddField(r.Namespace)
+				tp.AddField(r.SCM)
 				tp.EndRow()
 			}
 			return tp.Render()

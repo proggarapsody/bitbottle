@@ -10,7 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/proggarapsody/bitbottle/api"
+	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/cloud"
+	"github.com/proggarapsody/bitbottle/api/server"
+	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/internal/keyring"
 	"github.com/proggarapsody/bitbottle/internal/run"
@@ -22,17 +25,24 @@ import (
 // TestFactoryOpts overrides individual factory components in tests.
 // Unset fields receive safe no-op defaults.
 type TestFactoryOpts struct {
-	ConfigDir     string
-	InitialConfig string
-	HTTPClient    api.HTTPClient
-	BaseURL       func(hostname string) string
-	GitRunner     run.Runner
-	Keyring       keyring.Keyring
-	Browser       cmdutil.BrowserLauncher
-	Editor        cmdutil.EditorLauncher
-	IOStreams     *iostreams.IOStreams
-	Hostname      string
-	Now           func() time.Time
+	ConfigDir      string
+	InitialConfig  string
+	HTTPClient     HTTPClient
+	BaseURL        func(hostname string) string
+	GitRunner      run.Runner
+	Keyring        keyring.Keyring
+	Browser        cmdutil.BrowserLauncher
+	Editor         cmdutil.EditorLauncher
+	IOStreams       *iostreams.IOStreams
+	Hostname       string
+	Now            func() time.Time
+	BackendOverride backend.Client
+	BackendType    string
+}
+
+// HTTPClient is the transport interface used by server and cloud clients.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // NewTestFactory returns a fully wired Factory suitable for command-level unit
@@ -114,8 +124,26 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 			}
 			return cfg, nil
 		},
-		HttpClient: func(hostname string) (*api.Client, error) {
-			return api.NewClient(httpClient, baseURL(hostname), api.AuthConfig{Token: "test-token"}), nil
+		Backend: func(hostname string) (backend.Client, error) {
+			if opts.BackendOverride != nil {
+				return opts.BackendOverride, nil
+			}
+
+			// Determine backend type: check config for host-level override.
+			var hostCfg config.HostConfig
+			if err := cfg.Load(); err == nil || os.IsNotExist(err) {
+				hostCfg, _ = cfg.Get(hostname)
+			}
+
+			effectiveBackendType := opts.BackendType
+			if effectiveBackendType == "" {
+				effectiveBackendType = hostCfg.BackendType
+			}
+
+			if bbinstance.IsCloud(hostname, effectiveBackendType) {
+				return cloud.NewClient(httpClient, baseURL(hostname), "test-token", ""), nil
+			}
+			return server.NewClient(httpClient, baseURL(hostname), "test-token", ""), nil
 		},
 		GitRunner: func() run.Runner { return gitRunner },
 		Keyring:   kr,

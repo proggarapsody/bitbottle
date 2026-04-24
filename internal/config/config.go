@@ -15,6 +15,7 @@ type HostConfig struct {
 	GitProtocol   string `yaml:"git_protocol"`
 	Version       string `yaml:"version,omitempty"`
 	SkipTLSVerify bool   `yaml:"skip_tls_verify,omitempty"`
+	BackendType   string `yaml:"backend_type,omitempty"`
 }
 
 // Config reads/writes hosts.yml.

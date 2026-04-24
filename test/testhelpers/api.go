@@ -9,6 +9,119 @@ import (
 	"testing"
 )
 
+// CloudPagedResponse wraps the given values slice in a Bitbucket Cloud paged envelope.
+func CloudPagedResponse(values any) map[string]any {
+	size := 0
+	switch v := values.(type) {
+	case []any:
+		size = len(v)
+	case []map[string]any:
+		size = len(v)
+	}
+	return map[string]any{
+		"values":  values,
+		"size":    size,
+		"pagelen": 25,
+		"page":    1,
+	}
+}
+
+// BitbucketCloudServer is a fluent builder around NewTestServer that knows
+// common Bitbucket Cloud API v2.0 endpoints. Cloud paths use /2.0/... prefix.
+type BitbucketCloudServer struct {
+	t     *testing.T
+	stubs []StubResponse
+}
+
+// NewBitbucketCloudServer creates a new fluent BitbucketCloudServer builder.
+func NewBitbucketCloudServer(t *testing.T) *BitbucketCloudServer {
+	t.Helper()
+	return &BitbucketCloudServer{t: t}
+}
+
+// WithRepoList stubs GET /repositories/{workspace} with the provided list.
+func (b *BitbucketCloudServer) WithRepoList(workspace string, repos []map[string]any) *BitbucketCloudServer {
+	values := make([]any, len(repos))
+	for i, r := range repos {
+		values[i] = r
+	}
+	b.stubs = append(b.stubs, StubResponse{
+		Method:     http.MethodGet,
+		PathSuffix: fmt.Sprintf("/repositories/%s", workspace),
+		Status:     http.StatusOK,
+		Body:       CloudPagedResponse(values),
+	})
+	return b
+}
+
+// WithRepo stubs GET /repositories/{workspace}/{slug}.
+func (b *BitbucketCloudServer) WithRepo(workspace, slug string, repo map[string]any) *BitbucketCloudServer {
+	b.stubs = append(b.stubs, StubResponse{
+		Method:     http.MethodGet,
+		PathSuffix: fmt.Sprintf("/repositories/%s/%s", workspace, slug),
+		Status:     http.StatusOK,
+		Body:       repo,
+	})
+	return b
+}
+
+// WithPRList stubs GET /repositories/{workspace}/{slug}/pullrequests.
+func (b *BitbucketCloudServer) WithPRList(workspace, slug string, prs []map[string]any) *BitbucketCloudServer {
+	values := make([]any, len(prs))
+	for i, p := range prs {
+		values[i] = p
+	}
+	b.stubs = append(b.stubs, StubResponse{
+		Method:     http.MethodGet,
+		PathSuffix: fmt.Sprintf("/repositories/%s/%s/pullrequests", workspace, slug),
+		Status:     http.StatusOK,
+		Body:       CloudPagedResponse(values),
+	})
+	return b
+}
+
+// WithPR stubs GET /repositories/{workspace}/{slug}/pullrequests/{id}.
+func (b *BitbucketCloudServer) WithPR(workspace, slug string, id int, pr map[string]any) *BitbucketCloudServer {
+	b.stubs = append(b.stubs, StubResponse{
+		Method:     http.MethodGet,
+		PathSuffix: fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", workspace, slug, id),
+		Status:     http.StatusOK,
+		Body:       pr,
+	})
+	return b
+}
+
+// WithCurrentUser stubs GET /user.
+func (b *BitbucketCloudServer) WithCurrentUser(user map[string]any) *BitbucketCloudServer {
+	b.stubs = append(b.stubs, StubResponse{
+		Method:     http.MethodGet,
+		PathSuffix: "/user",
+		Status:     http.StatusOK,
+		Body:       user,
+	})
+	return b
+}
+
+// WithError stubs an error response in Cloud format for paths ending with pathSuffix.
+func (b *BitbucketCloudServer) WithError(pathSuffix string, status int, message string) *BitbucketCloudServer {
+	b.stubs = append(b.stubs, StubResponse{
+		PathSuffix: pathSuffix,
+		Status:     status,
+		Body: map[string]any{
+			"type": "error",
+			"error": map[string]any{
+				"message": message,
+			},
+		},
+	})
+	return b
+}
+
+// Build constructs the httptest.Server using the accumulated stubs.
+func (b *BitbucketCloudServer) Build() *httptest.Server {
+	return NewTestServer(b.t, b.stubs...)
+}
+
 // StubResponse describes a single canned HTTP response for NewTestServer.
 // If Handler is set it takes precedence over Status/Body.
 type StubResponse struct {

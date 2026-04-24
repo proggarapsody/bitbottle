@@ -1,0 +1,1 @@
+{"values":[{"id":1,"slug":"my-service","name":"my-service","project":{"key":"MYPROJ","name":"My Project"},"scmId":"git","state":"AVAILABLE","public":false,"links":{"clone":[{"href":"https://bb.example.com/scm/myproj/my-service.git","name":"http"}],"self":[{"href":"https://bb.example.com/projects/MYPROJ/repos/my-service/browse"}]}}],"size":1,"isLastPage":true,"start":0,"limit":25}

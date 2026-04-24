@@ -1,6 +1,7 @@
 package bbinstance_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,4 +52,84 @@ func TestSupportsDraftPR_Below(t *testing.T) {
 func TestSupportsDraftPR_Exact(t *testing.T) {
 	t.Parallel()
 	assert.True(t, bbinstance.SupportsDraftPR("7.17.0"))
+}
+
+func TestIsCloud(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		hostname    string
+		backendType string
+		want        bool
+	}{
+		{"bitbucket.org", "", true},
+		{"bitbucket.org", "server", false},
+		{"bitbucket.org", "cloud", true},
+		{"git.example.com", "", false},
+		{"git.example.com", "cloud", true},
+		{"git.example.com", "server", false},
+		{"", "", false},
+		{"", "cloud", true},
+		{"git.example.com", "datacenter", false},
+		{"bitbucket.org:443", "", false},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(fmt.Sprintf("%s+%s→%v", tc.hostname, tc.backendType, tc.want), func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, bbinstance.IsCloud(tc.hostname, tc.backendType))
+		})
+	}
+}
+
+func TestCloudRESTBase(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, "https://api.bitbucket.org/2.0", bbinstance.CloudRESTBase())
+}
+
+func TestIsCloud_EdgeCases(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name        string
+		hostname    string
+		backendType string
+		want        bool
+	}{
+		{
+			name:        "backendType=cloud_with_enterprise_hostname",
+			hostname:    "git.internal.example.com",
+			backendType: "cloud",
+			want:        true,
+		},
+		{
+			name:        "backendType=server_with_bitbucket.org",
+			hostname:    "bitbucket.org",
+			backendType: "server",
+			want:        false,
+		},
+		{
+			name:        "backendType_empty_with_bitbucket.org",
+			hostname:    "bitbucket.org",
+			backendType: "",
+			want:        true,
+		},
+		{
+			name:        "backendType_empty_with_uppercase_hostname_is_case_sensitive",
+			hostname:    "BITBUCKET.ORG",
+			backendType: "",
+			want:        false,
+		},
+		{
+			name:        "backendType_empty_with_api.bitbucket.org_is_false",
+			hostname:    "api.bitbucket.org",
+			backendType: "",
+			want:        false,
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, bbinstance.IsCloud(tc.hostname, tc.backendType))
+		})
+	}
 }
