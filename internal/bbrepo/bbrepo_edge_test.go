@@ -3,9 +3,10 @@ package bbrepo_test
 import (
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 )
 
 // TestInferFromRemote_SSHNoGitSuffix verifies an SSH URL without .git suffix

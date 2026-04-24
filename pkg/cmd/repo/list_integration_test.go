@@ -7,10 +7,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 )
 
 const repoListConfig = "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n"

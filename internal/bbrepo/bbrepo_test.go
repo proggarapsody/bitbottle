@@ -3,9 +3,10 @@ package bbrepo_test
 import (
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 )
 
 func TestParse_Valid(t *testing.T) {

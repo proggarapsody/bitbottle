@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/proggarapsody/bitbottle/git"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
-	"github.com/spf13/cobra"
 )
 
 func NewCmdPRList(f *factory.Factory) *cobra.Command {

@@ -3,8 +3,9 @@ package bbinstance_test
 import (
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 )
 
 func TestSSHURL(t *testing.T) {

@@ -3,10 +3,11 @@ package pr_test
 import (
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 )
 
 func TestNewCmdPRList_HasFlags(t *testing.T) {

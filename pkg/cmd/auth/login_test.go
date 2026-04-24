@@ -3,10 +3,11 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func TestNewCmdAuthLogin_HasRequiredFlags(t *testing.T) {

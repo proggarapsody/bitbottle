@@ -1,11 +1,12 @@
 package root
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
-	"github.com/spf13/cobra"
 )
 
 func NewCmdRoot(f *factory.Factory) *cobra.Command {

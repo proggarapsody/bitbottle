@@ -6,9 +6,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/api"
 )
 
 // TestGetJSON_MalformedResponseBody verifies that a 200 with invalid JSON returns

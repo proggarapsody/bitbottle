@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/api"
 )
 
 func newTLSClient(t *testing.T, handler http.HandlerFunc) (*api.Client, *httptest.Server) {

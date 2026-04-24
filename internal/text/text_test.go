@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/proggarapsody/bitbottle/internal/text"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/proggarapsody/bitbottle/internal/text"
 )
 
 func TestTruncate_Short(t *testing.T) {

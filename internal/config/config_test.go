@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/internal/config"
 )
 
 func writeHostsFile(t *testing.T, dir, content string) {

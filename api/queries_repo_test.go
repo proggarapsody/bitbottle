@@ -6,9 +6,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/api"
 )
 
 func newClientWithFixture(t *testing.T, pathSuffix, fixturePath string, status int) (*api.Client, *httptest.Server) {

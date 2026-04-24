@@ -4,9 +4,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/internal/config"
 )
 
 // TestConfig_ConcurrentSetGet verifies that concurrent Set and Get operations

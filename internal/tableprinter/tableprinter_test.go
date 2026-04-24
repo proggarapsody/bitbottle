@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 )
 
 func TestTablePrinter_Render_Empty(t *testing.T) {

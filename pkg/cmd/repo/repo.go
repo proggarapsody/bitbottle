@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/spf13/cobra"
+
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func NewCmdRepo(f *factory.Factory) *cobra.Command {

@@ -3,9 +3,10 @@ package repo
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
-	"github.com/spf13/cobra"
 )
 
 func NewCmdRepoList(f *factory.Factory) *cobra.Command {
