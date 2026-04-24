@@ -1,0 +1,16 @@
+{
+  "id": 3,
+  "slug": "new-repo",
+  "name": "new-repo",
+  "project": { "key": "MYPROJ", "name": "My Project" },
+  "scmId": "git",
+  "state": "AVAILABLE",
+  "public": false,
+  "links": {
+    "clone": [
+      { "href": "ssh://git@git.example.com/myproj/new-repo.git", "name": "ssh" },
+      { "href": "https://git.example.com/scm/myproj/new-repo.git", "name": "http" }
+    ],
+    "self": [{ "href": "https://git.example.com/projects/MYPROJ/repos/new-repo/browse" }]
+  }
+}

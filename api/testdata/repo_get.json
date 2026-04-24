@@ -1,0 +1,16 @@
+{
+  "id": 1,
+  "slug": "my-service",
+  "name": "my-service",
+  "project": { "key": "MYPROJ", "name": "My Project" },
+  "scmId": "git",
+  "state": "AVAILABLE",
+  "public": false,
+  "links": {
+    "clone": [
+      { "href": "ssh://git@git.example.com/myproj/my-service.git", "name": "ssh" },
+      { "href": "https://git.example.com/scm/myproj/my-service.git", "name": "http" }
+    ],
+    "self": [{ "href": "https://git.example.com/projects/MYPROJ/repos/my-service/browse" }]
+  }
+}

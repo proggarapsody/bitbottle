@@ -1,0 +1,65 @@
+{
+  "values": [
+    {
+      "id": 42,
+      "title": "Fix login bug",
+      "description": "Fixes the auth middleware issue",
+      "state": "OPEN",
+      "draft": false,
+      "author": {
+        "user": { "slug": "alice", "displayName": "Alice" },
+        "role": "AUTHOR",
+        "approved": false
+      },
+      "reviewers": [
+        {
+          "user": { "slug": "bob", "displayName": "Bob" },
+          "role": "REVIEWER",
+          "approved": true
+        }
+      ],
+      "fromRef": {
+        "id": "refs/heads/fix/login",
+        "displayId": "fix/login",
+        "repository": { "slug": "my-service", "project": { "key": "MYPROJ" } }
+      },
+      "toRef": {
+        "id": "refs/heads/main",
+        "displayId": "main",
+        "repository": { "slug": "my-service", "project": { "key": "MYPROJ" } }
+      },
+      "links": {
+        "self": [{ "href": "https://git.example.com/projects/MYPROJ/repos/my-service/pull-requests/42" }]
+      }
+    },
+    {
+      "id": 41,
+      "title": "Add dark mode",
+      "description": "",
+      "state": "OPEN",
+      "draft": true,
+      "author": {
+        "user": { "slug": "ivan", "displayName": "Ivan" },
+        "role": "AUTHOR",
+        "approved": false
+      },
+      "reviewers": [],
+      "fromRef": {
+        "id": "refs/heads/feat/dark-mode",
+        "displayId": "feat/dark-mode",
+        "repository": { "slug": "my-service", "project": { "key": "MYPROJ" } }
+      },
+      "toRef": {
+        "id": "refs/heads/main",
+        "displayId": "main",
+        "repository": { "slug": "my-service", "project": { "key": "MYPROJ" } }
+      },
+      "links": {
+        "self": [{ "href": "https://git.example.com/projects/MYPROJ/repos/my-service/pull-requests/41" }]
+      }
+    }
+  ],
+  "size": 2,
+  "isLastPage": true,
+  "start": 0
+}

@@ -1,0 +1,39 @@
+{
+  "values": [
+    {
+      "id": 1,
+      "slug": "my-service",
+      "name": "my-service",
+      "project": { "key": "MYPROJ", "name": "My Project" },
+      "scmId": "git",
+      "state": "AVAILABLE",
+      "public": false,
+      "links": {
+        "clone": [
+          { "href": "ssh://git@git.example.com/myproj/my-service.git", "name": "ssh" },
+          { "href": "https://git.example.com/scm/myproj/my-service.git", "name": "http" }
+        ],
+        "self": [{ "href": "https://git.example.com/projects/MYPROJ/repos/my-service/browse" }]
+      }
+    },
+    {
+      "id": 2,
+      "slug": "another-repo",
+      "name": "another-repo",
+      "project": { "key": "MYPROJ", "name": "My Project" },
+      "scmId": "git",
+      "state": "AVAILABLE",
+      "public": true,
+      "links": {
+        "clone": [
+          { "href": "ssh://git@git.example.com/myproj/another-repo.git", "name": "ssh" },
+          { "href": "https://git.example.com/scm/myproj/another-repo.git", "name": "http" }
+        ],
+        "self": [{ "href": "https://git.example.com/projects/MYPROJ/repos/another-repo/browse" }]
+      }
+    }
+  ],
+  "size": 2,
+  "isLastPage": true,
+  "start": 0
+}

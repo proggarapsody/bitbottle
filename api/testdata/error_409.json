@@ -1,0 +1,8 @@
+{
+  "errors": [
+    {
+      "message": "Repository already exists with slug 'my-service' in project 'MYPROJ'",
+      "exceptionName": "com.atlassian.bitbucket.repository.RepositoryAlreadyExistsException"
+    }
+  ]
+}

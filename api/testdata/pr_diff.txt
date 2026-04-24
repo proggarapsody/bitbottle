@@ -1,0 +1,11 @@
+diff --git a/internal/auth/middleware.go b/internal/auth/middleware.go
+index 1a2b3c4..5d6e7f8 100644
+--- a/internal/auth/middleware.go
++++ b/internal/auth/middleware.go
+@@ -12,7 +12,7 @@ func ValidateToken(token string) bool {
+ 	if token == "" {
+ 		return false
+ 	}
+-	return len(token) > 0
++	return len(token) >= 32
+ }

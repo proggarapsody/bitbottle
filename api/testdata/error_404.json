@@ -1,0 +1,8 @@
+{
+  "errors": [
+    {
+      "message": "Repository does not exist",
+      "exceptionName": "com.atlassian.bitbucket.repository.NoSuchRepositoryException"
+    }
+  ]
+}
