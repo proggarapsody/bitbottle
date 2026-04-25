@@ -50,6 +50,11 @@ type PRDiffer interface {
 	GetPRDiff(ns, slug string, id int) (string, error)
 }
 
+// BranchLister can list branches.
+type BranchLister interface {
+	ListBranches(ns, slug string, limit int) ([]Branch, error)
+}
+
 // BranchDeleter can delete branches.
 type BranchDeleter interface {
 	DeleteBranch(ns, slug, branch string) error
@@ -72,6 +77,7 @@ type Client interface {
 	PRMerger
 	PRApprover
 	PRDiffer
+	BranchLister
 	BranchDeleter
 	UserGetter
 }
@@ -79,4 +85,11 @@ type Client interface {
 // ServerCapabilities is implemented only by Bitbucket Data Center clients.
 type ServerCapabilities interface {
 	GetApplicationProperties() (AppProperties, error)
+}
+
+// PipelineClient is implemented only by Bitbucket Cloud clients.
+type PipelineClient interface {
+	ListPipelines(ns, slug string, limit int) ([]Pipeline, error)
+	GetPipeline(ns, slug, uuid string) (Pipeline, error)
+	RunPipeline(ns, slug string, in RunPipelineInput) (Pipeline, error)
 }

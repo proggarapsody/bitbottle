@@ -27,8 +27,14 @@ type FakeClient struct {
 	GetPRDiffFn func(ns, slug string, id int) (string, error)
 
 	// Branch / user methods
+	ListBranchesFn   func(ns, slug string, limit int) ([]backend.Branch, error)
 	DeleteBranchFn   func(ns, slug, branch string) error
 	GetCurrentUserFn func() (backend.User, error)
+
+	// Pipeline methods (Cloud-only; satisfies backend.PipelineClient when set)
+	ListPipelinesFn func(ns, slug string, limit int) ([]backend.Pipeline, error)
+	GetPipelineFn   func(ns, slug, uuid string) (backend.Pipeline, error)
+	RunPipelineFn   func(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error)
 }
 
 // Compile-time interface check.
@@ -128,6 +134,13 @@ func (c *FakeClient) GetPRDiff(ns, slug string, id int) (string, error) {
 	return "", nil
 }
 
+func (c *FakeClient) ListBranches(ns, slug string, limit int) ([]backend.Branch, error) {
+	if c.ListBranchesFn != nil {
+		return c.ListBranchesFn(ns, slug, limit)
+	}
+	return nil, nil
+}
+
 func (c *FakeClient) DeleteBranch(ns, slug, branch string) error {
 	if c.DeleteBranchFn != nil {
 		return c.DeleteBranchFn(ns, slug, branch)
@@ -146,4 +159,34 @@ func (c *FakeClient) GetCurrentUser() (backend.User, error) {
 		c.T.Fatalf("unexpected call to FakeClient.GetCurrentUser; set GetCurrentUserFn in your test")
 	}
 	return backend.User{}, nil
+}
+
+func (c *FakeClient) ListPipelines(ns, slug string, limit int) ([]backend.Pipeline, error) {
+	if c.ListPipelinesFn != nil {
+		return c.ListPipelinesFn(ns, slug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelines; set ListPipelinesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetPipeline(ns, slug, uuid string) (backend.Pipeline, error) {
+	if c.GetPipelineFn != nil {
+		return c.GetPipelineFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipeline; set GetPipelineFn in your test")
+	}
+	return backend.Pipeline{}, nil
+}
+
+func (c *FakeClient) RunPipeline(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error) {
+	if c.RunPipelineFn != nil {
+		return c.RunPipelineFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RunPipeline; set RunPipelineFn in your test")
+	}
+	return backend.Pipeline{}, nil
 }

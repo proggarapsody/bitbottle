@@ -57,3 +57,27 @@ type AppProperties struct {
 	BuildNumber string
 	DisplayName string
 }
+
+// Branch is the domain representation of a repository branch.
+type Branch struct {
+	Name       string
+	IsDefault  bool
+	LatestHash string
+}
+
+// Pipeline is the domain representation of a Bitbucket Cloud pipeline run.
+type Pipeline struct {
+	UUID        string
+	BuildNumber int
+	State       string // PENDING, IN_PROGRESS, SUCCESSFUL, FAILED, ERROR, STOPPED
+	RefType     string // "branch", "tag", "commit"
+	RefName     string
+	CreatedOn   string
+	Duration    int // seconds
+	WebURL      string
+}
+
+// RunPipelineInput carries the parameters for triggering a pipeline run.
+type RunPipelineInput struct {
+	Branch string
+}

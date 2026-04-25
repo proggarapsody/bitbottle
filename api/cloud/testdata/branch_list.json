@@ -1,0 +1,19 @@
+{
+  "pagelen": 10,
+  "values": [
+    {
+      "name": "main",
+      "target": {
+        "hash": "abc1234def567890"
+      }
+    },
+    {
+      "name": "feature/login",
+      "target": {
+        "hash": "deadbeef01234567"
+      }
+    }
+  ],
+  "page": 1,
+  "size": 2
+}

@@ -1,0 +1,18 @@
+{
+  "values": [
+    {
+      "id": "refs/heads/main",
+      "displayId": "main",
+      "isDefault": true,
+      "latestCommit": "abc1234def5"
+    },
+    {
+      "id": "refs/heads/feature/login",
+      "displayId": "feature/login",
+      "isDefault": false,
+      "latestCommit": "deadbeef01"
+    }
+  ],
+  "size": 2,
+  "isLastPage": true
+}

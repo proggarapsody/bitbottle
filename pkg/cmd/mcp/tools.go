@@ -209,4 +209,54 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.getCurrentUser,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_branches",
+			mcplib.WithDescription("List branches for a repository"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			optLimit,
+		),
+		h.listBranches,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("list_pipelines",
+			mcplib.WithDescription("List pipelines for a repository (Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			optLimit,
+		),
+		h.listPipelines,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("get_pipeline",
+			mcplib.WithDescription("Get a single pipeline by UUID (Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("uuid",
+				mcplib.Description("Pipeline UUID"),
+				mcplib.Required(),
+			),
+		),
+		h.getPipeline,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("run_pipeline",
+			mcplib.WithDescription("Trigger a pipeline on a branch (Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("branch",
+				mcplib.Description("Branch to run the pipeline on"),
+				mcplib.Required(),
+			),
+		),
+		h.runPipeline,
+	)
 }

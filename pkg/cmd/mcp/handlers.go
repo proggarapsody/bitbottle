@@ -361,3 +361,117 @@ func (h *handlers) getCurrentUser(_ context.Context, req mcplib.CallToolRequest)
 	}
 	return jsonResult(user)
 }
+
+func (h *handlers) listBranches(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	limit := req.GetInt("limit", 30)
+
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	branches, err := client.ListBranches(project, slug, limit)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(branches)
+}
+
+func (h *handlers) listPipelines(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	limit := req.GetInt("limit", 20)
+
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	pc, ok := client.(backend.PipelineClient)
+	if !ok {
+		return errResult("pipelines are only supported on Bitbucket Cloud"), nil
+	}
+	pipelines, err := pc.ListPipelines(project, slug, limit)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(pipelines)
+}
+
+func (h *handlers) getPipeline(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	uuid, err := requireString(req, "uuid")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	pc, ok := client.(backend.PipelineClient)
+	if !ok {
+		return errResult("pipelines are only supported on Bitbucket Cloud"), nil
+	}
+	pl, err := pc.GetPipeline(project, slug, uuid)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(pl)
+}
+
+func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	branch, err := requireString(req, "branch")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	pc, ok := client.(backend.PipelineClient)
+	if !ok {
+		return errResult("pipelines are only supported on Bitbucket Cloud"), nil
+	}
+	pl, err := pc.RunPipeline(project, slug, backend.RunPipelineInput{Branch: branch})
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(pl)
+}

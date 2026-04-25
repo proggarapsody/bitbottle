@@ -590,3 +590,201 @@ func TestResolveBackend_ExplicitHostname_Success(t *testing.T) {
 	require.NoError(t, err)
 	assertJSONContains(t, result, "r", "")
 }
+
+// ---- list_branches ----
+
+func TestListBranches_CallsClientWithCorrectParams(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug string
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListBranchesFn: func(ns, slug string, limit int) ([]backend.Branch, error) {
+			gotNS = ns
+			gotSlug = slug
+			gotLimit = limit
+			return []backend.Branch{
+				{Name: "main", IsDefault: true, LatestHash: "abc1234"},
+				{Name: "feature/x", IsDefault: false, LatestHash: "def5678"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listBranches(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"limit":   float64(10),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "MYPROJ", gotNS)
+	assert.Equal(t, "my-repo", gotSlug)
+	assert.Equal(t, 10, gotLimit)
+	assertJSONContains(t, result, "main", "")
+}
+
+func TestListBranches_DefaultLimit(t *testing.T) {
+	t.Parallel()
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListBranchesFn: func(ns, slug string, limit int) ([]backend.Branch, error) {
+			gotLimit = limit
+			return nil, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	_, err := h.listBranches(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 30, gotLimit)
+}
+
+func TestListBranches_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listBranches(context.Background(), makeReq(map[string]any{"slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestListBranches_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listBranches(context.Background(), makeReq(map[string]any{"project": "MYPROJ"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+// ---- list_pipelines ----
+
+func TestListPipelines_CallsClientWithCorrectParams(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug string
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListPipelinesFn: func(ns, slug string, limit int) ([]backend.Pipeline, error) {
+			gotNS = ns
+			gotSlug = slug
+			gotLimit = limit
+			return []backend.Pipeline{
+				{BuildNumber: 42, State: "SUCCESSFUL", RefName: "main"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listPipelines(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"limit":   float64(5),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "myworkspace", gotNS)
+	assert.Equal(t, "my-service", gotSlug)
+	assert.Equal(t, 5, gotLimit)
+	assertJSONContains(t, result, "SUCCESSFUL", "")
+}
+
+func TestListPipelines_NotCloudCapable_ReturnsError(t *testing.T) {
+	t.Parallel()
+	// FakeClient wrapped as plain backend.Client — no PipelineClient methods visible
+	type serverOnlyFake struct{ backend.Client }
+	fake := &serverOnlyFake{Client: &testhelpers.FakeClient{}}
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig:   singleHostConfig,
+		BackendOverride: fake,
+	})
+	h := newHandlers(f)
+	result, err := h.listPipelines(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "pipelines")
+}
+
+func TestListPipelines_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelines(context.Background(), makeReq(map[string]any{"slug": "my-service"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestListPipelines_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelines(context.Background(), makeReq(map[string]any{"project": "myworkspace"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+// ---- get_pipeline ----
+
+func TestGetPipeline_CallsClientWithCorrectParams(t *testing.T) {
+	t.Parallel()
+	uuid := "{aabbccdd-1234-5678-abcd-000000000001}"
+	var gotNS, gotSlug, gotUUID string
+	fake := &testhelpers.FakeClient{
+		GetPipelineFn: func(ns, slug, u string) (backend.Pipeline, error) {
+			gotNS = ns
+			gotSlug = slug
+			gotUUID = u
+			return backend.Pipeline{UUID: u, BuildNumber: 42, State: "SUCCESSFUL"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getPipeline(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"uuid":    uuid,
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "myworkspace", gotNS)
+	assert.Equal(t, "my-service", gotSlug)
+	assert.Equal(t, uuid, gotUUID)
+	assertJSONContains(t, result, "SUCCESSFUL", "")
+}
+
+func TestGetPipeline_MissingUUID_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getPipeline(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "uuid")
+}
+
+// ---- run_pipeline ----
+
+func TestRunPipeline_CallsClientWithCorrectInput(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.RunPipelineInput
+	fake := &testhelpers.FakeClient{
+		RunPipelineFn: func(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error) {
+			gotIn = in
+			return backend.Pipeline{BuildNumber: 99, State: "PENDING", RefName: in.Branch}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.runPipeline(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"branch":  "main",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "main", gotIn.Branch)
+	assertJSONContains(t, result, "PENDING", "")
+}
+
+func TestRunPipeline_MissingBranch_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.runPipeline(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "branch")
+}
