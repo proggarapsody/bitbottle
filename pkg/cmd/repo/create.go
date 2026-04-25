@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -15,15 +16,43 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create [NAME]",
 		Short: "Create a repository",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not implemented")
+			if project == "" {
+				return fmt.Errorf("--project is required")
+			}
+
+			name := args[0]
+
+			host, err := resolveHostname(f, "")
+			if err != nil {
+				return err
+			}
+
+			client, err := f.Backend(host)
+			if err != nil {
+				return err
+			}
+
+			repo, err := client.CreateRepo(project, backend.CreateRepoInput{
+				Name:        name,
+				SCM:         "git",
+				Public:      !private,
+				Description: description,
+			})
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintf(f.IOStreams.Out, "Created repository %s/%s\n", repo.Namespace, repo.Slug)
+			if repo.WebURL != "" {
+				fmt.Fprintf(f.IOStreams.Out, "%s\n", repo.WebURL)
+			}
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&project, "project", "", "Project key")
 	cmd.Flags().StringVar(&description, "description", "", "Repository description")
 	cmd.Flags().BoolVar(&private, "private", true, "Make repository private")
-	_ = project
-	_ = description
-	_ = private
 	return cmd
 }

@@ -1,13 +1,16 @@
 package repo_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
+	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdRepoCreate_HasFlags(t *testing.T) {
@@ -19,12 +22,61 @@ func TestNewCmdRepoCreate_HasFlags(t *testing.T) {
 	assert.NotNil(t, cmd.Flag("private"))
 }
 
-func TestNewCmdRepoCreate_NotImplemented(t *testing.T) {
+func TestRepoCreate_CallsAPIAndPrintsSummary(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+
+	var capturedNS string
+	var capturedIn backend.CreateRepoInput
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		CreateRepoFn: func(ns string, in backend.CreateRepoInput) (backend.Repository, error) {
+			capturedNS = ns
+			capturedIn = in
+			return testhelpers.BackendRepoFactory(
+				testhelpers.BackendRepoWithSlug("new-repo"),
+				testhelpers.BackendRepoWithWebURL("https://bb.example.com/projects/MYPROJ/repos/new-repo/browse"),
+			), nil
+		},
+	}
+
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoCreate(f)
+	cmd.SetArgs([]string{"new-repo", "--project", "MYPROJ"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "MYPROJ", capturedNS)
+	assert.Equal(t, "new-repo", capturedIn.Name)
+	assert.False(t, capturedIn.Public, "default --private=true means Public should be false")
+	assert.Contains(t, out.String(), "new-repo")
+}
+
+func TestRepoCreate_MissingProject_Errors(t *testing.T) {
+	t.Parallel()
+
+	f, _, _ := newRepoFactory(t, nil)
+	cmd := repo.NewCmdRepoCreate(f)
+	cmd.SetArgs([]string{"new-repo"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "project")
+}
+
+func TestRepoCreate_APIError_PropagatesError(t *testing.T) {
+	t.Parallel()
+
+	apiErr := errors.New("409 conflict")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		CreateRepoFn: func(ns string, in backend.CreateRepoInput) (backend.Repository, error) {
+			return backend.Repository{}, apiErr
+		},
+	}
+
+	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoCreate(f)
 	cmd.SetArgs([]string{"new-repo", "--project", "MYPROJ"})
 	err := cmd.Execute()
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	assert.Contains(t, err.Error(), "409 conflict")
 }

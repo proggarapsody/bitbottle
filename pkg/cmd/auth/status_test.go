@@ -17,12 +17,29 @@ func TestNewCmdAuthStatus_HasHostnameFlag(t *testing.T) {
 	assert.NotNil(t, cmd.Flag("hostname"))
 }
 
-func TestNewCmdAuthStatus_NotImplemented(t *testing.T) {
+func TestAuthStatus_PrintsConfiguredHosts(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+
+	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig: authConfig,
+	})
 	cmd := auth.NewCmdAuthStatus(f)
 	cmd.SetArgs([]string{})
-	err := cmd.Execute()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not implemented")
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	assert.Contains(t, got, "bb.example.com")
+	assert.Contains(t, got, "alice")
+}
+
+func TestAuthStatus_NoHosts_PrintsNothing(t *testing.T) {
+	t.Parallel()
+
+	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	cmd := auth.NewCmdAuthStatus(f)
+	cmd.SetArgs([]string{})
+	require.NoError(t, cmd.Execute())
+
+	// no hosts → must not print any specific hostname; behaviour: "not logged in" message.
+	assert.NotContains(t, out.String(), "bb.example.com")
 }

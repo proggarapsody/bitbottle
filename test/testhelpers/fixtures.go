@@ -297,3 +297,61 @@ func BackendPRFactory(opts ...BackendPROption) backend.PullRequest {
 	}
 	return pr
 }
+
+// BackendPRWithID sets the ID on a backend.PullRequest.
+func BackendPRWithID(id int) BackendPROption {
+	return func(p *backend.PullRequest) { p.ID = id }
+}
+
+// BackendPRWithWebURL sets the WebURL on a backend.PullRequest.
+func BackendPRWithWebURL(url string) BackendPROption {
+	return func(p *backend.PullRequest) { p.WebURL = url }
+}
+
+// BackendPRWithFromBranch sets FromBranch on a backend.PullRequest.
+func BackendPRWithFromBranch(branch string) BackendPROption {
+	return func(p *backend.PullRequest) { p.FromBranch = branch }
+}
+
+// BackendPRWithTitle sets Title on a backend.PullRequest.
+func BackendPRWithTitle(title string) BackendPROption {
+	return func(p *backend.PullRequest) { p.Title = title }
+}
+
+// BackendPRWithState sets State on a backend.PullRequest.
+func BackendPRWithState(state string) BackendPROption {
+	return func(p *backend.PullRequest) { p.State = state }
+}
+
+// BackendRepoWithWebURL sets the WebURL on a backend.Repository.
+func BackendRepoWithWebURL(url string) BackendRepoOption {
+	return func(r *backend.Repository) { r.WebURL = url }
+}
+
+// BackendRepoWithSlug sets the slug on a backend.Repository.
+func BackendRepoWithSlug(slug string) BackendRepoOption {
+	return func(r *backend.Repository) {
+		r.Slug = slug
+		r.Name = slug
+	}
+}
+
+// BackendUserOption mutates a backend.User.
+type BackendUserOption func(*backend.User)
+
+// BackendUserFactory returns a default backend.User with options applied.
+func BackendUserFactory(opts ...BackendUserOption) backend.User {
+	u := backend.User{
+		Slug:        "alice",
+		DisplayName: "Alice Example",
+	}
+	for _, opt := range opts {
+		opt(&u)
+	}
+	return u
+}
+
+// BackendUserWithSlug sets the slug on a backend.User.
+func BackendUserWithSlug(slug string) BackendUserOption {
+	return func(u *backend.User) { u.Slug = slug }
+}

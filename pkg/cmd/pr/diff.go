@@ -14,7 +14,18 @@ func NewCmdPRDiff(f *factory.Factory) *cobra.Command {
 		Short: "Show a pull request diff",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not implemented")
+			ref, prID, client, err := resolvePRTarget(f, args, "")
+			if err != nil {
+				return err
+			}
+
+			diff, err := client.GetPRDiff(ref.Project, ref.Slug, prID)
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprint(f.IOStreams.Out, diff)
+			return nil
 		},
 	}
 	return cmd
