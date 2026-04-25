@@ -81,7 +81,7 @@ func (t *Transport) GetText(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode >= http.StatusBadRequest {
 		return "", t.apiError(resp)
 	}
@@ -117,7 +117,7 @@ func (t *Transport) sendJSON(method, path string, body, v any) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	return t.checkAndDecode(resp, v)
 }
 

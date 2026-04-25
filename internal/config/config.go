@@ -66,12 +66,12 @@ func (c *Config) Save() error {
 	}
 	tmpName := tmp.Name()
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		os.Remove(tmpName)
+		tmp.Close()        //nolint:errcheck
+		os.Remove(tmpName) //nolint:errcheck
 		return err
 	}
 	if err := tmp.Close(); err != nil {
-		os.Remove(tmpName)
+		os.Remove(tmpName) //nolint:errcheck
 		return err
 	}
 	return os.Rename(tmpName, filepath.Join(c.dir, "hosts.yml"))

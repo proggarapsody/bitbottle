@@ -16,7 +16,7 @@ type Runner interface {
 type SystemRunner struct{}
 
 func (r *SystemRunner) Run(args ...string) (string, string, error) {
-	cmd := exec.Command("git", args...) //nolint:gosec
+	cmd := exec.Command("git", args...) //nolint:gosec,noctx
 	var outBuf, errBuf bytes.Buffer
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &errBuf
@@ -25,7 +25,7 @@ func (r *SystemRunner) Run(args ...string) (string, string, error) {
 }
 
 func (r *SystemRunner) RunInteractive(args ...string) error {
-	cmd := exec.Command("git", args...) //nolint:gosec
+	cmd := exec.Command("git", args...) //nolint:gosec,noctx
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

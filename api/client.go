@@ -64,7 +64,7 @@ func (c *Client) GetJSON(path string, v any) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	return c.checkAndDecode(resp, v)
 }
 
@@ -78,7 +78,7 @@ func (c *Client) GetText(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode >= 400 {
 		return "", c.apiError(resp)
 	}
@@ -116,7 +116,7 @@ func (c *Client) doJSON(method, path string, body any, v any) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	return c.checkAndDecode(resp, v)
 }
 
@@ -130,7 +130,7 @@ func (c *Client) Delete(path string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode >= 400 {
 		return c.apiError(resp)
 	}

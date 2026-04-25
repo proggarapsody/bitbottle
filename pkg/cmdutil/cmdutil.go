@@ -33,9 +33,9 @@ func (b *SystemBrowser) Browse(url string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "linux":
-		cmd = exec.Command("xdg-open", url) //nolint:gosec
+		cmd = exec.Command("xdg-open", url) //nolint:gosec,noctx
 	default:
-		cmd = exec.Command("open", url) //nolint:gosec
+		cmd = exec.Command("open", url) //nolint:gosec,noctx
 	}
 	return cmd.Run()
 }
@@ -49,7 +49,7 @@ func (e *SystemEditor) Edit(filename string) error {
 	if editor == "" {
 		editor = "vi"
 	}
-	cmd := exec.Command(editor, filename) //nolint:gosec
+	cmd := exec.Command(editor, filename) //nolint:gosec,noctx
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
