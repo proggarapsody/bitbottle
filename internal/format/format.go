@@ -103,18 +103,18 @@ func (p *Printer[T]) renderJSON() error {
 		}
 		obj := p.itemToMap(p.items[0], requested)
 		if p.jqExpr != "" {
-			return p.applyJQSingle(obj)
+			return p.runJQ(obj)
 		}
-		return p.writeJSONValue(obj)
+		return json.NewEncoder(p.w).Encode(obj)
 	}
 
-	objs := make([]map[string]any, len(p.items))
+	objs := make([]any, len(p.items))
 	for i, item := range p.items {
 		objs[i] = p.itemToMap(item, requested)
 	}
 
 	if p.jqExpr != "" {
-		return p.applyJQ(objs)
+		return p.runJQ(objs)
 	}
 
 	enc := json.NewEncoder(p.w)
@@ -153,48 +153,11 @@ func (p *Printer[T]) itemToMap(item T, fields []Field[T]) map[string]any {
 	return m
 }
 
-func (p *Printer[T]) writeJSONValue(v any) error {
-	enc := json.NewEncoder(p.w)
-	return enc.Encode(v)
-}
-
-func (p *Printer[T]) applyJQSingle(obj map[string]any) error {
+func (p *Printer[T]) runJQ(input any) error {
 	q, err := gojq.Parse(p.jqExpr)
 	if err != nil {
 		return fmt.Errorf("--jq: %w", err)
 	}
-	iter := q.Run(obj)
-	for {
-		v, ok := iter.Next()
-		if !ok {
-			break
-		}
-		if err, ok := v.(error); ok {
-			return fmt.Errorf("--jq: %w", err)
-		}
-		out, err := json.Marshal(v)
-		if err != nil {
-			return err
-		}
-		if _, err := fmt.Fprintf(p.w, "%s\n", out); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (p *Printer[T]) applyJQ(objs []map[string]any) error {
-	q, err := gojq.Parse(p.jqExpr)
-	if err != nil {
-		return fmt.Errorf("--jq: %w", err)
-	}
-
-	// Convert to any for gojq
-	var input any = make([]any, len(objs))
-	for i, o := range objs {
-		input.([]any)[i] = o
-	}
-
 	iter := q.Run(input)
 	for {
 		v, ok := iter.Next()
