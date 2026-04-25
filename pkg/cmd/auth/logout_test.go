@@ -53,3 +53,42 @@ func TestAuthLogout_UnknownHost_Errors(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown.example.com")
 }
+
+func TestAuthLogout_SingleHost_AutoResolves(t *testing.T) {
+	t.Parallel()
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig: authConfig,
+	})
+	cmd := auth.NewCmdAuthLogout(f)
+	// No --hostname: should auto-resolve to the single configured host.
+	require.NoError(t, cmd.Execute())
+
+	cfg, err := f.Config()
+	require.NoError(t, err)
+	_, ok := cfg.Get("bb.example.com")
+	assert.False(t, ok, "single host should be auto-resolved and removed")
+}
+
+func TestAuthLogout_MultipleHosts_NoHostname_Errors(t *testing.T) {
+	t.Parallel()
+
+	const multiHost = "bb.example.com:\n  oauth_token: tok\n  user: alice\nhub.example.com:\n  oauth_token: tok2\n  user: bob\n"
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig: multiHost,
+	})
+	cmd := auth.NewCmdAuthLogout(f)
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "multiple hosts")
+}
+
+func TestAuthLogout_NoHosts_Errors(t *testing.T) {
+	t.Parallel()
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	cmd := auth.NewCmdAuthLogout(f)
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not authenticated")
+}

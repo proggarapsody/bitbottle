@@ -426,3 +426,167 @@ func TestGetCurrentUser_BackendError_ReturnsErrorResult(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "401 unauthorized")
 }
+
+// ---- missing required param coverage ----
+
+func TestGetRepo_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getRepo(context.Background(), makeReq(map[string]any{"project": "MYPROJ"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+func TestCreateRepo_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createRepo(context.Background(), makeReq(map[string]any{"name": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestCreateRepo_MissingName_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createRepo(context.Background(), makeReq(map[string]any{"project": "MYPROJ"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "name")
+}
+
+func TestDeleteRepo_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.deleteRepo(context.Background(), makeReq(map[string]any{"slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestDeleteRepo_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.deleteRepo(context.Background(), makeReq(map[string]any{"project": "MYPROJ"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+func TestListPRs_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPRs(context.Background(), makeReq(map[string]any{"slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestListPRs_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPRs(context.Background(), makeReq(map[string]any{"project": "MYPROJ"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+func TestGetPR_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getPR(context.Background(), makeReq(map[string]any{"slug": "my-repo", "id": float64(1)}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestGetPR_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getPR(context.Background(), makeReq(map[string]any{"project": "MYPROJ", "id": float64(1)}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+func TestGetPR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getPR(context.Background(), makeReq(map[string]any{"project": "MYPROJ", "slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+func TestCreatePR_MissingTitle_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ", "slug": "my-repo",
+		"from_branch": "feat", "to_branch": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "title")
+}
+
+func TestCreatePR_MissingFromBranch_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ", "slug": "my-repo",
+		"title": "Fix", "to_branch": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "from_branch")
+}
+
+func TestCreatePR_MissingToBranch_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ", "slug": "my-repo",
+		"title": "Fix", "from_branch": "feat",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "to_branch")
+}
+
+func TestMergePR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.mergePR(context.Background(), makeReq(map[string]any{"project": "MYPROJ", "slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+func TestApprovePR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.approvePR(context.Background(), makeReq(map[string]any{"project": "MYPROJ", "slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+func TestGetPRDiff_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getPRDiff(context.Background(), makeReq(map[string]any{"project": "MYPROJ", "slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+func TestDeleteBranch_MissingBranch_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.deleteBranch(context.Background(), makeReq(map[string]any{"project": "MYPROJ", "slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "branch")
+}
+
+func TestResolveBackend_ExplicitHostname_Success(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListReposFn: func(limit int) ([]backend.Repository, error) {
+			return []backend.Repository{{Slug: "r"}}, nil
+		},
+	}
+	// Multi-host config; pass explicit hostname to bypass auto-resolve.
+	h := newHandlersWithFake(t, multiHostConfig, fake)
+	result, err := h.listRepos(context.Background(), makeReq(map[string]any{
+		"hostname": "git.example.com",
+		"limit":    float64(10),
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "r", "")
+}

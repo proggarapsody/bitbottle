@@ -81,6 +81,30 @@ func TestIsCloud(t *testing.T) {
 	}
 }
 
+func TestCloudSSHURL(t *testing.T) {
+	t.Parallel()
+	got := bbinstance.CloudSSHURL("myworkspace", "myrepo")
+	assert.Equal(t, "git@bitbucket.org:myworkspace/myrepo.git", got)
+}
+
+func TestCloudHTTPSURL(t *testing.T) {
+	t.Parallel()
+	got := bbinstance.CloudHTTPSURL("myworkspace", "myrepo")
+	assert.Equal(t, "https://bitbucket.org/myworkspace/myrepo.git", got)
+}
+
+func TestCloudWebRepoURL(t *testing.T) {
+	t.Parallel()
+	got := bbinstance.CloudWebRepoURL("myworkspace", "myrepo")
+	assert.Equal(t, "https://bitbucket.org/myworkspace/myrepo", got)
+}
+
+func TestCloudWebPRURL(t *testing.T) {
+	t.Parallel()
+	got := bbinstance.CloudWebPRURL("myworkspace", "myrepo", 7)
+	assert.Equal(t, "https://bitbucket.org/myworkspace/myrepo/pull-requests/7", got)
+}
+
 func TestCloudRESTBase(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, "https://api.bitbucket.org/2.0", bbinstance.CloudRESTBase())
