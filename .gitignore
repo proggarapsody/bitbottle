@@ -12,3 +12,6 @@
 .vscode/
 *.swp
 /2026-04-24-*.md
+
+# Git worktrees
+.worktrees/
