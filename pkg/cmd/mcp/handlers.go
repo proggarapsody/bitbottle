@@ -403,9 +403,9 @@ func (h *handlers) listPipelines(_ context.Context, req mcplib.CallToolRequest) 
 	if err != nil {
 		return errResult(err.Error()), nil
 	}
-	pc, ok := client.(backend.PipelineClient)
-	if !ok {
-		return errResult("pipelines are only supported on Bitbucket Cloud"), nil
+	pc, err := backend.AsPipelineClient(client)
+	if err != nil {
+		return errResult(err.Error()), nil
 	}
 	pipelines, err := pc.ListPipelines(project, slug, limit)
 	if err != nil {
@@ -434,9 +434,9 @@ func (h *handlers) getPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 	if err != nil {
 		return errResult(err.Error()), nil
 	}
-	pc, ok := client.(backend.PipelineClient)
-	if !ok {
-		return errResult("pipelines are only supported on Bitbucket Cloud"), nil
+	pc, err := backend.AsPipelineClient(client)
+	if err != nil {
+		return errResult(err.Error()), nil
 	}
 	pl, err := pc.GetPipeline(project, slug, uuid)
 	if err != nil {
@@ -465,9 +465,9 @@ func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 	if err != nil {
 		return errResult(err.Error()), nil
 	}
-	pc, ok := client.(backend.PipelineClient)
-	if !ok {
-		return errResult("pipelines are only supported on Bitbucket Cloud"), nil
+	pc, err := backend.AsPipelineClient(client)
+	if err != nil {
+		return errResult(err.Error()), nil
 	}
 	pl, err := pc.RunPipeline(project, slug, backend.RunPipelineInput{Branch: branch})
 	if err != nil {

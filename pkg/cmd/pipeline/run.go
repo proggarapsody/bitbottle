@@ -18,7 +18,7 @@ func NewCmdPipelineRun(f *factory.Factory) *cobra.Command {
 		Short: "Trigger a pipeline",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := resolvePipelineRef(f, args[0], hostname)
+			ref, err := f.ResolveRef(args[0], hostname)
 			if err != nil {
 				return err
 			}
@@ -28,9 +28,9 @@ func NewCmdPipelineRun(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			pc, ok := client.(backend.PipelineClient)
-			if !ok {
-				return fmt.Errorf("pipelines are only supported on Bitbucket Cloud")
+			pc, err := backend.AsPipelineClient(client)
+			if err != nil {
+				return err
 			}
 
 			pl, err := pc.RunPipeline(ref.Project, ref.Slug, backend.RunPipelineInput{Branch: branch})

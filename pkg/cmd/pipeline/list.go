@@ -1,8 +1,6 @@
 package pipeline
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -21,7 +19,7 @@ func NewCmdPipelineList(f *factory.Factory) *cobra.Command {
 		Short: "List pipelines",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := resolvePipelineRef(f, args[0], hostname)
+			ref, err := f.ResolveRef(args[0], hostname)
 			if err != nil {
 				return err
 			}
@@ -31,9 +29,9 @@ func NewCmdPipelineList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			pc, ok := client.(backend.PipelineClient)
-			if !ok {
-				return fmt.Errorf("pipelines are only supported on Bitbucket Cloud")
+			pc, err := backend.AsPipelineClient(client)
+			if err != nil {
+				return err
 			}
 
 			pipelines, err := pc.ListPipelines(ref.Project, ref.Slug, limit)

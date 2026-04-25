@@ -16,7 +16,7 @@ func NewCmdBranchDelete(f *factory.Factory) *cobra.Command {
 		Short: "Delete a branch",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := resolveRef(f, args[0], hostname)
+			ref, err := f.ResolveRef(args[0], hostname)
 			if err != nil {
 				return err
 			}

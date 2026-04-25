@@ -11,6 +11,8 @@ A command-line interface for **Bitbucket Cloud** and **Bitbucket Server / Data C
 | `auth login / logout / status` | ✅ Fully working |
 | `repo list / create / delete / clone / view` | ✅ Fully working |
 | `pr list / create / merge / approve / view / diff / checkout` | ✅ Fully working |
+| `branch list / delete` | ✅ Fully working |
+| `pipeline list / view / run` _(Cloud only)_ | ✅ Fully working |
 | `mcp serve` — MCP stdio server for AI assistants | ✅ Fully working |
 
 Works identically against **Bitbucket Cloud** (`bitbucket.org`) and **Bitbucket Server / Data Center** (self-hosted).
@@ -205,6 +207,40 @@ bitbottle repo view MYPROJ/my-service --web
 
 ---
 
+### 🌿 Branches
+
+#### List
+
+```bash
+bitbottle branch list MYPROJ/my-service
+
+# Limit results
+bitbottle branch list MYPROJ/my-service --limit 10
+
+# JSON output
+bitbottle branch list MYPROJ/my-service --json name,default,hash
+
+# jq filter
+bitbottle branch list MYPROJ/my-service --json name --jq .
+```
+
+**TTY output:**
+
+```
+NAME        DEFAULT   HASH
+main        true      a1b2c3d4
+feature/x   false     e5f6a7b8
+develop     false     c9d0e1f2
+```
+
+#### Delete
+
+```bash
+bitbottle branch delete MYPROJ/my-service feature/my-branch
+```
+
+---
+
 ### 🔀 Pull Requests
 
 #### List
@@ -323,6 +359,62 @@ bitbottle pr checkout 42
 
 ---
 
+### ⚙️ Pipelines _(Bitbucket Cloud only)_
+
+#### List
+
+```bash
+bitbottle pipeline list MYWORKSPACE/my-service
+
+# Limit results
+bitbottle pipeline list MYWORKSPACE/my-service --limit 10
+
+# JSON output
+bitbottle pipeline list MYWORKSPACE/my-service --json buildNumber,state,refName,duration
+
+# jq filter — show only failed
+bitbottle pipeline list MYWORKSPACE/my-service --json state --jq 'select(. == "FAILED")'
+```
+
+**TTY output:**
+
+```
+BUILD   STATE       BRANCH/TAG   DURATION
+42      SUCCESSFUL  main         87s
+41      FAILED      feature/x    12s
+40      SUCCESSFUL  main         91s
+```
+
+#### View
+
+```bash
+bitbottle pipeline view MYWORKSPACE/my-service {uuid}
+
+# Open in browser
+bitbottle pipeline view MYWORKSPACE/my-service {uuid} --web
+
+# JSON output
+bitbottle pipeline view MYWORKSPACE/my-service {uuid} --json buildNumber,state,refName,duration,webURL
+```
+
+#### Run
+
+```bash
+# Trigger a pipeline on a branch (--branch is required)
+bitbottle pipeline run MYWORKSPACE/my-service --branch main
+
+# Trigger on a feature branch
+bitbottle pipeline run MYWORKSPACE/my-service --branch feature/my-feature
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--branch` | — | **Required.** Branch to run the pipeline on |
+
+> **Note:** Pipelines are a Bitbucket Cloud feature. Running any `pipeline` command against a Server / Data Center host returns an error.
+
+---
+
 ## 🤖 MCP Server (AI Assistant Integration)
 
 `bitbottle mcp serve` starts a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio. Claude Desktop, Claude Code, and any MCP-compatible client can call Bitbucket operations as native tools — no raw API requests, no output parsing.
@@ -342,7 +434,11 @@ bitbottle pr checkout 42
 | `merge_pr` | Merge a pull request |
 | `approve_pr` | Approve a pull request |
 | `get_pr_diff` | Get the unified diff for a pull request |
+| `list_branches` | List branches in a repository |
 | `delete_branch` | Delete a branch |
+| `list_pipelines` | List pipelines _(Cloud only)_ |
+| `get_pipeline` | Get a single pipeline by UUID _(Cloud only)_ |
+| `run_pipeline` | Trigger a pipeline on a branch _(Cloud only)_ |
 | `get_current_user` | Get the authenticated user |
 
 Every tool accepts an optional `hostname` parameter. When only one host is configured, `hostname` can be omitted.
@@ -435,12 +531,14 @@ bitbottle
 ├── internal/config     # hosts.yml read/write
 └── pkg/cmd/            # CLI commands (cobra)
     ├── auth/           # auth login / logout / status
+    ├── branch/         # branch list / delete
     ├── mcp/            # mcp serve — MCP stdio server
+    ├── pipeline/       # pipeline list / view / run (Cloud only)
     ├── repo/           # repo list / create / delete / clone / view
     └── pr/             # pr list / create / merge / approve / view / diff / checkout
 ```
 
-The `Backend` factory returns a `backend.Client` — a composite of 12 single-method interfaces. Commands depend only on the methods they use, so they work identically against Cloud and Server with no `if cloud { ... }` branching. The MCP server is a thin translation layer on top of the same factory and client.
+The `Backend` factory returns a `backend.Client` — a composite of single-method interfaces. Commands depend only on the methods they use, so they work identically against Cloud and Server with no `if cloud { ... }` branching. Pipeline commands additionally require a `backend.PipelineClient`, which is only implemented by the Cloud adapter. The MCP server is a thin translation layer on top of the same factory and client.
 
 ---
 

@@ -20,7 +20,7 @@ func NewCmdPipelineView(f *factory.Factory) *cobra.Command {
 		Short: "View a pipeline",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := resolvePipelineRef(f, args[0], hostname)
+			ref, err := f.ResolveRef(args[0], hostname)
 			if err != nil {
 				return err
 			}
@@ -30,9 +30,9 @@ func NewCmdPipelineView(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			pc, ok := client.(backend.PipelineClient)
-			if !ok {
-				return fmt.Errorf("pipelines are only supported on Bitbucket Cloud")
+			pc, err := backend.AsPipelineClient(client)
+			if err != nil {
+				return err
 			}
 
 			pl, err := pc.GetPipeline(ref.Project, ref.Slug, args[1])

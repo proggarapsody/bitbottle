@@ -1,5 +1,7 @@
 package backend
 
+import "fmt"
+
 // RepoLister can list repositories.
 type RepoLister interface {
 	ListRepos(limit int) ([]Repository, error)
@@ -92,4 +94,14 @@ type PipelineClient interface {
 	ListPipelines(ns, slug string, limit int) ([]Pipeline, error)
 	GetPipeline(ns, slug, uuid string) (Pipeline, error)
 	RunPipeline(ns, slug string, in RunPipelineInput) (Pipeline, error)
+}
+
+// AsPipelineClient returns the PipelineClient view of c, or an error if the
+// backend does not support pipelines (i.e. is not Bitbucket Cloud).
+func AsPipelineClient(c Client) (PipelineClient, error) {
+	pc, ok := c.(PipelineClient)
+	if !ok {
+		return nil, fmt.Errorf("pipelines are only supported on Bitbucket Cloud")
+	}
+	return pc, nil
 }

@@ -1,13 +1,15 @@
-package pipeline
+package factory
 
 import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-func resolvePipelineRef(f *factory.Factory, arg, hostnameFlag string) (bbrepo.RepoRef, error) {
+// ResolveRef parses a PROJECT/REPO argument and resolves the Bitbucket host.
+// hostnameFlag takes precedence when set; otherwise the host is inferred from
+// the argument itself or from the single configured host.
+func (f *Factory) ResolveRef(arg, hostnameFlag string) (bbrepo.RepoRef, error) {
 	ref, err := bbrepo.Parse(arg)
 	if err != nil {
 		return bbrepo.RepoRef{}, err
@@ -17,9 +19,9 @@ func resolvePipelineRef(f *factory.Factory, arg, hostnameFlag string) (bbrepo.Re
 		return ref, nil
 	}
 	if ref.Host == "" {
-		cfg, cerr := f.Config()
-		if cerr != nil {
-			return bbrepo.RepoRef{}, cerr
+		cfg, err := f.Config()
+		if err != nil {
+			return bbrepo.RepoRef{}, err
 		}
 		hosts := cfg.Hosts()
 		switch len(hosts) {
