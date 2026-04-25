@@ -147,4 +147,3 @@ func TestCloudClient_NoAuth_WhenBothEmpty(t *testing.T) {
 	_, _ = client.GetCurrentUser()
 	assert.Empty(t, gotAuth)
 }
-

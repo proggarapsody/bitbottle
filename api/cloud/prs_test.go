@@ -154,6 +154,8 @@ func TestCloudClient_CloudNotServerCapabilities(t *testing.T) {
 	})
 	// cloud.Client must NOT implement backend.ServerCapabilities
 	var iface any = client
-	_, ok := iface.(interface{ GetApplicationProperties() (backend.AppProperties, error) })
+	_, ok := iface.(interface {
+		GetApplicationProperties() (backend.AppProperties, error)
+	})
 	assert.False(t, ok, "cloud.Client must not implement ServerCapabilities")
 }

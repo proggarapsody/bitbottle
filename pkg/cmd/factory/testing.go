@@ -25,19 +25,19 @@ import (
 // TestFactoryOpts overrides individual factory components in tests.
 // Unset fields receive safe no-op defaults.
 type TestFactoryOpts struct {
-	ConfigDir      string
-	InitialConfig  string
-	HTTPClient     HTTPClient
-	BaseURL        func(hostname string) string
-	GitRunner      run.Runner
-	Keyring        keyring.Keyring
-	Browser        cmdutil.BrowserLauncher
-	Editor         cmdutil.EditorLauncher
+	ConfigDir       string
+	InitialConfig   string
+	HTTPClient      HTTPClient
+	BaseURL         func(hostname string) string
+	GitRunner       run.Runner
+	Keyring         keyring.Keyring
+	Browser         cmdutil.BrowserLauncher
+	Editor          cmdutil.EditorLauncher
 	IOStreams       *iostreams.IOStreams
-	Hostname       string
-	Now            func() time.Time
+	Hostname        string
+	Now             func() time.Time
 	BackendOverride backend.Client
-	BackendType    string
+	BackendType     string
 }
 
 // HTTPClient is the transport interface used by server and cloud clients.

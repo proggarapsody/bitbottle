@@ -161,11 +161,11 @@ type CloudRepoOption func(map[string]any)
 // CloudRepoFactory returns a default Bitbucket Cloud repository object.
 func CloudRepoFactory(opts ...CloudRepoOption) map[string]any {
 	repo := map[string]any{
-		"type":      "repository",
-		"full_name": "myworkspace/default-repo",
-		"slug":      "default-repo",
-		"name":      "default-repo",
-		"scm":       "git",
+		"type":       "repository",
+		"full_name":  "myworkspace/default-repo",
+		"slug":       "default-repo",
+		"name":       "default-repo",
+		"scm":        "git",
 		"is_private": true,
 		"links": map[string]any{
 			"html": map[string]any{

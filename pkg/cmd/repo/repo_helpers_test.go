@@ -15,9 +15,9 @@ import (
 // repoConfig / repoConfigSSH share the same SSH value; repoConfigSSH is kept
 // as an alias so clone_test.go reads clearly without a separate declaration.
 const (
-	repoConfig       = "bb.example.com:\n  oauth_token: tok\n  user: alice\n  git_protocol: ssh\n"
-	repoConfigSSH    = repoConfig
-	repoConfigHTTPS  = "bb.example.com:\n  oauth_token: tok\n  user: alice\n  git_protocol: https\n"
+	repoConfig         = "bb.example.com:\n  oauth_token: tok\n  user: alice\n  git_protocol: ssh\n"
+	repoConfigSSH      = repoConfig
+	repoConfigHTTPS    = "bb.example.com:\n  oauth_token: tok\n  user: alice\n  git_protocol: https\n"
 	repoConfigCloudSSH = "bitbucket.org:\n  oauth_token: tok\n  user: alice\n  git_protocol: ssh\n"
 )
 
