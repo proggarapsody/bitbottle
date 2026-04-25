@@ -26,10 +26,11 @@ formatters:
     gofmt:
       simplify: true
     goimports:
-      local-prefixes: github.com/proggarapsody/bitbottle
+      local-prefixes:
+        - github.com/proggarapsody/bitbottle
 
-issues:
-  exclude-rules:
+exclusions:
+  rules:
     - path: "_test\\.go"
       linters:
         - errcheck
