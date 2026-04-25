@@ -28,9 +28,3 @@ formatters:
     goimports:
       local-prefixes:
         - github.com/proggarapsody/bitbottle
-
-exclusions:
-  rules:
-    - path: "_test\\.go"
-      linters:
-        - errcheck
