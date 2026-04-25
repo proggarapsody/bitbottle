@@ -10,6 +10,8 @@ import (
 
 func NewCmdPRView(f *factory.Factory) *cobra.Command {
 	var web bool
+	var jsonFields string
+	var jqExpr string
 
 	cmd := &cobra.Command{
 		Use:   "view PR_ID",
@@ -21,31 +23,39 @@ func NewCmdPRView(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			pr, err := client.GetPR(ref.Project, ref.Slug, prID)
+			p, err := client.GetPR(ref.Project, ref.Slug, prID)
 			if err != nil {
 				return err
 			}
 
-			// --web: open in browser and skip text output.
 			if web {
-				if pr.WebURL == "" {
+				if p.WebURL == "" {
 					return fmt.Errorf("no web URL available for this pull request")
 				}
-				return f.Browser.Browse(pr.WebURL)
+				return f.Browser.Browse(p.WebURL)
+			}
+
+			if jsonFields != "" || jqExpr != "" {
+				printer := prFieldsWithDescription(f, jsonFields, jqExpr)
+				printer.SetSingleItem()
+				printer.AddItem(p)
+				return printer.Render()
 			}
 
 			out := f.IOStreams.Out
-			fmt.Fprintf(out, "#%d %s\n", pr.ID, pr.Title)
-			fmt.Fprintf(out, "State:  %s\n", pr.State)
-			fmt.Fprintf(out, "Author: %s\n", pr.Author.Slug)
-			fmt.Fprintf(out, "From:   %s\n", pr.FromBranch)
-			fmt.Fprintf(out, "To:     %s\n", pr.ToBranch)
-			if pr.WebURL != "" {
-				fmt.Fprintf(out, "URL:    %s\n", pr.WebURL)
+			fmt.Fprintf(out, "#%d %s\n", p.ID, p.Title)
+			fmt.Fprintf(out, "State:  %s\n", p.State)
+			fmt.Fprintf(out, "Author: %s\n", p.Author.Slug)
+			fmt.Fprintf(out, "From:   %s\n", p.FromBranch)
+			fmt.Fprintf(out, "To:     %s\n", p.ToBranch)
+			if p.WebURL != "" {
+				fmt.Fprintf(out, "URL:    %s\n", p.WebURL)
 			}
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&web, "web", false, "Open in browser")
+	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }

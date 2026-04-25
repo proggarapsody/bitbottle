@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -97,4 +98,55 @@ func TestRepoView_APIError_PropagatesError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "404")
+}
+
+func TestNewCmdRepoView_HasJSONAndJQFlags(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	cmd := repo.NewCmdRepoView(f)
+	assert.NotNil(t, cmd.Flag("json"))
+	assert.NotNil(t, cmd.Flag("jq"))
+}
+
+func TestRepoView_JSON_EmitsObject(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			return testhelpers.BackendRepoFactory(
+				testhelpers.BackendRepoWithSlug("my-service"),
+				testhelpers.BackendRepoWithWebURL("https://bb.example.com/browse"),
+			), nil
+		},
+	}
+
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoView(f)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "slug,webURL"})
+	require.NoError(t, cmd.Execute())
+
+	got := strings.TrimSpace(out.String())
+	assert.True(t, strings.HasPrefix(got, "{"), "expected JSON object, got: %s", got)
+	assert.Contains(t, got, `"slug":"my-service"`)
+	assert.Contains(t, got, `"webURL"`)
+	assert.NotContains(t, got, `"namespace"`)
+}
+
+func TestRepoView_JQ_FilterObject(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			return testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("my-service")), nil
+		},
+	}
+
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoView(f)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "slug", "--jq", ".slug"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, `"my-service"`, strings.TrimSpace(out.String()))
 }

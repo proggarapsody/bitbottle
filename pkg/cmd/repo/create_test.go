@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,4 +80,32 @@ func TestRepoCreate_APIError_PropagatesError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "409 conflict")
+}
+
+func TestNewCmdRepoCreate_HasJSONAndJQFlags(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	cmd := repo.NewCmdRepoCreate(f)
+	assert.NotNil(t, cmd.Flag("json"))
+	assert.NotNil(t, cmd.Flag("jq"))
+}
+
+func TestRepoCreate_JSON_EmitsObject(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		CreateRepoFn: func(ns string, in backend.CreateRepoInput) (backend.Repository, error) {
+			return testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("new-repo")), nil
+		},
+	}
+
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoCreate(f)
+	cmd.SetArgs([]string{"new-repo", "--project", "MYPROJ", "--json", "slug,namespace"})
+	require.NoError(t, cmd.Execute())
+
+	got := strings.TrimSpace(out.String())
+	assert.True(t, strings.HasPrefix(got, "{"), "expected JSON object, got: %s", got)
+	assert.Contains(t, got, `"slug":"new-repo"`)
 }

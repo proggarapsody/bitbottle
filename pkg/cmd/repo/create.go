@@ -12,6 +12,8 @@ import (
 func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 	var project, description string
 	var private bool
+	var jsonFields string
+	var jqExpr string
 
 	cmd := &cobra.Command{
 		Use:   "create [NAME]",
@@ -34,7 +36,7 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			repo, err := client.CreateRepo(project, backend.CreateRepoInput{
+			r, err := client.CreateRepo(project, backend.CreateRepoInput{
 				Name:        name,
 				SCM:         "git",
 				Public:      !private,
@@ -44,9 +46,16 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(f.IOStreams.Out, "Created repository %s/%s\n", repo.Namespace, repo.Slug)
-			if repo.WebURL != "" {
-				fmt.Fprintf(f.IOStreams.Out, "%s\n", repo.WebURL)
+			if jsonFields != "" || jqExpr != "" {
+				p := repoFields(f, jsonFields, jqExpr)
+				p.SetSingleItem()
+				p.AddItem(r)
+				return p.Render()
+			}
+
+			fmt.Fprintf(f.IOStreams.Out, "Created repository %s/%s\n", r.Namespace, r.Slug)
+			if r.WebURL != "" {
+				fmt.Fprintf(f.IOStreams.Out, "%s\n", r.WebURL)
 			}
 			return nil
 		},
@@ -54,5 +63,7 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "Project key")
 	cmd.Flags().StringVar(&description, "description", "", "Repository description")
 	cmd.Flags().BoolVar(&private, "private", true, "Make repository private")
+	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }

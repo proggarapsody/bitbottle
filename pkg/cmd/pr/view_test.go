@@ -2,6 +2,7 @@ package pr_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -96,4 +97,54 @@ func TestPRView_APIError_PropagatesError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "404")
+}
+
+func TestNewCmdPRView_HasJSONAndJQFlags(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	cmd := pr.NewCmdPRView(f)
+	assert.NotNil(t, cmd.Flag("json"))
+	assert.NotNil(t, cmd.Flag("jq"))
+}
+
+func TestPRView_JSON_EmitsObject(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(
+				testhelpers.BackendPRWithID(42),
+				testhelpers.BackendPRWithTitle("Hello PR"),
+			), nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRView(f)
+	cmd.SetArgs([]string{"42", "--json", "id,title"})
+	require.NoError(t, cmd.Execute())
+
+	got := strings.TrimSpace(out.String())
+	assert.True(t, strings.HasPrefix(got, "{"), "expected JSON object, got: %s", got)
+	assert.Contains(t, got, `"id":42`)
+	assert.Contains(t, got, `"title":"Hello PR"`)
+}
+
+func TestPRView_JSON_IncludesDescription(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			p := testhelpers.BackendPRFactory(testhelpers.BackendPRWithID(1))
+			p.Description = "Some description"
+			return p, nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRView(f)
+	cmd.SetArgs([]string{"1", "--json", "id,description"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Contains(t, out.String(), `"description":"Some description"`)
 }

@@ -5,13 +5,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 	var limit int
 	var jsonFields string
+	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -33,27 +33,16 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if jsonFields != "" {
-				return fmt.Errorf("--json not yet implemented")
-			}
-
-			if len(repos) == 0 {
-				return nil
-			}
-
-			tp := tableprinter.New(f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), 80)
-			tp.AddHeader("SLUG", "PROJECT", "TYPE")
+			p := repoFields(f, jsonFields, jqExpr)
 			for _, r := range repos {
-				tp.AddField(r.Slug)
-				tp.AddField(r.Namespace)
-				tp.AddField(r.SCM)
-				tp.EndRow()
+				p.AddItem(r)
 			}
-			return tp.Render()
+			return p.Render()
 		},
 	}
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of repositories")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output as JSON with specified fields")
+	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (defaults to configured host)")
 	return cmd
 }

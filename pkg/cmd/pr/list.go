@@ -8,7 +8,6 @@ import (
 
 	"github.com/proggarapsody/bitbottle/git"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
-	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -16,6 +15,7 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 	var state string
 	var limit int
 	var jsonFields string
+	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -38,28 +38,17 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if jsonFields != "" {
-				return fmt.Errorf("--json not yet implemented")
+			p := prFields(f, jsonFields, jqExpr)
+			for _, pr := range prs {
+				p.AddItem(pr)
 			}
-
-			if len(prs) == 0 {
-				return nil
-			}
-
-			tp := tableprinter.New(f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), 80)
-			tp.AddHeader("TITLE", "AUTHOR", "STATE")
-			for _, p := range prs {
-				tp.AddField(p.Title)
-				tp.AddField(p.Author.Slug)
-				tp.AddField(p.State)
-				tp.EndRow()
-			}
-			return tp.Render()
+			return p.Render()
 		},
 	}
 	cmd.Flags().StringVar(&state, "state", "open", "State filter: open, closed, merged")
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of pull requests")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output as JSON with specified fields")
+	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }

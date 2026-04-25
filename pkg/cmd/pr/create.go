@@ -14,6 +14,8 @@ import (
 func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 	var title, body, base string
 	var draft bool
+	var jsonFields string
+	var jqExpr string
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -43,7 +45,7 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			pr, err := client.CreatePR(ref.Project, ref.Slug, backend.CreatePRInput{
+			p, err := client.CreatePR(ref.Project, ref.Slug, backend.CreatePRInput{
 				Title:       title,
 				Description: body,
 				Draft:       draft,
@@ -54,9 +56,16 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(f.IOStreams.Out, "Created pull request #%d: %s\n", pr.ID, pr.Title)
-			if pr.WebURL != "" {
-				fmt.Fprintf(f.IOStreams.Out, "%s\n", pr.WebURL)
+			if jsonFields != "" || jqExpr != "" {
+				printer := prFields(f, jsonFields, jqExpr)
+				printer.SetSingleItem()
+				printer.AddItem(p)
+				return printer.Render()
+			}
+
+			fmt.Fprintf(f.IOStreams.Out, "Created pull request #%d: %s\n", p.ID, p.Title)
+			if p.WebURL != "" {
+				fmt.Fprintf(f.IOStreams.Out, "%s\n", p.WebURL)
 			}
 			return nil
 		},
@@ -65,5 +74,7 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&body, "body", "", "Pull request description")
 	cmd.Flags().StringVar(&base, "base", "", "Base branch")
 	cmd.Flags().BoolVar(&draft, "draft", false, "Create as draft")
+	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }

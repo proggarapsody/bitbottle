@@ -2,6 +2,7 @@ package pr_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -93,4 +94,36 @@ func TestPRCreate_APIError_PropagatesError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "409 conflict")
+}
+
+func TestNewCmdPRCreate_HasJSONAndJQFlags(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	cmd := pr.NewCmdPRCreate(f)
+	assert.NotNil(t, cmd.Flag("json"))
+	assert.NotNil(t, cmd.Flag("jq"))
+}
+
+func TestPRCreate_JSON_EmitsObject(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		CreatePRFn: func(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(
+				testhelpers.BackendPRWithID(99),
+				testhelpers.BackendPRWithTitle("New PR"),
+			), nil
+		},
+	}
+
+	f, out, _ := newPRFactory(t, fake, newPRCreateRunner())
+	cmd := pr.NewCmdPRCreate(f)
+	cmd.SetArgs([]string{"--title", "New PR", "--base", "main", "--json", "id,title"})
+	require.NoError(t, cmd.Execute())
+
+	got := strings.TrimSpace(out.String())
+	assert.True(t, strings.HasPrefix(got, "{"), "expected JSON object, got: %s", got)
+	assert.Contains(t, got, `"id":99`)
+	assert.Contains(t, got, `"title":"New PR"`)
 }
