@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -48,6 +49,16 @@ func jsonResult(v any) (*mcplib.CallToolResult, error) {
 
 func errResult(msg string) *mcplib.CallToolResult {
 	return mcplib.NewToolResultError(msg)
+}
+
+// splitTrimmed splits s by sep and trims whitespace from each part.
+func splitTrimmed(s, sep string) []string {
+	parts := strings.Split(s, sep)
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		result = append(result, strings.TrimSpace(p))
+	}
+	return result
 }
 
 func requireString(req mcplib.CallToolRequest, key string) (string, error) {
@@ -443,6 +454,148 @@ func (h *handlers) getPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 		return errResult(err.Error()), nil
 	}
 	return jsonResult(pl)
+}
+
+func (h *handlers) updatePR(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	title := req.GetString("title", "")
+	body := req.GetString("body", "")
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	pr, err := client.UpdatePR(project, slug, id, backend.UpdatePRInput{
+		Title:       title,
+		Description: body,
+	})
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(pr)
+}
+
+func (h *handlers) declinePR(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	if err := client.DeclinePR(project, slug, id); err != nil {
+		return errResult(err.Error()), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
+}
+
+func (h *handlers) unapprovePR(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	if err := client.UnapprovePR(project, slug, id); err != nil {
+		return errResult(err.Error()), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
+}
+
+func (h *handlers) readyPR(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	if err := client.ReadyPR(project, slug, id); err != nil {
+		return errResult(err.Error()), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
+}
+
+func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	reviewers, err := requireString(req, "reviewers")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	var users []string
+	for _, u := range splitTrimmed(reviewers, ",") {
+		if u != "" {
+			users = append(users, u)
+		}
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	if err := client.RequestReview(project, slug, id, users); err != nil {
+		return errResult(err.Error()), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
 }
 
 func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {

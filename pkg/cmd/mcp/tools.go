@@ -259,4 +259,74 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.runPipeline,
 	)
+
+	reqID := mcplib.WithNumber("id",
+		mcplib.Description("Pull request ID"),
+		mcplib.Required(),
+	)
+
+	s.AddTool(
+		mcplib.NewTool("update_pr",
+			mcplib.WithDescription("Update the title and/or description of a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+			mcplib.WithString("title",
+				mcplib.Description("New pull request title"),
+			),
+			mcplib.WithString("body",
+				mcplib.Description("New pull request description"),
+			),
+		),
+		h.updatePR,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("decline_pr",
+			mcplib.WithDescription("Decline a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+		),
+		h.declinePR,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("unapprove_pr",
+			mcplib.WithDescription("Remove approval from a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+		),
+		h.unapprovePR,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("ready_pr",
+			mcplib.WithDescription("Mark a draft pull request as ready for review"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+		),
+		h.readyPR,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("request_review",
+			mcplib.WithDescription("Request reviewers on a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+			mcplib.WithString("reviewers",
+				mcplib.Description("Comma-separated list of reviewer usernames/account IDs"),
+				mcplib.Required(),
+			),
+		),
+		h.requestReview,
+	)
 }
