@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -18,12 +19,16 @@ func TestPRReady_PrintsConfirmation(t *testing.T) {
 		ReadyPRFn: func(ns, slug string, id int) error {
 			return nil
 		},
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: id, WebURL: "https://example.com/pr/42"}, nil
+		},
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRReady(f)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "Marked pull request #42 as ready for review")
+	assert.Contains(t, out.String(), "https://example.com/pr/42")
 }
 
 func TestPRReady_APIError_PropagatesError(t *testing.T) {

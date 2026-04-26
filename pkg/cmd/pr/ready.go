@@ -26,6 +26,9 @@ func NewCmdPRReady(f *factory.Factory) *cobra.Command {
 			}
 
 			fmt.Fprintf(f.IOStreams.Out, "Marked pull request #%d as ready for review\n", prID)
+			if pr, err := client.GetPR(ref.Project, ref.Slug, prID); err == nil && pr.WebURL != "" {
+				fmt.Fprintf(f.IOStreams.Out, "%s\n", pr.WebURL)
+			}
 			return nil
 		},
 	}
