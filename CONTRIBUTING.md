@@ -90,6 +90,7 @@ Merging the Release Please PR triggers the release workflow, which:
 |--------|---------|
 | `RELEASE_PLEASE_TOKEN` | PAT with contents+PRs write on this repo |
 | `DOCKER_PASSWORD` | Docker Hub password / access token for `proggarapsody` |
+| `NPM_TOKEN` | **Granular Access Token** (not classic) with "Bypass two-factor authentication" enabled and read+write on `@proggarapsody/bitbottle` |
 
 
 **Versioning follows [Semantic Versioning](https://semver.org/):**
