@@ -26,6 +26,9 @@ func NewCmdTagDelete(f *factory.Factory) *cobra.Command {
 			tagName := args[1]
 
 			if !confirm {
+				if !f.IOStreams.IsStdoutTTY() {
+					return fmt.Errorf("--confirm required when not running interactively")
+				}
 				fmt.Fprintf(f.IOStreams.Out, "Delete tag %s? [y/N]: ", tagName)
 				reader := bufio.NewReader(f.IOStreams.In)
 				answer, _ := reader.ReadString('\n')

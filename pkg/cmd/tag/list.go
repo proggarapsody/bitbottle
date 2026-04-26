@@ -1,6 +1,7 @@
 package tag
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -14,6 +15,7 @@ func NewCmdTagList(f *factory.Factory) *cobra.Command {
 	var limit int
 	var jsonFields string
 	var jqExpr string
+	var web bool
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -31,6 +33,17 @@ func NewCmdTagList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			if web {
+				repo, err := client.GetRepo(ref.Project, ref.Slug)
+				if err != nil {
+					return err
+				}
+				if repo.WebURL == "" {
+					return fmt.Errorf("no web URL available for this repository")
+				}
+				return f.Browser.Browse(repo.WebURL)
+			}
+
 			tags, err := client.ListTags(ref.Project, ref.Slug, limit)
 			if err != nil {
 				return err
@@ -46,6 +59,7 @@ func NewCmdTagList(f *factory.Factory) *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of tags")
 	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
 	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
+	cmd.Flags().BoolVar(&web, "web", false, "Open repository tags page in browser")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
