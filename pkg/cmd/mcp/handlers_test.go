@@ -1017,3 +1017,211 @@ func TestDeleteTag_MissingName_ReturnsError(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "name")
 }
+
+// ---- update_pr ----
+
+func TestUpdatePR_CallsClientWithCorrectInput(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	var gotIn backend.UpdatePRInput
+	fake := &testhelpers.FakeClient{
+		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
+			gotID = id
+			gotIn = in
+			return backend.PullRequest{ID: id, Title: in.Title}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.updatePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"title":   "Updated title",
+		"body":    "Updated body",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assert.Equal(t, "Updated title", gotIn.Title)
+	assert.Equal(t, "Updated body", gotIn.Description)
+	assertJSONContains(t, result, "Updated title", "")
+}
+
+func TestUpdatePR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.updatePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+func TestUpdatePR_BackendError_ReturnsErrorResult(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
+			return backend.PullRequest{}, errors.New("422 unprocessable")
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.updatePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "422")
+}
+
+// ---- decline_pr ----
+
+func TestDeclinePR_CallsClientAndReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		DeclinePRFn: func(ns, slug string, id int) error {
+			gotID = id
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.declinePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assertJSONContains(t, result, "{}", "")
+}
+
+func TestDeclinePR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.declinePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+// ---- unapprove_pr ----
+
+func TestUnapprovePR_CallsClientAndReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		UnapprovePRFn: func(ns, slug string, id int) error {
+			gotID = id
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.unapprovePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assertJSONContains(t, result, "{}", "")
+}
+
+func TestUnapprovePR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.unapprovePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+// ---- ready_pr ----
+
+func TestReadyPR_CallsClientAndReturnsPR(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		ReadyPRFn: func(ns, slug string, id int) error {
+			gotID = id
+			return nil
+		},
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: id, Title: "Ready PR"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.readyPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assertJSONContains(t, result, "Ready PR", "")
+}
+
+func TestReadyPR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.readyPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+// ---- request_review ----
+
+func TestRequestReview_CallsClientWithUsers(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	var gotUsers []string
+	fake := &testhelpers.FakeClient{
+		RequestReviewFn: func(ns, slug string, id int, users []string) error {
+			gotID = id
+			gotUsers = users
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.requestReview(context.Background(), makeReq(map[string]any{
+		"project":   "MYPROJ",
+		"slug":      "my-repo",
+		"id":        float64(7),
+		"reviewers": "alice,bob",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assert.Equal(t, []string{"alice", "bob"}, gotUsers)
+	assertJSONContains(t, result, "{}", "")
+}
+
+func TestRequestReview_MissingReviewers_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.requestReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "reviewers")
+}
+
+func TestRequestReview_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.requestReview(context.Background(), makeReq(map[string]any{
+		"project":   "MYPROJ",
+		"slug":      "my-repo",
+		"reviewers": "alice",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}

@@ -24,6 +24,12 @@ func NewCmdPR(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewCmdPRApprove(f))
 	cmd.AddCommand(NewCmdPRDiff(f))
 	cmd.AddCommand(NewCmdPRCheckout(f))
+	cmd.AddCommand(NewCmdPREdit(f))
+	cmd.AddCommand(NewCmdPRDecline(f))
+	cmd.AddCommand(NewCmdPRUnapprove(f))
+	cmd.AddCommand(NewCmdPRReady(f))
+	cmd.AddCommand(NewCmdPRRequestReview(f))
+	cmd.AddCommand(NewCmdPRRequestChanges(f))
 	return cmd
 }
 
