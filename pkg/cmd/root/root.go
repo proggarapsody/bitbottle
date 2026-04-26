@@ -5,6 +5,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
@@ -32,6 +33,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(branch.NewCmdBranch(f))
 	cmd.AddCommand(pipeline.NewCmdPipeline(f))
 	cmd.AddCommand(tag.NewCmdTag(f))
+	cmd.AddCommand(commit.NewCmdCommit(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
 
 	return cmd
