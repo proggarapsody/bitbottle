@@ -59,21 +59,26 @@ gh pr create --base dev
 
 ## Release workflow
 
-When `dev` is stable and ready to ship:
+Releases are fully automated via [Release Please](https://github.com/googleapis/release-please).
 
 ```bash
 # 1. Open a PR from dev → main
 gh pr create --base main --head dev --title "Release vX.Y.Z"
 
 # 2. CI (Test, Lint, Build) must pass — merge when green
-
-# 3. Tag the merge commit on main
-git checkout main && git pull
-git tag vX.Y.Z
-git push origin vX.Y.Z
 ```
 
-Pushing a `v*` tag triggers the release workflow, which:
+After the PR merges, Release Please automatically opens a **"Release vX.Y.Z"** PR on `main` with a computed version (based on conventional commit types) and an updated `CHANGELOG.md`. Merge that PR to trigger the release — no manual tagging needed.
+
+**Version bumps follow conventional commits:**
+
+| Commit prefix | Bump |
+|---|---|
+| `fix:` | patch (0.1.0 → 0.1.1) |
+| `feat:` | minor (0.1.0 → 0.2.0) |
+| `feat!:` or `BREAKING CHANGE` | major (0.1.0 → 1.0.0) |
+
+Merging the Release Please PR triggers the release workflow, which:
 - Builds binaries for Linux, macOS (arm64 + amd64), and Windows
 - Creates a GitHub release with a changelog and checksums
 - Builds `.deb`, `.rpm`, and `.apk` packages attached to the release
