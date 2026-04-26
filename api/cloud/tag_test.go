@@ -50,9 +50,6 @@ func TestCloudClient_CreateTag_IssuesCorrectPath(t *testing.T) {
 		gotPath = r.URL.Path
 		gotMethod = r.Method
 		w.Header().Set("Content-Type", "application/json")
-		body, _ := io.ReadAll(r.Body)
-		_, _ = w.Write(body) // echo back a valid tag-shaped response
-		_ = body
 		_, _ = w.Write([]byte(`{"name":"v1.0.0","target":{"hash":"abc"},"message":"","links":{"html":{"href":""}}}`))
 	}))
 	t.Cleanup(srv.Close)

@@ -19,10 +19,6 @@ func NewCmdTagCreate(f *factory.Factory) *cobra.Command {
 		Short: "Create a tag",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if startAt == "" {
-				return fmt.Errorf("required flag \"start-at\" not set")
-			}
-
 			ref, err := f.ResolveRef(args[0], hostname)
 			if err != nil {
 				return err
@@ -52,6 +48,7 @@ func NewCmdTagCreate(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&startAt, "start-at", "", "Branch name or commit hash to tag (required)")
+	_ = cmd.MarkFlagRequired("start-at")
 	cmd.Flags().StringVar(&message, "message", "", "Tag message (creates annotated tag when non-empty)")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
