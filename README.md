@@ -10,8 +10,9 @@ A command-line interface for **Bitbucket Cloud** and **Bitbucket Server / Data C
 |---|---|
 | `auth login / logout / status` | ✅ Fully working |
 | `repo list / create / delete / clone / view` | ✅ Fully working |
-| `pr list / create / merge / approve / view / diff / checkout` | ✅ Fully working |
-| `branch list / delete` | ✅ Fully working |
+| `pr list / create / merge / approve / view / diff / checkout / edit / decline / unapprove / ready / request-review` | ✅ Fully working |
+| `branch list / delete / create / checkout` | ✅ Fully working |
+| `tag list / create / delete` | ✅ Fully working |
 | `pipeline list / view / run` _(Cloud only)_ | ✅ Fully working |
 | `mcp serve` — MCP stdio server for AI assistants | ✅ Fully working |
 
@@ -239,6 +240,68 @@ develop     false     c9d0e1f2
 bitbottle branch delete MYPROJ/my-service feature/my-branch
 ```
 
+#### Create
+
+```bash
+bitbottle branch create MYPROJ/my-service feature/my-branch --start-at main
+bitbottle branch create MYPROJ/my-service hotfix/issue-42 --start-at abc123def456
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--start-at` | — | **Required.** Branch name or commit hash to branch from |
+
+#### Checkout
+
+```bash
+# Fetch from origin and check out locally
+bitbottle branch checkout feature/my-branch
+```
+
+Equivalent to `git fetch origin feature/my-branch && git checkout feature/my-branch`.
+
+---
+
+### 🏷️ Tags
+
+#### List
+
+```bash
+bitbottle tag list MYPROJ/my-service
+bitbottle tag list MYPROJ/my-service --limit 10
+bitbottle tag list MYPROJ/my-service --json name,hash
+```
+
+**TTY output:**
+
+```
+NAME       HASH
+v1.2.0     a1b2c3d4
+v1.1.0     e5f6a7b8
+v1.0.0     c9d0e1f2
+```
+
+#### Create
+
+```bash
+# Lightweight tag
+bitbottle tag create MYPROJ/my-service v1.3.0 --start-at main
+
+# Annotated tag
+bitbottle tag create MYPROJ/my-service v1.3.0 --start-at main --message "Release 1.3.0"
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--start-at` | — | **Required.** Branch name or commit hash to tag |
+| `--message` | — | Tag message (creates annotated tag when non-empty) |
+
+#### Delete
+
+```bash
+bitbottle tag delete MYPROJ/my-service v1.3.0
+```
+
 ---
 
 ### 🔀 Pull Requests
@@ -357,6 +420,52 @@ bitbottle pr diff 42 | delta
 bitbottle pr checkout 42
 ```
 
+#### Edit
+
+```bash
+# Update title
+bitbottle pr edit 42 --title "Fix auth bug (updated)"
+
+# Update description
+bitbottle pr edit 42 --body "New description"
+
+# Update both
+bitbottle pr edit 42 --title "New title" --body "New body"
+```
+
+#### Decline
+
+```bash
+bitbottle pr decline 42
+```
+
+#### Unapprove
+
+```bash
+bitbottle pr unapprove 42
+```
+
+#### Ready
+
+```bash
+# Promote a draft PR to ready for review
+bitbottle pr ready 42
+```
+
+#### Request Review
+
+```bash
+# Add reviewers (comma-separated usernames/account IDs)
+bitbottle pr request-review 42 --reviewer alice --reviewer bob
+
+# Or comma-separated
+bitbottle pr request-review 42 --reviewer alice,bob
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--reviewer` | — | **Required.** Reviewer username(s); repeatable or comma-separated |
+
 ---
 
 ### ⚙️ Pipelines _(Bitbucket Cloud only)_
@@ -435,7 +544,16 @@ bitbottle pipeline run MYWORKSPACE/my-service --branch feature/my-feature
 | `approve_pr` | Approve a pull request |
 | `get_pr_diff` | Get the unified diff for a pull request |
 | `list_branches` | List branches in a repository |
+| `create_branch` | Create a new branch |
 | `delete_branch` | Delete a branch |
+| `list_tags` | List tags in a repository |
+| `create_tag` | Create a tag |
+| `delete_tag` | Delete a tag |
+| `update_pr` | Update PR title and/or description |
+| `decline_pr` | Decline a pull request |
+| `unapprove_pr` | Remove approval from a pull request |
+| `ready_pr` | Mark a draft PR as ready for review |
+| `request_review` | Add reviewers to a pull request |
 | `list_pipelines` | List pipelines _(Cloud only)_ |
 | `get_pipeline` | Get a single pipeline by UUID _(Cloud only)_ |
 | `run_pipeline` | Trigger a pipeline on a branch _(Cloud only)_ |
@@ -531,14 +649,15 @@ bitbottle
 ├── internal/config     # hosts.yml read/write
 └── pkg/cmd/            # CLI commands (cobra)
     ├── auth/           # auth login / logout / status
-    ├── branch/         # branch list / delete
+    ├── branch/         # branch list / delete / create / checkout
     ├── mcp/            # mcp serve — MCP stdio server
     ├── pipeline/       # pipeline list / view / run (Cloud only)
+    ├── pr/             # pr list / create / merge / approve / view / diff / checkout / edit / decline / unapprove / ready / request-review
     ├── repo/           # repo list / create / delete / clone / view
-    └── pr/             # pr list / create / merge / approve / view / diff / checkout
+    └── tag/            # tag list / create / delete
 ```
 
-The `Backend` factory returns a `backend.Client` — a composite of single-method interfaces. Commands depend only on the methods they use, so they work identically against Cloud and Server with no `if cloud { ... }` branching. Pipeline commands additionally require a `backend.PipelineClient`, which is only implemented by the Cloud adapter. The MCP server is a thin translation layer on top of the same factory and client.
+The `Backend` factory returns a `backend.Client` — a composite of single-method interfaces. Commands depend only on the methods they use, so they work identically against Cloud and Server with no `if cloud { ... }` branching. Pipeline commands additionally require a `backend.PipelineClient`, which is only implemented by the Cloud adapter. `pr request-changes` uses the Cloud-only optional-interface pattern (type assertion). The MCP server is a thin translation layer on top of the same factory and client.
 
 ---
 

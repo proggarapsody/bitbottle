@@ -77,12 +77,12 @@ Current state of every command area against gh feature parity:
 | `pr approve` | ✅ | |
 | `pr diff` | ✅ | |
 | `pr checkout` | ✅ | |
-| `pr edit` | ❌ | Update title / description |
-| `pr unapprove` | ❌ | Remove own approval |
-| `pr decline` | ❌ | Close/decline a PR |
-| `pr ready` | ❌ | Promote draft → open |
-| `pr request-review` | ❌ | Add reviewers to an open PR |
-| `pr request-changes` | ❌ | Cloud only |
+| `pr edit` | ✅ | Update title / description |
+| `pr unapprove` | ✅ | Remove own approval |
+| `pr decline` | ✅ | Close/decline a PR |
+| `pr ready` | ✅ | Promote draft → open |
+| `pr request-review` | ✅ | Add reviewers to an open PR |
+| `pr request-changes` | ✅ | Cloud only |
 | `pr comment list` | ❌ | List general comments |
 | `pr comment add` | ❌ | Add a general comment |
 
@@ -92,8 +92,8 @@ Current state of every command area against gh feature parity:
 |---|---|---|
 | `branch list` | ✅ | |
 | `branch delete` | ✅ | |
-| `branch create` | ❌ | |
-| `branch checkout` | ❌ | Thin wrapper: `git fetch origin BRANCH && git checkout BRANCH` |
+| `branch create` | ✅ | |
+| `branch checkout` | ✅ | Thin wrapper: `git fetch origin BRANCH && git checkout BRANCH` |
 | `branch protect` | ❌ | Branch restrictions; Server/DC only |
 
 ### Pipeline _(Cloud only)_
@@ -121,9 +121,9 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `tag list` | ❌ | |
-| `tag create` | ❌ | |
-| `tag delete` | ❌ | |
+| `tag list` | ✅ | |
+| `tag create` | ✅ | |
+| `tag delete` | ✅ | |
 
 ### Webhooks
 
@@ -178,9 +178,9 @@ Current state of every command area against gh feature parity:
 
 | ID | Scope | Commands | Backends | Tier | Status |
 |---|---|---|---|---|---|
-| L | **Branch Create + Checkout** | `branch create`, `branch checkout` | Both | 1 | 🔲 |
-| E | **Tags** | `tag list`, `tag create`, `tag delete` | Both | 1 | 🔲 |
-| G | **PR Lifecycle** | `pr decline`, `pr unapprove`, `pr edit`, `pr ready`, `pr request-review`, `pr request-changes` | Both / Cloud | 1 | 🔲 |
+| L | **Branch Create + Checkout** | `branch create`, `branch checkout` | Both | 1 | ✅ |
+| E | **Tags** | `tag list`, `tag create`, `tag delete` | Both | 1 | ✅ |
+| G | **PR Lifecycle** | `pr decline`, `pr unapprove`, `pr edit`, `pr ready`, `pr request-review`, `pr request-changes` | Both / Cloud | 1 | ✅ |
 | M | **Shell Completion** | `completion bash\|zsh\|fish\|powershell` | N/A | DX | 🔲 |
 | P | **Auth Extras** | `auth token`, `auth refresh` | N/A | DX | 🔲 |
 | Q | **Repo Extras** | `repo fork`, `repo rename`, `repo archive`, `repo set-default` | Both / Cloud | 2 | 🔲 |
