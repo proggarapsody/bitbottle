@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/proggarapsody/bitbottle/compare/v1.1.0...v1.1.1) (2026-04-26)
+
+
+### Bug Fixes
+
+* auth login interactive prompt, error visibility, skip-tls-verify race ([#11](https://github.com/proggarapsody/bitbottle/issues/11)) ([ba22eeb](https://github.com/proggarapsody/bitbottle/commit/ba22eeb105c0033231c9eaeb7f11f71a89b20eeb))
+
 ## [1.1.0](https://github.com/proggarapsody/bitbottle/compare/v1.0.1...v1.1.0) (2026-04-26)
 
 
