@@ -1,0 +1,31 @@
+{
+  "pagelen": 10,
+  "values": [
+    {
+      "name": "v1.0.0",
+      "target": {
+        "hash": "abc1234def567890"
+      },
+      "message": "Release v1.0.0",
+      "links": {
+        "html": {
+          "href": "https://bitbucket.org/myworkspace/my-service/src/v1.0.0"
+        }
+      }
+    },
+    {
+      "name": "v0.9.0",
+      "target": {
+        "hash": "deadbeef01234567"
+      },
+      "message": "",
+      "links": {
+        "html": {
+          "href": "https://bitbucket.org/myworkspace/my-service/src/v0.9.0"
+        }
+      }
+    }
+  ],
+  "page": 1,
+  "size": 2
+}

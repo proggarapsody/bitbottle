@@ -871,3 +871,149 @@ func TestCreateBranch_APIError_ReturnsErrorResult(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "branch already exists")
 }
+
+// ---- list_tags ----
+
+func TestListTags_CallsClientWithCorrectParams(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug string
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListTagsFn: func(ns, slug string, limit int) ([]backend.Tag, error) {
+			gotNS = ns
+			gotSlug = slug
+			gotLimit = limit
+			return []backend.Tag{
+				{Name: "v1.0.0", Hash: "abc1234", Message: "Release v1.0.0"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listTags(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"limit":   float64(10),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "MYPROJ", gotNS)
+	assert.Equal(t, "my-repo", gotSlug)
+	assert.Equal(t, 10, gotLimit)
+	assertJSONContains(t, result, "v1.0.0", "")
+}
+
+func TestListTags_DefaultLimit(t *testing.T) {
+	t.Parallel()
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListTagsFn: func(ns, slug string, limit int) ([]backend.Tag, error) {
+			gotLimit = limit
+			return nil, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	_, err := h.listTags(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 30, gotLimit)
+}
+
+func TestListTags_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listTags(context.Background(), makeReq(map[string]any{"slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestListTags_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listTags(context.Background(), makeReq(map[string]any{"project": "MYPROJ"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+// ---- create_tag ----
+
+func TestCreateTag_CallsClientWithCorrectInput(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.CreateTagInput
+	fake := &testhelpers.FakeClient{
+		CreateTagFn: func(ns, slug string, in backend.CreateTagInput) (backend.Tag, error) {
+			gotIn = in
+			return backend.Tag{Name: in.Name, WebURL: "https://example.com/" + in.Name}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.createTag(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-repo",
+		"name":     "v1.0.0",
+		"start_at": "main",
+		"message":  "Release notes",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "v1.0.0", gotIn.Name)
+	assert.Equal(t, "main", gotIn.StartAt)
+	assert.Equal(t, "Release notes", gotIn.Message)
+	assertJSONContains(t, result, "v1.0.0", "")
+}
+
+func TestCreateTag_MissingName_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createTag(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-repo",
+		"start_at": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "name")
+}
+
+func TestCreateTag_MissingStartAt_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createTag(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"name":    "v1.0.0",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "start_at")
+}
+
+// ---- delete_tag ----
+
+func TestDeleteTag_CallsClientAndReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	var gotName string
+	fake := &testhelpers.FakeClient{
+		DeleteTagFn: func(ns, slug, name string) error {
+			gotName = name
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deleteTag(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"name":    "v1.0.0",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "v1.0.0", gotName)
+	assertJSONContains(t, result, "{}", "")
+}
+
+func TestDeleteTag_MissingName_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.deleteTag(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "name")
+}

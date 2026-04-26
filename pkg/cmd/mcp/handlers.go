@@ -447,6 +447,7 @@ func (h *handlers) getPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 
 func (h *handlers) createBranch(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
+
 	project, err := requireString(req, "project")
 	if err != nil {
 		return errResult(err.Error()), nil
@@ -476,6 +477,92 @@ func (h *handlers) createBranch(_ context.Context, req mcplib.CallToolRequest) (
 		return errResult(err.Error()), nil
 	}
 	return jsonResult(br)
+}
+
+func (h *handlers) listTags(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	limit := req.GetInt("limit", 30)
+
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	tags, err := client.ListTags(project, slug, limit)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(tags)
+}
+
+func (h *handlers) createTag(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	name, err := requireString(req, "name")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	startAt, err := requireString(req, "start_at")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	message := req.GetString("message", "")
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	t, err := client.CreateTag(project, slug, backend.CreateTagInput{
+		Name:    name,
+		StartAt: startAt,
+		Message: message,
+	})
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(t)
+}
+
+func (h *handlers) deleteTag(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	name, err := requireString(req, "name")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	if err := client.DeleteTag(project, slug, name); err != nil {
+		return errResult(err.Error()), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
 }
 
 func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {

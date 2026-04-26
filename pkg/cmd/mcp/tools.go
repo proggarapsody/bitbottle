@@ -277,4 +277,50 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.runPipeline,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_tags",
+			mcplib.WithDescription("List tags for a repository"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			optLimit,
+		),
+		h.listTags,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("create_tag",
+			mcplib.WithDescription("Create a tag in a repository"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("name",
+				mcplib.Description("Tag name"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("start_at",
+				mcplib.Description("Branch name or commit hash to tag"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("message",
+				mcplib.Description("Tag message (creates annotated tag when non-empty)"),
+			),
+		),
+		h.createTag,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("delete_tag",
+			mcplib.WithDescription("Delete a tag (destructive)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("name",
+				mcplib.Description("Tag name to delete"),
+				mcplib.Required(),
+			),
+		),
+		h.deleteTag,
+	)
 }

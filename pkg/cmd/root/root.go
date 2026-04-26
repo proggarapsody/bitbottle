@@ -10,6 +10,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 )
 
 func NewCmdRoot(f *factory.Factory) *cobra.Command {
@@ -28,6 +29,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(pr.NewCmdPR(f))
 	cmd.AddCommand(branch.NewCmdBranch(f))
 	cmd.AddCommand(pipeline.NewCmdPipeline(f))
+	cmd.AddCommand(tag.NewCmdTag(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
 
 	return cmd
