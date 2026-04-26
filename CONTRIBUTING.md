@@ -76,7 +76,21 @@ git push origin vX.Y.Z
 Pushing a `v*` tag triggers the release workflow, which:
 - Builds binaries for Linux, macOS (arm64 + amd64), and Windows
 - Creates a GitHub release with a changelog and checksums
-- Publishes a Homebrew formula to `proggarapsody/homebrew-bitbottle`
+- Builds `.deb`, `.rpm`, and `.apk` packages attached to the release
+- Pushes multi-arch Docker images to `proggarapsody/bitbottle` on Docker Hub
+
+**Required secrets** (set in repo Settings → Secrets → Actions):
+
+| Secret | Purpose |
+|--------|---------|
+| `DOCKER_PASSWORD` | Docker Hub password / access token for `proggarapsody` |
+
+**npm MCP wrapper** lives in `packages/mcp-npm/`. Publish manually after each release:
+```bash
+cd packages/mcp-npm
+# Bump version to match the release tag (strip the v prefix)
+npm publish --access public
+```
 
 **Versioning follows [Semantic Versioning](https://semver.org/):**
 - `vMAJOR.MINOR.PATCH` — breaking change / new feature / bug fix

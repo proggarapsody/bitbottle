@@ -1,0 +1,17 @@
+{
+  "name": "@proggarapsody/bitbottle-mcp",
+  "version": "0.0.1",
+  "description": "Bitbucket MCP server — npm wrapper for bitbottle",
+  "keywords": ["mcp", "bitbucket", "claude", "ai"],
+  "homepage": "https://github.com/proggarapsody/bitbottle",
+  "license": "MIT",
+  "bin": {
+    "bitbottle-mcp": "./bin/run.js"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
