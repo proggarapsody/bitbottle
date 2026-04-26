@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/proggarapsody/bitbottle/compare/v1.0.1...v1.1.0) (2026-04-26)
+
+
+### Features
+
+* expose full CLI via npm wrapper, not just mcp subcommand ([0b0695e](https://github.com/proggarapsody/bitbottle/commit/0b0695ec1581506cdec3489595fde70721ecdf7d))
+* expose full CLI via npm wrapper, not just mcp subcommand ([fee9a10](https://github.com/proggarapsody/bitbottle/commit/fee9a107934cc46f8693ae22dd17c9a70493a944))
+
 ## [1.0.1](https://github.com/proggarapsody/bitbottle/compare/v1.0.0...v1.0.1) (2026-04-26)
 
 
