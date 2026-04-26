@@ -50,6 +50,10 @@ type FakeClient struct {
 	ListPipelinesFn func(ns, slug string, limit int) ([]backend.Pipeline, error)
 	GetPipelineFn   func(ns, slug, uuid string) (backend.Pipeline, error)
 	RunPipelineFn   func(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error)
+
+	// Commit methods
+	ListCommitsFn func(ns, slug, branch string, limit int) ([]backend.Commit, error)
+	GetCommitFn   func(ns, slug, hash string) (backend.Commit, error)
 }
 
 // Compile-time interface check.
@@ -291,4 +295,24 @@ func (c *FakeClient) RunPipeline(ns, slug string, in backend.RunPipelineInput) (
 		c.T.Fatalf("unexpected call to FakeClient.RunPipeline; set RunPipelineFn in your test")
 	}
 	return backend.Pipeline{}, nil
+}
+
+func (c *FakeClient) ListCommits(ns, slug, branch string, limit int) ([]backend.Commit, error) {
+	if c.ListCommitsFn != nil {
+		return c.ListCommitsFn(ns, slug, branch, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListCommits; set ListCommitsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetCommit(ns, slug, hash string) (backend.Commit, error) {
+	if c.GetCommitFn != nil {
+		return c.GetCommitFn(ns, slug, hash)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetCommit; set GetCommitFn in your test")
+	}
+	return backend.Commit{}, nil
 }

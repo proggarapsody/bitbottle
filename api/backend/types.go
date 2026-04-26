@@ -1,5 +1,7 @@
 package backend
 
+import "time"
+
 // Repository is the domain representation of a Bitbucket repository.
 type Repository struct {
 	Slug      string
@@ -107,4 +109,13 @@ type CreateTagInput struct {
 type UpdatePRInput struct {
 	Title       string // empty = no change
 	Description string // empty = no change
+}
+
+// Commit is the domain representation of a single repository commit.
+type Commit struct {
+	Hash      string
+	Message   string    // subject line only (first line of commit message)
+	Author    User
+	Timestamp time.Time
+	WebURL    string
 }

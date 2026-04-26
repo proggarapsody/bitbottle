@@ -112,6 +112,16 @@ type PRReviewRequester interface {
 	RequestReview(ns, slug string, id int, users []string) error
 }
 
+// CommitLister can list commits for a branch.
+type CommitLister interface {
+	ListCommits(ns, slug, branch string, limit int) ([]Commit, error)
+}
+
+// CommitReader can fetch a single commit by hash.
+type CommitReader interface {
+	GetCommit(ns, slug, hash string) (Commit, error)
+}
+
 // PRChangesRequester can request changes on a pull request (Cloud only).
 // Access via type assertion — not embedded in Client.
 type PRChangesRequester interface {
@@ -142,6 +152,8 @@ type Client interface {
 	PRReadier
 	PRReviewRequester
 	UserGetter
+	CommitLister
+	CommitReader
 }
 
 // ServerCapabilities is implemented only by Bitbucket Data Center clients.

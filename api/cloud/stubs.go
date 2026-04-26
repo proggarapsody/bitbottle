@@ -1,1 +1,71 @@
 package cloud
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/proggarapsody/bitbottle/api/backend"
+)
+
+type wireCloudCommit struct {
+	Hash    string `json:"hash"`
+	Message string `json:"message"`
+	Author  struct {
+		User struct {
+			Nickname    string `json:"nickname"`
+			DisplayName string `json:"display_name"`
+		} `json:"user"`
+	} `json:"author"`
+	Date  time.Time `json:"date"`
+	Links struct {
+		HTML struct {
+			Href string `json:"href"`
+		} `json:"html"`
+	} `json:"links"`
+}
+
+func (w wireCloudCommit) toDomain() backend.Commit {
+	msg := w.Message
+	if i := len(msg); i > 0 {
+		for j, ch := range msg {
+			if ch == '\n' {
+				msg = msg[:j]
+				break
+			}
+		}
+	}
+	return backend.Commit{
+		Hash:    w.Hash,
+		Message: msg,
+		Author: backend.User{
+			Slug:        w.Author.User.Nickname,
+			DisplayName: w.Author.User.DisplayName,
+		},
+		Timestamp: w.Date,
+		WebURL:    w.Links.HTML.Href,
+	}
+}
+
+// ListCommits lists commits on a branch for a repository.
+func (c *Client) ListCommits(ns, slug, branch string, limit int) ([]backend.Commit, error) {
+	var page cloudPagedResponse[wireCloudCommit]
+	path := fmt.Sprintf("/repositories/%s/%s/commits/%s?pagelen=%d", ns, slug, branch, limit)
+	if err := c.getJSON(path, &page); err != nil {
+		return nil, err
+	}
+	commits := make([]backend.Commit, 0, len(page.Values))
+	for _, w := range page.Values {
+		commits = append(commits, w.toDomain())
+	}
+	return commits, nil
+}
+
+// GetCommit fetches a single commit by hash.
+func (c *Client) GetCommit(ns, slug, hash string) (backend.Commit, error) {
+	var w wireCloudCommit
+	path := fmt.Sprintf("/repositories/%s/%s/commit/%s", ns, slug, hash)
+	if err := c.getJSON(path, &w); err != nil {
+		return backend.Commit{}, err
+	}
+	return w.toDomain(), nil
+}
