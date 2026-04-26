@@ -5,6 +5,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
@@ -24,6 +25,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 
 	cmd.PersistentFlags().String("hostname", "", "Bitbucket hostname (overrides git remote)")
 
+	cmd.AddCommand(completion.NewCmdCompletion(f))
 	cmd.AddCommand(auth.NewCmdAuth(f))
 	cmd.AddCommand(repo.NewCmdRepo(f))
 	cmd.AddCommand(pr.NewCmdPR(f))
