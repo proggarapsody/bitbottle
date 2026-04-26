@@ -2,6 +2,13 @@ package backend
 
 import "time"
 
+// Options overrides the stored config when constructing a backend client.
+// Used by auth login to validate a new token before it is persisted.
+type Options struct {
+	Token         string
+	SkipTLSVerify bool
+}
+
 // Repository is the domain representation of a Bitbucket repository.
 type Repository struct {
 	Slug      string

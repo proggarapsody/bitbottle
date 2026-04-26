@@ -21,15 +21,16 @@ import (
 // Factory is the single dependency container threaded through every command.
 // Commands receive it via their constructor.
 type Factory struct {
-	IOStreams *iostreams.IOStreams
-	Config    func() (*config.Config, error)
-	Backend   func(hostname string) (backend.Client, error)
-	GitRunner func() run.Runner
-	Keyring   keyring.Keyring
-	Browser   cmdutil.BrowserLauncher
-	Editor    cmdutil.EditorLauncher
-	BaseURL   func(hostname string) string
-	Now       func() time.Time
+	IOStreams          *iostreams.IOStreams
+	Config             func() (*config.Config, error)
+	Backend            func(hostname string) (backend.Client, error)
+	BackendWithOptions func(hostname string, opts backend.Options) (backend.Client, error)
+	GitRunner          func() run.Runner
+	Keyring            keyring.Keyring
+	Browser            cmdutil.BrowserLauncher
+	Editor             cmdutil.EditorLauncher
+	BaseURL            func(hostname string) string
+	Now                func() time.Time
 }
 
 // New constructs a Factory wired with live dependencies.
@@ -61,6 +62,21 @@ func New() *Factory {
 				return nil, err
 			}
 			hostCfg, _ := cfg.Get(hostname)
+			hc := newHTTPClient(hostCfg.SkipTLSVerify)
+			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
+		},
+		BackendWithOptions: func(hostname string, opts backend.Options) (backend.Client, error) {
+			if err := loadConfig(); err != nil {
+				return nil, err
+			}
+			hostCfg, _ := cfg.Get(hostname)
+			// opts fields override the stored config values.
+			if opts.Token != "" {
+				hostCfg.OAuthToken = opts.Token
+			}
+			if opts.SkipTLSVerify {
+				hostCfg.SkipTLSVerify = true
+			}
 			hc := newHTTPClient(hostCfg.SkipTLSVerify)
 			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 		},

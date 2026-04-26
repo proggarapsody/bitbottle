@@ -145,6 +145,19 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 			}
 			return server.NewClient(httpClient, baseURL(hostname), "test-token", ""), nil
 		},
+		BackendWithOptions: func(hostname string, bOpts backend.Options) (backend.Client, error) {
+			if opts.BackendOverride != nil {
+				return opts.BackendOverride, nil
+			}
+			token := bOpts.Token
+			if token == "" {
+				token = "test-token"
+			}
+			if bbinstance.IsCloud(hostname, opts.BackendType) {
+				return cloud.NewClient(httpClient, baseURL(hostname), token, ""), nil
+			}
+			return server.NewClient(httpClient, baseURL(hostname), token, ""), nil
+		},
 		GitRunner: func() run.Runner { return gitRunner },
 		Keyring:   kr,
 		Browser:   browser,
