@@ -7,9 +7,9 @@ import (
 )
 
 type wireBranch struct {
-	ID        string `json:"id"`
-	DisplayID string `json:"displayId"`
-	IsDefault bool   `json:"isDefault"`
+	ID           string `json:"id"`
+	DisplayID    string `json:"displayId"`
+	IsDefault    bool   `json:"isDefault"`
 	LatestCommit string `json:"latestCommit"`
 }
 

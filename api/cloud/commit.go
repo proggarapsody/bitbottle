@@ -21,7 +21,9 @@ type wireCloudCommit struct {
 	} `json:"author"`
 	Date  time.Time `json:"date"`
 	Links struct {
-		HTML struct{ Href string `json:"href"` } `json:"html"`
+		HTML struct {
+			Href string `json:"href"`
+		} `json:"html"`
 	} `json:"links"`
 }
 

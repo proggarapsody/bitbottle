@@ -39,7 +39,7 @@ func TestTagDelete_ConfirmationPrompt_Abort(t *testing.T) {
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
 		InitialConfig:   tagConfig,
 		BackendOverride: fake,
-		IOStreams:        ios,
+		IOStreams:       ios,
 	})
 	cmd := tag.NewCmdTagDelete(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0"})
@@ -72,7 +72,7 @@ func TestTagDelete_ConfirmationPrompt_Confirm(t *testing.T) {
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
 		InitialConfig:   tagConfig,
 		BackendOverride: fake,
-		IOStreams:        ios,
+		IOStreams:       ios,
 	})
 	cmd := tag.NewCmdTagDelete(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0"})

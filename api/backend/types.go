@@ -114,7 +114,7 @@ type UpdatePRInput struct {
 // Commit is the domain representation of a single repository commit.
 type Commit struct {
 	Hash      string
-	Message   string    // subject line only (first line of commit message)
+	Message   string // subject line only (first line of commit message)
 	Author    User
 	Timestamp time.Time
 	WebURL    string

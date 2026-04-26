@@ -43,6 +43,20 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
+brews:
+  - name: bitbottle
+    repository:
+      owner: proggarapsody
+      name: homebrew-bitbottle
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: "https://github.com/proggarapsody/bitbottle"
+    description: "Bitbucket CLI for Server/Data Center and Cloud"
+    license: "MIT"
+    install: |
+      bin.install "bitbottle"
+    test: |
+      system "#{bin}/bitbottle", "--version"
+
 changelog:
   sort: asc
   use: github
@@ -73,6 +87,12 @@ release:
   footer: |
     ## Installation
 
+    **Homebrew (macOS/Linux):**
+    ```bash
+    brew install proggarapsody/bitbottle/bitbottle
+    ```
+
+    **Go install:**
     ```bash
     go install github.com/proggarapsody/bitbottle/cmd/bitbottle@{{.Tag}}
     ```
