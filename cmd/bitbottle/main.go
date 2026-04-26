@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
@@ -19,6 +20,7 @@ func main() {
 	cmd := root.NewCmdRoot(f)
 	cmd.Version = version + " (" + commit + ") built " + buildDate
 	if err := cmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
