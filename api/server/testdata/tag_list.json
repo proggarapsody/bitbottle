@@ -1,0 +1,16 @@
+{
+  "values": [
+    {
+      "displayId": "v1.0.0",
+      "latestCommit": "abc1234def567890",
+      "displayMessage": "Release v1.0.0"
+    },
+    {
+      "displayId": "v0.9.0",
+      "latestCommit": "deadbeef01234567",
+      "displayMessage": ""
+    }
+  ],
+  "size": 2,
+  "isLastPage": true
+}

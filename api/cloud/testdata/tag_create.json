@@ -1,0 +1,12 @@
+{
+  "name": "v2.0.0",
+  "target": {
+    "hash": "cafe1234beef5678"
+  },
+  "message": "Annotated release",
+  "links": {
+    "html": {
+      "href": "https://bitbucket.org/myworkspace/my-service/src/v2.0.0"
+    }
+  }
+}
