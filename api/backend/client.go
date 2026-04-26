@@ -67,6 +67,57 @@ type UserGetter interface {
 	GetCurrentUser() (User, error)
 }
 
+// BranchCreator can create branches.
+type BranchCreator interface {
+	CreateBranch(ns, slug string, in CreateBranchInput) (Branch, error)
+}
+
+// TagLister can list tags.
+type TagLister interface {
+	ListTags(ns, slug string, limit int) ([]Tag, error)
+}
+
+// TagCreator can create tags.
+type TagCreator interface {
+	CreateTag(ns, slug string, in CreateTagInput) (Tag, error)
+}
+
+// TagDeleter can delete tags.
+type TagDeleter interface {
+	DeleteTag(ns, slug, name string) error
+}
+
+// PREditor can update pull request metadata.
+type PREditor interface {
+	UpdatePR(ns, slug string, id int, in UpdatePRInput) (PullRequest, error)
+}
+
+// PRDecliner can decline pull requests.
+type PRDecliner interface {
+	DeclinePR(ns, slug string, id int) error
+}
+
+// PRUnapprover can remove approval from pull requests.
+type PRUnapprover interface {
+	UnapprovePR(ns, slug string, id int) error
+}
+
+// PRReadier can mark a draft pull request as ready for review.
+type PRReadier interface {
+	ReadyPR(ns, slug string, id int) error
+}
+
+// PRReviewRequester can request reviewers on a pull request.
+type PRReviewRequester interface {
+	RequestReview(ns, slug string, id int, users []string) error
+}
+
+// PRChangesRequester can request changes on a pull request (Cloud only).
+// Access via type assertion — not embedded in Client.
+type PRChangesRequester interface {
+	RequestChangesPR(ns, slug string, id int) error
+}
+
 // Client is the full Bitbucket backend interface.
 type Client interface {
 	RepoLister
@@ -80,7 +131,16 @@ type Client interface {
 	PRApprover
 	PRDiffer
 	BranchLister
+	BranchCreator
 	BranchDeleter
+	TagLister
+	TagCreator
+	TagDeleter
+	PREditor
+	PRDecliner
+	PRUnapprover
+	PRReadier
+	PRReviewRequester
 	UserGetter
 }
 

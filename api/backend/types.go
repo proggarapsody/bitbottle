@@ -81,3 +81,30 @@ type Pipeline struct {
 type RunPipelineInput struct {
 	Branch string
 }
+
+// Tag is the domain representation of a repository tag.
+type Tag struct {
+	Name    string
+	Hash    string
+	Message string // empty for lightweight tags; first line for annotated
+	WebURL  string
+}
+
+// CreateBranchInput carries the parameters for creating a branch.
+type CreateBranchInput struct {
+	Name    string
+	StartAt string // branch name or commit hash
+}
+
+// CreateTagInput carries the parameters for creating a tag.
+type CreateTagInput struct {
+	Name    string
+	StartAt string // branch name or commit hash
+	Message string // empty = lightweight tag; non-empty = annotated tag
+}
+
+// UpdatePRInput carries the parameters for editing a pull request.
+type UpdatePRInput struct {
+	Title       string // empty = no change
+	Description string // empty = no change
+}

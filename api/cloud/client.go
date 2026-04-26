@@ -68,6 +68,11 @@ func (c *Client) postJSON(path string, body, v any) error {
 	return c.http.PostJSON(path, body, v)
 }
 
+// putJSON PUTs body as JSON to path and decodes the response into v.
+func (c *Client) putJSON(path string, body, v any) error {
+	return c.http.PutJSON(path, body, v)
+}
+
 // delete sends a DELETE request to path (no body).
 func (c *Client) delete(path string) error {
 	return c.http.DeleteJSON(path, nil)

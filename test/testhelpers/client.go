@@ -31,6 +31,21 @@ type FakeClient struct {
 	DeleteBranchFn   func(ns, slug, branch string) error
 	GetCurrentUserFn func() (backend.User, error)
 
+	// Branch create method
+	CreateBranchFn func(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error)
+
+	// Tag methods
+	ListTagsFn   func(ns, slug string, limit int) ([]backend.Tag, error)
+	CreateTagFn  func(ns, slug string, in backend.CreateTagInput) (backend.Tag, error)
+	DeleteTagFn  func(ns, slug, name string) error
+
+	// PR lifecycle methods
+	UpdatePRFn        func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error)
+	DeclinePRFn       func(ns, slug string, id int) error
+	UnapprovePRFn     func(ns, slug string, id int) error
+	ReadyPRFn         func(ns, slug string, id int) error
+	RequestReviewFn   func(ns, slug string, id int, users []string) error
+
 	// Pipeline methods (Cloud-only; satisfies backend.PipelineClient when set)
 	ListPipelinesFn func(ns, slug string, limit int) ([]backend.Pipeline, error)
 	GetPipelineFn   func(ns, slug, uuid string) (backend.Pipeline, error)
@@ -159,6 +174,93 @@ func (c *FakeClient) GetCurrentUser() (backend.User, error) {
 		c.T.Fatalf("unexpected call to FakeClient.GetCurrentUser; set GetCurrentUserFn in your test")
 	}
 	return backend.User{}, nil
+}
+
+func (c *FakeClient) CreateBranch(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error) {
+	if c.CreateBranchFn != nil {
+		return c.CreateBranchFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateBranch; set CreateBranchFn in your test")
+	}
+	return backend.Branch{}, nil
+}
+
+func (c *FakeClient) ListTags(ns, slug string, limit int) ([]backend.Tag, error) {
+	if c.ListTagsFn != nil {
+		return c.ListTagsFn(ns, slug, limit)
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateTag(ns, slug string, in backend.CreateTagInput) (backend.Tag, error) {
+	if c.CreateTagFn != nil {
+		return c.CreateTagFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateTag; set CreateTagFn in your test")
+	}
+	return backend.Tag{}, nil
+}
+
+func (c *FakeClient) DeleteTag(ns, slug, name string) error {
+	if c.DeleteTagFn != nil {
+		return c.DeleteTagFn(ns, slug, name)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteTag; set DeleteTagFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
+	if c.UpdatePRFn != nil {
+		return c.UpdatePRFn(ns, slug, id, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdatePR; set UpdatePRFn in your test")
+	}
+	return backend.PullRequest{}, nil
+}
+
+func (c *FakeClient) DeclinePR(ns, slug string, id int) error {
+	if c.DeclinePRFn != nil {
+		return c.DeclinePRFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeclinePR; set DeclinePRFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) UnapprovePR(ns, slug string, id int) error {
+	if c.UnapprovePRFn != nil {
+		return c.UnapprovePRFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UnapprovePR; set UnapprovePRFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ReadyPR(ns, slug string, id int) error {
+	if c.ReadyPRFn != nil {
+		return c.ReadyPRFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ReadyPR; set ReadyPRFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RequestReview(ns, slug string, id int, users []string) error {
+	if c.RequestReviewFn != nil {
+		return c.RequestReviewFn(ns, slug, id, users)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RequestReview; set RequestReviewFn in your test")
+	}
+	return nil
 }
 
 func (c *FakeClient) ListPipelines(ns, slug string, limit int) ([]backend.Pipeline, error) {
