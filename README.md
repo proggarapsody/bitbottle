@@ -8,12 +8,14 @@ A command-line interface for **Bitbucket Cloud** and **Bitbucket Server / Data C
 
 | Area | Status |
 |---|---|
-| `auth login / logout / status` | ✅ Fully working |
+| `auth login / logout / status / token / refresh` | ✅ Fully working |
 | `repo list / create / delete / clone / view` | ✅ Fully working |
 | `pr list / create / merge / approve / view / diff / checkout / edit / decline / unapprove / ready / request-review` | ✅ Fully working |
 | `branch list / delete / create / checkout` | ✅ Fully working |
 | `tag list / create / delete` | ✅ Fully working |
+| `commit log / view` | ✅ Fully working |
 | `pipeline list / view / run` _(Cloud only)_ | ✅ Fully working |
+| `completion bash\|zsh\|fish\|powershell` | ✅ Fully working |
 | `mcp serve` — MCP stdio server for AI assistants | ✅ Fully working |
 
 Works identically against **Bitbucket Cloud** (`bitbucket.org`) and **Bitbucket Server / Data Center** (self-hosted).
@@ -78,6 +80,24 @@ bitbottle auth status
 ```bash
 bitbottle auth logout --hostname bitbucket.example.com
 ```
+
+### Print stored token
+
+```bash
+bitbottle auth token
+bitbottle auth token --hostname bitbucket.example.com
+```
+
+Prints the raw stored PAT to stdout (useful for scripting). Exits 1 if no token is stored for the host.
+
+### Refresh / re-validate token
+
+```bash
+bitbottle auth refresh
+bitbottle auth refresh --hostname bitbucket.example.com
+```
+
+Calls the API to confirm the token is still valid. Updates the stored username if it has changed. On failure, prints an actionable error to stderr and exits 1 — no interactive re-auth (PATs cannot be refreshed programmatically; generate a new token from the Bitbucket UI and run `auth login` again).
 
 ### Manual config
 
@@ -300,6 +320,74 @@ bitbottle tag create MYPROJ/my-service v1.3.0 --start-at main --message "Release
 
 ```bash
 bitbottle tag delete MYPROJ/my-service v1.3.0
+```
+
+---
+
+### 📝 Commits
+
+#### Log
+
+```bash
+bitbottle commit log MYPROJ/my-service
+
+# Specific branch
+bitbottle commit log MYPROJ/my-service --branch feature/x
+
+# Limit results
+bitbottle commit log MYPROJ/my-service --limit 10
+
+# JSON output
+bitbottle commit log MYPROJ/my-service --json hash,message,author
+```
+
+**Branch resolution order:** `--branch` flag → current local branch (`git rev-parse --abbrev-ref HEAD`) → `main`.
+
+**TTY output:**
+
+```
+HASH     MESSAGE                           AUTHOR   DATE
+abc1234  Fix null pointer in auth          alice    2 days ago
+def5678  Bump lodash to 4.17.21            bob      3 days ago
+c9d0e1f  Add retry logic to payments       charlie  5 days ago
+```
+
+**Pipe output** (tab-separated, no header, full hash + RFC3339 date):
+
+```bash
+bitbottle commit log MYPROJ/my-service | cut -f1   # → full hashes
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--branch` / `-b` | _(current branch → main)_ | Branch to list commits from |
+| `--limit` | 30 | Maximum number of results |
+| `--json` | — | Comma-separated fields |
+| `--jq` | — | jq filter applied to JSON output |
+| `--hostname` | — | Target Bitbucket host |
+
+#### View
+
+```bash
+bitbottle commit view MYPROJ/my-service abc1234def456abc1234def456abc1234def456ab
+
+# Open in browser
+bitbottle commit view MYPROJ/my-service abc1234 --web
+
+# JSON output
+bitbottle commit view MYPROJ/my-service abc1234 --json hash,message,author,timestamp
+```
+
+**TTY output:**
+
+```
+commit abc1234def456abc1234def456abc1234def456ab
+
+Fix null pointer in auth middleware
+
+Author:  alice
+Date:    2026-04-24 10:00:00 +0000 UTC
+Web:     https://bitbucket.org/myws/my-service/commits/abc1234def456
 ```
 
 ---
@@ -554,6 +642,8 @@ bitbottle pipeline run MYWORKSPACE/my-service --branch feature/my-feature
 | `unapprove_pr` | Remove approval from a pull request |
 | `ready_pr` | Mark a draft PR as ready for review |
 | `request_review` | Add reviewers to a pull request |
+| `list_commits` | List commits for a repository |
+| `get_commit` | Get a single commit by hash |
 | `list_pipelines` | List pipelines _(Cloud only)_ |
 | `get_pipeline` | Get a single pipeline by UUID _(Cloud only)_ |
 | `run_pipeline` | Trigger a pipeline on a branch _(Cloud only)_ |
@@ -590,6 +680,28 @@ Every tool accepts an optional `hostname` parameter. When only one host is confi
 ```
 
 The MCP server uses the same `~/.config/bitbottle/hosts.yml` config and credentials as the CLI — no separate auth setup needed.
+
+---
+
+## 🐚 Shell Completion
+
+```bash
+# bash
+bitbottle completion --shell bash >> ~/.bash_profile
+
+# zsh
+bitbottle completion --shell zsh >> ~/.zshrc
+
+# fish
+bitbottle completion --shell fish > ~/.config/fish/completions/bitbottle.fish
+
+# PowerShell
+bitbottle completion --shell powershell >> $PROFILE
+```
+
+| Flag | Short | Required | Values |
+|---|---|---|---|
+| `--shell` | `-s` | yes | `bash`, `zsh`, `fish`, `powershell` |
 
 ---
 
@@ -648,8 +760,10 @@ bitbottle
 ├── internal/bbinstance # Host detection, URL builders, version helpers
 ├── internal/config     # hosts.yml read/write
 └── pkg/cmd/            # CLI commands (cobra)
-    ├── auth/           # auth login / logout / status
+    ├── auth/           # auth login / logout / status / token / refresh
     ├── branch/         # branch list / delete / create / checkout
+    ├── commit/         # commit log / view
+    ├── completion/     # completion --shell bash|zsh|fish|powershell
     ├── mcp/            # mcp serve — MCP stdio server
     ├── pipeline/       # pipeline list / view / run (Cloud only)
     ├── pr/             # pr list / create / merge / approve / view / diff / checkout / edit / decline / unapprove / ready / request-review

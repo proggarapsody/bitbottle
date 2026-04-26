@@ -49,8 +49,8 @@ Current state of every command area against gh feature parity:
 | `auth login` | ✅ | |
 | `auth logout` | ✅ | |
 | `auth status` | ✅ | |
-| `auth token` | ❌ | Print raw stored token (gh has this) |
-| `auth refresh` | ❌ | Re-validate token + update stored user |
+| `auth token` | ✅ | Print raw stored token (gh has this) |
+| `auth refresh` | ✅ | Re-validate token + update stored user |
 
 ### Repo
 
@@ -113,8 +113,8 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `commit log` | ❌ | List commits on a branch |
-| `commit view` | ❌ | View a single commit |
+| `commit log` | ✅ | List commits on a branch |
+| `commit view` | ✅ | View a single commit |
 | `commit status` | ❌ | List build statuses for a commit hash |
 
 ### Tags
@@ -181,10 +181,10 @@ Current state of every command area against gh feature parity:
 | L | **Branch Create + Checkout** | `branch create`, `branch checkout` | Both | 1 | ✅ |
 | E | **Tags** | `tag list`, `tag create`, `tag delete` | Both | 1 | ✅ |
 | G | **PR Lifecycle** | `pr decline`, `pr unapprove`, `pr edit`, `pr ready`, `pr request-review`, `pr request-changes` | Both / Cloud | 1 | ✅ |
-| M | **Shell Completion** | `completion bash\|zsh\|fish\|powershell` | N/A | DX | 🔲 |
-| P | **Auth Extras** | `auth token`, `auth refresh` | N/A | DX | 🔲 |
+| M | **Shell Completion** | `completion bash\|zsh\|fish\|powershell` | N/A | DX | ✅ |
+| P | **Auth Extras** | `auth token`, `auth refresh` | N/A | DX | ✅ |
 | Q | **Repo Extras** | `repo fork`, `repo rename`, `repo archive`, `repo set-default` | Both / Cloud | 2 | 🔲 |
-| F | **Commits** | `commit log`, `commit view` | Both | 1 | 🔲 |
+| F | **Commits** | `commit log`, `commit view` | Both | 1 | ✅ |
 | H | **Pipeline Depth** | `pipeline steps`, `pipeline logs`, `pipeline variable *` | Cloud | 1 | 🔲 |
 | I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | 🔲 |
 | J | **PR Comments** | `pr comment list`, `pr comment add` | Both | 2 | 🔲 |
