@@ -33,6 +33,9 @@ func NewCmdPRRequestReview(f *factory.Factory) *cobra.Command {
 					users = append(users, u)
 				}
 			}
+			if len(users) == 0 {
+				return fmt.Errorf("at least one reviewer must be specified")
+			}
 
 			if err := client.RequestReview(ref.Project, ref.Slug, prID, users); err != nil {
 				return err

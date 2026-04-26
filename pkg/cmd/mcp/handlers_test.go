@@ -913,13 +913,16 @@ func TestUnapprovePR_ZeroId_ReturnsError(t *testing.T) {
 
 // ---- ready_pr ----
 
-func TestReadyPR_CallsClientAndReturnsEmpty(t *testing.T) {
+func TestReadyPR_CallsClientAndReturnsPR(t *testing.T) {
 	t.Parallel()
 	var gotID int
 	fake := &testhelpers.FakeClient{
 		ReadyPRFn: func(ns, slug string, id int) error {
 			gotID = id
 			return nil
+		},
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: id, Title: "Ready PR"}, nil
 		},
 	}
 	h := newHandlersWithFake(t, singleHostConfig, fake)
@@ -930,7 +933,7 @@ func TestReadyPR_CallsClientAndReturnsEmpty(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	assert.Equal(t, 7, gotID)
-	assertJSONContains(t, result, "{}", "")
+	assertJSONContains(t, result, "Ready PR", "")
 }
 
 func TestReadyPR_ZeroId_ReturnsError(t *testing.T) {

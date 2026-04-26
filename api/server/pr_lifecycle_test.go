@@ -73,18 +73,29 @@ func TestServerClient_UnapprovePR_IssuesDeleteToParticipants(t *testing.T) {
 	assert.Equal(t, http.MethodDelete, gotMethod)
 }
 
-func TestServerClient_ReadyPR_SendsDraftFalse(t *testing.T) {
+func TestServerClient_ReadyPR_GetsThenPutsFullBody(t *testing.T) {
 	t.Parallel()
-	var gotBody []byte
+	var methods []string
+	var bodies []string
 	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
-		gotBody, _ = io.ReadAll(r.Body)
+		methods = append(methods, r.Method)
+		b, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, string(b))
 		body, _ := os.ReadFile("testdata/pr_get.json")
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(body)
 	})
 	err := client.ReadyPR("MYPROJ", "my-service", 42)
 	require.NoError(t, err)
-	assert.Contains(t, string(gotBody), `"draft":false`)
+	// First call GET, second call PUT with full body.
+	require.Len(t, methods, 2)
+	assert.Equal(t, http.MethodGet, methods[0])
+	assert.Equal(t, http.MethodPut, methods[1])
+	put := bodies[1]
+	assert.Contains(t, put, `"draft":false`)
+	assert.Contains(t, put, `"title":"Fix login bug"`)
+	assert.Contains(t, put, `"fromRef"`)
+	assert.Contains(t, put, `"toRef"`)
 }
 
 func TestServerClient_RequestReview_GetsAndPutsPR(t *testing.T) {

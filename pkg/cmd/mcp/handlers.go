@@ -559,7 +559,11 @@ func (h *handlers) readyPR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	if err := client.ReadyPR(project, slug, id); err != nil {
 		return errResult(err.Error()), nil
 	}
-	return mcplib.NewToolResultText("{}"), nil
+	pr, err := client.GetPR(project, slug, id)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(pr)
 }
 
 func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {

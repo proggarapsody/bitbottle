@@ -34,11 +34,19 @@ func (c *Client) UnapprovePR(ns, slug string, id int) error {
 }
 
 // ReadyPR marks a draft pull request as ready for review.
+//
+// Bitbucket Server's PUT endpoint for a PR requires the full PR object
+// (title, fromRef, toRef, ...), so we GET the current PR first, flip the
+// draft flag, and PUT the full body back.
 func (c *Client) ReadyPR(ns, slug string, id int) error {
-	body := map[string]bool{"draft": false}
-	var result struct{}
+	var current wirePR
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
-	return c.putJSON(path, body, &result)
+	if err := c.getJSON(path, &current); err != nil {
+		return err
+	}
+	current.Draft = false
+	var result struct{}
+	return c.putJSON(path, current, &result)
 }
 
 // wireReviewer is the wire type for a reviewer entry in the Server PR body.
