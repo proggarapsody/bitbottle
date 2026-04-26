@@ -1,6 +1,6 @@
 {
   "name": "@proggarapsody/bitbottle-mcp",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Bitbucket MCP server — npm wrapper for bitbottle",
   "keywords": ["mcp", "bitbucket", "claude", "ai"],
   "homepage": "https://github.com/proggarapsody/bitbottle",
