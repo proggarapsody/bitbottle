@@ -35,16 +35,16 @@ type FakeClient struct {
 	CreateBranchFn func(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error)
 
 	// Tag methods
-	ListTagsFn   func(ns, slug string, limit int) ([]backend.Tag, error)
-	CreateTagFn  func(ns, slug string, in backend.CreateTagInput) (backend.Tag, error)
-	DeleteTagFn  func(ns, slug, name string) error
+	ListTagsFn  func(ns, slug string, limit int) ([]backend.Tag, error)
+	CreateTagFn func(ns, slug string, in backend.CreateTagInput) (backend.Tag, error)
+	DeleteTagFn func(ns, slug, name string) error
 
 	// PR lifecycle methods
-	UpdatePRFn        func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error)
-	DeclinePRFn       func(ns, slug string, id int) error
-	UnapprovePRFn     func(ns, slug string, id int) error
-	ReadyPRFn         func(ns, slug string, id int) error
-	RequestReviewFn   func(ns, slug string, id int, users []string) error
+	UpdatePRFn      func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error)
+	DeclinePRFn     func(ns, slug string, id int) error
+	UnapprovePRFn   func(ns, slug string, id int) error
+	ReadyPRFn       func(ns, slug string, id int) error
+	RequestReviewFn func(ns, slug string, id int, users []string) error
 
 	// Pipeline methods (Cloud-only; satisfies backend.PipelineClient when set)
 	ListPipelinesFn func(ns, slug string, limit int) ([]backend.Pipeline, error)

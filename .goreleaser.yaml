@@ -43,6 +43,59 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
+nfpms:
+  - id: bitbottle
+    package_name: bitbottle
+    vendor: proggarapsody
+    homepage: "https://github.com/proggarapsody/bitbottle"
+    maintainer: "proggarapsody"
+    description: "Bitbucket CLI for Server/Data Center and Cloud"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/bin
+
+dockers:
+  - image_templates:
+      - "proggarapsody/bitbottle:{{ .Tag }}-amd64"
+      - "proggarapsody/bitbottle:latest-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source=https://github.com/proggarapsody/bitbottle"
+    ids:
+      - bitbottle
+    goarch: amd64
+
+  - image_templates:
+      - "proggarapsody/bitbottle:{{ .Tag }}-arm64"
+      - "proggarapsody/bitbottle:latest-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source=https://github.com/proggarapsody/bitbottle"
+    ids:
+      - bitbottle
+    goarch: arm64
+
+docker_manifests:
+  - name_template: "proggarapsody/bitbottle:{{ .Tag }}"
+    image_templates:
+      - "proggarapsody/bitbottle:{{ .Tag }}-amd64"
+      - "proggarapsody/bitbottle:{{ .Tag }}-arm64"
+  - name_template: "proggarapsody/bitbottle:latest"
+    image_templates:
+      - "proggarapsody/bitbottle:latest-amd64"
+      - "proggarapsody/bitbottle:latest-arm64"
+
 changelog:
   sort: asc
   use: github
@@ -73,8 +126,35 @@ release:
   footer: |
     ## Installation
 
+    **macOS / Linux — direct download:**
+    ```bash
+    # Download the archive for your platform from the assets above, then:
+    tar -xzf bitbottle_darwin_arm64.tar.gz
+    sudo mv bitbottle /usr/local/bin/
+    ```
+
+    **apt (Debian/Ubuntu):**
+    ```bash
+    # Download the .deb from the assets above, then:
+    sudo dpkg -i bitbottle_linux_amd64.deb
+    ```
+
+    **rpm (Fedora/RHEL):**
+    ```bash
+    sudo rpm -i bitbottle_linux_amd64.rpm
+    ```
+
+    **Docker (MCP server):**
+    ```bash
+    docker pull proggarapsody/bitbottle:{{.Tag}}
+    ```
+
+    **npm (MCP wrapper):**
+    ```bash
+    npx @proggarapsody/bitbottle-mcp
+    ```
+
+    **Go install:**
     ```bash
     go install github.com/proggarapsody/bitbottle/cmd/bitbottle@{{.Tag}}
     ```
-
-    Or download the binary for your platform from the assets above.

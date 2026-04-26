@@ -25,7 +25,7 @@ func TestBranchDelete_PrintsConfirmation(t *testing.T) {
 	t.Parallel()
 
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:              t,
 		DeleteBranchFn: func(ns, slug, b string) error { return nil },
 	}
 
@@ -68,7 +68,7 @@ func TestBranchDelete_APIError_PropagatesError(t *testing.T) {
 
 	apiErr := errors.New("branch not found")
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:              t,
 		DeleteBranchFn: func(ns, slug, b string) error { return apiErr },
 	}
 

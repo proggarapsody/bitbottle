@@ -27,9 +27,9 @@ func TestBranchCheckout_FetchesAndChecksOutExistingBranch(t *testing.T) {
 	//   2. git branch --list feat/x → "feat/x\n" (branch exists locally)
 	//   3. git checkout feat/x      → success
 	runner := testhelpers.NewFakeRunner(
-		testhelpers.RunResponse{},                     // fetch
-		testhelpers.RunResponse{Stdout: "feat/x\n"},   // branch --list (exists)
-		testhelpers.RunResponse{},                     // checkout
+		testhelpers.RunResponse{},                   // fetch
+		testhelpers.RunResponse{Stdout: "feat/x\n"}, // branch --list (exists)
+		testhelpers.RunResponse{},                   // checkout
 	)
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
 		GitRunner: runner,
@@ -50,9 +50,9 @@ func TestBranchCheckout_CreatesTrackingBranchWhenNotLocal(t *testing.T) {
 	//   2. git branch --list feat/new → "" (branch does NOT exist locally)
 	//   3. git checkout -b feat/new --track origin/feat/new → success
 	runner := testhelpers.NewFakeRunner(
-		testhelpers.RunResponse{},             // fetch
-		testhelpers.RunResponse{Stdout: ""},   // branch --list (absent)
-		testhelpers.RunResponse{},             // checkout -b ...
+		testhelpers.RunResponse{},           // fetch
+		testhelpers.RunResponse{Stdout: ""}, // branch --list (absent)
+		testhelpers.RunResponse{},           // checkout -b ...
 	)
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
 		GitRunner: runner,
