@@ -445,6 +445,39 @@ func (h *handlers) getPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 	return jsonResult(pl)
 }
 
+func (h *handlers) createBranch(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	name, err := requireString(req, "name")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	startAt, err := requireString(req, "start_at")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	br, err := client.CreateBranch(project, slug, backend.CreateBranchInput{
+		Name:    name,
+		StartAt: startAt,
+	})
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(br)
+}
+
 func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 

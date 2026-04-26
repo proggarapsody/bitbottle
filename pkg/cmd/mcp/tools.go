@@ -222,6 +222,24 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 	)
 
 	s.AddTool(
+		mcplib.NewTool("create_branch",
+			mcplib.WithDescription("Create a new branch in a repository"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("name",
+				mcplib.Description("Name for the new branch"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("start_at",
+				mcplib.Description("Branch name or commit hash to start the new branch from"),
+				mcplib.Required(),
+			),
+		),
+		h.createBranch,
+	)
+
+	s.AddTool(
 		mcplib.NewTool("list_pipelines",
 			mcplib.WithDescription("List pipelines for a repository (Bitbucket Cloud only)"),
 			optHostname,
