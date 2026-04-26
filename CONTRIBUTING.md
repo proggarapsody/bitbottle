@@ -88,6 +88,7 @@ Merging the Release Please PR triggers the release workflow, which:
 
 | Secret | Purpose |
 |--------|---------|
+| `RELEASE_PLEASE_TOKEN` | PAT with contents+PRs write on this repo |
 | `DOCKER_PASSWORD` | Docker Hub password / access token for `proggarapsody` |
 
 **npm MCP wrapper** lives in `packages/mcp-npm/`. Publish manually after each release:
