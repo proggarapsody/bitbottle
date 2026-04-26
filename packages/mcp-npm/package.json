@@ -1,8 +1,8 @@
 {
   "name": "@proggarapsody/bitbottle",
   "version": "1.0.0",
-  "description": "Bitbucket MCP server — npm wrapper for bitbottle",
-  "keywords": ["mcp", "bitbucket", "claude", "ai"],
+  "description": "Bitbucket CLI for Server/Data Center and Cloud — npm wrapper for bitbottle",
+  "keywords": ["mcp", "bitbucket", "claude", "ai", "cli"],
   "homepage": "https://github.com/proggarapsody/bitbottle",
   "license": "MIT",
   "bin": {
