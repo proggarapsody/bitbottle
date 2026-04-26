@@ -2,13 +2,12 @@ package commit
 
 import (
 	"fmt"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/git"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
@@ -36,7 +35,12 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 			}
 
 			if branch == "" {
-				branch = currentGitBranch()
+				g := git.New(f.GitRunner())
+				if b, gerr := g.CurrentBranch(); gerr == nil && b != "" {
+					branch = b
+				} else {
+					branch = "main"
+				}
 			}
 
 			commits, err := client.ListCommits(ref.Project, ref.Slug, branch, limit)
@@ -61,17 +65,15 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 }
 
 func commitLogFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Commit] {
-	p := format.New[backend.Commit](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+	isTTY := f.IOStreams.IsStdoutTTY()
+	p := format.New[backend.Commit](f.IOStreams.Out, isTTY, jsonFields, jqExpr)
 
 	p.AddField(format.Field[backend.Commit]{
 		Name:   "hash",
 		Header: "HASH",
 		Extract: func(c backend.Commit) any {
-			if f.IOStreams.IsStdoutTTY() {
-				if len(c.Hash) >= 7 {
-					return c.Hash[:7]
-				}
-				return c.Hash
+			if isTTY && len(c.Hash) >= 7 {
+				return c.Hash[:7]
 			}
 			return c.Hash
 		},
@@ -81,50 +83,31 @@ func commitLogFields(f *factory.Factory, jsonFields, jqExpr string) *format.Prin
 		Name:   "message",
 		Header: "MESSAGE",
 		Extract: func(c backend.Commit) any {
-			if f.IOStreams.IsStdoutTTY() {
-				if len(c.Message) > 60 {
-					return c.Message[:60]
-				}
-				return c.Message
+			if isTTY && len(c.Message) > 60 {
+				return c.Message[:60]
 			}
 			return c.Message
 		},
 	})
 
 	p.AddField(format.Field[backend.Commit]{
-		Name:   "author",
-		Header: "AUTHOR",
-		Extract: func(c backend.Commit) any {
-			if c.Author.Slug != "" {
-				return c.Author.Slug
-			}
-			return c.Author.DisplayName
-		},
+		Name:    "author",
+		Header:  "AUTHOR",
+		Extract: func(c backend.Commit) any { return authorDisplay(c) },
 	})
 
 	p.AddField(format.Field[backend.Commit]{
 		Name:   "date",
 		Header: "DATE",
 		Extract: func(c backend.Commit) any {
-			if jsonFields != "" {
+			if jsonFields != "" || !isTTY {
 				return c.Timestamp.Format(time.RFC3339)
 			}
-			if f.IOStreams.IsStdoutTTY() {
-				return humanizeTime(c.Timestamp)
-			}
-			return c.Timestamp.Format(time.RFC3339)
+			return humanizeTime(c.Timestamp)
 		},
 	})
 
 	return p
-}
-
-func currentGitBranch() string {
-	out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
-	if err != nil || strings.TrimSpace(string(out)) == "HEAD" {
-		return "main"
-	}
-	return strings.TrimSpace(string(out))
 }
 
 func humanizeTime(t time.Time) string {

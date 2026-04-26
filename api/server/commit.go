@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -20,13 +21,7 @@ type wireServerCommit struct {
 // toDomain converts the wire type to a domain Commit. The caller is responsible
 // for setting WebURL, since the Server API does not return one.
 func (w wireServerCommit) toDomain() backend.Commit {
-	msg := w.Message
-	for j, ch := range msg {
-		if ch == '\n' {
-			msg = msg[:j]
-			break
-		}
-	}
+	msg, _, _ := strings.Cut(w.Message, "\n")
 	return backend.Commit{
 		Hash:    w.ID,
 		Message: msg,
@@ -36,6 +31,10 @@ func (w wireServerCommit) toDomain() backend.Commit {
 		},
 		Timestamp: time.UnixMilli(w.AuthorTimestamp).UTC(),
 	}
+}
+
+func (c *Client) commitWebURL(ns, slug, hash string) string {
+	return fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s", c.host, ns, slug, hash)
 }
 
 // ListCommits lists commits on a branch for a repository.
@@ -48,7 +47,7 @@ func (c *Client) ListCommits(ns, slug, branch string, limit int) ([]backend.Comm
 	commits := make([]backend.Commit, 0, len(page.Values))
 	for _, w := range page.Values {
 		commit := w.toDomain()
-		commit.WebURL = fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s", c.host, ns, slug, commit.Hash)
+		commit.WebURL = c.commitWebURL(ns, slug, commit.Hash)
 		commits = append(commits, commit)
 	}
 	return commits, nil
@@ -62,6 +61,6 @@ func (c *Client) GetCommit(ns, slug, hash string) (backend.Commit, error) {
 		return backend.Commit{}, err
 	}
 	commit := w.toDomain()
-	commit.WebURL = fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s", c.host, ns, slug, commit.Hash)
+	commit.WebURL = c.commitWebURL(ns, slug, commit.Hash)
 	return commit, nil
 }

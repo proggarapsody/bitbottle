@@ -2,6 +2,8 @@ package cloud
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -24,13 +26,7 @@ type wireCloudCommit struct {
 }
 
 func (w wireCloudCommit) toDomain() backend.Commit {
-	msg := w.Message
-	for j, ch := range msg {
-		if ch == '\n' {
-			msg = msg[:j]
-			break
-		}
-	}
+	msg, _, _ := strings.Cut(w.Message, "\n")
 
 	authorSlug := w.Author.User.DisplayName
 	if authorSlug == "" {
@@ -52,7 +48,7 @@ func (w wireCloudCommit) toDomain() backend.Commit {
 // ListCommits lists commits on a branch for a repository.
 func (c *Client) ListCommits(ns, slug, branch string, limit int) ([]backend.Commit, error) {
 	var page cloudPagedResponse[wireCloudCommit]
-	path := fmt.Sprintf("/repositories/%s/%s/commits?branch=%s&pagelen=%d", ns, slug, branch, limit)
+	path := fmt.Sprintf("/repositories/%s/%s/commits?branch=%s&pagelen=%d", ns, slug, url.QueryEscape(branch), limit)
 	if err := c.getJSON(path, &page); err != nil {
 		return nil, err
 	}
