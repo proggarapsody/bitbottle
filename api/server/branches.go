@@ -34,3 +34,22 @@ func (c *Client) ListBranches(ns, slug string, limit int) ([]backend.Branch, err
 	}
 	return branches, nil
 }
+
+// CreateBranch creates a new branch in the given repository.
+// Server accepts both branch names and commit hashes in startPoint.
+func (c *Client) CreateBranch(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error) {
+	type createRequest struct {
+		Name       string `json:"name"`
+		StartPoint string `json:"startPoint"`
+	}
+	req := createRequest{
+		Name:       in.Name,
+		StartPoint: in.StartAt,
+	}
+	path := fmt.Sprintf("/projects/%s/repos/%s/branches", ns, slug)
+	var wire wireBranch
+	if err := c.postJSON(path, req, &wire); err != nil {
+		return backend.Branch{}, err
+	}
+	return wire.toDomain(), nil
+}

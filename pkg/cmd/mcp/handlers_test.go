@@ -788,3 +788,86 @@ func TestRunPipeline_MissingBranch_ReturnsError(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "branch")
 }
+
+// ---- create_branch ----
+
+func TestCreateBranch_CallsClientWithCorrectInput(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug string
+	var gotIn backend.CreateBranchInput
+	fake := &testhelpers.FakeClient{
+		CreateBranchFn: func(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error) {
+			gotNS = ns
+			gotSlug = slug
+			gotIn = in
+			return backend.Branch{Name: in.Name, LatestHash: "abc123"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.createBranch(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-repo",
+		"name":     "feat/new",
+		"start_at": "main",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "MYPROJ", gotNS)
+	assert.Equal(t, "my-repo", gotSlug)
+	assert.Equal(t, "feat/new", gotIn.Name)
+	assert.Equal(t, "main", gotIn.StartAt)
+	assertJSONContains(t, result, "feat/new", "")
+}
+
+func TestCreateBranch_MissingName_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createBranch(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-repo",
+		"start_at": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "name")
+}
+
+func TestCreateBranch_MissingStartAt_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createBranch(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"name":    "feat/new",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "start_at")
+}
+
+func TestCreateBranch_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.createBranch(context.Background(), makeReq(map[string]any{
+		"slug":     "my-repo",
+		"name":     "feat/new",
+		"start_at": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestCreateBranch_APIError_ReturnsErrorResult(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		CreateBranchFn: func(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error) {
+			return backend.Branch{}, errors.New("branch already exists")
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.createBranch(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-repo",
+		"name":     "feat/new",
+		"start_at": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "branch already exists")
+}
