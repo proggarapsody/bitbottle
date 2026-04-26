@@ -18,10 +18,6 @@ func NewCmdBranchCreate(f *factory.Factory) *cobra.Command {
 		Short: "Create a new branch",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if startAt == "" {
-				return fmt.Errorf("required flag \"start-at\" not set")
-			}
-
 			ref, err := f.ResolveRef(args[0], hostname)
 			if err != nil {
 				return err
@@ -46,6 +42,7 @@ func NewCmdBranchCreate(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&startAt, "start-at", "", "Branch name or commit hash to start from (required)")
+	_ = cmd.MarkFlagRequired("start-at")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }

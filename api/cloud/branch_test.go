@@ -22,11 +22,11 @@ func TestCloudClient_CreateBranch_IssuesCorrectPath(t *testing.T) {
 		gotMethod = r.Method
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_, _ = io.WriteString(w, `{"name":"feat/x","target":{"hash":"abc123def456abc123def456abc123def456abc123"}}`)
+		_, _ = io.WriteString(w, `{"name":"feat/x","target":{"hash":"abc123def456abc123def456abc123def456abc1"}}`)
 	})
 	_, err := client.CreateBranch("myworkspace", "my-service", backend.CreateBranchInput{
 		Name:    "feat/x",
-		StartAt: "abc123def456abc123def456abc123def456abc123",
+		StartAt: "abc123def456abc123def456abc123def456abc1",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "/repositories/myworkspace/my-service/refs/branches", gotPath)
