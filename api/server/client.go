@@ -5,6 +5,7 @@ package server
 import (
 	"encoding/json"
 	"io"
+	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
@@ -17,12 +18,19 @@ type HTTPClient = httpx.Doer
 // Client is the Bitbucket Data Center HTTP client.
 type Client struct {
 	http *httpx.Transport
+	// host is the scheme+host extracted from baseURL, used to construct WebURLs
+	// for resources (like commits) that the API does not return a link for.
+	host string
 }
 
 // NewClient constructs a Client.
 // If token is non-empty Bearer auth is used; else if username is non-empty
 // Basic auth is used with username:token as credentials.
 func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
+	host := baseURL
+	if u, err := url.Parse(baseURL); err == nil {
+		host = u.Scheme + "://" + u.Host
+	}
 	return &Client{
 		http: httpx.New(
 			httpClient,
@@ -30,6 +38,7 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			httpx.Auth{Token: token, Username: username},
 			decodeErrorMessage,
 		),
+		host: host,
 	}
 }
 
