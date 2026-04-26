@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/proggarapsody/bitbottle/compare/v1.0.0...v1.0.1) (2026-04-26)
+
+
+### Bug Fixes
+
+* document NPM_TOKEN granular access token requirement ([9664b0f](https://github.com/proggarapsody/bitbottle/commit/9664b0fdd2c58960d1b6417a0e89d384cd4f720c))
+* document NPM_TOKEN must be granular access token with 2FA bypass ([0bac29d](https://github.com/proggarapsody/bitbottle/commit/0bac29d37d62a1fa4637d21937a4cf8f507aa1b4))
+
 ## 1.0.0 (2026-04-26)
 
 
