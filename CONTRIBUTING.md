@@ -91,12 +91,6 @@ Merging the Release Please PR triggers the release workflow, which:
 | `RELEASE_PLEASE_TOKEN` | PAT with contents+PRs write on this repo |
 | `DOCKER_PASSWORD` | Docker Hub password / access token for `proggarapsody` |
 
-**npm MCP wrapper** lives in `packages/mcp-npm/`. Publish manually after each release:
-```bash
-cd packages/mcp-npm
-# Bump version to match the release tag (strip the v prefix)
-npm publish --access public
-```
 
 **Versioning follows [Semantic Versioning](https://semver.org/):**
 - `vMAJOR.MINOR.PATCH` — breaking change / new feature / bug fix
