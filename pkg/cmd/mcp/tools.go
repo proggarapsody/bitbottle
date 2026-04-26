@@ -393,4 +393,32 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.requestReview,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_commits",
+			mcplib.WithDescription("List commits for a repository"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("branch",
+				mcplib.Description("Branch to list commits from (default: main)"),
+			),
+			optLimit,
+		),
+		h.listCommits,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("get_commit",
+			mcplib.WithDescription("Get a single commit by hash"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("hash",
+				mcplib.Description("Commit hash"),
+				mcplib.Required(),
+			),
+		),
+		h.getCommit,
+	)
 }

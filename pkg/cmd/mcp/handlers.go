@@ -722,6 +722,56 @@ func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) 
 	return mcplib.NewToolResultText("{}"), nil
 }
 
+func (h *handlers) listCommits(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	branch := req.GetString("branch", "main")
+	limit := req.GetInt("limit", 30)
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	commits, err := client.ListCommits(project, slug, branch, limit)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(commits)
+}
+
+func (h *handlers) getCommit(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	hash, err := requireString(req, "hash")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	commit, err := client.GetCommit(project, slug, hash)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(commit)
+}
+
 func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 

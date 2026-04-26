@@ -1225,3 +1225,120 @@ func TestRequestReview_ZeroId_ReturnsError(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "id")
 }
+
+// ---- list_commits ----
+
+func TestListCommits_CallsClientAndReturnsJSON(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug, gotBranch string
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListCommitsFn: func(ns, slug, branch string, limit int) ([]backend.Commit, error) {
+			gotNS = ns
+			gotSlug = slug
+			gotBranch = branch
+			gotLimit = limit
+			return []backend.Commit{
+				{Hash: "abc1234def5678", Message: "Initial commit"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listCommits(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"branch":  "main",
+		"limit":   float64(10),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "MYPROJ", gotNS)
+	assert.Equal(t, "my-repo", gotSlug)
+	assert.Equal(t, "main", gotBranch)
+	assert.Equal(t, 10, gotLimit)
+	assertJSONContains(t, result, "abc1234def5678", "")
+}
+
+func TestListCommits_DefaultBranchAndLimit(t *testing.T) {
+	t.Parallel()
+	var gotBranch string
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListCommitsFn: func(ns, slug, branch string, limit int) ([]backend.Commit, error) {
+			gotBranch = branch
+			gotLimit = limit
+			return nil, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	_, err := h.listCommits(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "main", gotBranch)
+	assert.Equal(t, 30, gotLimit)
+}
+
+func TestListCommits_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listCommits(context.Background(), makeReq(map[string]any{"slug": "my-repo"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestListCommits_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listCommits(context.Background(), makeReq(map[string]any{"project": "MYPROJ"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+// ---- get_commit ----
+
+func TestGetCommit_CallsClientAndReturnsJSON(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug, gotHash string
+	fake := &testhelpers.FakeClient{
+		GetCommitFn: func(ns, slug, hash string) (backend.Commit, error) {
+			gotNS = ns
+			gotSlug = slug
+			gotHash = hash
+			return backend.Commit{Hash: hash, Message: "Fix critical bug"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getCommit(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"hash":    "deadbeef1234",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "MYPROJ", gotNS)
+	assert.Equal(t, "my-repo", gotSlug)
+	assert.Equal(t, "deadbeef1234", gotHash)
+	assertJSONContains(t, result, "deadbeef1234", "")
+}
+
+func TestGetCommit_MissingHash_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getCommit(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "hash")
+}
+
+func TestGetCommit_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getCommit(context.Background(), makeReq(map[string]any{
+		"slug": "my-repo",
+		"hash": "deadbeef",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
