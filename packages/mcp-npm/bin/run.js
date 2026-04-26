@@ -6,7 +6,7 @@ const isWindows = process.platform === "win32";
 const binary = path.join(__dirname, "bitbottle" + (isWindows ? ".exe" : ""));
 
 try {
-  execFileSync(binary, ["mcp", ...process.argv.slice(2)], { stdio: "inherit" });
+  execFileSync(binary, process.argv.slice(2), { stdio: "inherit" });
 } catch (e) {
   process.exit(e.status ?? 1);
 }
