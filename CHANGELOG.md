@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/proggarapsody/bitbottle/compare/v1.1.3...v1.2.0) (2026-04-27)
+
+
+### Features
+
+* **auth:** interactive guided login flow ([d95262b](https://github.com/proggarapsody/bitbottle/commit/d95262b5dd150bfcbfe20ac1848722d384ba5b67))
+* **auth:** open browser to PAT page during interactive login ([31f85e2](https://github.com/proggarapsody/bitbottle/commit/31f85e2d0c2b22544aeec3f7f6f90f14bfcb0127))
+
+
+### Bug Fixes
+
+* **auth:** implement OS keyring and always print PAT URL ([685e65c](https://github.com/proggarapsody/bitbottle/commit/685e65c91d8b3db2a651fbea2f949d4632bdea25))
+
 ## [1.1.3](https://github.com/proggarapsody/bitbottle/compare/v1.1.2...v1.1.3) (2026-04-27)
 
 
