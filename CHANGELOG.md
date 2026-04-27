@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/proggarapsody/bitbottle/compare/v1.1.2...v1.1.3) (2026-04-27)
+
+
+### Bug Fixes
+
+* auth login fails with HTTP 404 on Bitbucket Server (GET /users/~ unsupported) ([#16](https://github.com/proggarapsody/bitbottle/issues/16)) ([01aa25b](https://github.com/proggarapsody/bitbottle/commit/01aa25b0b656e836619ddbabc56ca57b5c1c6bbd))
+
 ## [1.1.2](https://github.com/proggarapsody/bitbottle/compare/v1.1.1...v1.1.2) (2026-04-27)
 
 
