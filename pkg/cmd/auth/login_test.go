@@ -112,6 +112,12 @@ func TestAuthLogin_GetCurrentUser_Fails_Errors(t *testing.T) {
 	assert.Empty(t, cfg.Hosts(), "config must not be saved when validation fails")
 }
 
+// ttyInput builds a multi-line stdin string for interactive TTY tests.
+// Each element is one line (newline appended automatically).
+func ttyInput(lines ...string) io.Reader {
+	return strings.NewReader(strings.Join(lines, "\n") + "\n")
+}
+
 func TestAuthLogin_TTY_OpensBrowser_Server(t *testing.T) {
 	t.Parallel()
 
@@ -122,7 +128,8 @@ func TestAuthLogin_TTY_OpensBrowser_Server(t *testing.T) {
 		},
 	}
 	ios := iostreams.TestTTY()
-	ios.In = io.NopCloser(strings.NewReader("my-token\n"))
+	// Sequence: choice "1" → Enter (press-enter gate) → token
+	ios.In = io.NopCloser(ttyInput("1", "", "my-token"))
 	browser := &testhelpers.FakeBrowserLauncher{}
 	kr := testhelpers.NewFakeKeyring()
 
@@ -151,7 +158,8 @@ func TestAuthLogin_TTY_OpensBrowser_Cloud(t *testing.T) {
 		},
 	}
 	ios := iostreams.TestTTY()
-	ios.In = io.NopCloser(strings.NewReader("my-token\n"))
+	// Sequence: choice "1" → Enter (press-enter gate) → token
+	ios.In = io.NopCloser(ttyInput("1", "", "my-token"))
 	browser := &testhelpers.FakeBrowserLauncher{}
 	kr := testhelpers.NewFakeKeyring()
 
@@ -170,6 +178,57 @@ func TestAuthLogin_TTY_OpensBrowser_Cloud(t *testing.T) {
 	assert.Contains(t, browser.URLs[0], "app-passwords")
 }
 
+func TestAuthLogin_TTY_ChoiceTwo_NoBrowser(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return testhelpers.BackendUserFactory(), nil
+		},
+	}
+	ios := iostreams.TestTTY()
+	// Sequence: choice "2" (paste directly) → token
+	ios.In = io.NopCloser(ttyInput("2", "my-token"))
+	browser := &testhelpers.FakeBrowserLauncher{}
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		BackendOverride: fake,
+		IOStreams:       ios,
+		Browser:         browser,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Empty(t, browser.URLs, "browser must NOT be opened when choice is 2")
+}
+
+func TestAuthLogin_TTY_PromptsForUsername(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return testhelpers.BackendUserFactory(), nil
+		},
+	}
+	ios := iostreams.TestTTY()
+	// Sequence: username → choice "2" → token
+	ios.In = io.NopCloser(ttyInput("alice", "2", "my-token"))
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		BackendOverride: fake,
+		IOStreams:       ios,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{"--hostname", "bb.example.com"}) // no --username
+	require.NoError(t, cmd.Execute())
+
+	outBuf := ios.Out.(*bytes.Buffer)
+	assert.Contains(t, outBuf.String(), "Bitbucket username for bb.example.com")
+}
+
 func TestAuthLogin_TTY_BrowserError_IsNonFatal(t *testing.T) {
 	t.Parallel()
 
@@ -180,7 +239,8 @@ func TestAuthLogin_TTY_BrowserError_IsNonFatal(t *testing.T) {
 		},
 	}
 	ios := iostreams.TestTTY()
-	ios.In = io.NopCloser(strings.NewReader("my-token\n"))
+	// Sequence: choice "1" → Enter → token
+	ios.In = io.NopCloser(ttyInput("1", "", "my-token"))
 	browser := &testhelpers.FakeBrowserLauncher{Err: errors.New("no display")}
 
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
@@ -192,8 +252,7 @@ func TestAuthLogin_TTY_BrowserError_IsNonFatal(t *testing.T) {
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
 	require.NoError(t, cmd.Execute(), "browser failure must not abort login")
 
-	// URL is always printed to stdout so the user can open it manually.
-	// ios.Out is a *bytes.Buffer when created via iostreams.TestTTY().
+	// When browser fails the fallback URL is printed so the user can open it manually.
 	outBuf := ios.Out.(*bytes.Buffer)
 	assert.Contains(t, outBuf.String(), "access-tokens")
 }
