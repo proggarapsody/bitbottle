@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/proggarapsody/bitbottle/compare/v1.1.1...v1.1.2) (2026-04-27)
+
+
+### Bug Fixes
+
+* keyring stub panics crash auth login, status, and logout ([#15](https://github.com/proggarapsody/bitbottle/issues/15)) ([2b64f3a](https://github.com/proggarapsody/bitbottle/commit/2b64f3ac865a31133683ff61702209dbd185a938))
+
 ## [1.1.1](https://github.com/proggarapsody/bitbottle/compare/v1.1.0...v1.1.1) (2026-04-26)
 
 
