@@ -41,7 +41,20 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 					return fmt.Errorf("no token provided on stdin")
 				}
 			case f.IOStreams.IsStdoutTTY():
-				fmt.Fprintf(f.IOStreams.Out, "Paste your Personal Access Token for %s: ", hostname)
+				// Open the browser to the PAT / App Password creation page so the
+				// user can generate a token without leaving the terminal workflow.
+				var tokenURL string
+				if bbinstance.IsCloud(hostname, "") {
+					tokenURL = bbinstance.CloudAppPasswordsURL()
+				} else {
+					tokenURL = bbinstance.PATManageURL(hostname)
+				}
+				fmt.Fprintf(f.IOStreams.Out, "Opening %s in your browser to create a token.\n", tokenURL)
+				if browseErr := f.Browser.Browse(tokenURL); browseErr != nil {
+					fmt.Fprintf(f.IOStreams.ErrOut, "warning: could not open browser: %v\n", browseErr)
+					fmt.Fprintf(f.IOStreams.Out, "Open the following URL manually:\n  %s\n", tokenURL)
+				}
+				fmt.Fprintf(f.IOStreams.Out, "Paste your Personal Access Token: ")
 				var err error
 				token, err = readSecret(f.IOStreams)
 				if err != nil {

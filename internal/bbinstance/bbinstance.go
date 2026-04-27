@@ -86,6 +86,17 @@ func RESTBase(host string) string {
 	return fmt.Sprintf("https://%s/rest/api/1.0", host)
 }
 
+// PATManageURL returns the URL for managing Personal Access Tokens on a
+// Bitbucket Server / Data Center instance.
+func PATManageURL(hostname string) string {
+	return fmt.Sprintf("https://%s/plugins/servlet/access-tokens/manage", hostname)
+}
+
+// CloudAppPasswordsURL returns the Bitbucket Cloud App Passwords creation URL.
+func CloudAppPasswordsURL() string {
+	return "https://bitbucket.org/account/settings/app-passwords/new"
+}
+
 // SupportsDraftPR returns true if version >= "7.17.0".
 func SupportsDraftPR(version string) bool {
 	parts := strings.Split(version, ".")

@@ -1,6 +1,7 @@
 package auth_test
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"strings"
@@ -109,6 +110,92 @@ func TestAuthLogin_GetCurrentUser_Fails_Errors(t *testing.T) {
 	cfg, cerr := f.Config()
 	require.NoError(t, cerr)
 	assert.Empty(t, cfg.Hosts(), "config must not be saved when validation fails")
+}
+
+func TestAuthLogin_TTY_OpensBrowser_Server(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return testhelpers.BackendUserFactory(), nil
+		},
+	}
+	ios := iostreams.TestTTY()
+	ios.In = io.NopCloser(strings.NewReader("my-token\n"))
+	browser := &testhelpers.FakeBrowserLauncher{}
+	kr := testhelpers.NewFakeKeyring()
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		BackendOverride: fake,
+		IOStreams:       ios,
+		Keyring:         kr,
+		Browser:         browser,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
+	require.NoError(t, cmd.Execute())
+
+	require.Len(t, browser.URLs, 1, "browser must be opened exactly once")
+	assert.Contains(t, browser.URLs[0], "bb.example.com")
+	assert.Contains(t, browser.URLs[0], "access-tokens")
+}
+
+func TestAuthLogin_TTY_OpensBrowser_Cloud(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return testhelpers.BackendUserFactory(), nil
+		},
+	}
+	ios := iostreams.TestTTY()
+	ios.In = io.NopCloser(strings.NewReader("my-token\n"))
+	browser := &testhelpers.FakeBrowserLauncher{}
+	kr := testhelpers.NewFakeKeyring()
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		BackendOverride: fake,
+		IOStreams:       ios,
+		Keyring:         kr,
+		Browser:         browser,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{"--hostname", "bitbucket.org"})
+	require.NoError(t, cmd.Execute())
+
+	require.Len(t, browser.URLs, 1, "browser must be opened exactly once")
+	assert.Contains(t, browser.URLs[0], "bitbucket.org")
+	assert.Contains(t, browser.URLs[0], "app-passwords")
+}
+
+func TestAuthLogin_TTY_BrowserError_IsNonFatal(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return testhelpers.BackendUserFactory(), nil
+		},
+	}
+	ios := iostreams.TestTTY()
+	ios.In = io.NopCloser(strings.NewReader("my-token\n"))
+	browser := &testhelpers.FakeBrowserLauncher{Err: errors.New("no display")}
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		BackendOverride: fake,
+		IOStreams:       ios,
+		Browser:         browser,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
+	require.NoError(t, cmd.Execute(), "browser failure must not abort login")
+
+	// The fallback URL must be printed so the user can open it manually.
+	// ios.Out is a *bytes.Buffer when created via iostreams.TestTTY().
+	outBuf := ios.Out.(*bytes.Buffer)
+	assert.Contains(t, outBuf.String(), "bb.example.com")
 }
 
 func TestAuthLogin_KeyringError_IsNonFatal(t *testing.T) {
