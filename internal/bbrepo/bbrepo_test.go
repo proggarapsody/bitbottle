@@ -73,3 +73,15 @@ func TestInferFromRemote_Empty(t *testing.T) {
 	_, err := bbrepo.InferFromRemote("")
 	require.Error(t, err)
 }
+
+// Bug: ssh://git@host:7999/PROJ/repo.git — u.Host includes the port suffix
+// (:7999), causing API calls to use "host:7999" instead of "host".
+// Bitbucket Server's default SSH port (7999) must be stripped from the hostname.
+func TestInferFromRemote_SSHSchemeWithPort_StripPort(t *testing.T) {
+	t.Parallel()
+	ref, err := bbrepo.InferFromRemote("ssh://git@git.example.com:7999/PROJ/repo.git")
+	require.NoError(t, err)
+	assert.Equal(t, "git.example.com", ref.Host, "port must be stripped from ssh:// hostname")
+	assert.Equal(t, "PROJ", ref.Project)
+	assert.Equal(t, "repo", ref.Slug)
+}

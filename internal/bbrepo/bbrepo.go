@@ -67,7 +67,7 @@ func InferFromRemote(remoteURL string) (RepoRef, error) {
 		if len(parts) != 2 {
 			return RepoRef{}, fmt.Errorf("unexpected path in ssh:// URL: %q", remoteURL)
 		}
-		return RepoRef{Host: u.Host, Project: parts[0], Slug: parts[1]}, nil
+		return RepoRef{Host: u.Hostname(), Project: parts[0], Slug: parts[1]}, nil
 
 	case "https", "http":
 		// https://host/scm/PROJ/repo.git

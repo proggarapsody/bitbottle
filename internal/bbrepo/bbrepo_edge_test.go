@@ -30,12 +30,12 @@ func TestInferFromRemote_HTTPSPort(t *testing.T) {
 	assert.Equal(t, "repo", ref.Slug)
 }
 
-// TestInferFromRemote_SSHPort verifies an ssh:// URL with a custom port.
+// TestInferFromRemote_SSHPort verifies an ssh:// URL with a custom port strips the port from Host.
 func TestInferFromRemote_SSHPort(t *testing.T) {
 	t.Parallel()
 	ref, err := bbrepo.InferFromRemote("ssh://git@git.example.com:7999/PROJ/repo.git")
 	require.NoError(t, err)
-	assert.Equal(t, "git.example.com:7999", ref.Host)
+	assert.Equal(t, "git.example.com", ref.Host)
 	assert.Equal(t, "PROJ", ref.Project)
 	assert.Equal(t, "repo", ref.Slug)
 }
