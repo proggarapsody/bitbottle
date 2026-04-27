@@ -16,7 +16,14 @@ func NewCmdPR(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pr",
 		Short: "Manage pull requests",
+		Annotations: map[string]string{
+			"help:arguments": `A repository can be supplied as PROJECT/REPO. When omitted, the
+repository is inferred from the "origin" git remote in the current
+directory. Use --hostname to disambiguate when multiple Bitbucket
+hosts are configured.`,
+		},
 	}
+	factory.EnableRepoOverride(cmd, f)
 	cmd.AddCommand(NewCmdPRList(f))
 	cmd.AddCommand(NewCmdPRView(f))
 	cmd.AddCommand(NewCmdPRCreate(f))

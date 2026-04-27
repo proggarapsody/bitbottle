@@ -56,7 +56,9 @@ func NewCmdCommitView(f *factory.Factory) *cobra.Command {
 			fmt.Fprintf(out, "\n%s\n", c.Message)
 			fmt.Fprintf(out, "\nAuthor:  %s\n", authorDisplay(c))
 			fmt.Fprintf(out, "Date:    %s\n", c.Timestamp.UTC().Format("2006-01-02 15:04:05 +0000 UTC"))
-			fmt.Fprintf(out, "Web:     %s\n", c.WebURL)
+			if c.WebURL != "" {
+				fmt.Fprintf(out, "Web:     %s\n", c.WebURL)
+			}
 			return nil
 		},
 	}
