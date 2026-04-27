@@ -36,5 +36,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(commit.NewCmdCommit(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
 
+	SetHelpFunc(cmd)
+
 	return cmd
 }
