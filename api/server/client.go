@@ -21,6 +21,10 @@ type Client struct {
 	// host is the scheme+host extracted from baseURL, used to construct WebURLs
 	// for resources (like commits) that the API does not return a link for.
 	host string
+	// userSlug is the authenticated user's slug. When non-empty it is used by
+	// GetCurrentUser to call GET /users/{slug} instead of GET /users/~ because
+	// Bitbucket Server does not recognise "~" as a self-reference.
+	userSlug string
 }
 
 // NewClient constructs a Client.
@@ -38,7 +42,8 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			httpx.Auth{Token: token, Username: username},
 			decodeErrorMessage,
 		),
-		host: host,
+		host:     host,
+		userSlug: username,
 	}
 }
 

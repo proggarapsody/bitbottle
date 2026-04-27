@@ -7,6 +7,10 @@ import "time"
 type Options struct {
 	Token         string
 	SkipTLSVerify bool
+	// Username is the Bitbucket username / slug. Required for Bitbucket
+	// Server/Data Center instances because the Server REST API does not support
+	// the Cloud-style "~" self-reference in GET /users/~.
+	Username string
 }
 
 // Repository is the domain representation of a Bitbucket repository.

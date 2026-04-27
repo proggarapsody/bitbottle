@@ -155,12 +155,18 @@ func (c *Client) DeleteBranch(ns, slug, branch string) error {
 }
 
 // GetCurrentUser fetches the authenticated user.
+// Bitbucket Server does not support GET /users/~ (Cloud-only), so when a
+// userSlug was provided at construction time we call GET /users/{slug} instead.
 func (c *Client) GetCurrentUser() (backend.User, error) {
+	path := "/users/~"
+	if c.userSlug != "" {
+		path = "/users/" + c.userSlug
+	}
 	var w struct {
 		Slug        string `json:"slug"`
 		DisplayName string `json:"displayName"`
 	}
-	if err := c.getJSON("/users/~", &w); err != nil {
+	if err := c.getJSON(path, &w); err != nil {
 		return backend.User{}, err
 	}
 	return backend.User{Slug: w.Slug, DisplayName: w.DisplayName}, nil

@@ -50,7 +50,7 @@ func TestAuthLogin_NonTTY_StoredToken_Revalidates(t *testing.T) {
 		BackendOverride: fake,
 		// Seed the config with an existing token so the non-TTY path
 		// can pick it up without --with-token.
-		InitialConfig: "bb.example.com:\n  oauth_token: existing-token\n  git_protocol: ssh\n",
+		InitialConfig: "bb.example.com:\n  oauth_token: existing-token\n  user: alice\n  git_protocol: ssh\n",
 	})
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com"})

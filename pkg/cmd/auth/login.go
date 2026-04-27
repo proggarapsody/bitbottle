@@ -10,13 +10,14 @@ import (
 	"golang.org/x/term"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
 
 func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
-	var hostname, gitProtocol string
+	var hostname, gitProtocol, username string
 	var skipTLS, withToken bool
 
 	cmd := &cobra.Command{
@@ -64,11 +65,33 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				}
 			}
 
+			// Bitbucket Server/Data Center does not support GET /users/~ as a
+			// self-reference; a username is needed to call GET /users/{slug}.
+			// Resolution order: --username flag → stored config → TTY prompt → error.
+			if !bbinstance.IsCloud(hostname, "") && username == "" {
+				if cfg, err := f.Config(); err == nil {
+					if h, ok := cfg.Get(hostname); ok {
+						username = h.User
+					}
+				}
+				if username == "" && f.IOStreams.IsStdoutTTY() {
+					fmt.Fprintf(f.IOStreams.Out, "Bitbucket username for %s: ", hostname)
+					scanner := bufio.NewScanner(f.IOStreams.In)
+					if scanner.Scan() {
+						username = strings.TrimSpace(scanner.Text())
+					}
+				}
+				if username == "" {
+					return fmt.Errorf("--username is required for Bitbucket Server/Data Center instances")
+				}
+			}
+
 			// Build a one-shot HTTP client that honours --skip-tls-verify
 			// immediately, before any token is stored in the config file.
 			client, err := f.BackendWithOptions(hostname, backend.Options{
 				Token:         token,
 				SkipTLSVerify: skipTLS,
+				Username:      username,
 			})
 			if err != nil {
 				return err
@@ -104,6 +127,7 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	cmd.Flags().StringVar(&gitProtocol, "git-protocol", "ssh", "Git protocol (ssh or https)")
+	cmd.Flags().StringVar(&username, "username", "", "Bitbucket username (required for Server/Data Center)")
 	cmd.Flags().BoolVar(&skipTLS, "skip-tls-verify", false, "Skip TLS certificate verification")
 	cmd.Flags().BoolVar(&withToken, "with-token", false, "Read token from stdin")
 	return cmd
