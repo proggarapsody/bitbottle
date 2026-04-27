@@ -31,6 +31,10 @@ type Factory struct {
 	Editor             cmdutil.EditorLauncher
 	BaseURL            func(hostname string) string
 	Now                func() time.Time
+	// ServerPATURLProber resolves the PAT management URL for Bitbucket Server/DC
+	// by probing which URL format the instance accepts. Injected here so tests
+	// can stub it without real network calls. nil → default HEAD probe.
+	ServerPATURLProber func(hostname, username string, skipTLS bool) string
 }
 
 // New constructs a Factory wired with live dependencies.

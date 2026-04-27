@@ -2,9 +2,12 @@ package auth
 
 import (
 	"bufio"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -48,10 +51,9 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 
 			case f.IOStreams.IsStdoutTTY():
 				// Interactive guided flow.
-				tokenURL := patURL(hostname)
 
 				// For Server/DC, ask for the username first so we can
-				// show a personalised URL if needed.
+				// embed it in the PAT management URL.
 				if !bbinstance.IsCloud(hostname, "") && username == "" {
 					if cfg, err := f.Config(); err == nil {
 						if h, ok := cfg.Get(hostname); ok {
@@ -68,6 +70,9 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 						}
 					}
 				}
+
+				// Build the PAT URL now that username is known; probe which format this instance uses.
+				tokenURL := patURL(f, hostname, username, skipTLS)
 
 				// Ask how the user wants to authenticate.
 				fmt.Fprintf(f.IOStreams.Out, "\nHow would you like to authenticate with %s?\n", hostname)
@@ -189,11 +194,53 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 }
 
 // patURL returns the Personal Access Token management URL for the given host.
-func patURL(hostname string) string {
+// For Cloud it always returns the App Passwords page. For Server/DC it probes
+// which URL format the running instance uses before returning.
+func patURL(f *factory.Factory, hostname, username string, skipTLS bool) string {
 	if bbinstance.IsCloud(hostname, "") {
 		return bbinstance.CloudAppPasswordsURL()
 	}
-	return bbinstance.PATManageURL(hostname)
+	prober := f.ServerPATURLProber
+	if prober == nil {
+		prober = probeServerPATURL
+	}
+	return prober(hostname, username, skipTLS)
+}
+
+// probeServerPATURL checks the two known Bitbucket Server PAT URL patterns
+// and returns the first one the server acknowledges with a non-404 status.
+// An unauthenticated HEAD request is sufficient: valid endpoints return 401,
+// missing ones return 404. Falls back to user-scoped URL if probing fails.
+func probeServerPATURL(hostname, username string, skipTLS bool) string {
+	candidates := []string{
+		bbinstance.PATManageURL(hostname, username), // user-scoped (older/some versions)
+		bbinstance.PATManageURL(hostname, ""),       // generic   (newer versions)
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipTLS}, //nolint:gosec // mirrors --skip-tls-verify
+	}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   5 * time.Second,
+		// Don't follow redirects — the raw status is what matters.
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	for _, u := range candidates {
+		resp, err := client.Head(u)
+		if err != nil {
+			continue
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusNotFound {
+			return u
+		}
+	}
+
+	return candidates[0] // best guess
 }
 
 // readSecret reads a secret from the terminal without echoing the input.

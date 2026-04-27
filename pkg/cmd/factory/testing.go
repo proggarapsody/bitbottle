@@ -45,6 +45,12 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// stubServerPATURLProber is the no-network prober used in tests.
+// Returns the user-scoped URL directly without any HTTP requests.
+func stubServerPATURLProber(hostname, username string, _ bool) string {
+	return bbinstance.PATManageURL(hostname, username)
+}
+
 // NewTestFactory returns a fully wired Factory suitable for command-level unit
 // tests. Never touches the real filesystem, keyring, git binary, or network.
 func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer, *bytes.Buffer) {
@@ -158,12 +164,13 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 			}
 			return server.NewClient(httpClient, baseURL(hostname), token, ""), nil
 		},
-		GitRunner: func() run.Runner { return gitRunner },
-		Keyring:   kr,
-		Browser:   browser,
-		Editor:    editor,
-		BaseURL:   baseURL,
-		Now:       now,
+		GitRunner:          func() run.Runner { return gitRunner },
+		Keyring:            kr,
+		Browser:            browser,
+		Editor:             editor,
+		BaseURL:            baseURL,
+		Now:                now,
+		ServerPATURLProber: stubServerPATURLProber,
 	}
 	return f, out, errOut
 }

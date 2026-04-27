@@ -88,7 +88,14 @@ func RESTBase(host string) string {
 
 // PATManageURL returns the URL for managing Personal Access Tokens on a
 // Bitbucket Server / Data Center instance.
-func PATManageURL(hostname string) string {
+// When username is non-empty the user-scoped path is used
+// (/plugins/servlet/access-tokens/users/{username}/manage), which works across
+// all Bitbucket Server / Data Center versions. The generic /manage path is
+// only used as a fallback when the username is not yet known.
+func PATManageURL(hostname, username string) string {
+	if username != "" {
+		return fmt.Sprintf("https://%s/plugins/servlet/access-tokens/users/%s/manage", hostname, username)
+	}
 	return fmt.Sprintf("https://%s/plugins/servlet/access-tokens/manage", hostname)
 }
 
