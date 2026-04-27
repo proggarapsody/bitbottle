@@ -77,6 +77,9 @@ func New() *Factory {
 			if opts.SkipTLSVerify {
 				hostCfg.SkipTLSVerify = true
 			}
+			if opts.Username != "" {
+				hostCfg.User = opts.Username
+			}
 			hc := newHTTPClient(hostCfg.SkipTLSVerify)
 			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 		},

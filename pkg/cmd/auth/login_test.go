@@ -54,7 +54,7 @@ func TestAuthLogin_WithToken_StoresCredentials(t *testing.T) {
 		Keyring:         kr,
 	})
 	cmd := auth.NewCmdAuthLogin(f)
-	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--with-token"})
+	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice", "--with-token"})
 	require.NoError(t, cmd.Execute())
 
 	cfg, err := f.Config()
@@ -131,7 +131,7 @@ func TestAuthLogin_KeyringError_IsNonFatal(t *testing.T) {
 		Keyring:         kr,
 	})
 	cmd := auth.NewCmdAuthLogin(f)
-	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--with-token"})
+	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice", "--with-token"})
 	err := cmd.Execute()
 	require.NoError(t, err, "keyring failures must not fail the login command")
 
