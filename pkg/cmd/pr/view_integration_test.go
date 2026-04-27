@@ -63,7 +63,7 @@ func TestPRView_Integration_ServerEndToEnd(t *testing.T) {
 
 	output := out.String()
 	assert.Contains(t, output, "Hello PR", "title should be in output")
-	assert.Contains(t, output, "alice", "author slug should be in output")
+	assert.Contains(t, output, "Alice", "author display name should be in output")
 	assert.Contains(t, output, "feat/x", "from branch should be in output")
 	assert.Contains(t, output, "main", "to branch should be in output")
 }
