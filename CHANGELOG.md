@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/proggarapsody/bitbottle/compare/v1.3.0...v1.4.0) (2026-04-27)
+
+
+### Features
+
+* gh CLI UX patterns + 5 bug fixes ([#22](https://github.com/proggarapsody/bitbottle/issues/22)) ([3edf123](https://github.com/proggarapsody/bitbottle/commit/3edf123bccaa27bb31edb142a89fe357978adf03))
+
 ## [1.3.0](https://github.com/proggarapsody/bitbottle/compare/v1.2.0...v1.3.0) (2026-04-27)
 
 
