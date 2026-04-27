@@ -2,6 +2,7 @@ package factory
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,7 +11,9 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/cloud"
 	"github.com/proggarapsody/bitbottle/api/server"
+	"github.com/proggarapsody/bitbottle/git"
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
+	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/internal/keyring"
 	"github.com/proggarapsody/bitbottle/internal/run"
@@ -30,6 +33,7 @@ type Factory struct {
 	Browser            cmdutil.BrowserLauncher
 	Editor             cmdutil.EditorLauncher
 	BaseURL            func(hostname string) string
+	BaseRepo           func() (bbrepo.RepoRef, error)
 	Now                func() time.Time
 	// ServerPATURLProber resolves the PAT management URL for Bitbucket Server/DC
 	// by probing which URL format the instance accepts. Injected here so tests
@@ -53,14 +57,17 @@ func New() *Factory {
 		return nil
 	}
 
+	configFn := func() (*config.Config, error) {
+		if err := loadConfig(); err != nil {
+			return nil, err
+		}
+		return cfg, nil
+	}
+	gitRunner := func() run.Runner { return &run.SystemRunner{} }
+
 	return &Factory{
 		IOStreams: iostreams.System(),
-		Config: func() (*config.Config, error) {
-			if err := loadConfig(); err != nil {
-				return nil, err
-			}
-			return cfg, nil
-		},
+		Config:    configFn,
 		Backend: func(hostname string) (backend.Client, error) {
 			if err := loadConfig(); err != nil {
 				return nil, err
@@ -87,12 +94,42 @@ func New() *Factory {
 			hc := newHTTPClient(hostCfg.SkipTLSVerify)
 			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 		},
-		GitRunner: func() run.Runner { return &run.SystemRunner{} },
+		GitRunner: gitRunner,
 		Keyring:   &keyring.OSKeyring{},
 		Browser:   &cmdutil.SystemBrowser{},
 		Editor:    &cmdutil.SystemEditor{},
 		BaseURL:   baseURL,
+		BaseRepo:  DefaultBaseRepo(gitRunner(), configFn),
 		Now:       time.Now,
+	}
+}
+
+// DefaultBaseRepo is the standard BaseRepo implementation: detect the repo
+// from the "origin" git remote, falling back to the configured single host
+// when the remote URL omits a host. Errors are user-facing and never expose
+// raw exec status codes.
+func DefaultBaseRepo(runner run.Runner, cfg func() (*config.Config, error)) func() (bbrepo.RepoRef, error) {
+	return func() (bbrepo.RepoRef, error) {
+		c, err := cfg()
+		if err != nil {
+			return bbrepo.RepoRef{}, err
+		}
+		hosts := c.Hosts()
+
+		g := git.New(runner)
+		remoteURL, gerr := g.RemoteURL("origin")
+		if gerr != nil {
+			if len(hosts) == 0 {
+				return bbrepo.RepoRef{}, fmt.Errorf("not authenticated; run `bitbottle auth login` first")
+			}
+			return bbrepo.RepoRef{}, fmt.Errorf("no git remotes found; pass [HOST/]PROJECT/REPO or run from a Bitbucket checkout")
+		}
+
+		ref, err := bbrepo.InferFromRemote(remoteURL)
+		if err != nil {
+			return bbrepo.RepoRef{}, err
+		}
+		return ref, nil
 	}
 }
 

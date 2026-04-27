@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/git"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
@@ -65,13 +64,8 @@ func resolveRepoRef(f *factory.Factory, args []string, hostnameFlag string) (bbr
 			return bbrepo.RepoRef{}, err
 		}
 	} else {
-		// No arg — detect from git remote.
-		g := git.New(f.GitRunner())
-		remoteURL, rerr := g.RemoteURL("origin")
-		if rerr != nil {
-			return bbrepo.RepoRef{}, fmt.Errorf("could not detect repo: %w; pass PROJECT/REPO as an argument", rerr)
-		}
-		ref, err = bbrepo.InferFromRemote(remoteURL)
+		// No arg — delegate to factory for git-remote detection.
+		ref, err = f.BaseRepo()
 		if err != nil {
 			return bbrepo.RepoRef{}, err
 		}

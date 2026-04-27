@@ -172,6 +172,7 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 		Now:                now,
 		ServerPATURLProber: stubServerPATURLProber,
 	}
+	f.BaseRepo = DefaultBaseRepo(gitRunner, f.Config)
 	return f, out, errOut
 }
 
