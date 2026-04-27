@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v golangci-lint &>/dev/null; then
+  echo "pre-commit: golangci-lint not found — run 'make setup' or install golangci-lint" >&2
+  exit 1
+fi
+
+echo "pre-commit: running golangci-lint..."
+golangci-lint run ./...

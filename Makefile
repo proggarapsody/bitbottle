@@ -1,4 +1,4 @@
-.PHONY: build test lint clean
+.PHONY: build test lint clean setup
 
 BIN := bitbottle
 GO  := go
@@ -14,3 +14,6 @@ lint:
 
 clean:
 	rm -f $(BIN)
+
+setup:
+	git config core.hooksPath .githooks
