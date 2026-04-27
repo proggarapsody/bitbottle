@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/proggarapsody/bitbottle/compare/v1.2.0...v1.3.0) (2026-04-27)
+
+
+### Features
+
+* **auth:** probe PAT management URL before opening browser on Server/DC ([b6e7701](https://github.com/proggarapsody/bitbottle/commit/b6e7701ddf44fb8fc025b92ea16b06b3fdc787d3))
+
+
+### Bug Fixes
+
+* **auth:** use NewRequestWithContext in PAT URL probe (noctx) ([#20](https://github.com/proggarapsody/bitbottle/issues/20)) ([287dec9](https://github.com/proggarapsody/bitbottle/commit/287dec91f5bc178d03bad75788949dd04fc87220))
+
 ## [1.2.0](https://github.com/proggarapsody/bitbottle/compare/v1.1.3...v1.2.0) (2026-04-27)
 
 
