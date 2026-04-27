@@ -72,11 +72,14 @@ func (t *Transport) GetJSON(path string, v any) error {
 }
 
 // GetText GETs path and returns the raw body string.
+// Sends Accept: text/plain so Bitbucket Server returns a unified diff
+// rather than its JSON structured-diff format.
 func (t *Transport) GetText(path string) (string, error) {
 	req, err := t.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return "", err
 	}
+	req.Header.Set("Accept", "text/plain")
 	resp, err := t.do(req)
 	if err != nil {
 		return "", err
