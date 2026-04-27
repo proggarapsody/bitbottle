@@ -15,6 +15,7 @@ func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 	var web bool
 	var jsonFields string
 	var jqExpr string
+	var hostname string
 
 	cmd := &cobra.Command{
 		Use:   "view [PROJECT/REPO]",
@@ -26,7 +27,7 @@ func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			host, err := resolveHostname(f, "")
+			host, err := resolveHostname(f, hostname)
 			if err != nil {
 				return err
 			}
@@ -67,6 +68,7 @@ func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 	cmd.Flags().BoolVar(&web, "web", false, "Open in browser")
 	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
 	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
