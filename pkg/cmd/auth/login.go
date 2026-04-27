@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -230,7 +231,11 @@ func probeServerPATURL(hostname, username string, skipTLS bool) string {
 	}
 
 	for _, u := range candidates {
-		resp, err := client.Head(u)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodHead, u, nil)
+		if err != nil {
+			continue
+		}
+		resp, err := client.Do(req)
 		if err != nil {
 			continue
 		}
