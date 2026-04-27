@@ -192,10 +192,10 @@ func TestAuthLogin_TTY_BrowserError_IsNonFatal(t *testing.T) {
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
 	require.NoError(t, cmd.Execute(), "browser failure must not abort login")
 
-	// The fallback URL must be printed so the user can open it manually.
+	// URL is always printed to stdout so the user can open it manually.
 	// ios.Out is a *bytes.Buffer when created via iostreams.TestTTY().
 	outBuf := ios.Out.(*bytes.Buffer)
-	assert.Contains(t, outBuf.String(), "bb.example.com")
+	assert.Contains(t, outBuf.String(), "access-tokens")
 }
 
 func TestAuthLogin_KeyringError_IsNonFatal(t *testing.T) {

@@ -49,10 +49,11 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				} else {
 					tokenURL = bbinstance.PATManageURL(hostname)
 				}
-				fmt.Fprintf(f.IOStreams.Out, "Opening %s in your browser to create a token.\n", tokenURL)
+				// Always print the URL so the user can copy it if the browser
+				// doesn't open automatically.
+				fmt.Fprintf(f.IOStreams.Out, "Create a Personal Access Token at:\n  %s\n\n", tokenURL)
 				if browseErr := f.Browser.Browse(tokenURL); browseErr != nil {
 					fmt.Fprintf(f.IOStreams.ErrOut, "warning: could not open browser: %v\n", browseErr)
-					fmt.Fprintf(f.IOStreams.Out, "Open the following URL manually:\n  %s\n", tokenURL)
 				}
 				fmt.Fprintf(f.IOStreams.Out, "Paste your Personal Access Token: ")
 				var err error
