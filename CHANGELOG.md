@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/proggarapsody/bitbottle/compare/v1.6.0...v1.6.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* **pr:** add --head flag to pr create ([#28](https://github.com/proggarapsody/bitbottle/issues/28)) ([b1f798e](https://github.com/proggarapsody/bitbottle/commit/b1f798e0b23e595ca1d0f42ebc72aac97976730d))
+
 ## [1.6.0](https://github.com/proggarapsody/bitbottle/compare/v1.5.0...v1.6.0) (2026-04-28)
 
 
