@@ -136,10 +136,12 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 }
 
 // ApprovePR approves a PR on behalf of the authenticated user.
+// Bitbucket Server (like Cloud) exposes a dedicated POST .../approve endpoint;
+// the participants/{userSlug} path requires an actual slug and does not accept ~.
 func (c *Client) ApprovePR(ns, slug string, id int) error {
 	var result struct{}
-	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/participants/~", ns, slug, id)
-	return c.putJSON(path, map[string]string{"status": "APPROVED"}, &result)
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/approve", ns, slug, id)
+	return c.postJSON(path, nil, &result)
 }
 
 // GetPRDiff fetches the unified diff for a PR.

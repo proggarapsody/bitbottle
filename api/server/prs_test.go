@@ -115,17 +115,19 @@ func TestServerClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
 	assert.NotContains(t, string(gotBody), `"strategy"`)
 }
 
-func TestServerClient_ApprovePR_SendsPUT(t *testing.T) {
+func TestServerClient_ApprovePR_PostsToApproveEndpoint(t *testing.T) {
 	t.Parallel()
-	var gotMethod string
+	var gotMethod, gotPath string
 	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
 		gotMethod = r.Method
+		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, `{}`)
 	})
 	err := client.ApprovePR("MYPROJ", "my-service", 42)
 	require.NoError(t, err)
-	assert.Equal(t, http.MethodPut, gotMethod)
+	assert.Equal(t, http.MethodPost, gotMethod, "ApprovePR must POST, not PUT")
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/approve", gotPath)
 }
 
 func TestServerClient_DeleteBranch_SendsDeleteWithBody(t *testing.T) {

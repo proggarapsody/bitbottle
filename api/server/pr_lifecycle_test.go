@@ -59,7 +59,7 @@ func TestServerClient_DeclinePR_IssuesCorrectPath(t *testing.T) {
 	assert.Equal(t, http.MethodPost, gotMethod)
 }
 
-func TestServerClient_UnapprovePR_IssuesDeleteToParticipants(t *testing.T) {
+func TestServerClient_UnapprovePR_DeletesApproveEndpoint(t *testing.T) {
 	t.Parallel()
 	var gotPath, gotMethod string
 	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +69,8 @@ func TestServerClient_UnapprovePR_IssuesDeleteToParticipants(t *testing.T) {
 	})
 	err := client.UnapprovePR("MYPROJ", "my-service", 42)
 	require.NoError(t, err)
-	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/participants/~", gotPath)
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/approve", gotPath,
+		"UnapprovePR must DELETE .../approve, not .../participants/~")
 	assert.Equal(t, http.MethodDelete, gotMethod)
 }
 
