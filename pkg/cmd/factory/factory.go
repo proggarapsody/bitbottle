@@ -12,14 +12,21 @@ import (
 	"github.com/proggarapsody/bitbottle/api/cloud"
 	"github.com/proggarapsody/bitbottle/api/server"
 	"github.com/proggarapsody/bitbottle/git"
+	"github.com/proggarapsody/bitbottle/internal/aliases"
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/internal/keyring"
 	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/internal/userconfig"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
+
+// HTTPClient is the minimal HTTP doer used by raw API access.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 // Factory is the single dependency container threaded through every command.
 // Commands receive it via their constructor.
@@ -28,6 +35,9 @@ type Factory struct {
 	Config             func() (*config.Config, error)
 	Backend            func(hostname string) (backend.Client, error)
 	BackendWithOptions func(hostname string, opts backend.Options) (backend.Client, error)
+	HTTPClient         func(hostname string) (HTTPClient, error)
+	UserConfig         func() (*userconfig.Config, error)
+	Aliases            func() (*aliases.Store, error)
 	GitRunner          func() run.Runner
 	Keyring            keyring.Keyring
 	Browser            cmdutil.BrowserLauncher
@@ -63,6 +73,22 @@ func New() *Factory {
 		}
 		return cfg, nil
 	}
+
+	userCfg := userconfig.New(configDir)
+	userConfigFn := func() (*userconfig.Config, error) {
+		if err := userCfg.Load(); err != nil {
+			return nil, err
+		}
+		return userCfg, nil
+	}
+
+	aliasStore := aliases.New(configDir)
+	aliasesFn := func() (*aliases.Store, error) {
+		if err := aliasStore.Load(); err != nil {
+			return nil, err
+		}
+		return aliasStore, nil
+	}
 	gitRunner := func() run.Runner { return &run.SystemRunner{} }
 
 	return &Factory{
@@ -94,13 +120,22 @@ func New() *Factory {
 			hc := newHTTPClient(hostCfg.SkipTLSVerify)
 			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 		},
-		GitRunner: gitRunner,
-		Keyring:   &keyring.OSKeyring{},
-		Browser:   &cmdutil.SystemBrowser{},
-		Editor:    &cmdutil.SystemEditor{},
-		BaseURL:   baseURL,
-		BaseRepo:  DefaultBaseRepo(gitRunner(), configFn),
-		Now:       time.Now,
+		HTTPClient: func(hostname string) (HTTPClient, error) {
+			if err := loadConfig(); err != nil {
+				return nil, err
+			}
+			hostCfg, _ := cfg.Get(hostname)
+			return newHTTPClient(hostCfg.SkipTLSVerify), nil
+		},
+		UserConfig: userConfigFn,
+		Aliases:    aliasesFn,
+		GitRunner:  gitRunner,
+		Keyring:    &keyring.OSKeyring{},
+		Browser:    &cmdutil.SystemBrowser{},
+		Editor:     &cmdutil.SystemEditor{},
+		BaseURL:    baseURL,
+		BaseRepo:   DefaultBaseRepo(gitRunner(), configFn),
+		Now:        time.Now,
 	}
 }
 

@@ -612,6 +612,99 @@ bitbottle pipeline run MYWORKSPACE/my-service --branch feature/my-feature
 
 ---
 
+### 🌐 `api` — Generic Bitbucket REST passthrough
+
+`bitbottle api <endpoint>` issues an authenticated request against the Bitbucket REST API. Use this for any endpoint the CLI doesn't yet wrap.
+
+The endpoint is a Bitbucket-relative path; the CLI prepends only scheme + host. Cloud paths begin with `2.0/`; Server / DC paths begin with `rest/api/1.0/`. Auth tokens, TLS settings, and the resolved hostname come from the active host config — same source as every other command.
+
+```bash
+# Cloud — read the current user
+bitbottle api 2.0/user
+
+# Server / DC — list pull requests on the resolved repo (variable expansion)
+bitbottle api 'rest/api/1.0/projects/{project}/repos/{slug}/pull-requests'
+
+# Cloud — paginate through all repos in a workspace and project a single field
+bitbottle api --paginate --jq '.[].full_name' '2.0/repositories/{workspace}'
+
+# Cloud — create a PR via JSON body
+bitbottle api -X POST \
+  -F 'title=My change' -F 'source.branch.name=feature/x' -F 'destination.branch.name=main' \
+  '2.0/repositories/{workspace}/{repo_slug}/pullrequests'
+
+# Pipe a request body in
+cat payload.json | bitbottle api -X PUT --input - 2.0/repositories/me/x
+```
+
+| Flag | Description |
+|---|---|
+| `-X, --method` | HTTP method (default GET, or POST when a body is provided) |
+| `-H, --header` | Add a request header (`key:value`) |
+| `-F, --field` | Typed JSON body field — `key=value` (auto-detects booleans, numbers, `@file`) |
+| `-f, --raw-field` | String JSON body field — value is always sent as a string |
+| `--input <file>` | Stream raw body bytes from file (`-` for stdin) |
+| `-q, --jq` | Filter JSON response with a `jq` expression |
+| `--paginate` | Walk Cloud `next` URLs / Server `nextPageStart` and merge `values` arrays |
+| `--hostname` | Target a specific host (overrides the default-host fallback) |
+
+**Variable expansion** in the endpoint path: `{project}`, `{slug}`, `{workspace}`, `{repo_slug}` are substituted from the current git remote (`{workspace}` / `{repo_slug}` are Cloud-flavored aliases for `{project}` / `{slug}`).
+
+---
+
+### 🛠 `config` — User preferences
+
+`bitbottle config` reads/writes user preferences in `~/.config/bitbottle/config.yml` (separate from auth state in `hosts.yml`).
+
+```bash
+bitbottle config set editor nvim
+bitbottle config set git_protocol https --host bitbucket.example.com
+bitbottle config get editor
+bitbottle config list
+```
+
+**Allowed keys:** `editor`, `pager`, `browser`, `git_protocol`, `prompt`. Per-host overrides supported for `git_protocol`. Unknown keys are rejected at write time so typos surface immediately.
+
+---
+
+### 🪄 `alias` — Command shortcuts
+
+`bitbottle alias` lets you register custom shortcuts in `~/.config/bitbottle/aliases.yml`.
+
+```bash
+# Command alias — args are appended at use time
+bitbottle alias set prs 'pr list --author @me'
+bitbottle prs --limit 5     # → bitbottle pr list --author @me --limit 5
+
+# Shell alias — prefix with '!'; $1..$9 and $@ interpolate trailing args
+bitbottle alias set deploys '!ssh prod tail -f /var/log/$1.log'
+bitbottle deploys api       # → ssh prod tail -f /var/log/api.log
+
+bitbottle alias list
+bitbottle alias delete prs
+```
+
+Aliases cannot shadow built-in command names (e.g. `pr`, `repo`, `auth`).
+
+---
+
+### 🌱 Environment variables
+
+Every config-file value can be overridden by an environment variable (useful for CI). All bitbottle-specific names live under the `BB_` prefix; see [`internal/envvars/envvars.go`](internal/envvars/envvars.go) for the full inventory.
+
+| Variable | Effect |
+|---|---|
+| `BB_TOKEN` | Override the auth token for API requests |
+| `BB_HOST` | Default hostname when multiple are configured |
+| `BB_REPO` | Override `[HOST/]PROJECT/REPO` resolution |
+| `BB_EDITOR` / `BB_PAGER` / `BB_BROWSER` | Override the corresponding config key |
+| `BB_FORCE_TTY` | Force aligned/colored output even in pipes |
+| `BB_PROMPT_DISABLED` | Suppress every interactive prompt |
+| `BB_CONFIG_DIR` | Override the config directory |
+| `NO_COLOR` | Standard; disables color |
+
+---
+
 ## 🤖 MCP Server (AI Assistant Integration)
 
 `bitbottle mcp serve` starts a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio. Claude Desktop, Claude Code, and any MCP-compatible client can call Bitbucket operations as native tools — no raw API requests, no output parsing.

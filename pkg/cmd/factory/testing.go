@@ -13,10 +13,12 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/cloud"
 	"github.com/proggarapsody/bitbottle/api/server"
+	"github.com/proggarapsody/bitbottle/internal/aliases"
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/internal/keyring"
 	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/internal/userconfig"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -38,11 +40,6 @@ type TestFactoryOpts struct {
 	Now             func() time.Time
 	BackendOverride backend.Client
 	BackendType     string
-}
-
-// HTTPClient is the transport interface used by server and cloud clients.
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
 }
 
 // stubServerPATURLProber is the no-network prober used in tests.
@@ -121,6 +118,8 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 	}
 
 	cfg := config.New(configDir)
+	userCfg := userconfig.New(configDir)
+	aliasStore := aliases.New(configDir)
 
 	f := &Factory{
 		IOStreams: ios,
@@ -163,6 +162,21 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 				return cloud.NewClient(httpClient, baseURL(hostname), token, ""), nil
 			}
 			return server.NewClient(httpClient, baseURL(hostname), token, ""), nil
+		},
+		HTTPClient: func(_ string) (HTTPClient, error) {
+			return httpClient, nil
+		},
+		UserConfig: func() (*userconfig.Config, error) {
+			if err := userCfg.Load(); err != nil {
+				return nil, err
+			}
+			return userCfg, nil
+		},
+		Aliases: func() (*aliases.Store, error) {
+			if err := aliasStore.Load(); err != nil {
+				return nil, err
+			}
+			return aliasStore, nil
 		},
 		GitRunner:          func() run.Runner { return gitRunner },
 		Keyring:            kr,
