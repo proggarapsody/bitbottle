@@ -128,6 +128,21 @@ type PRChangesRequester interface {
 	RequestChangesPR(ns, slug string, id int) error
 }
 
+// PRCommentLister can list general (top-level) comments on a pull request.
+type PRCommentLister interface {
+	ListPRComments(ns, slug string, id int) ([]PRComment, error)
+}
+
+// PRCommentAdder can add a top-level comment to a pull request.
+type PRCommentAdder interface {
+	AddPRComment(ns, slug string, id int, in AddPRCommentInput) (PRComment, error)
+}
+
+// CommitStatusLister can list build/CI statuses for a commit hash.
+type CommitStatusLister interface {
+	ListCommitStatuses(ns, slug, hash string) ([]CommitStatus, error)
+}
+
 // Client is the full Bitbucket backend interface.
 type Client interface {
 	RepoLister
@@ -154,6 +169,9 @@ type Client interface {
 	UserGetter
 	CommitLister
 	CommitReader
+	PRCommentLister
+	PRCommentAdder
+	CommitStatusLister
 }
 
 // ServerCapabilities is implemented only by Bitbucket Data Center clients.

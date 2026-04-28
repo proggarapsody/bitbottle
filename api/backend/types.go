@@ -130,3 +130,25 @@ type Commit struct {
 	Timestamp time.Time
 	WebURL    string
 }
+
+// PRComment is the domain representation of a general comment on a pull request.
+type PRComment struct {
+	ID        int
+	Author    User
+	Text      string
+	CreatedAt time.Time
+}
+
+// AddPRCommentInput carries the parameters for adding a comment to a PR.
+type AddPRCommentInput struct {
+	Text string
+}
+
+// CommitStatus is a build / CI status reported against a commit hash.
+type CommitStatus struct {
+	Key         string
+	State       string // SUCCESSFUL | FAILED | INPROGRESS | STOPPED
+	Name        string
+	Description string
+	URL         string
+}

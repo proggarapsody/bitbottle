@@ -18,6 +18,9 @@ type HTTPClient = httpx.Doer
 // Client is the Bitbucket Data Center HTTP client.
 type Client struct {
 	http *httpx.Transport
+	// buildStatusHTTP targets /rest/build-status/1.0, the separate REST root
+	// Bitbucket Server uses for commit build statuses.
+	buildStatusHTTP *httpx.Transport
 	// host is the scheme+host extracted from baseURL, used to construct WebURLs
 	// for resources (like commits) that the API does not return a link for.
 	host string
@@ -35,11 +38,18 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 	if u, err := url.Parse(baseURL); err == nil {
 		host = u.Scheme + "://" + u.Host
 	}
+	auth := httpx.Auth{Token: token, Username: username}
 	return &Client{
 		http: httpx.New(
 			httpClient,
 			baseURL,
-			httpx.Auth{Token: token, Username: username},
+			auth,
+			decodeErrorMessage,
+		),
+		buildStatusHTTP: httpx.New(
+			httpClient,
+			host+"/rest/build-status/1.0",
+			auth,
 			decodeErrorMessage,
 		),
 		host:     host,

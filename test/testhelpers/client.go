@@ -54,6 +54,13 @@ type FakeClient struct {
 	// Commit methods
 	ListCommitsFn func(ns, slug, branch string, limit int) ([]backend.Commit, error)
 	GetCommitFn   func(ns, slug, hash string) (backend.Commit, error)
+
+	// PR comment methods
+	ListPRCommentsFn func(ns, slug string, id int) ([]backend.PRComment, error)
+	AddPRCommentFn   func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error)
+
+	// Commit status methods
+	ListCommitStatusesFn func(ns, slug, hash string) ([]backend.CommitStatus, error)
 }
 
 // Compile-time interface check.
@@ -315,4 +322,34 @@ func (c *FakeClient) GetCommit(ns, slug, hash string) (backend.Commit, error) {
 		c.T.Fatalf("unexpected call to FakeClient.GetCommit; set GetCommitFn in your test")
 	}
 	return backend.Commit{}, nil
+}
+
+func (c *FakeClient) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
+	if c.ListPRCommentsFn != nil {
+		return c.ListPRCommentsFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPRComments; set ListPRCommentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
+	if c.AddPRCommentFn != nil {
+		return c.AddPRCommentFn(ns, slug, id, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddPRComment; set AddPRCommentFn in your test")
+	}
+	return backend.PRComment{}, nil
+}
+
+func (c *FakeClient) ListCommitStatuses(ns, slug, hash string) ([]backend.CommitStatus, error) {
+	if c.ListCommitStatusesFn != nil {
+		return c.ListCommitStatusesFn(ns, slug, hash)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListCommitStatuses; set ListCommitStatusesFn in your test")
+	}
+	return nil, nil
 }

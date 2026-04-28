@@ -83,8 +83,8 @@ Current state of every command area against gh feature parity:
 | `pr ready` | ✅ | Promote draft → open |
 | `pr request-review` | ✅ | Add reviewers to an open PR |
 | `pr request-changes` | ✅ | Cloud only |
-| `pr comment list` | ❌ | List general comments |
-| `pr comment add` | ❌ | Add a general comment |
+| `pr comment list` | ✅ | List general comments |
+| `pr comment add` | ✅ | Add a general comment |
 
 ### Branch
 
@@ -115,7 +115,7 @@ Current state of every command area against gh feature parity:
 |---|---|---|
 | `commit log` | ✅ | List commits on a branch |
 | `commit view` | ✅ | View a single commit |
-| `commit status` | ❌ | List build statuses for a commit hash |
+| `commit status` | ✅ | List build statuses for a commit hash |
 
 ### Tags
 
@@ -196,11 +196,11 @@ Current state of every command area against gh feature parity:
 | F | **Commits** | `commit log`, `commit view` | Both | 1 | ✅ |
 | H | **Pipeline Depth** | `pipeline steps`, `pipeline logs`, `pipeline variable *` | Cloud | 1 | 🔲 |
 | I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | 🔲 |
-| J | **PR Comments** | `pr comment list`, `pr comment add` | Both | 2 | 🔲 |
-| K | **Commit Statuses** | `commit status` | Both | 2 | 🔲 |
+| J | **PR Comments** | `pr comment list`, `pr comment add` | Both | 2 | ✅ |
+| K | **Commit Statuses** | `commit status` | Both | 2 | ✅ |
 | T | **Output DX** | pager (`$PAGER`), color output | N/A | DX | 🔲 |
-| U | **Config** | `config list`, `config get`, `config set` | N/A | 2 | 🔲 |
-| V | **API Passthrough** | `api PATH` | Both | 2 | 🔲 |
+| U | **Config** | `config list`, `config get`, `config set` | N/A | 2 | ✅ |
+| V | **API Passthrough** | `api PATH` | Both | 2 | ✅ |
 | N | **Workspace / Projects** | `workspace list`, `project list` | Cloud | 3 | 🔲 |
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | 🔲 |
 
