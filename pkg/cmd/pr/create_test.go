@@ -32,6 +32,60 @@ func TestNewCmdPRCreate_HasFlags(t *testing.T) {
 	assert.NotNil(t, cmd.Flag("body"))
 	assert.NotNil(t, cmd.Flag("base"))
 	assert.NotNil(t, cmd.Flag("draft"))
+	assert.NotNil(t, cmd.Flag("head"), "--head flag must exist")
+}
+
+// newPRCreateRunnerNoGit returns a FakeRunner with only the remote-URL response.
+// It is used when --head is supplied and git branch detection must NOT be called.
+func newPRCreateRunnerNoGit() *testhelpers.FakeRunner {
+	return testhelpers.NewFakeRunner(
+		testhelpers.RunResponse{Stdout: "ssh://git@bb.example.com:7999/myproj/my-service.git\n"},
+	)
+}
+
+func TestPRCreate_WithHeadFlag_SkipsGitDetection(t *testing.T) {
+	t.Parallel()
+
+	var capturedIn backend.CreatePRInput
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		CreatePRFn: func(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error) {
+			capturedIn = in
+			return testhelpers.BackendPRFactory(
+				testhelpers.BackendPRWithID(7),
+				testhelpers.BackendPRWithTitle("feat: add thing"),
+			), nil
+		},
+	}
+
+	// Runner has only ONE canned response (remote URL). If CurrentBranch() were
+	// called it would consume a second slot (which doesn't exist) and panic/fail.
+	f, out, _ := newPRFactory(t, fake, newPRCreateRunnerNoGit())
+	cmd := pr.NewCmdPRCreate(f)
+	cmd.SetArgs([]string{"--title", "feat: add thing", "--base", "main", "--head", "feat/explicit-branch"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "feat/explicit-branch", capturedIn.FromBranch)
+	assert.Contains(t, out.String(), "7")
+}
+
+func TestPRCreate_NoHeadFlag_GitError_HintsAtHeadFlag(t *testing.T) {
+	t.Parallel()
+
+	// Provide a runner where the second call (rev-parse) returns an error,
+	// simulating "not inside a git repo".
+	runner := testhelpers.NewFakeRunner(
+		testhelpers.RunResponse{Stdout: "ssh://git@bb.example.com:7999/myproj/my-service.git\n"},
+		testhelpers.RunResponse{Err: errors.New("not a git repository")},
+	)
+
+	f, _, _ := newPRFactory(t, nil, runner)
+	cmd := pr.NewCmdPRCreate(f)
+	cmd.SetArgs([]string{"--title", "My PR", "--base", "main"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--head")
 }
 
 func TestPRCreate_WithFlags_CallsAPIAndPrints(t *testing.T) {
