@@ -421,4 +421,44 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.getCommit,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_pr_comments",
+			mcplib.WithDescription("List general (top-level) comments on a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+		),
+		h.listPRComments,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("add_pr_comment",
+			mcplib.WithDescription("Add a general comment to a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+			mcplib.WithString("body",
+				mcplib.Description("Comment body"),
+				mcplib.Required(),
+			),
+		),
+		h.addPRComment,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("list_commit_statuses",
+			mcplib.WithDescription("List build / CI statuses reported against a commit hash"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("hash",
+				mcplib.Description("Commit hash"),
+				mcplib.Required(),
+			),
+		),
+		h.listCommitStatuses,
+	)
 }

@@ -390,6 +390,25 @@ Date:    2026-04-24 10:00:00 +0000 UTC
 Web:     https://bitbucket.org/myws/my-service/commits/abc1234def456
 ```
 
+#### Build / CI status
+
+List build statuses reported against a commit hash. On Cloud this hits
+`/2.0/repositories/{ws}/{repo}/commit/{hash}/statuses`; on Server/DC it hits
+the dedicated `/rest/build-status/1.0/commits/{hash}` endpoint.
+
+```bash
+bitbottle commit status MYPROJ/my-service abc1234
+
+# JSON output for piping into CI gates
+bitbottle commit status MYPROJ/my-service abc1234 --json key,state
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--json` | — | Comma-separated fields |
+| `--jq` | — | jq filter applied to JSON output |
+| `--hostname` | — | Target Bitbucket host |
+
 ---
 
 ### 🔀 Pull Requests
@@ -553,6 +572,30 @@ bitbottle pr request-review 42 --reviewer alice,bob
 | Flag | Default | Description |
 |---|---|---|
 | `--reviewer` | — | **Required.** Reviewer username(s); repeatable or comma-separated |
+
+#### Comments
+
+List or add general (top-level) PR comments. On Server/DC the list view
+walks the `activities` feed and filters for `COMMENTED` events; on Cloud it
+hits `/pullrequests/{id}/comments` directly.
+
+```bash
+# List general comments
+bitbottle pr comment list 42
+
+# JSON output
+bitbottle pr comment list 42 --json id,author,text
+
+# Add a comment
+bitbottle pr comment add 42 --body "LGTM, merging shortly"
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--body` | — | **Required for `add`.** Comment body |
+| `--json` | — | (`list`) Comma-separated fields |
+| `--jq` | — | (`list`) jq filter |
+| `--hostname` | — | Target Bitbucket host |
 
 ---
 
@@ -737,6 +780,9 @@ Every config-file value can be overridden by an environment variable (useful for
 | `request_review` | Add reviewers to a pull request |
 | `list_commits` | List commits for a repository |
 | `get_commit` | Get a single commit by hash |
+| `list_commit_statuses` | List build / CI statuses for a commit hash |
+| `list_pr_comments` | List general comments on a pull request |
+| `add_pr_comment` | Add a general comment to a pull request |
 | `list_pipelines` | List pipelines _(Cloud only)_ |
 | `get_pipeline` | Get a single pipeline by UUID _(Cloud only)_ |
 | `run_pipeline` | Trigger a pipeline on a branch _(Cloud only)_ |

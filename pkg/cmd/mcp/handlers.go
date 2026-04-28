@@ -802,3 +802,82 @@ func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 	}
 	return jsonResult(pl)
 }
+
+func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	cmts, err := client.ListPRComments(project, slug, id)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(cmts)
+}
+
+func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	body, err := requireString(req, "body")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	c, err := client.AddPRComment(project, slug, id, backend.AddPRCommentInput{Text: body})
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(c)
+}
+
+func (h *handlers) listCommitStatuses(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	hash, err := requireString(req, "hash")
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	statuses, err := client.ListCommitStatuses(project, slug, hash)
+	if err != nil {
+		return errResult(err.Error()), nil
+	}
+	return jsonResult(statuses)
+}
