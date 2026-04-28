@@ -12,7 +12,7 @@ import (
 )
 
 func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
-	var title, body, base string
+	var title, body, base, head string
 	var draft bool
 	var jsonFields string
 	var jqExpr string
@@ -27,10 +27,13 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 			}
 			ref.Project = strings.ToUpper(ref.Project)
 
-			g := git.New(f.GitRunner())
-			currentBranch, err := g.CurrentBranch()
-			if err != nil {
-				return err
+			currentBranch := head
+			if currentBranch == "" {
+				g := git.New(f.GitRunner())
+				currentBranch, err = g.CurrentBranch()
+				if err != nil {
+					return fmt.Errorf("%w\nhint: use --head to specify the source branch explicitly", err)
+				}
 			}
 
 			if title == "" {
@@ -73,6 +76,7 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&title, "title", "", "Pull request title")
 	cmd.Flags().StringVar(&body, "body", "", "Pull request description")
 	cmd.Flags().StringVar(&base, "base", "", "Base branch")
+	cmd.Flags().StringVar(&head, "head", "", "Source branch (default: current branch from git)")
 	cmd.Flags().BoolVar(&draft, "draft", false, "Create as draft")
 	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
 	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
