@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/proggarapsody/bitbottle/compare/v1.4.0...v1.5.0) (2026-04-28)
+
+
+### Features
+
+* add api/config/alias commands modeled on gh CLI ([#24](https://github.com/proggarapsody/bitbottle/issues/24)) ([6e5679a](https://github.com/proggarapsody/bitbottle/commit/6e5679a5f059da9b5a30621259ca619fccd2e266))
+
 ## [1.4.0](https://github.com/proggarapsody/bitbottle/compare/v1.3.0...v1.4.0) (2026-04-27)
 
 
