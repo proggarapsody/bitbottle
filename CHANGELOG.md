@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/proggarapsody/bitbottle/compare/v1.5.0...v1.6.0) (2026-04-28)
+
+
+### Features
+
+* add `pr comment` and `commit status` commands ([#26](https://github.com/proggarapsody/bitbottle/issues/26)) ([f4e18ff](https://github.com/proggarapsody/bitbottle/commit/f4e18fff8df9d5b5d91519980f8a88ab18e1ceef))
+
 ## [1.5.0](https://github.com/proggarapsody/bitbottle/compare/v1.4.0...v1.5.0) (2026-04-28)
 
 
