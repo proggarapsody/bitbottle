@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/proggarapsody/bitbottle/compare/v1.6.1...v1.6.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* **server:** use POST/DELETE .../approve for PR approval ([#30](https://github.com/proggarapsody/bitbottle/issues/30)) ([fc4e62a](https://github.com/proggarapsody/bitbottle/commit/fc4e62ad3c030261788860ebea6714648b41134c))
+
 ## [1.6.1](https://github.com/proggarapsody/bitbottle/compare/v1.6.0...v1.6.1) (2026-04-28)
 
 
