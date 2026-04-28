@@ -138,15 +138,24 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `config list` | ❌ | List all config entries |
-| `config get KEY` | ❌ | Read a config value |
-| `config set KEY VALUE` | ❌ | Write a config value |
+| `config list` | ✅ | Lists every set key (globals, then per-host) |
+| `config get KEY` | ✅ | Supports `--host` for per-host lookup |
+| `config set KEY VALUE` | ✅ | Allowlisted keys: editor, pager, browser, git_protocol, prompt |
+
+### Aliases
+
+| Command | Status | Notes |
+|---|---|---|
+| `alias set NAME EXPANSION` | ✅ | Command alias; `!` prefix → shell alias with $1..$9 / $@ |
+| `alias list` | ✅ | |
+| `alias delete NAME` | ✅ | |
+| Root expansion | ✅ | `cmd/bitbottle/main.go` resolves before cobra parsing |
 
 ### API Passthrough
 
 | Command | Status | Notes |
 |---|---|---|
-| `api PATH` | ❌ | Authenticated raw request to any Bitbucket API path |
+| `api PATH` | ✅ | `-X/--method`, `-H/--header`, `-F/--field`, `-f/--raw-field`, `--input`, `--jq`, `--paginate` (Cloud `next` + Server `nextPageStart`), `{workspace}/{repo_slug}/{project}/{slug}` expansion |
 
 ### Output / DX
 
