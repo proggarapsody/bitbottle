@@ -28,8 +28,10 @@ func (c *Client) DeclinePR(ns, slug string, id int) error {
 }
 
 // UnapprovePR removes the authenticated user's approval from a pull request.
+// Mirrors the approve endpoint: DELETE .../approve (not DELETE .../participants/~,
+// which requires an actual user slug and is rejected by Bitbucket Server).
 func (c *Client) UnapprovePR(ns, slug string, id int) error {
-	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/participants/~", ns, slug, id)
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/approve", ns, slug, id)
 	return c.delete(path, nil)
 }
 

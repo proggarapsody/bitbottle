@@ -15,7 +15,7 @@ import (
 
 // TestPRApprove_Integration_ServerEndToEnd exercises `pr approve ID` through
 // the cobra command tree against a Bitbucket Data Center httptest server.
-// Verifies the PUT to /participants/~ endpoint and the success message.
+// Verifies the POST to the dedicated /approve endpoint and the success message.
 func TestPRApprove_Integration_ServerEndToEnd(t *testing.T) {
 	t.Parallel()
 
@@ -46,8 +46,10 @@ func TestPRApprove_Integration_ServerEndToEnd(t *testing.T) {
 	root.SetArgs([]string{"approve", "42"})
 	require.NoError(t, root.Execute())
 
-	assert.Equal(t, http.MethodPut, gotMethod)
-	assert.Contains(t, gotPath, "/projects/MYPROJ/repos/myrepo/pull-requests/42/participants")
+	assert.Equal(t, http.MethodPost, gotMethod, "ApprovePR must POST to /approve, not PUT to /participants/~")
+	// The test server base URL is srv.URL (no /rest/api/1.0 prefix); the
+	// server client appends that prefix when constructing real requests.
+	assert.Equal(t, "/projects/MYPROJ/repos/myrepo/pull-requests/42/approve", gotPath)
 	assert.Contains(t, out.String(), "Approved pull request")
 	assert.Contains(t, out.String(), "#42")
 }
