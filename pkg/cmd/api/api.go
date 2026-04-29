@@ -18,6 +18,7 @@ import (
 	"github.com/itchyny/gojq"
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -110,7 +111,17 @@ func runAPI(cmd *cobra.Command, f *factory.Factory, endpoint string, opts *optio
 		}
 	}
 
-	url := "https://" + host + "/" + strings.TrimPrefix(expandedEndpoint, "/")
+	// For Bitbucket Cloud the REST API lives at api.bitbucket.org, not
+	// bitbucket.org.  Cloud also requires HTTP Basic auth (email:token) when
+	// an Atlassian API token is stored — Bearer tokens must not be sent to
+	// bitbucket.org.  Bitbucket Server/DC PATs work as Bearer tokens, so we
+	// keep the original Bearer behaviour there.
+	apiHost := host
+	if bbinstance.IsCloud(host, hostCfg.BackendType) {
+		apiHost = "api.bitbucket.org"
+	}
+
+	url := "https://" + apiHost + "/" + strings.TrimPrefix(expandedEndpoint, "/")
 	req, err := http.NewRequestWithContext(cmd.Context(), method, url, body)
 	if err != nil {
 		return err
@@ -118,8 +129,22 @@ func runAPI(cmd *cobra.Command, f *factory.Factory, endpoint string, opts *optio
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
-	if hostCfg.OAuthToken != "" {
-		req.Header.Set("Authorization", "Bearer "+hostCfg.OAuthToken)
+	if bbinstance.IsCloud(host, hostCfg.BackendType) {
+		// Cloud: Atlassian API tokens require Basic auth (email:token).
+		authUser := hostCfg.AuthUser
+		if authUser == "" {
+			authUser = hostCfg.User // backward-compat: older configs have no AuthUser
+		}
+		if authUser != "" && hostCfg.OAuthToken != "" {
+			req.SetBasicAuth(authUser, hostCfg.OAuthToken)
+		} else if hostCfg.OAuthToken != "" {
+			req.Header.Set("Authorization", "Bearer "+hostCfg.OAuthToken)
+		}
+	} else {
+		// Server/DC: PATs work as Bearer tokens.
+		if hostCfg.OAuthToken != "" {
+			req.Header.Set("Authorization", "Bearer "+hostCfg.OAuthToken)
+		}
 	}
 	for _, h := range opts.headers {
 		k, v, ok := strings.Cut(h, ":")
@@ -358,7 +383,8 @@ func buildBody(f *factory.Factory, opts *options) (io.Reader, string, error) {
 			}
 			r = bytes.NewReader(data)
 		}
-		return r, "", nil
+		// Default to application/json; the caller can override with -H.
+		return r, "application/json", nil
 	}
 
 	if len(opts.typedFields) == 0 && len(opts.stringFields) == 0 {
@@ -375,14 +401,14 @@ func buildBody(f *factory.Factory, opts *options) (io.Reader, string, error) {
 		if err != nil {
 			return nil, "", err
 		}
-		payload[k] = val
+		setNestedKey(payload, k, val)
 	}
 	for _, raw := range opts.stringFields {
 		k, v, ok := strings.Cut(raw, "=")
 		if !ok {
 			return nil, "", fmt.Errorf("invalid -f %q: expected key=value", raw)
 		}
-		payload[k] = v
+		setNestedKey(payload, k, v)
 	}
 
 	encoded, err := json.Marshal(payload)
@@ -422,6 +448,27 @@ func applyJQ(w io.Writer, respBody []byte, expr string) error {
 		}
 	}
 	return nil
+}
+
+// setNestedKey sets a value in a nested map using dot-separated key notation.
+// For example, key "source.branch.name" with value "main" produces:
+//
+//	{"source": {"branch": {"name": "main"}}}
+//
+// Existing sub-maps are reused; non-map values at intermediate levels are
+// overwritten.
+func setNestedKey(m map[string]any, key string, val any) {
+	parts := strings.SplitN(key, ".", 2)
+	if len(parts) == 1 {
+		m[key] = val
+		return
+	}
+	sub, _ := m[parts[0]].(map[string]any)
+	if sub == nil {
+		sub = make(map[string]any)
+	}
+	setNestedKey(sub, parts[1], val)
+	m[parts[0]] = sub
 }
 
 // parseTypedValue converts a -F right-hand side into its JSON-typed Go value.

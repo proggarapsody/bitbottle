@@ -22,21 +22,23 @@ type wireCloudPipeline struct {
 	CreatedOn         string `json:"created_on"`
 	DurationInSeconds int    `json:"duration_in_seconds"`
 	Links             struct {
-		Self []struct {
+		Self struct {
 			Href string `json:"href"`
 		} `json:"self"`
 	} `json:"links"`
 }
 
-func (w wireCloudPipeline) toDomain() backend.Pipeline {
+func (w wireCloudPipeline) toDomain(ns, slug string) backend.Pipeline {
 	state := w.State.Name
 	if state == "COMPLETED" && w.State.Result.Name != "" {
 		state = w.State.Result.Name
 	}
-	webURL := ""
-	if len(w.Links.Self) > 0 {
-		webURL = w.Links.Self[0].Href
-	}
+	// Bitbucket Cloud's links.self points to the REST API, not the browser UI.
+	// Construct the browser URL from workspace, repo slug, and build number.
+	webURL := fmt.Sprintf(
+		"https://bitbucket.org/%s/%s/pipelines/results/%d",
+		ns, slug, w.BuildNumber,
+	)
 	return backend.Pipeline{
 		UUID:        w.UUID,
 		BuildNumber: w.BuildNumber,
@@ -58,19 +60,30 @@ func (c *Client) ListPipelines(ns, slug string, limit int) ([]backend.Pipeline, 
 	}
 	pipelines := make([]backend.Pipeline, 0, len(page.Values))
 	for _, w := range page.Values {
-		pipelines = append(pipelines, w.toDomain())
+		pipelines = append(pipelines, w.toDomain(ns, slug))
 	}
 	return pipelines, nil
 }
 
 // GetPipeline fetches a single pipeline run by UUID.
+// Bitbucket Cloud requires pipeline UUIDs to be enclosed in curly braces in
+// the URL path (e.g. "{abc-123}"), so we normalise the caller-supplied uuid.
 func (c *Client) GetPipeline(ns, slug, uuid string) (backend.Pipeline, error) {
 	var w wireCloudPipeline
-	path := fmt.Sprintf("/repositories/%s/%s/pipelines/%s", ns, slug, uuid)
+	path := fmt.Sprintf("/repositories/%s/%s/pipelines/%s", ns, slug, braceUUID(uuid))
 	if err := c.getJSON(path, &w); err != nil {
 		return backend.Pipeline{}, err
 	}
-	return w.toDomain(), nil
+	return w.toDomain(ns, slug), nil
+}
+
+// braceUUID wraps a UUID in curly braces if it is not already wrapped, as
+// required by the Bitbucket Cloud pipeline API.
+func braceUUID(uuid string) string {
+	if len(uuid) > 0 && uuid[0] == '{' {
+		return uuid
+	}
+	return "{" + uuid + "}"
 }
 
 type wireRunPipelineInput struct {
@@ -97,5 +110,5 @@ func (c *Client) RunPipeline(ns, slug string, in backend.RunPipelineInput) (back
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.Pipeline{}, err
 	}
-	return w.toDomain(), nil
+	return w.toDomain(ns, slug), nil
 }

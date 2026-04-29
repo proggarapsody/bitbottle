@@ -44,7 +44,12 @@ func NewCmdTagDelete(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			return client.DeleteTag(ref.Project, ref.Slug, tagName)
+			if err := client.DeleteTag(ref.Project, ref.Slug, tagName); err != nil {
+				return err
+			}
+
+			fmt.Fprintf(f.IOStreams.Out, "Deleted tag %s\n", tagName)
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&confirm, "confirm", false, "Skip confirmation prompt")

@@ -13,6 +13,8 @@ import (
 )
 
 func NewCmdRepoClone(f *factory.Factory) *cobra.Command {
+	var hostname string
+
 	cmd := &cobra.Command{
 		Use:   "clone PROJECT/REPO [DIR]",
 		Short: "Clone a repository",
@@ -23,7 +25,7 @@ func NewCmdRepoClone(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			host, err := resolveHostname(f, "")
+			host, err := resolveHostname(f, hostname)
 			if err != nil {
 				return err
 			}
@@ -47,6 +49,7 @@ func NewCmdRepoClone(f *factory.Factory) *cobra.Command {
 			return g.Clone(cloneURL, dir)
 		},
 	}
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 

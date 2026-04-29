@@ -107,6 +107,29 @@ func TestAPI_HostnameFlag_TargetsHost(t *testing.T) {
 	assert.Equal(t, "Bearer tok2", stub.req.Header.Get("Authorization"))
 }
 
+// TestAPI_CloudHost_RemapsToAPIHost verifies that requests for the canonical
+// Bitbucket Cloud host (bitbucket.org) are sent to api.bitbucket.org and use
+// HTTP Basic auth (email:token) rather than Bearer.
+func TestAPI_CloudHost_RemapsToAPIHost(t *testing.T) {
+	t.Parallel()
+
+	const cloudHostConfig = "bitbucket.org:\n  oauth_token: mytoken\n  auth_user: user@example.com\n  git_protocol: ssh\n"
+
+	stub := &stubHTTP{respBody: `{"username":"clouduser"}`}
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig: cloudHostConfig,
+		HTTPClient:    stub,
+	})
+
+	cmd := api.NewCmdAPI(f)
+	cmd.SetArgs([]string{"2.0/user"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "https://api.bitbucket.org/2.0/user", stub.req.URL.String())
+	// Basic auth: base64("user@example.com:mytoken")
+	assert.Equal(t, "Basic", strings.SplitN(stub.req.Header.Get("Authorization"), " ", 2)[0])
+}
+
 func TestAPI_AmbiguousHost_Errors(t *testing.T) {
 	t.Parallel()
 

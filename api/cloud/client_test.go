@@ -58,5 +58,7 @@ func TestCloudClient_ErrorBody_MissingMessage(t *testing.T) {
 	var httpErr *backend.HTTPError
 	require.ErrorAs(t, err, &httpErr)
 	assert.Equal(t, 401, httpErr.StatusCode)
-	assert.Equal(t, "", httpErr.Message)
+	// When the body has no parseable message, the transport falls back to the
+	// canonical HTTP status text so the error is never just "HTTP 401: ".
+	assert.Equal(t, "Unauthorized", httpErr.Message)
 }

@@ -13,6 +13,7 @@ import (
 
 func NewCmdRepoDelete(f *factory.Factory) *cobra.Command {
 	var confirm bool
+	var hostname string
 
 	cmd := &cobra.Command{
 		Use:   "delete [PROJECT/REPO]",
@@ -24,7 +25,7 @@ func NewCmdRepoDelete(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			host, err := resolveHostname(f, "")
+			host, err := resolveHostname(f, hostname)
 			if err != nil {
 				return err
 			}
@@ -54,6 +55,7 @@ func NewCmdRepoDelete(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&confirm, "confirm", false, "Skip confirmation prompt")
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 

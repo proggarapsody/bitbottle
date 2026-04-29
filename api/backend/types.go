@@ -7,9 +7,12 @@ import "time"
 type Options struct {
 	Token         string
 	SkipTLSVerify bool
-	// Username is the Bitbucket username / slug. Required for Bitbucket
-	// Server/Data Center instances because the Server REST API does not support
-	// the Cloud-style "~" self-reference in GET /users/~.
+	// Email is the Atlassian account email address used as the HTTP Basic auth
+	// identity for Bitbucket Cloud when authenticating with an Atlassian API
+	// token. Leave empty when using a Bearer / OAuth2 token.
+	Email string
+	// Username is the Bitbucket Server/DC username used as the HTTP Basic auth
+	// identity. Not used for Bitbucket Cloud.
 	Username string
 }
 
