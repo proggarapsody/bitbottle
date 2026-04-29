@@ -139,7 +139,10 @@ func (t *Transport) newRequest(method, path string, body any) (*http.Request, er
 	if err != nil {
 		return nil, err
 	}
-	if body != nil {
+	// Always set Content-Type for write methods so that Bitbucket Server's
+	// CSRF protection (which triggers on POST/PUT/DELETE without the header)
+	// does not reject requests that carry no body (e.g. ApprovePR, DeclinePR).
+	if body != nil || (method != http.MethodGet && method != http.MethodHead) {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	return req, nil
