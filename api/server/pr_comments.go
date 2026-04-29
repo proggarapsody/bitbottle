@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -38,20 +39,24 @@ type wireServerPRActivity struct {
 
 // ListPRComments lists top-level comments on a pull request. Bitbucket Server
 // exposes comments via the activities feed; we filter for COMMENTED actions.
+// Follows all pagination pages.
 func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
-	var page PagedResponse[wireServerPRActivity]
+	var out []backend.PRComment
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/activities?limit=100", ns, slug, id)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	out := make([]backend.PRComment, 0, len(page.Values))
-	for _, a := range page.Values {
-		if a.Action != "COMMENTED" || a.Comment.ID == 0 {
-			continue
+	err := c.http.GetAllJSON(path, func(body []byte) error {
+		var page PagedResponse[wireServerPRActivity]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
 		}
-		out = append(out, a.Comment.toDomain())
-	}
-	return out, nil
+		for _, a := range page.Values {
+			if a.Action != "COMMENTED" || a.Comment.ID == 0 {
+				continue
+			}
+			out = append(out, a.Comment.toDomain())
+		}
+		return nil
+	})
+	return out, err
 }
 
 type wireServerAddPRComment struct {

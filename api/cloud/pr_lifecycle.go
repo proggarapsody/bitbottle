@@ -21,6 +21,8 @@ func (c *Client) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (ba
 }
 
 // DeclinePR declines an open pull request.
+// A nil body is intentional: ContentTypeWhenBody ensures no Content-Type is
+// set, which is required for this endpoint on Bitbucket Cloud.
 func (c *Client) DeclinePR(ns, slug string, id int) error {
 	var result struct{}
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/decline", ns, slug, id)
@@ -60,6 +62,8 @@ func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 }
 
 // RequestChangesPR requests changes on a pull request (Cloud only).
+// A nil body is intentional: ContentTypeWhenBody ensures no Content-Type is
+// set, which is required for this endpoint on Bitbucket Cloud.
 func (c *Client) RequestChangesPR(ns, slug string, id int) error {
 	var result struct{}
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/request-changes", ns, slug, id)

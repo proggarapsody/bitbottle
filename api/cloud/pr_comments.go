@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -36,18 +37,22 @@ func (w wireCloudPRComment) toDomain() backend.PRComment {
 	}
 }
 
-// ListPRComments lists top-level comments on a pull request.
+// ListPRComments lists top-level comments on a pull request, following all
+// pagination pages.
 func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
-	var page cloudPagedResponse[wireCloudPRComment]
+	var out []backend.PRComment
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments?pagelen=100", ns, slug, id)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	out := make([]backend.PRComment, 0, len(page.Values))
-	for _, w := range page.Values {
-		out = append(out, w.toDomain())
-	}
-	return out, nil
+	err := c.http.GetAllJSON(path, func(body []byte) error {
+		var page cloudPagedResponse[wireCloudPRComment]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
+		}
+		for _, w := range page.Values {
+			out = append(out, w.toDomain())
+		}
+		return nil
+	})
+	return out, err
 }
 
 type wireCloudAddPRComment struct {

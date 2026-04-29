@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -29,18 +30,21 @@ func (w wireCloudTag) toDomain() backend.Tag {
 	}
 }
 
-// ListTags lists tags for a repository.
+// ListTags lists tags for a repository, following all pagination pages.
 func (c *Client) ListTags(ns, slug string, limit int) ([]backend.Tag, error) {
-	var page cloudPagedResponse[wireCloudTag]
+	var tags []backend.Tag
 	path := fmt.Sprintf("/repositories/%s/%s/refs/tags?pagelen=%d", ns, slug, limit)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	tags := make([]backend.Tag, 0, len(page.Values))
-	for _, w := range page.Values {
-		tags = append(tags, w.toDomain())
-	}
-	return tags, nil
+	err := c.http.GetAllJSON(path, func(body []byte) error {
+		var page cloudPagedResponse[wireCloudTag]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
+		}
+		for _, w := range page.Values {
+			tags = append(tags, w.toDomain())
+		}
+		return nil
+	})
+	return tags, err
 }
 
 type wireCloudCreateTag struct {

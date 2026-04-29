@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -63,18 +64,21 @@ func ensureRefsHeads(branch string) string {
 	return "refs/heads/" + branch
 }
 
-// ListPRs lists pull requests for a repository.
+// ListPRs lists pull requests for a repository, following all pagination pages.
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
-	var page PagedResponse[wirePR]
+	var prs []backend.PullRequest
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests?state=%s&limit=%d", ns, slug, state, limit)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	prs := make([]backend.PullRequest, 0, len(page.Values))
-	for _, w := range page.Values {
-		prs = append(prs, w.toDomain())
-	}
-	return prs, nil
+	err := c.http.GetAllJSON(path, func(body []byte) error {
+		var page PagedResponse[wirePR]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
+		}
+		for _, w := range page.Values {
+			prs = append(prs, w.toDomain())
+		}
+		return nil
+	})
+	return prs, err
 }
 
 // GetPR fetches a single pull request.

@@ -10,7 +10,13 @@ import (
 
 // HostConfig is one entry in hosts.yml.
 type HostConfig struct {
-	User          string `yaml:"user"`
+	User string `yaml:"user"`
+	// AuthUser is the identity used for HTTP Basic auth (email for Atlassian
+	// personal API tokens, username for App Passwords). When empty, User is
+	// used as fallback. Distinct from User because the Bitbucket API returns
+	// the account's username slug while Atlassian API tokens require the
+	// account email address as the Basic-auth username.
+	AuthUser      string `yaml:"auth_user,omitempty"`
 	OAuthToken    string `yaml:"oauth_token,omitempty"`
 	GitProtocol   string `yaml:"git_protocol"`
 	Version       string `yaml:"version,omitempty"`

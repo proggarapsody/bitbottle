@@ -4,7 +4,8 @@
 // backend.HTTPError.
 //
 // Each adapter plugs in its own ErrorDecoder to parse backend-specific error
-// response bodies.
+// response bodies, a ContentTypePolicy to control when Content-Type is set,
+// and a Paginator to follow multi-page results.
 package httpx
 
 import (
@@ -37,27 +38,80 @@ type Auth struct {
 // adapter supplies its own decoder.
 type ErrorDecoder func(body io.Reader) string
 
+// ContentTypePolicy controls when the Content-Type: application/json header is
+// added to a request. method is the HTTP method; hasBody is true when the
+// request carries a non-nil body.
+//
+// Use ContentTypeWhenBody for Bitbucket Cloud and ContentTypeAlwaysWrite for
+// Bitbucket Server/DC.
+type ContentTypePolicy func(method string, hasBody bool) bool
+
+// ContentTypeWhenBody sets Content-Type only when the request carries a body.
+// Use this for Bitbucket Cloud, which returns HTTP 400 when an empty-body
+// POST/PUT includes a Content-Type header (e.g. ApprovePR, DeclinePR,
+// RequestChangesPR).
+var ContentTypeWhenBody ContentTypePolicy = func(_ string, hasBody bool) bool {
+	return hasBody
+}
+
+// ContentTypeAlwaysWrite sets Content-Type for every write method (POST, PUT,
+// DELETE) even when the body is nil. Use this for Bitbucket Server/Data Center
+// whose CSRF filter rejects write requests that omit Content-Type.
+var ContentTypeAlwaysWrite ContentTypePolicy = func(method string, hasBody bool) bool {
+	return hasBody || (method != http.MethodGet && method != http.MethodHead)
+}
+
+// Paginator extracts the next-page URL from a response body. Implementations
+// live in each adapter package because the pagination envelope differs between
+// Cloud ("next": "<absolute-url>") and Server/DC ("isLastPage": bool,
+// "nextPageStart": N).
+type Paginator interface {
+	// NextURL returns the absolute URL of the next page, or "" when there are
+	// no more pages. currentURL is the absolute URL that produced responseBody.
+	NextURL(currentURL string, responseBody []byte) string
+}
+
 // Transport encapsulates auth injection and JSON helpers over a Doer.
 type Transport struct {
-	doer         Doer
-	baseURL      string
-	auth         Auth
-	decodeErrMsg ErrorDecoder
+	doer              Doer
+	baseURL           string
+	auth              Auth
+	decodeErrMsg      ErrorDecoder
+	contentTypePolicy ContentTypePolicy
+	paginator         Paginator
 }
 
 // New constructs a Transport.
-func New(doer Doer, baseURL string, auth Auth, decodeErr ErrorDecoder) *Transport {
+//
+// ctPolicy controls Content-Type header injection; pass ContentTypeWhenBody
+// for Bitbucket Cloud or ContentTypeAlwaysWrite for Bitbucket Server/DC.
+//
+// paginator is used by GetAllJSON to follow pages; pass nil if pagination is
+// not required for this transport instance.
+func New(doer Doer, baseURL string, auth Auth, decodeErr ErrorDecoder, ctPolicy ContentTypePolicy, paginator Paginator) *Transport {
 	return &Transport{
-		doer:         doer,
-		baseURL:      strings.TrimRight(baseURL, "/"),
-		auth:         auth,
-		decodeErrMsg: decodeErr,
+		doer:              doer,
+		baseURL:           strings.TrimRight(baseURL, "/"),
+		auth:              auth,
+		decodeErrMsg:      decodeErr,
+		contentTypePolicy: ctPolicy,
+		paginator:         paginator,
 	}
 }
 
 // do adds auth headers and executes the request.
+//
+// Auth priority:
+//  1. Both Username and Token set → Basic auth (username:token).
+//     This covers Bitbucket App Passwords and Atlassian API tokens, which both
+//     require HTTP Basic auth rather than Bearer.
+//  2. Token only → Bearer auth.
+//     Used for OAuth2 access tokens and workspace/repository access tokens.
+//  3. Username only → Basic auth with empty password (rare, kept for compat).
 func (t *Transport) do(req *http.Request) (*http.Response, error) {
 	switch {
+	case t.auth.Username != "" && t.auth.Token != "":
+		req.SetBasicAuth(t.auth.Username, t.auth.Token)
 	case t.auth.Token != "":
 		req.Header.Set("Authorization", "Bearer "+t.auth.Token)
 	case t.auth.Username != "":
@@ -69,6 +123,50 @@ func (t *Transport) do(req *http.Request) (*http.Response, error) {
 // GetJSON GETs path and decodes the JSON response into v.
 func (t *Transport) GetJSON(path string, v any) error {
 	return t.sendJSON(http.MethodGet, path, nil, v)
+}
+
+// GetAllJSON fetches all pages starting at path by following the Transport's
+// Paginator (if any). accumulate is called with the raw JSON bytes for each
+// page. If no Paginator is configured only the first page is fetched.
+//
+// The first request uses t.baseURL+path. Subsequent requests use the absolute
+// URL returned by Paginator.NextURL, which lets each adapter embed the correct
+// host in its next-page field.
+func (t *Transport) GetAllJSON(path string, accumulate func([]byte) error) error {
+	nextURL := t.baseURL + path
+	for nextURL != "" {
+		body, err := t.fetchBodyAt(nextURL)
+		if err != nil {
+			return err
+		}
+		if err := accumulate(body); err != nil {
+			return err
+		}
+		if t.paginator == nil {
+			break
+		}
+		nextURL = t.paginator.NextURL(nextURL, body)
+	}
+	return nil
+}
+
+// fetchBodyAt GETs fullURL (an absolute URL) and returns the raw response
+// body. It is used by GetAllJSON for second-and-later pages whose URLs come
+// from the Paginator and are already absolute.
+func (t *Transport) fetchBodyAt(fullURL string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fullURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := t.do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, t.apiError(resp)
+	}
+	return io.ReadAll(resp.Body)
 }
 
 // GetText GETs path and returns the raw body string.
@@ -109,8 +207,8 @@ func (t *Transport) DeleteJSON(path string, body any) error {
 }
 
 // sendJSON handles every method that may carry a JSON body. It marshals body
-// (if non-nil), sets Content-Type, sends the request and then checks/decodes
-// the response into v (v may be nil).
+// (if non-nil), sets Content-Type via the policy, sends the request and then
+// checks/decodes the response into v (v may be nil).
 func (t *Transport) sendJSON(method, path string, body, v any) error {
 	req, err := t.newRequest(method, path, body)
 	if err != nil {
@@ -125,7 +223,7 @@ func (t *Transport) sendJSON(method, path string, body, v any) error {
 }
 
 // newRequest builds an *http.Request with the JSON body (if any) encoded and
-// Content-Type set appropriately.
+// Content-Type set according to the ContentTypePolicy.
 func (t *Transport) newRequest(method, path string, body any) (*http.Request, error) {
 	var reader io.Reader
 	if body != nil {
@@ -139,10 +237,7 @@ func (t *Transport) newRequest(method, path string, body any) (*http.Request, er
 	if err != nil {
 		return nil, err
 	}
-	// Always set Content-Type for write methods so that Bitbucket Server's
-	// CSRF protection (which triggers on POST/PUT/DELETE without the header)
-	// does not reject requests that carry no body (e.g. ApprovePR, DeclinePR).
-	if body != nil || (method != http.MethodGet && method != http.MethodHead) {
+	if t.contentTypePolicy != nil && t.contentTypePolicy(method, body != nil) {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	return req, nil
