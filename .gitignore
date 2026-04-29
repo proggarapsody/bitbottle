@@ -15,3 +15,6 @@
 
 # Git worktrees
 .worktrees/
+
+# Reference repos (local only, not tracked)
+reference/

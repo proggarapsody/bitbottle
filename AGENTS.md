@@ -2,6 +2,10 @@
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full workflow, code style, and testing conventions.
 
+## Reference implementations
+
+`reference/gh/` contains a shallow clone of [github.com/cli/cli](https://github.com/cli/cli). When in doubt about CLI design patterns (flag naming, config structs, auth flows), check how `gh` does it there first.
+
 ## Key rules for AI agents
 
 - **Branch + commits:** feature/fix/chore branch → PR to `main`. Never push directly to `main`. Use Conventional Commits (`feat:`, `fix:`, `chore:`).
