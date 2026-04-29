@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -35,20 +36,22 @@ func (w wireCloudRepo) toDomain() backend.Repository {
 	}
 }
 
-// ListRepos lists repositories visible to the authenticated user.
-// Bitbucket Cloud's /repositories endpoint is not workspace-scoped here;
-// callers that need workspace-scoped listing should use GetRepo with ns.
+// ListRepos lists repositories visible to the authenticated user, following
+// all pagination pages.
 func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
-	var page cloudPagedResponse[wireCloudRepo]
+	var repos []backend.Repository
 	path := fmt.Sprintf("/repositories?pagelen=%d", limit)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	repos := make([]backend.Repository, 0, len(page.Values))
-	for _, w := range page.Values {
-		repos = append(repos, w.toDomain())
-	}
-	return repos, nil
+	err := c.http.GetAllJSON(path, func(body []byte) error {
+		var page cloudPagedResponse[wireCloudRepo]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
+		}
+		for _, w := range page.Values {
+			repos = append(repos, w.toDomain())
+		}
+		return nil
+	})
+	return repos, err
 }
 
 // GetRepo fetches a single repository.

@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -25,18 +26,21 @@ func (w wireCloudBranch) toDomain() backend.Branch {
 	}
 }
 
-// ListBranches lists branches for a repository.
+// ListBranches lists branches for a repository, following all pagination pages.
 func (c *Client) ListBranches(ns, slug string, limit int) ([]backend.Branch, error) {
-	var page cloudPagedResponse[wireCloudBranch]
+	var branches []backend.Branch
 	path := fmt.Sprintf("/repositories/%s/%s/refs/branches?pagelen=%d", ns, slug, limit)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	branches := make([]backend.Branch, 0, len(page.Values))
-	for _, w := range page.Values {
-		branches = append(branches, w.toDomain())
-	}
-	return branches, nil
+	err := c.http.GetAllJSON(path, func(body []byte) error {
+		var page cloudPagedResponse[wireCloudBranch]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
+		}
+		for _, w := range page.Values {
+			branches = append(branches, w.toDomain())
+		}
+		return nil
+	})
+	return branches, err
 }
 
 // CreateBranch creates a new branch in the given repository.

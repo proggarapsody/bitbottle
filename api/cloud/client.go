@@ -5,6 +5,7 @@ package cloud
 import (
 	"encoding/json"
 	"io"
+	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
@@ -27,6 +28,8 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			baseURL,
 			httpx.Auth{Token: token, Username: username},
 			decodeErrorMessage,
+			httpx.ContentTypeWhenBody,
+			cloudPaginator{},
 		),
 	}
 }
@@ -35,6 +38,26 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 type cloudPagedResponse[T any] struct {
 	Values []T    `json:"values"`
 	Next   string `json:"next"`
+}
+
+// cloudPaginator follows Bitbucket Cloud pagination by extracting the "next"
+// absolute URL from the paged response envelope.
+type cloudPaginator struct{}
+
+func (cloudPaginator) NextURL(_ string, responseBody []byte) string {
+	var page struct {
+		Next string `json:"next"`
+	}
+	if json.Unmarshal(responseBody, &page) != nil || page.Next == "" {
+		return ""
+	}
+	// Validate that next is a well-formed absolute HTTP(S) URL; malformed
+	// values (e.g. "::::not-a-url::::") must not cause a panic or an error.
+	u, err := url.ParseRequestURI(page.Next)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+	return page.Next
 }
 
 // cloudErrorEnvelope is the Bitbucket Cloud error body shape.

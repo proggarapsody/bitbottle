@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -39,20 +40,21 @@ func (w wireRepository) toDomain() backend.Repository {
 	}
 }
 
-// ListRepos lists repositories accessible to the authenticated user.
+// ListRepos lists repositories accessible to the authenticated user, following
+// all pagination pages.
 func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
-	var page PagedResponse[wireRepository]
-	if err := c.getJSON(fmt.Sprintf("/repos?limit=%d", limit), &page); err != nil {
-		return nil, err
-	}
-	repos := make([]backend.Repository, 0, len(page.Values))
-	for _, w := range page.Values {
-		repos = append(repos, w.toDomain())
-	}
-	if limit > 0 && len(repos) > limit {
-		repos = repos[:limit]
-	}
-	return repos, nil
+	var repos []backend.Repository
+	err := c.http.GetAllJSON(fmt.Sprintf("/repos?limit=%d", limit), func(body []byte) error {
+		var page PagedResponse[wireRepository]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
+		}
+		for _, w := range page.Values {
+			repos = append(repos, w.toDomain())
+		}
+		return nil
+	})
+	return repos, err
 }
 
 // GetRepo fetches a single repository.

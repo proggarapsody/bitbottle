@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/url"
+	"strconv"
 
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
@@ -45,12 +46,16 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			baseURL,
 			auth,
 			decodeErrorMessage,
+			httpx.ContentTypeAlwaysWrite,
+			serverPaginator{},
 		),
 		buildStatusHTTP: httpx.New(
 			httpClient,
 			host+"/rest/build-status/1.0",
 			auth,
 			decodeErrorMessage,
+			httpx.ContentTypeAlwaysWrite,
+			serverPaginator{},
 		),
 		host:     host,
 		userSlug: username,
@@ -64,6 +69,28 @@ type PagedResponse[T any] struct {
 	IsLastPage    bool `json:"isLastPage"`
 	NextPageStart *int `json:"nextPageStart"`
 	Start         int  `json:"start"`
+}
+
+// serverPaginator follows Bitbucket Server/DC pagination by inspecting
+// isLastPage and nextPageStart, then appending start=N to the current URL.
+type serverPaginator struct{}
+
+func (serverPaginator) NextURL(currentURL string, responseBody []byte) string {
+	var page struct {
+		IsLastPage    bool `json:"isLastPage"`
+		NextPageStart *int `json:"nextPageStart"`
+	}
+	if json.Unmarshal(responseBody, &page) != nil || page.IsLastPage || page.NextPageStart == nil {
+		return ""
+	}
+	u, err := url.Parse(currentURL)
+	if err != nil {
+		return ""
+	}
+	q := u.Query()
+	q.Set("start", strconv.Itoa(*page.NextPageStart))
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 // dcErrorEnvelope is the Bitbucket Data Center error body shape.

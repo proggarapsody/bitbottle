@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -51,18 +52,21 @@ func (w wireCloudPR) toDomain() backend.PullRequest {
 	}
 }
 
-// ListPRs lists pull requests for a repository.
+// ListPRs lists pull requests for a repository, following all pagination pages.
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
-	var page cloudPagedResponse[wireCloudPR]
+	var prs []backend.PullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests?state=%s&pagelen=%d", ns, slug, state, limit)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	prs := make([]backend.PullRequest, 0, len(page.Values))
-	for _, w := range page.Values {
-		prs = append(prs, w.toDomain())
-	}
-	return prs, nil
+	err := c.http.GetAllJSON(path, func(body []byte) error {
+		var page cloudPagedResponse[wireCloudPR]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return err
+		}
+		for _, w := range page.Values {
+			prs = append(prs, w.toDomain())
+		}
+		return nil
+	})
+	return prs, err
 }
 
 // GetPR fetches a single pull request.
@@ -126,6 +130,10 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 }
 
 // ApprovePR approves a PR on behalf of the authenticated user.
+// A nil body is intentional: Bitbucket Cloud returns HTTP 400 when
+// Content-Type: application/json is sent with an empty body on this endpoint.
+// The ContentTypeWhenBody policy on the Cloud transport ensures no Content-Type
+// is set for nil-body POSTs.
 func (c *Client) ApprovePR(ns, slug string, id int) error {
 	var result struct{}
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/approve", ns, slug, id)
@@ -154,8 +162,14 @@ func (c *Client) GetCurrentUser() (backend.User, error) {
 	if err := c.getJSON("/user", &w); err != nil {
 		return backend.User{}, err
 	}
+	// Prefer nickname (human-readable handle, e.g. "proggarapsody") over the
+	// opaque account_id UUID. Fall back to account_id if nickname is absent.
+	slug := w.Nickname
+	if slug == "" {
+		slug = w.AccountID
+	}
 	return backend.User{
-		Slug:        w.AccountID,
+		Slug:        slug,
 		DisplayName: w.DisplayName,
 	}, nil
 }
