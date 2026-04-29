@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.3](https://github.com/proggarapsody/bitbottle/compare/v1.6.2...v1.6.3) (2026-04-29)
+
+
+### Bug Fixes
+
+* set Content-Type on bodyless POST/DELETE to pass Bitbucket Server CSRF check ([#32](https://github.com/proggarapsody/bitbottle/issues/32)) ([35a55f6](https://github.com/proggarapsody/bitbottle/commit/35a55f674f5a88edc0ac339db613dab3167041ff))
+
 ## [1.6.2](https://github.com/proggarapsody/bitbottle/compare/v1.6.1...v1.6.2) (2026-04-28)
 
 
