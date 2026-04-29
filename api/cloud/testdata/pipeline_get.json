@@ -14,6 +14,6 @@
   "created_on": "2026-04-01T10:00:00.000Z",
   "duration_in_seconds": 120,
   "links": {
-    "self": [{"href": "https://bitbucket.org/myworkspace/my-service/addon/pipelines/home#!/results/42"}]
+    "self": {"href": "https://bitbucket.org/myworkspace/my-service/addon/pipelines/home#!/results/42"}
   }
 }

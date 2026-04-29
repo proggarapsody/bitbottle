@@ -15,7 +15,7 @@ func prFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[bac
 	p.AddField(format.Field[backend.PullRequest]{Name: "author", Header: "AUTHOR", Extract: func(pr backend.PullRequest) any { return pr.Author.Slug }})
 	p.AddField(format.Field[backend.PullRequest]{Name: "fromBranch", Header: "FROM", Extract: func(pr backend.PullRequest) any { return pr.FromBranch }})
 	p.AddField(format.Field[backend.PullRequest]{Name: "toBranch", Header: "TO", Extract: func(pr backend.PullRequest) any { return pr.ToBranch }})
-	p.AddField(format.Field[backend.PullRequest]{Name: "webURL", Header: "URL", Extract: func(pr backend.PullRequest) any { return pr.WebURL }})
+	p.AddField(format.Field[backend.PullRequest]{Name: "webURL", Header: "URL", Aliases: []string{"url", "link"}, Extract: func(pr backend.PullRequest) any { return pr.WebURL }})
 	return p
 }
 

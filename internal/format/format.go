@@ -16,6 +16,12 @@ type Field[T any] struct {
 	Name    string
 	Header  string
 	Extract func(T) any
+	// Aliases are alternative names accepted by --json; they do not appear in
+	// the valid-fields error list so the canonical name is always preferred.
+	Aliases []string
+	// JSONOnly marks a field that is available via --json but omitted from the
+	// default table output (e.g. UUID, webURL columns that clutter the TTY view).
+	JSONOnly bool
 }
 
 // Printer renders a slice of T in the correct output mode.
@@ -72,8 +78,16 @@ func (p *Printer[T]) renderTable() error {
 		return nil
 	}
 
-	headers := make([]string, len(p.fields))
-	for i, f := range p.fields {
+	// Collect only table-visible fields (JSONOnly fields are excluded).
+	tableFields := make([]Field[T], 0, len(p.fields))
+	for _, f := range p.fields {
+		if !f.JSONOnly {
+			tableFields = append(tableFields, f)
+		}
+	}
+
+	headers := make([]string, len(tableFields))
+	for i, f := range tableFields {
 		headers[i] = f.Header
 	}
 
@@ -82,7 +96,7 @@ func (p *Printer[T]) renderTable() error {
 		tp.AddHeader(headers...)
 	}
 	for _, item := range p.items {
-		for _, f := range p.fields {
+		for _, f := range tableFields {
 			tp.AddField(fmt.Sprintf("%v", f.Extract(item)))
 		}
 		tp.EndRow()
@@ -127,6 +141,9 @@ func (p *Printer[T]) resolveFields() ([]Field[T], error) {
 	fieldByName := make(map[string]Field[T], len(p.fields))
 	for _, f := range p.fields {
 		fieldByName[f.Name] = f
+		for _, alias := range f.Aliases {
+			fieldByName[alias] = f
+		}
 	}
 
 	result := make([]Field[T], 0, len(names))
@@ -139,6 +156,11 @@ func (p *Printer[T]) resolveFields() ([]Field[T], error) {
 				valid[i] = f.Name
 			}
 			return nil, fmt.Errorf("unknown field %q; valid fields: %s", name, strings.Join(valid, ", "))
+		}
+		// Use the requested name as the JSON key so that --json link produces
+		// {"link": ...} and --jq '.[].link' works as expected.
+		if name != f.Name {
+			f.Name = name
 		}
 		result = append(result, f)
 	}

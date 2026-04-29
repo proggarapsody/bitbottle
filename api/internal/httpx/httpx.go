@@ -257,10 +257,15 @@ func (t *Transport) checkAndDecode(resp *http.Response, v any) error {
 
 // apiError builds a backend.HTTPError from a non-2xx response, using the
 // adapter's ErrorDecoder to extract the backend-specific message.
+// When the decoded message is empty (e.g. an empty-body 404), it falls back to
+// the canonical HTTP status text so the error is never just "HTTP 404: ".
 func (t *Transport) apiError(resp *http.Response) error {
 	msg := ""
 	if t.decodeErrMsg != nil {
 		msg = t.decodeErrMsg(resp.Body)
+	}
+	if msg == "" {
+		msg = http.StatusText(resp.StatusCode)
 	}
 	url := ""
 	if resp.Request != nil {

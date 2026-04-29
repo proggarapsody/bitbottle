@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/url"
+	"regexp"
 
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
@@ -68,12 +69,20 @@ type cloudErrorEnvelope struct {
 	} `json:"error"`
 }
 
+// fieldPrefixRE matches a leading "fieldname: " prefix that Bitbucket Cloud
+// sometimes prepends to error messages, e.g. "newstatus: Already closed."
+var fieldPrefixRE = regexp.MustCompile(`^[a-z_]+:\s+`)
+
 // decodeErrorMessage parses a Cloud error response body and returns the
 // message, or empty string if the body cannot be decoded.
+// Bitbucket Cloud occasionally prefixes the human-readable message with the
+// internal field name (e.g. "newstatus: This pull request is already closed.");
+// that prefix is stripped so callers see only the human-readable portion.
 func decodeErrorMessage(body io.Reader) string {
 	var env cloudErrorEnvelope
 	_ = json.NewDecoder(body).Decode(&env)
-	return env.Error.Message
+	msg := env.Error.Message
+	return fieldPrefixRE.ReplaceAllString(msg, "")
 }
 
 // getJSON GETs path and decodes the JSON response into v.
