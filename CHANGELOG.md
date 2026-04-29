@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.4](https://github.com/proggarapsody/bitbottle/compare/v1.6.3...v1.6.4) (2026-04-29)
+
+
+### Bug Fixes
+
+* **cloud:** multiple Bitbucket Cloud adapter fixes + auth improvements ([#41](https://github.com/proggarapsody/bitbottle/issues/41)) ([4d4be63](https://github.com/proggarapsody/bitbottle/commit/4d4be638f2013d85a4f5226ab1d9ed449be1f28f))
+
 ## [1.6.3](https://github.com/proggarapsody/bitbottle/compare/v1.6.2...v1.6.3) (2026-04-29)
 
 
