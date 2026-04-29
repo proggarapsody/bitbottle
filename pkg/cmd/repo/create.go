@@ -10,7 +10,7 @@ import (
 )
 
 func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
-	var project, description string
+	var hostname, project, description string
 	var private bool
 	var jsonFields string
 	var jqExpr string
@@ -26,7 +26,7 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 
 			name := args[0]
 
-			host, err := resolveHostname(f, "")
+			host, err := resolveHostname(f, hostname)
 			if err != nil {
 				return err
 			}
@@ -60,6 +60,7 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	cmd.Flags().StringVar(&project, "project", "", "Project key")
 	cmd.Flags().StringVar(&description, "description", "", "Repository description")
 	cmd.Flags().BoolVar(&private, "private", true, "Make repository private")

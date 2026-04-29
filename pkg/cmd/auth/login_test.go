@@ -25,6 +25,9 @@ func TestNewCmdAuthLogin_HasRequiredFlags(t *testing.T) {
 	assert.NotNil(t, cmd.Flag("git-protocol"))
 	assert.NotNil(t, cmd.Flag("skip-tls-verify"))
 	assert.NotNil(t, cmd.Flag("with-token"))
+	// Cloud uses --email; Server/DC uses --username — they are separate flags.
+	assert.NotNil(t, cmd.Flag("email"), "--email flag must exist for Cloud API token auth")
+	assert.NotNil(t, cmd.Flag("username"), "--username flag must exist for Server/DC auth")
 }
 
 func TestNewCmdAuthLogin_GitProtocolDefault(t *testing.T) {
@@ -69,6 +72,80 @@ func TestAuthLogin_WithToken_StoresCredentials(t *testing.T) {
 	got, err := kr.Get("bitbottle", "alice")
 	require.NoError(t, err)
 	assert.Equal(t, "new-token", got)
+}
+
+func TestAuthLogin_Cloud_WithEmail_StoresAuthUser(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return testhelpers.BackendUserFactory(), nil
+		},
+	}
+	ios := iostreams.Test()
+	ios.In = io.NopCloser(strings.NewReader("my-api-token\n"))
+	kr := testhelpers.NewFakeKeyring()
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		BackendOverride: fake,
+		IOStreams:       ios,
+		Keyring:         kr,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{
+		"--hostname", "bitbucket.org",
+		"--email", "alice@example.com",
+		"--with-token",
+	})
+	require.NoError(t, cmd.Execute())
+
+	cfg, err := f.Config()
+	require.NoError(t, err)
+	hc, ok := cfg.Get("bitbucket.org")
+	require.True(t, ok, "host must be persisted")
+	assert.Equal(t, "alice@example.com", hc.AuthUser,
+		"email must be stored as AuthUser for Cloud Basic auth")
+	assert.Equal(t, "my-api-token", hc.OAuthToken)
+}
+
+func TestAuthLogin_Cloud_MissingEmail_Errors(t *testing.T) {
+	t.Parallel()
+
+	ios := iostreams.Test() // non-TTY so no interactive prompt
+	ios.In = io.NopCloser(strings.NewReader("my-api-token\n"))
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		IOStreams: ios,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{"--hostname", "bitbucket.org", "--with-token"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--email",
+		"error must point Cloud users to the --email flag")
+}
+
+func TestAuthLogin_Cloud_UsernameFlag_Errors(t *testing.T) {
+	t.Parallel()
+
+	ios := iostreams.Test()
+	ios.In = io.NopCloser(strings.NewReader("my-api-token\n"))
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		IOStreams: ios,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	// --username is for Server/DC; on Cloud it must error and guide user to --email
+	cmd.SetArgs([]string{
+		"--hostname", "bitbucket.org",
+		"--username", "alice",
+		"--with-token",
+	})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--email",
+		"error must tell Cloud users to use --email instead of --username")
 }
 
 func TestAuthLogin_MissingHostname_Errors(t *testing.T) {
@@ -118,6 +195,38 @@ func ttyInput(lines ...string) io.Reader {
 	return strings.NewReader(strings.Join(lines, "\n") + "\n")
 }
 
+func TestAuthLogin_TTY_Cloud_PromptsForEmail(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return testhelpers.BackendUserFactory(), nil
+		},
+	}
+	ios := iostreams.TestTTY()
+	// Sequence: email → choice "2" (paste) → token
+	ios.In = io.NopCloser(ttyInput("alice@example.com", "2", "my-token"))
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		BackendOverride: fake,
+		IOStreams:       ios,
+	})
+	cmd := auth.NewCmdAuthLogin(f)
+	cmd.SetArgs([]string{"--hostname", "bitbucket.org"}) // no --email
+	require.NoError(t, cmd.Execute())
+
+	outBuf := ios.Out.(*bytes.Buffer)
+	assert.Contains(t, outBuf.String(), "Atlassian account email for bitbucket.org",
+		"must prompt for email on Cloud when --email not provided")
+
+	cfg, err := f.Config()
+	require.NoError(t, err)
+	hc, ok := cfg.Get("bitbucket.org")
+	require.True(t, ok)
+	assert.Equal(t, "alice@example.com", hc.AuthUser)
+}
+
 func TestAuthLogin_TTY_OpensBrowser_Server(t *testing.T) {
 	t.Parallel()
 
@@ -159,6 +268,7 @@ func TestAuthLogin_TTY_OpensBrowser_Cloud(t *testing.T) {
 	}
 	ios := iostreams.TestTTY()
 	// Sequence: choice "1" → Enter (press-enter gate) → token
+	// --email is provided via flag so no email prompt is shown.
 	ios.In = io.NopCloser(ttyInput("1", "", "my-token"))
 	browser := &testhelpers.FakeBrowserLauncher{}
 	kr := testhelpers.NewFakeKeyring()
@@ -170,7 +280,7 @@ func TestAuthLogin_TTY_OpensBrowser_Cloud(t *testing.T) {
 		Browser:         browser,
 	})
 	cmd := auth.NewCmdAuthLogin(f)
-	cmd.SetArgs([]string{"--hostname", "bitbucket.org"})
+	cmd.SetArgs([]string{"--hostname", "bitbucket.org", "--email", "alice@example.com"})
 	require.NoError(t, cmd.Execute())
 
 	require.Len(t, browser.URLs, 1, "browser must be opened exactly once")

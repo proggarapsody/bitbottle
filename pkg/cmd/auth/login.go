@@ -21,7 +21,7 @@ import (
 )
 
 func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
-	var hostname, gitProtocol, username string
+	var hostname, gitProtocol, username, email string
 	var skipTLS, withToken bool
 
 	cmd := &cobra.Command{
@@ -30,6 +30,16 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if hostname == "" {
 				return fmt.Errorf("--hostname is required")
+			}
+
+			// Flag cross-validation: --username is for Server/DC only;
+			// --email is for Cloud only.
+			isCloud := bbinstance.IsCloud(hostname, "")
+			if isCloud && username != "" {
+				return fmt.Errorf("--username is not supported for Bitbucket Cloud; use --email (your Atlassian account email) instead")
+			}
+			if !isCloud && email != "" {
+				return fmt.Errorf("--email is not supported for Bitbucket Server/Data Center; use --username instead")
 			}
 
 			// Shared scanner — reused across all interactive prompts so that
@@ -53,12 +63,33 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 			case f.IOStreams.IsStdoutTTY():
 				// Interactive guided flow.
 
-				// For Server/DC, ask for the username first so we can
-				// embed it in the PAT management URL.
-				if !bbinstance.IsCloud(hostname, "") && username == "" {
-					if cfg, err := f.Config(); err == nil {
-						if h, ok := cfg.Get(hostname); ok {
-							username = h.User
+				if isCloud {
+					// Cloud: ask for the Atlassian account email so we can use
+					// Basic auth with the API token.
+					if email == "" {
+						if cfg, err := f.Config(); err == nil {
+							if h, ok := cfg.Get(hostname); ok {
+								email = h.AuthUser
+							}
+						}
+					}
+					if email == "" {
+						fmt.Fprintf(f.IOStreams.Out, "Atlassian account email for %s: ", hostname)
+						if scanner.Scan() {
+							email = strings.TrimSpace(scanner.Text())
+						}
+						if email == "" {
+							return fmt.Errorf("email is required for Bitbucket Cloud (use --email)")
+						}
+					}
+				} else {
+					// Server/DC: ask for the Bitbucket username so we can
+					// embed it in the PAT management URL.
+					if username == "" {
+						if cfg, err := f.Config(); err == nil {
+							if h, ok := cfg.Get(hostname); ok {
+								username = h.User
+							}
 						}
 					}
 					if username == "" {
@@ -129,14 +160,29 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 			}
 
 			// ------------------------------------------------------------------
-			// 2. Collect username for Server/DC (non-TTY path or --with-token)
+			// 2. Require auth identity (non-interactive paths)
 			// ------------------------------------------------------------------
-			// The TTY path already asked above; this block handles the remaining
-			// non-interactive cases where username wasn't provided yet.
-			if !bbinstance.IsCloud(hostname, "") && username == "" {
-				if cfg, err := f.Config(); err == nil {
-					if h, ok := cfg.Get(hostname); ok {
-						username = h.User
+			// The TTY path already collected the identity above. These checks
+			// handle non-TTY (--with-token or stored-token) cases.
+			if isCloud {
+				// Cloud: --email is required for Atlassian API token auth.
+				if email == "" {
+					if cfg, err := f.Config(); err == nil {
+						if h, ok := cfg.Get(hostname); ok {
+							email = h.AuthUser
+						}
+					}
+				}
+				if email == "" {
+					return fmt.Errorf("--email is required for Bitbucket Cloud (your Atlassian account email)")
+				}
+			} else {
+				// Server/DC: --username is required.
+				if username == "" {
+					if cfg, err := f.Config(); err == nil {
+						if h, ok := cfg.Get(hostname); ok {
+							username = h.User
+						}
 					}
 				}
 				if username == "" {
@@ -150,6 +196,7 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 			client, err := f.BackendWithOptions(hostname, backend.Options{
 				Token:         token,
 				SkipTLSVerify: skipTLS,
+				Email:         email,
 				Username:      username,
 			})
 			if err != nil {
@@ -167,8 +214,15 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// authUser is the identity used for HTTP Basic auth:
+			// email for Cloud Atlassian API tokens, username for Server/DC PATs.
+			authUser := email
+			if authUser == "" {
+				authUser = username
+			}
 			cfg.Set(hostname, config.HostConfig{
 				User:          user.Slug,
+				AuthUser:      authUser,
 				OAuthToken:    token,
 				GitProtocol:   gitProtocol,
 				SkipTLSVerify: skipTLS,
@@ -188,7 +242,8 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	cmd.Flags().StringVar(&gitProtocol, "git-protocol", "ssh", "Git protocol (ssh or https)")
-	cmd.Flags().StringVar(&username, "username", "", "Bitbucket username (required for Server/Data Center)")
+	cmd.Flags().StringVar(&email, "email", "", "Atlassian account email (required for Bitbucket Cloud API token auth)")
+	cmd.Flags().StringVar(&username, "username", "", "Bitbucket username (required for Bitbucket Server/Data Center)")
 	cmd.Flags().BoolVar(&skipTLS, "skip-tls-verify", false, "Skip TLS certificate verification")
 	cmd.Flags().BoolVar(&withToken, "with-token", false, "Read token from stdin")
 	return cmd

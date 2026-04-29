@@ -114,8 +114,14 @@ func New() *Factory {
 			if opts.SkipTLSVerify {
 				hostCfg.SkipTLSVerify = true
 			}
+			// Email (Cloud Atlassian API token) and Username (Server/DC PAT)
+			// are mutually exclusive; only one will be set per call.
+			if opts.Email != "" {
+				hostCfg.AuthUser = opts.Email
+			}
 			if opts.Username != "" {
 				hostCfg.User = opts.Username
+				hostCfg.AuthUser = opts.Username
 			}
 			hc := newHTTPClient(hostCfg.SkipTLSVerify)
 			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
@@ -190,8 +196,14 @@ func newHTTPClient(skipTLSVerify bool) *http.Client {
 // newBackendClient selects and constructs the backend.Client implementation
 // appropriate for hostname (Cloud vs. Data Center).
 func newBackendClient(hc *http.Client, hostname string, hostCfg config.HostConfig, dcBaseURL func(string) string) backend.Client {
+	// authUser is the identity sent in HTTP Basic auth (email for Atlassian
+	// API tokens, username for App Passwords, empty for OAuth Bearer tokens).
+	authUser := hostCfg.AuthUser
+	if authUser == "" {
+		authUser = hostCfg.User // backward-compat: older configs have no AuthUser
+	}
 	if bbinstance.IsCloud(hostname, hostCfg.BackendType) {
-		return cloud.NewClient(hc, bbinstance.CloudRESTBase(), hostCfg.OAuthToken, hostCfg.User)
+		return cloud.NewClient(hc, bbinstance.CloudRESTBase(), hostCfg.OAuthToken, authUser)
 	}
 	return server.NewClient(hc, dcBaseURL(hostname), hostCfg.OAuthToken, hostCfg.User)
 }
