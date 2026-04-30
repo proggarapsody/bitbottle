@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/proggarapsody/bitbottle/compare/v1.7.1...v1.7.2) (2026-04-30)
+
+
+### Bug Fixes
+
+* **cloud:** 4 bugs found during Cloud manual-test run ([dd1c223](https://github.com/proggarapsody/bitbottle/commit/dd1c2236d061ea3c078cc47b246f5791d591ab60))
+
 ## [1.7.1](https://github.com/proggarapsody/bitbottle/compare/v1.7.0...v1.7.1) (2026-04-29)
 
 
