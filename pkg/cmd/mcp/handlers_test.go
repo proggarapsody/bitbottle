@@ -140,6 +140,44 @@ func TestListRepos_BackendError_ReturnsErrorResult(t *testing.T) {
 	assertErrorResult(t, result, "server unavailable")
 }
 
+// TestListRepos_DomainError_EmitsStructuredEnvelope verifies that when the
+// backend returns a typed backend.DomainError, the MCP error result body is
+// a JSON envelope carrying a stable code, host, and message — the contract
+// AI agents depend on for branching without parsing prose. PRD #47.
+func TestListRepos_DomainError_EmitsStructuredEnvelope(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListReposFn: func(limit int) ([]backend.Repository, error) {
+			return nil, &backend.DomainError{
+				Kind:    backend.ErrUnsupportedOnHost,
+				Host:    "git.moscow.alfaintra.net",
+				Feature: string(backend.FeaturePipelines),
+				Message: "pipelines are not supported on git.moscow.alfaintra.net",
+			}
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listRepos(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+
+	require.NotNil(t, result)
+	assert.True(t, result.IsError)
+	require.Len(t, result.Content, 1)
+	text, ok := result.Content[0].(mcplib.TextContent)
+	require.True(t, ok)
+
+	var env struct {
+		Code    string `json:"code"`
+		Host    string `json:"host"`
+		Feature string `json:"feature"`
+		Message string `json:"message"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text.Text), &env))
+	assert.Equal(t, "unsupported_on_host", env.Code)
+	assert.Equal(t, "git.moscow.alfaintra.net", env.Host)
+	assert.Equal(t, "pipelines", env.Feature)
+}
+
 // ---- get_repo ----
 
 func TestGetRepo_CallsClientWithNsAndSlug(t *testing.T) {
