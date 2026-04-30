@@ -22,8 +22,6 @@ func (w wireServerTag) toDomain() backend.Tag {
 	}
 }
 
-// ListTags lists tags for a repository, capping the total returned at limit
-// (limit <= 0 means unbounded).
 func (c *Client) ListTags(ns, slug string, limit int) ([]backend.Tag, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/tags?limit=%d", ns, slug, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Tag, error) {
@@ -45,7 +43,6 @@ type wireServerCreateTag struct {
 	Message    string `json:"message,omitempty"`
 }
 
-// CreateTag creates a new tag in a repository.
 func (c *Client) CreateTag(ns, slug string, in backend.CreateTagInput) (backend.Tag, error) {
 	body := wireServerCreateTag{
 		Name:       in.Name,
@@ -60,7 +57,6 @@ func (c *Client) CreateTag(ns, slug string, in backend.CreateTagInput) (backend.
 	return w.toDomain(), nil
 }
 
-// DeleteTag deletes a tag in a repository.
 func (c *Client) DeleteTag(ns, slug, name string) error {
 	path := fmt.Sprintf("/projects/%s/repos/%s/tags/%s", ns, slug, name)
 	return c.delete(path, map[string]string{"name": name})

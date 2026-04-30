@@ -28,7 +28,6 @@ func NewCmdAuthStatus(f *factory.Factory) *cobra.Command {
 				return nil
 			}
 
-			// Filter to a single host when --hostname is given.
 			if hostname != "" {
 				if _, ok := cfg.Get(hostname); !ok {
 					return fmt.Errorf("not logged into %s", hostname)

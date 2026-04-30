@@ -127,7 +127,7 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 						fmt.Fprintf(f.IOStreams.Out, "Visit this URL manually:\n  %s\n", tokenURL)
 					}
 					fmt.Fprintf(f.IOStreams.Out, "Press Enter once you have your token.\n\n")
-					scanner.Scan() // wait for Enter
+					scanner.Scan()
 				case "2":
 					fmt.Fprintf(f.IOStreams.Out, "\nCreate a token at:\n  %s\n\n", tokenURL)
 				default:
@@ -145,8 +145,6 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				}
 
 			default:
-				// Non-TTY without --with-token: fall back to stored token.
-				// Useful for re-validating a previously stored credential.
 				cfg, err := f.Config()
 				if err != nil {
 					return err
@@ -159,13 +157,7 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			// ------------------------------------------------------------------
-			// 2. Require auth identity (non-interactive paths)
-			// ------------------------------------------------------------------
-			// The TTY path already collected the identity above. These checks
-			// handle non-TTY (--with-token or stored-token) cases.
 			if isCloud {
-				// Cloud: --email is required for Atlassian API token auth.
 				if email == "" {
 					if cfg, err := f.Config(); err == nil {
 						if h, ok := cfg.Get(hostname); ok {
@@ -177,7 +169,6 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 					return fmt.Errorf("--email is required for Bitbucket Cloud (your Atlassian account email)")
 				}
 			} else {
-				// Server/DC: --username is required.
 				if username == "" {
 					if cfg, err := f.Config(); err == nil {
 						if h, ok := cfg.Get(hostname); ok {
@@ -190,9 +181,6 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			// ------------------------------------------------------------------
-			// 3. Validate credentials against the API
-			// ------------------------------------------------------------------
 			client, err := f.BackendWithOptions(hostname, backend.Options{
 				Token:         token,
 				SkipTLSVerify: skipTLS,
@@ -207,15 +195,10 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("authentication failed: %w", err)
 			}
 
-			// ------------------------------------------------------------------
-			// 4. Persist credentials
-			// ------------------------------------------------------------------
 			cfg, err := f.Config()
 			if err != nil {
 				return err
 			}
-			// authUser is the identity used for HTTP Basic auth:
-			// email for Cloud Atlassian API tokens, username for Server/DC PATs.
 			authUser := email
 			if authUser == "" {
 				authUser = username
@@ -231,7 +214,6 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			// Best-effort keyring storage.
 			if krErr := f.Keyring.Set("bitbottle", user.Slug, token); krErr != nil {
 				fmt.Fprintf(f.IOStreams.ErrOut, "warning: could not store token in keyring: %v\n", krErr)
 			}

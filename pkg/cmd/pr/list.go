@@ -52,8 +52,6 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-// resolveRepoRef returns a RepoRef from an explicit argument or git remote detection.
-// hostnameFlag overrides the host in all cases if non-empty.
 func resolveRepoRef(f *factory.Factory, args []string, hostnameFlag string) (bbrepo.RepoRef, error) {
 	var ref bbrepo.RepoRef
 	var err error
@@ -64,20 +62,17 @@ func resolveRepoRef(f *factory.Factory, args []string, hostnameFlag string) (bbr
 			return bbrepo.RepoRef{}, err
 		}
 	} else {
-		// No arg — delegate to factory for git-remote detection.
 		ref, err = f.BaseRepo()
 		if err != nil {
 			return bbrepo.RepoRef{}, err
 		}
 	}
 
-	// Explicit --hostname flag overrides detected host.
 	if hostnameFlag != "" {
 		ref.Host = hostnameFlag
 		return ref, nil
 	}
 
-	// Host unknown (from PROJECT/REPO arg without host component): use config.
 	if ref.Host == "" {
 		cfg, cerr := f.Config()
 		if cerr != nil {

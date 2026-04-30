@@ -66,8 +66,6 @@ func ensureRefsHeads(branch string) string {
 	return "refs/heads/" + branch
 }
 
-// ListPRs lists pull requests for a repository, following pagination until
-// the total cap of `limit` is reached.
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests?state=%s&limit=%d", ns, slug, state, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PullRequest, error) {
@@ -83,7 +81,6 @@ func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullReque
 	}, limit)
 }
 
-// GetPR fetches a single pull request.
 func (c *Client) GetPR(ns, slug string, id int) (backend.PullRequest, error) {
 	var w wirePR
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
@@ -105,7 +102,6 @@ type wireRefBody struct {
 	ID string `json:"id"`
 }
 
-// CreatePR creates a new pull request.
 func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error) {
 	body := wireCreatePRInput{
 		Title:       in.Title,
@@ -158,13 +154,11 @@ func (c *Client) ApprovePR(ns, slug string, id int) error {
 	return c.postJSON(path, nil, &result)
 }
 
-// GetPRDiff fetches the unified diff for a PR.
 func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/diff", ns, slug, id)
 	return c.getText(path)
 }
 
-// DeleteBranch deletes a branch in a repository.
 func (c *Client) DeleteBranch(ns, slug, branch string) error {
 	path := fmt.Sprintf("/projects/%s/repos/%s/branches", ns, slug)
 	return c.delete(path, map[string]string{"name": branch})

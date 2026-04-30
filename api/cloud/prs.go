@@ -53,8 +53,6 @@ func (w wireCloudPR) toDomain() backend.PullRequest {
 	}
 }
 
-// ListPRs lists pull requests for a repository, following pagination until
-// the total cap of `limit` is reached.
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests?state=%s&pagelen=%d", ns, slug, state, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PullRequest, error) {
@@ -70,7 +68,6 @@ func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullReque
 	}, limit)
 }
 
-// GetPR fetches a single pull request.
 func (c *Client) GetPR(ns, slug string, id int) (backend.PullRequest, error) {
 	var w wireCloudPR
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
@@ -96,7 +93,6 @@ type wireCloudBranchName struct {
 	Name string `json:"name"`
 }
 
-// CreatePR creates a new pull request.
 func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error) {
 	body := wireCloudCreatePR{
 		Title:       in.Title,
@@ -117,7 +113,6 @@ type wireCloudMergePR struct {
 	MergeStrategy string `json:"merge_strategy,omitempty"`
 }
 
-// MergePR merges a pull request.
 func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
 	body := wireCloudMergePR{
 		MergeStrategy: in.Strategy,
@@ -141,19 +136,16 @@ func (c *Client) ApprovePR(ns, slug string, id int) error {
 	return c.postJSON(path, nil, &result)
 }
 
-// GetPRDiff fetches the unified diff for a PR.
 func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/diff", ns, slug, id)
 	return c.getText(path)
 }
 
-// DeleteBranch deletes a branch in a repository.
 func (c *Client) DeleteBranch(ns, slug, branch string) error {
 	path := fmt.Sprintf("/repositories/%s/%s/refs/branches/%s", ns, slug, url.PathEscape(branch))
 	return c.delete(path)
 }
 
-// GetCurrentUser fetches the authenticated user.
 func (c *Client) GetCurrentUser() (backend.User, error) {
 	var w struct {
 		AccountID   string `json:"account_id"`

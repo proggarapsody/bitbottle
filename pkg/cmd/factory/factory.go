@@ -23,13 +23,10 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
 
-// HTTPClient is the minimal HTTP doer used by raw API access.
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// Factory is the single dependency container threaded through every command.
-// Commands receive it via their constructor.
 type Factory struct {
 	IOStreams          *iostreams.IOStreams
 	Config             func() (*config.Config, error)
@@ -51,7 +48,6 @@ type Factory struct {
 	ServerPATURLProber func(hostname, username string, skipTLS bool) string
 }
 
-// New constructs a Factory wired with live dependencies.
 func New() *Factory {
 	configDir := filepath.Join(configHomeDir(), "bitbottle")
 	cfg := config.New(configDir)
@@ -107,15 +103,12 @@ func New() *Factory {
 				return nil, err
 			}
 			hostCfg, _ := cfg.Get(hostname)
-			// opts fields override the stored config values.
 			if opts.Token != "" {
 				hostCfg.OAuthToken = opts.Token
 			}
 			if opts.SkipTLSVerify {
 				hostCfg.SkipTLSVerify = true
 			}
-			// Email (Cloud Atlassian API token) and Username (Server/DC PAT)
-			// are mutually exclusive; only one will be set per call.
 			if opts.Email != "" {
 				hostCfg.AuthUser = opts.Email
 			}
@@ -145,11 +138,6 @@ func New() *Factory {
 	}
 }
 
-// DefaultBaseRepo is the standard BaseRepo implementation: it first consults
-// bitbottle.host / bitbottle.project / bitbottle.slug in the local git config
-// (written by `bitbottle repo set-default`); when those are unset it falls
-// back to the "origin" git remote. Errors are user-facing and never expose
-// raw exec status codes.
 func DefaultBaseRepo(runner run.Runner, cfg func() (*config.Config, error)) func() (bbrepo.RepoRef, error) {
 	return func() (bbrepo.RepoRef, error) {
 		c, err := cfg()
@@ -179,9 +167,6 @@ func DefaultBaseRepo(runner run.Runner, cfg func() (*config.Config, error)) func
 	}
 }
 
-// readPinnedDefaultRepo returns the repository pinned by `repo set-default`,
-// or ok=false when any of the three keys is missing. All-or-nothing semantics
-// avoid partial pins surprising the user (e.g. host set but project unset).
 func readPinnedDefaultRepo(g *git.Git) (bbrepo.RepoRef, bool) {
 	host, _ := g.GetConfig("bitbottle.host")
 	project, _ := g.GetConfig("bitbottle.project")
@@ -200,9 +185,6 @@ func configHomeDir() string {
 	return filepath.Join(home, ".config")
 }
 
-// newHTTPClient returns an *http.Client configured with a clone of the default
-// transport. If skipTLSVerify is true, TLS certificate verification is
-// disabled (for self-signed DC instances).
 func newHTTPClient(skipTLSVerify bool) *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	if skipTLSVerify {
@@ -211,11 +193,7 @@ func newHTTPClient(skipTLSVerify bool) *http.Client {
 	return &http.Client{Transport: transport}
 }
 
-// newBackendClient selects and constructs the backend.Client implementation
-// appropriate for hostname (Cloud vs. Data Center).
 func newBackendClient(hc *http.Client, hostname string, hostCfg config.HostConfig, dcBaseURL func(string) string) backend.Client {
-	// authUser is the identity sent in HTTP Basic auth (email for Atlassian
-	// API tokens, username for App Passwords, empty for OAuth Bearer tokens).
 	authUser := hostCfg.AuthUser
 	if authUser == "" {
 		authUser = hostCfg.User // backward-compat: older configs have no AuthUser

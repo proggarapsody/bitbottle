@@ -23,8 +23,6 @@ func (w wireBranch) toDomain() backend.Branch {
 	}
 }
 
-// ListBranches lists branches for a repository, capping the total returned
-// at limit (limit <= 0 means unbounded).
 func (c *Client) ListBranches(ns, slug string, limit int) ([]backend.Branch, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/branches?limit=%d", ns, slug, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Branch, error) {

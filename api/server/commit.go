@@ -37,7 +37,6 @@ func (c *Client) commitWebURL(ns, slug, hash string) string {
 	return fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s", c.host, ns, slug, hash)
 }
 
-// ListCommits lists commits on a branch for a repository.
 func (c *Client) ListCommits(ns, slug, branch string, limit int) ([]backend.Commit, error) {
 	var page PagedResponse[wireServerCommit]
 	path := fmt.Sprintf("/projects/%s/repos/%s/commits?until=%s&limit=%d", ns, slug, branch, limit)
@@ -53,7 +52,6 @@ func (c *Client) ListCommits(ns, slug, branch string, limit int) ([]backend.Comm
 	return commits, nil
 }
 
-// GetCommit fetches a single commit by hash.
 func (c *Client) GetCommit(ns, slug, hash string) (backend.Commit, error) {
 	var w wireServerCommit
 	path := fmt.Sprintf("/projects/%s/repos/%s/commits/%s", ns, slug, hash)

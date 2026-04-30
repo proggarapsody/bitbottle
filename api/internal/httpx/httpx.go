@@ -134,7 +134,6 @@ func (t *Transport) do(req *http.Request) (*http.Response, error) {
 	return t.doer.Do(req)
 }
 
-// GetJSON GETs path and decodes the JSON response into v.
 func (t *Transport) GetJSON(path string, v any) error {
 	return t.sendJSON(http.MethodGet, path, nil, v)
 }
@@ -164,9 +163,6 @@ func (t *Transport) GetAllJSON(path string, accumulate func([]byte) error) error
 	return nil
 }
 
-// fetchBodyAt GETs fullURL (an absolute URL) and returns the raw response
-// body. It is used by GetAllJSON for second-and-later pages whose URLs come
-// from the Paginator and are already absolute.
 func (t *Transport) fetchBodyAt(fullURL string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fullURL, nil)
 	if err != nil {
@@ -204,25 +200,19 @@ func (t *Transport) GetText(path string) (string, error) {
 	return string(b), err
 }
 
-// PostJSON POSTs body as JSON to path and decodes the response into v.
 func (t *Transport) PostJSON(path string, body, v any) error {
 	return t.sendJSON(http.MethodPost, path, body, v)
 }
 
-// PutJSON PUTs body as JSON to path and decodes the response into v.
 func (t *Transport) PutJSON(path string, body, v any) error {
 	return t.sendJSON(http.MethodPut, path, body, v)
 }
 
-// DeleteJSON sends a DELETE request with an optional JSON body (body may be
-// nil). It decodes nothing from the response.
+// DeleteJSON sends a DELETE request with an optional JSON body (body may be nil).
 func (t *Transport) DeleteJSON(path string, body any) error {
 	return t.sendJSON(http.MethodDelete, path, body, nil)
 }
 
-// sendJSON handles every method that may carry a JSON body. It marshals body
-// (if non-nil), sets Content-Type via the policy, sends the request and then
-// checks/decodes the response into v (v may be nil).
 func (t *Transport) sendJSON(method, path string, body, v any) error {
 	req, err := t.newRequest(method, path, body)
 	if err != nil {
@@ -236,8 +226,6 @@ func (t *Transport) sendJSON(method, path string, body, v any) error {
 	return t.checkAndDecode(resp, v)
 }
 
-// newRequest builds an *http.Request with the JSON body (if any) encoded and
-// Content-Type set according to the ContentTypePolicy.
 func (t *Transport) newRequest(method, path string, body any) (*http.Request, error) {
 	var reader io.Reader
 	if body != nil {
@@ -257,8 +245,6 @@ func (t *Transport) newRequest(method, path string, body any) (*http.Request, er
 	return req, nil
 }
 
-// checkAndDecode returns an error for non-2xx responses, otherwise decodes
-// into v (unless v is nil).
 func (t *Transport) checkAndDecode(resp *http.Response, v any) error {
 	if resp.StatusCode >= http.StatusBadRequest {
 		return t.apiError(resp)
@@ -269,10 +255,6 @@ func (t *Transport) checkAndDecode(resp *http.Response, v any) error {
 	return json.NewDecoder(resp.Body).Decode(v)
 }
 
-// apiError builds a backend.HTTPError from a non-2xx response, using the
-// adapter's ErrorDecoder to extract the backend-specific message.
-// When the decoded message is empty (e.g. an empty-body 404), it falls back to
-// the canonical HTTP status text so the error is never just "HTTP 404: ".
 func (t *Transport) apiError(resp *http.Response) error {
 	msg := ""
 	if t.decodeErrMsg != nil {

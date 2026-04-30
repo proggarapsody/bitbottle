@@ -26,7 +26,6 @@ func NewCmdAuthLogout(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			// Best-effort keyring deletion.
 			if krErr := f.Keyring.Delete("bitbottle", hostCfg.User); krErr != nil {
 				fmt.Fprintf(f.IOStreams.ErrOut, "warning: could not remove token from keyring: %v\n", krErr)
 			}

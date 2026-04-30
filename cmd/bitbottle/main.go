@@ -11,7 +11,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/root"
 )
 
-// Injected at build time by goreleaser via -X ldflags.
+// Injected at build time by goreleaser (-X ldflags).
 var (
 	version   = "dev"
 	buildDate = "unknown"
@@ -36,12 +36,9 @@ func main() {
 	}
 }
 
-// expandAlias resolves a top-level alias against the on-disk store. Returns
-// the (possibly rewritten) argv that cobra should parse. For shell aliases,
-// it execs $SHELL -c and never returns.
-//
-// Failures to load the alias file fall back to the raw args — startup must
-// not block on a corrupt aliases.yml.
+// expandAlias resolves a top-level alias. For shell aliases it execs
+// $SHELL -c and never returns. Alias file failures fall back to raw args
+// to prevent startup hangs on corrupt aliases.yml.
 func expandAlias(f *factory.Factory, args []string) ([]string, error) {
 	if len(args) == 0 || isFlag(args[0]) {
 		return args, nil

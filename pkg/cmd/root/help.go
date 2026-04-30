@@ -1,7 +1,3 @@
-// Adapted from cli/cli (MIT) — pkg/cmd/root/help.go.
-// Renders sectioned --help output with a custom ARGUMENTS section sourced
-// from Annotations["help:arguments"] on the command or any ancestor.
-
 package root
 
 import (
@@ -13,12 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// argumentsAnnotationKey is the Cobra command annotation read by helpFunc to
-// render the ARGUMENTS section. Set it on a parent command to share argument
-// documentation across all leaves.
 const argumentsAnnotationKey = "help:arguments"
 
-// SetHelpFunc installs the bitbottle help renderer on cmd and every descendant.
 func SetHelpFunc(cmd *cobra.Command) {
 	cmd.SetHelpFunc(helpFunc)
 }

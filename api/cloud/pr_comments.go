@@ -37,8 +37,6 @@ func (w wireCloudPRComment) toDomain() backend.PRComment {
 	}
 }
 
-// ListPRComments lists top-level comments on a pull request, following all
-// pagination pages.
 func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
 	var out []backend.PRComment
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments?pagelen=100", ns, slug, id)
@@ -61,7 +59,6 @@ type wireCloudAddPRComment struct {
 	} `json:"content"`
 }
 
-// AddPRComment adds a top-level comment to a pull request.
 func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
 	body := wireCloudAddPRComment{}
 	body.Content.Raw = in.Text

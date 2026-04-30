@@ -52,7 +52,6 @@ func (w wireCloudPipeline) toDomain(ns, slug string) backend.Pipeline {
 	}
 }
 
-// ListPipelines lists recent pipeline runs for a repository.
 func (c *Client) ListPipelines(ns, slug string, limit int) ([]backend.Pipeline, error) {
 	var page cloudPagedResponse[wireCloudPipeline]
 	path := fmt.Sprintf("/repositories/%s/%s/pipelines/?sort=-created_on&pagelen=%d", ns, slug, limit)

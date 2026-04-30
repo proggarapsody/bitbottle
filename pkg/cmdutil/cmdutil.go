@@ -7,7 +7,6 @@ import (
 	"runtime"
 )
 
-// FatalIfError prints err to stderr and exits with code 1.
 func FatalIfError(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -15,17 +14,14 @@ func FatalIfError(err error) {
 	}
 }
 
-// BrowserLauncher opens URLs.
 type BrowserLauncher interface {
 	Browse(url string) error
 }
 
-// EditorLauncher opens a file in $EDITOR.
 type EditorLauncher interface {
 	Edit(filename string) error
 }
 
-// SystemBrowser is the real browser launcher.
 type SystemBrowser struct{}
 
 // Browse opens the given URL in the system browser.
@@ -40,7 +36,6 @@ func (b *SystemBrowser) Browse(url string) error {
 	return cmd.Run()
 }
 
-// SystemEditor is the real editor launcher.
 type SystemEditor struct{}
 
 // Edit opens the given filename in $EDITOR.

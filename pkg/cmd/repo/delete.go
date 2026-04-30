@@ -59,10 +59,6 @@ func NewCmdRepoDelete(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-// confirmDelete prompts the user interactively for delete confirmation.
-// Returns (false, error) when running non-TTY (which requires --confirm),
-// (true, nil) when the user answered "y"/"yes", and (false, nil) on any
-// other answer.
 func confirmDelete(f *factory.Factory, ref bbrepo.RepoRef) (bool, error) {
 	if !f.IOStreams.IsStdoutTTY() {
 		return false, fmt.Errorf("requires --confirm to delete a repository")

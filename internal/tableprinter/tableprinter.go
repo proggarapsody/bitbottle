@@ -38,21 +38,18 @@ func (t *TablePrinter) EndRow() {
 	t.cur = nil
 }
 
-// Render writes all rows. In TTY mode columns are padded to align and the last
-// column is truncated to respect maxWidth; in non-TTY mode fields are
-// tab-separated and headers are omitted.
+// Render writes all rows in the appropriate format (aligned columns for TTY,
+// tab-separated for pipes). The last column is truncated to maxWidth in TTY mode.
 func (t *TablePrinter) Render() error {
 	if len(t.rows) == 0 {
 		return nil
 	}
 
-	// In TTY mode, include the header in column-width measurements.
 	measureRows := t.rows
 	if t.isTTY && len(t.header) > 0 {
 		measureRows = append([][]string{t.header}, t.rows...)
 	}
 
-	// Compute max column widths using rune counts (correct for multi-byte UTF-8).
 	cols := 0
 	for _, row := range measureRows {
 		if len(row) > cols {
@@ -96,7 +93,6 @@ func (t *TablePrinter) Render() error {
 		return err
 	}
 
-	// Print header first in TTY mode (suppressed for non-TTY / piped output).
 	if t.isTTY && len(t.header) > 0 {
 		if err := renderRow(t.header); err != nil {
 			return err

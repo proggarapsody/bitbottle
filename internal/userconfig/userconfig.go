@@ -15,8 +15,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// AllowedKeys is the set of keys writable via `bitbottle config set`. We keep
-// this allowlisted so users get an immediate error on a typo rather than
+// AllowedKeys is the set of keys writable via `bitbottle config set`.
+// This allowlist ensures users get immediate feedback on typos rather than
 // silently writing a key the CLI never reads back.
 var AllowedKeys = []string{
 	"editor",
@@ -26,13 +26,10 @@ var AllowedKeys = []string{
 	"prompt",
 }
 
-// PerHostKeys are the subset of keys that may be overridden per-host.
 var PerHostKeys = []string{
 	"git_protocol",
 }
 
-// data is the on-disk YAML schema. Top-level scalars are global defaults;
-// the `hosts` map holds per-host overrides keyed by hostname.
 type data struct {
 	Editor      string                       `yaml:"editor,omitempty"`
 	Pager       string                       `yaml:"pager,omitempty"`
@@ -54,8 +51,7 @@ func New(dir string) *Config {
 	return &Config{dir: dir}
 }
 
-// Load reads config.yml. Missing file is not an error; the returned Config
-// just behaves as empty.
+// Load reads config.yml. A missing file is treated as empty config.
 func (c *Config) Load() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -74,7 +70,7 @@ func (c *Config) Load() error {
 	return nil
 }
 
-// Save writes config.yml atomically via temp file + rename.
+// Save writes config.yml atomically (temp file + rename).
 func (c *Config) Save() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -102,7 +98,7 @@ func (c *Config) Save() error {
 	return os.Rename(tmpName, filepath.Join(c.dir, "config.yml"))
 }
 
-// Get returns (value, true) when the key is set. Per-host lookup falls back to
+// Get returns (value, true) when key is set. Per-host lookup falls back to
 // the global value when no host-specific override exists.
 func (c *Config) Get(key, host string) (string, bool) {
 	c.mu.Lock()
@@ -118,7 +114,7 @@ func (c *Config) Get(key, host string) (string, bool) {
 	return v, v != ""
 }
 
-// Set writes value under key (optionally scoped to host).
+// Set records value under key, optionally scoped to a specific host.
 func (c *Config) Set(key, value, host string) error {
 	if !isAllowed(key) {
 		return fmt.Errorf("unknown key %q (allowed: %v)", key, AllowedKeys)
@@ -142,15 +138,14 @@ func (c *Config) Set(key, value, host string) error {
 	return nil
 }
 
-// Entry is one row returned by List.
 type Entry struct {
 	Key   string
 	Value string
 	Host  string // empty = global scope
 }
 
-// List returns every set key in deterministic order: globals first (sorted),
-// then per-host (sorted by host then key).
+// List returns all set keys in deterministic order: globals (sorted), then
+// per-host entries (sorted by host, then by key).
 func (c *Config) List() []Entry {
 	c.mu.Lock()
 	defer c.mu.Unlock()

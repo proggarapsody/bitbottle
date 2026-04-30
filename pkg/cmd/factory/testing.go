@@ -24,8 +24,6 @@ import (
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
-// TestFactoryOpts overrides individual factory components in tests.
-// Unset fields receive safe no-op defaults.
 type TestFactoryOpts struct {
 	ConfigDir       string
 	InitialConfig   string
@@ -42,14 +40,10 @@ type TestFactoryOpts struct {
 	BackendType     string
 }
 
-// stubServerPATURLProber is the no-network prober used in tests.
-// Returns the user-scoped URL directly without any HTTP requests.
 func stubServerPATURLProber(hostname, username string, _ bool) string {
 	return bbinstance.PATManageURL(hostname, username)
 }
 
-// NewTestFactory returns a fully wired Factory suitable for command-level unit
-// tests. Never touches the real filesystem, keyring, git binary, or network.
 func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer, *bytes.Buffer) {
 	t.Helper()
 
@@ -134,7 +128,6 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 				return opts.BackendOverride, nil
 			}
 
-			// Determine backend type: check config for host-level override.
 			var hostCfg config.HostConfig
 			if err := cfg.Load(); err == nil || os.IsNotExist(err) {
 				hostCfg, _ = cfg.Get(hostname)
@@ -190,7 +183,6 @@ func NewTestFactory(t *testing.T, opts TestFactoryOpts) (*Factory, *bytes.Buffer
 	return f, out, errOut
 }
 
-// noopHTTPClient returns 404 for every request, preventing accidental real network calls.
 type noopHTTPClient struct{}
 
 func (n *noopHTTPClient) Do(req *http.Request) (*http.Response, error) {
