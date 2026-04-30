@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/proggarapsody/bitbottle/compare/v1.7.3...v1.8.0) (2026-04-30)
+
+
+### Features
+
+* seamless audit — bug-class fixes for v1.8.0 ([#49](https://github.com/proggarapsody/bitbottle/issues/49)) ([5eb221f](https://github.com/proggarapsody/bitbottle/commit/5eb221fb801254dd304ae065d2c37c0e2102dfbe))
+
 ## [1.7.3](https://github.com/proggarapsody/bitbottle/compare/v1.7.2...v1.7.3) (2026-04-30)
 
 
