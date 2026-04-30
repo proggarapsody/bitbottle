@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.3](https://github.com/proggarapsody/bitbottle/compare/v1.7.2...v1.7.3) (2026-04-30)
+
+
+### Bug Fixes
+
+* **server:** fetch PR version before merge to prevent HTTP 409 ([#45](https://github.com/proggarapsody/bitbottle/issues/45)) ([fce1b91](https://github.com/proggarapsody/bitbottle/commit/fce1b91134607e332c024b7c14cd75230259ea89))
+
 ## [1.7.2](https://github.com/proggarapsody/bitbottle/compare/v1.7.1...v1.7.2) (2026-04-30)
 
 
