@@ -48,7 +48,7 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			decodeErrorMessage,
 			httpx.ContentTypeAlwaysWrite,
 			serverPaginator{},
-		),
+		).UseDomainErrors(host),
 		buildStatusHTTP: httpx.New(
 			httpClient,
 			host+"/rest/build-status/1.0",
@@ -56,7 +56,7 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			decodeErrorMessage,
 			httpx.ContentTypeAlwaysWrite,
 			serverPaginator{},
-		),
+		).UseDomainErrors(host),
 		host:     host,
 		userSlug: username,
 	}

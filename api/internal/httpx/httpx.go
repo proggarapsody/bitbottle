@@ -79,6 +79,20 @@ type Transport struct {
 	decodeErrMsg      ErrorDecoder
 	contentTypePolicy ContentTypePolicy
 	paginator         Paginator
+	domainHost        string // when non-empty, apiError wraps via backend.ClassifyHTTPError
+}
+
+// UseDomainErrors enables classification of HTTP errors into typed
+// backend.DomainError values on the way out of GetJSON / PostJSON / pagination
+// helpers. host is attached to the returned DomainError so callers and the
+// MCP surface know which Bitbucket instance produced the failure.
+//
+// Adapters call this once during construction. When unset (the default),
+// apiError continues to return the raw *backend.HTTPError for back-compat
+// with existing tests.
+func (t *Transport) UseDomainErrors(host string) *Transport {
+	t.domainHost = host
+	return t
 }
 
 // New constructs a Transport.
@@ -271,9 +285,13 @@ func (t *Transport) apiError(resp *http.Response) error {
 	if resp.Request != nil {
 		url = resp.Request.URL.String()
 	}
-	return &backend.HTTPError{
+	httpErr := &backend.HTTPError{
 		StatusCode: resp.StatusCode,
 		Message:    msg,
 		RequestURL: url,
 	}
+	if t.domainHost == "" {
+		return httpErr
+	}
+	return backend.ClassifyHTTPError(t.domainHost, httpErr)
 }
