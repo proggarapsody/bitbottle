@@ -18,9 +18,28 @@ func executeCompletion(t *testing.T, shell string) (string, error) {
 		InitialConfig: completionConfig,
 	})
 	rootCmd := root.NewCmdRoot(f)
+	rootCmd.SetArgs([]string{"completion", shell})
+	err := rootCmd.Execute()
+	return out.String(), err
+}
+
+func executeCompletionFlag(t *testing.T, shell string) (string, error) {
+	t.Helper()
+	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig: completionConfig,
+	})
+	rootCmd := root.NewCmdRoot(f)
 	rootCmd.SetArgs([]string{"completion", "--shell", shell})
 	err := rootCmd.Execute()
 	return out.String(), err
+}
+
+func TestCompletion_FlagStillSupported(t *testing.T) {
+	t.Parallel()
+
+	got, err := executeCompletionFlag(t, "bash")
+	require.NoError(t, err)
+	assert.NotEmpty(t, got)
 }
 
 func TestCompletion_Bash(t *testing.T) {

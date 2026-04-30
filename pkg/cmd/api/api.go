@@ -59,7 +59,7 @@ hostname, auth token, and TLS settings are applied automatically.`,
 	cmd.Flags().StringArrayVarP(&opts.stringFields, "raw-field", "f", nil, "Add a string-valued JSON body field (`key=value`)")
 	cmd.Flags().StringVar(&opts.input, "input", "", "Read raw request body from `file` (or `-` for stdin)")
 	cmd.Flags().StringVarP(&opts.jq, "jq", "q", "", "Filter the JSON response with a `jq` expression")
-	cmd.Flags().BoolVar(&opts.paginate, "paginate", false, "Follow paginated responses and merge `values` arrays")
+	cmd.Flags().BoolVar(&opts.paginate, "paginate", false, "Follow paginated responses and merge values arrays")
 	return cmd
 }
 
