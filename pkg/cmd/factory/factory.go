@@ -145,9 +145,10 @@ func New() *Factory {
 	}
 }
 
-// DefaultBaseRepo is the standard BaseRepo implementation: detect the repo
-// from the "origin" git remote, falling back to the configured single host
-// when the remote URL omits a host. Errors are user-facing and never expose
+// DefaultBaseRepo is the standard BaseRepo implementation: it first consults
+// bitbottle.host / bitbottle.project / bitbottle.slug in the local git config
+// (written by `bitbottle repo set-default`); when those are unset it falls
+// back to the "origin" git remote. Errors are user-facing and never expose
 // raw exec status codes.
 func DefaultBaseRepo(runner run.Runner, cfg func() (*config.Config, error)) func() (bbrepo.RepoRef, error) {
 	return func() (bbrepo.RepoRef, error) {
@@ -158,6 +159,10 @@ func DefaultBaseRepo(runner run.Runner, cfg func() (*config.Config, error)) func
 		hosts := c.Hosts()
 
 		g := git.New(runner)
+		if ref, ok := readPinnedDefaultRepo(g); ok {
+			return ref, nil
+		}
+
 		remoteURL, gerr := g.RemoteURL("origin")
 		if gerr != nil {
 			if len(hosts) == 0 {
@@ -172,6 +177,19 @@ func DefaultBaseRepo(runner run.Runner, cfg func() (*config.Config, error)) func
 		}
 		return ref, nil
 	}
+}
+
+// readPinnedDefaultRepo returns the repository pinned by `repo set-default`,
+// or ok=false when any of the three keys is missing. All-or-nothing semantics
+// avoid partial pins surprising the user (e.g. host set but project unset).
+func readPinnedDefaultRepo(g *git.Git) (bbrepo.RepoRef, bool) {
+	host, _ := g.GetConfig("bitbottle.host")
+	project, _ := g.GetConfig("bitbottle.project")
+	slug, _ := g.GetConfig("bitbottle.slug")
+	if host == "" || project == "" || slug == "" {
+		return bbrepo.RepoRef{}, false
+	}
+	return bbrepo.RepoRef{Host: host, Project: project, Slug: slug}, true
 }
 
 func configHomeDir() string {

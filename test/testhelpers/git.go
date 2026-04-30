@@ -23,6 +23,11 @@ type FakeRunner struct {
 	mu        sync.Mutex
 	responses []RunResponse
 	Calls     []Call
+	// BitbottleConfig overrides answers for `git config --local --get
+	// bitbottle.<key>` lookups. Tests that exercise the pinned-default-repo
+	// path populate this map; legacy tests leave it nil and bitbottle.* reads
+	// resolve to "missing" without consuming a queued response.
+	BitbottleConfig map[string]string
 }
 
 // NewFakeRunner constructs a FakeRunner seeded with the provided responses.
@@ -33,12 +38,39 @@ func NewFakeRunner(responses ...RunResponse) *FakeRunner {
 }
 
 // Run records the call and returns the next canned response.
+//
+// Reads of bitbottle.* keys via `git config --local --get bitbottle.<name>`
+// are answered as "missing" (empty stdout, no error) without consuming a
+// queued response. This lets pre-existing tests that seed responses only for
+// the legacy git-remote inference path continue to work after the factory
+// gained a `bitbottle repo set-default` consult step. Tests that intentionally
+// exercise the pinned-default path supply explicit responses; their first
+// `bitbottle.host` lookup matches the queued stdout before this shortcut
+// fires.
 func (r *FakeRunner) Run(args ...string) (string, string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	argsCopy := append([]string(nil), args...)
 	r.Calls = append(r.Calls, Call{Args: argsCopy})
+	if isBitbottleConfigGet(args) {
+		if v, ok := r.BitbottleConfig[args[3]]; ok {
+			return v, "", nil
+		}
+		return "", "", nil
+	}
 	return r.next()
+}
+
+// isBitbottleConfigGet reports whether args is a `git config --local --get
+// bitbottle.<key>` invocation.
+func isBitbottleConfigGet(args []string) bool {
+	if len(args) != 4 {
+		return false
+	}
+	if args[0] != "config" || args[1] != "--local" || args[2] != "--get" {
+		return false
+	}
+	return strings.HasPrefix(args[3], "bitbottle.")
 }
 
 // RunInteractive records the call (flagged as interactive) and returns only

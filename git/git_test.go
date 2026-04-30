@@ -8,6 +8,57 @@ import (
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
+// TestGit_GetConfig_ReturnsValue is the tracer for the bitbottle.* config
+// helpers used by `repo set-default` and the BaseRepo consult path.
+func TestGit_GetConfig_ReturnsValue(t *testing.T) {
+	t.Parallel()
+	runner := testhelpers.NewFakeRunner()
+	runner.BitbottleConfig = map[string]string{"bitbottle.project": "MYPROJ"}
+	g := git.New(runner)
+
+	got, err := g.GetConfig("bitbottle.project")
+	if err != nil {
+		t.Fatalf("GetConfig: unexpected error: %v", err)
+	}
+	if got != "MYPROJ" {
+		t.Errorf("GetConfig = %q, want %q", got, "MYPROJ")
+	}
+	runner.AssertCalled(t, "config", "--local", "--get", "bitbottle.project")
+}
+
+// TestGit_GetConfig_MissingReturnsEmpty verifies that a missing key returns
+// empty value with no error, so callers can treat absence as "fall back to
+// other inference". The FakeRunner answers an unset bitbottle.* key as empty
+// without consuming a queued response.
+func TestGit_GetConfig_MissingReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	runner := testhelpers.NewFakeRunner()
+	g := git.New(runner)
+
+	got, err := g.GetConfig("bitbottle.host")
+	if err != nil {
+		t.Fatalf("GetConfig: unexpected error on missing key: %v", err)
+	}
+	if got != "" {
+		t.Errorf("GetConfig = %q, want empty for missing key", got)
+	}
+}
+
+// TestGit_SetConfig_WritesLocal verifies the write path used by
+// `repo set-default`.
+func TestGit_SetConfig_WritesLocal(t *testing.T) {
+	t.Parallel()
+	runner := testhelpers.NewFakeRunner(
+		testhelpers.RunResponse{},
+	)
+	g := git.New(runner)
+
+	if err := g.SetConfig("bitbottle.host", "bb.example.com"); err != nil {
+		t.Fatalf("SetConfig: unexpected error: %v", err)
+	}
+	runner.AssertCalled(t, "config", "--local", "bitbottle.host", "bb.example.com")
+}
+
 func TestGit_CurrentBranch(t *testing.T) {
 	t.Parallel()
 
