@@ -24,10 +24,9 @@ type Store struct {
 	d   map[string]string
 }
 
-// New constructs a Store rooted at dir.
 func New(dir string) *Store { return &Store{dir: dir, d: map[string]string{}} }
 
-// Load reads aliases.yml. Missing file is not an error.
+// Load reads aliases.yml. A missing file is treated as an empty store.
 func (s *Store) Load() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -50,7 +49,6 @@ func (s *Store) Load() error {
 	return nil
 }
 
-// Save writes aliases.yml atomically.
 func (s *Store) Save() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -93,7 +91,6 @@ func (s *Store) Set(name, expansion string) error {
 	return nil
 }
 
-// Get returns the raw expansion for name.
 func (s *Store) Get(name string) (string, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -101,7 +98,6 @@ func (s *Store) Get(name string) (string, bool) {
 	return v, ok
 }
 
-// Delete removes name. Returns false if it didn't exist.
 func (s *Store) Delete(name string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -112,7 +108,6 @@ func (s *Store) Delete(name string) bool {
 	return true
 }
 
-// Entry is one row from List.
 type Entry struct {
 	Name      string
 	Expansion string

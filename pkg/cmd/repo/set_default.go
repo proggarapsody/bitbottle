@@ -55,8 +55,6 @@ func NewCmdRepoSetDefault(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-// parseSetDefaultArg accepts `HOST/PROJECT/REPO` (3 parts) or `PROJECT/REPO`
-// (2 parts; host inferred from the single configured host).
 func parseSetDefaultArg(arg string, f *factory.Factory) (host, project, slug string, err error) {
 	parts := strings.Split(arg, "/")
 	switch len(parts) {

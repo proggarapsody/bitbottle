@@ -78,7 +78,6 @@ func (p *Printer[T]) renderTable() error {
 		return nil
 	}
 
-	// Collect only table-visible fields (JSONOnly fields are excluded).
 	tableFields := make([]Field[T], 0, len(p.fields))
 	for _, f := range p.fields {
 		if !f.JSONOnly {

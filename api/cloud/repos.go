@@ -39,8 +39,6 @@ func (w wireCloudRepo) toDomain() backend.Repository {
 	}
 }
 
-// ListRepos lists repositories in the authenticated user's workspace, capping
-// the total returned at limit (limit <= 0 means unbounded).
 func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
 	user, err := c.GetCurrentUser()
 	if err != nil {
@@ -60,7 +58,6 @@ func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
 	}, limit)
 }
 
-// GetRepo fetches a single repository.
 func (c *Client) GetRepo(ns, slug string) (backend.Repository, error) {
 	var w wireCloudRepo
 	if err := c.getJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), &w); err != nil {
@@ -75,7 +72,6 @@ type wireCloudCreateRepo struct {
 	Name      string `json:"name"`
 }
 
-// CreateRepo creates a new repository in the workspace ns.
 func (c *Client) CreateRepo(ns string, in backend.CreateRepoInput) (backend.Repository, error) {
 	body := wireCloudCreateRepo{
 		SCM:       in.SCM,
@@ -89,7 +85,6 @@ func (c *Client) CreateRepo(ns string, in backend.CreateRepoInput) (backend.Repo
 	return w.toDomain(), nil
 }
 
-// DeleteRepo deletes a repository.
 func (c *Client) DeleteRepo(ns, slug string) error {
 	return c.delete(fmt.Sprintf("/repositories/%s/%s", ns, slug))
 }

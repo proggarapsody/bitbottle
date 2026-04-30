@@ -8,8 +8,6 @@ import (
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-// wire types for JSON deserialization from Bitbucket Data Center responses.
-
 type wireRepository struct {
 	ID      int    `json:"id"`
 	Slug    string `json:"slug"`
@@ -41,8 +39,6 @@ func (w wireRepository) toDomain() backend.Repository {
 	}
 }
 
-// ListRepos lists repositories accessible to the authenticated user, capping
-// the total returned at limit (limit <= 0 means unbounded).
 func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
 	path := fmt.Sprintf("/repos?limit=%d", limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
@@ -58,7 +54,6 @@ func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
 	}, limit)
 }
 
-// GetRepo fetches a single repository.
 func (c *Client) GetRepo(ns, slug string) (backend.Repository, error) {
 	var w wireRepository
 	if err := c.getJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), &w); err != nil {
@@ -74,7 +69,6 @@ type wireCreateRepoInput struct {
 	Description string `json:"description,omitempty"`
 }
 
-// CreateRepo creates a new repository in ns.
 func (c *Client) CreateRepo(ns string, in backend.CreateRepoInput) (backend.Repository, error) {
 	body := wireCreateRepoInput{
 		Name:        in.Name,
@@ -89,7 +83,6 @@ func (c *Client) CreateRepo(ns string, in backend.CreateRepoInput) (backend.Repo
 	return w.toDomain(), nil
 }
 
-// DeleteRepo deletes a repository.
 func (c *Client) DeleteRepo(ns, slug string) error {
 	return c.delete(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), nil)
 }
@@ -100,7 +93,6 @@ type wireAppProperties struct {
 	DisplayName string `json:"displayName"`
 }
 
-// GetApplicationProperties fetches Bitbucket version information.
 func (c *Client) GetApplicationProperties() (backend.AppProperties, error) {
 	var w wireAppProperties
 	if err := c.getJSON("/application-properties", &w); err != nil {

@@ -11,7 +11,6 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-// NewCmdPRComment returns the `bitbottle pr comment` parent group.
 func NewCmdPRComment(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "comment",

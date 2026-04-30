@@ -12,7 +12,6 @@ type Runner interface {
 	RunInteractive(args ...string) error
 }
 
-// SystemRunner executes real git commands.
 type SystemRunner struct{}
 
 func (r *SystemRunner) Run(args ...string) (string, string, error) {

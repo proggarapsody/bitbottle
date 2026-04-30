@@ -41,8 +41,6 @@ hosts are configured.`,
 	return cmd
 }
 
-// parsePRID parses a positional PR ID argument and returns a friendly error
-// when the value is not a positive integer.
 func parsePRID(arg string) (int, error) {
 	id, err := strconv.Atoi(arg)
 	if err != nil {
@@ -51,11 +49,6 @@ func parsePRID(arg string) (int, error) {
 	return id, nil
 }
 
-// resolvePRTarget is the common entry point for sub-commands that operate on a
-// single existing pull request (`view`, `diff`, `approve`, `checkout`,
-// `merge`). It parses the PR ID, resolves the repository reference from the
-// current git remote (uppercasing the Bitbucket Data Center project key), and
-// returns a backend client bound to the resolved host.
 func resolvePRTarget(f *factory.Factory, args []string, hostnameFlag string) (bbrepo.RepoRef, int, backend.Client, error) {
 	prID, err := parsePRID(args[0])
 	if err != nil {

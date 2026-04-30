@@ -24,7 +24,6 @@ func (w wireCloudCommitStatus) toDomain() backend.CommitStatus {
 	}
 }
 
-// ListCommitStatuses lists build / CI statuses reported against a commit hash.
 func (c *Client) ListCommitStatuses(ns, slug, hash string) ([]backend.CommitStatus, error) {
 	var page cloudPagedResponse[wireCloudCommitStatus]
 	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/statuses?pagelen=100", ns, slug, hash)

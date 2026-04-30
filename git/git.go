@@ -19,7 +19,6 @@ func New(runner run.Runner) *Git {
 	return &Git{runner: runner}
 }
 
-// CurrentBranch returns the name of the current branch.
 func (g *Git) CurrentBranch() (string, error) {
 	stdout, _, err := g.runner.Run("rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
@@ -32,7 +31,6 @@ func (g *Git) CurrentBranch() (string, error) {
 	return branch, nil
 }
 
-// RemoteURL returns the URL for the named remote.
 func (g *Git) RemoteURL(name string) (string, error) {
 	stdout, _, err := g.runner.Run("remote", "get-url", name)
 	if err != nil {
@@ -61,7 +59,6 @@ func (g *Git) SetConfig(key, value string) error {
 	return err
 }
 
-// HasUncommittedChanges returns true if the working tree is dirty.
 func (g *Git) HasUncommittedChanges() (bool, error) {
 	stdout, _, err := g.runner.Run("status", "--porcelain")
 	if err != nil {
@@ -70,19 +67,16 @@ func (g *Git) HasUncommittedChanges() (bool, error) {
 	return strings.TrimSpace(stdout) != "", nil
 }
 
-// Fetch fetches a branch from remote.
 func (g *Git) Fetch(remote, branch string) error {
 	_, _, err := g.runner.Run("fetch", remote, branch)
 	return err
 }
 
-// Checkout checks out a branch.
 func (g *Git) Checkout(branch string) error {
 	_, _, err := g.runner.Run("checkout", branch)
 	return err
 }
 
-// Clone clones a repo URL into dir (empty string = default dir).
 func (g *Git) Clone(url, dir string) error {
 	args := []string{"clone", url}
 	if dir != "" {
@@ -92,7 +86,6 @@ func (g *Git) Clone(url, dir string) error {
 	return err
 }
 
-// CommitsAhead returns number of commits in current branch ahead of base.
 func (g *Git) CommitsAhead(base string) (int, error) {
 	stdout, _, err := g.runner.Run("rev-list", "HEAD..."+base, "--count")
 	if err != nil {

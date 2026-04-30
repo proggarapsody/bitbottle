@@ -22,7 +22,6 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-// options bundles the flag values for `bitbottle api`.
 type options struct {
 	hostname     string
 	method       string
@@ -34,7 +33,6 @@ type options struct {
 	paginate     bool     // --paginate
 }
 
-// NewCmdAPI builds the `bitbottle api` cobra command.
 func NewCmdAPI(f *factory.Factory) *cobra.Command {
 	opts := &options{}
 
@@ -185,14 +183,6 @@ func runAPI(cmd *cobra.Command, f *factory.Factory, endpoint string, opts *optio
 	return nil
 }
 
-// runPaginated walks a Bitbucket paginated collection (Cloud `next` URLs or
-// Server `nextPageStart` query params), merges every page's `values` array
-// into a single JSON array, and emits it (optionally jq-filtered).
-//
-// Paginated body flags (-F/-f/--input) are not supported because Bitbucket
-// pagination is GET-only. The caller's request method is preserved for the
-// first call but Cloud's `next` URL is always GET; Server's nextPageStart
-// follow-up is also GET.
 func runPaginated(cmd *cobra.Command, f *factory.Factory, hc factory.HTTPClient, firstReq *http.Request, opts *options) error {
 	var aggregate []any
 	currentReq := firstReq
@@ -219,7 +209,6 @@ func runPaginated(cmd *cobra.Command, f *factory.Factory, hc factory.HTTPClient,
 		}
 		aggregate = append(aggregate, page.Values...)
 
-		// Cloud-style: explicit next URL.
 		if page.Next != "" {
 			next, err := http.NewRequestWithContext(cmd.Context(), http.MethodGet, page.Next, nil)
 			if err != nil {
@@ -230,9 +219,6 @@ func runPaginated(cmd *cobra.Command, f *factory.Factory, hc factory.HTTPClient,
 			continue
 		}
 
-		// Server-style: walk via nextPageStart while !isLastPage. We can detect
-		// Server-flavored responses by the presence of the IsLastPage marker;
-		// json.Unmarshal of a Cloud response leaves IsLastPage at its zero value.
 		if page.hasIsLastPage && !page.IsLastPage {
 			nextURL := *currentReq.URL
 			q := nextURL.Query()
@@ -262,10 +248,6 @@ func runPaginated(cmd *cobra.Command, f *factory.Factory, hc factory.HTTPClient,
 	return err
 }
 
-// paginatedPage models the relevant subset of both Cloud and Server collection
-// responses. Unknown fields are ignored. hasIsLastPage is set via custom
-// unmarshaling so we can distinguish "Server response with isLastPage:true"
-// from "Cloud response that omits the field".
 type paginatedPage struct {
 	Values        []any `json:"values"`
 	Next          string
@@ -315,10 +297,6 @@ func copyAuthAndCustomHeaders(dst, src *http.Request) {
 	}
 }
 
-// repoVarNames are the placeholder tokens replaced from the resolved base repo.
-// project/slug match RepoRef field names (used by Server / DC paths);
-// workspace/repo_slug are Cloud-flavored aliases for the same values, since
-// Bitbucket Cloud calls them "workspace" and "repo_slug" in its docs.
 var repoVarNames = []string{"{project}", "{slug}", "{workspace}", "{repo_slug}"}
 
 // expandVars substitutes {workspace}/{repo_slug}/{project}/{slug} in endpoint
@@ -364,10 +342,6 @@ func firstPresent(s string, tokens []string) string {
 	return ""
 }
 
-// buildBody assembles the request body from -F/-f/--input flags. Returns
-// (nil, "", nil) when no body flags are set. -F and -f populate a JSON object;
-// --input is mutually exclusive with field flags and streams the file's bytes
-// verbatim (with no Content-Type set unless the user supplies -H).
 func buildBody(f *factory.Factory, opts *options) (io.Reader, string, error) {
 	if opts.input != "" {
 		if len(opts.typedFields) > 0 || len(opts.stringFields) > 0 {
@@ -450,13 +424,6 @@ func applyJQ(w io.Writer, respBody []byte, expr string) error {
 	return nil
 }
 
-// setNestedKey sets a value in a nested map using dot-separated key notation.
-// For example, key "source.branch.name" with value "main" produces:
-//
-//	{"source": {"branch": {"name": "main"}}}
-//
-// Existing sub-maps are reused; non-map values at intermediate levels are
-// overwritten.
 func setNestedKey(m map[string]any, key string, val any) {
 	parts := strings.SplitN(key, ".", 2)
 	if len(parts) == 1 {
@@ -471,10 +438,6 @@ func setNestedKey(m map[string]any, key string, val any) {
 	m[parts[0]] = sub
 }
 
-// parseTypedValue converts a -F right-hand side into its JSON-typed Go value.
-// Recognised forms: "true"/"false" → bool, integer → int64, "@filename" →
-// file contents as string, "@-" → stdin contents as string. Anything else is
-// kept as a string.
 func parseTypedValue(v string) (any, error) {
 	switch v {
 	case "true":

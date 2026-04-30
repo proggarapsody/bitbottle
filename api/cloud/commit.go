@@ -47,7 +47,6 @@ func (w wireCloudCommit) toDomain() backend.Commit {
 	}
 }
 
-// ListCommits lists commits on a branch for a repository.
 func (c *Client) ListCommits(ns, slug, branch string, limit int) ([]backend.Commit, error) {
 	var page cloudPagedResponse[wireCloudCommit]
 	path := fmt.Sprintf("/repositories/%s/%s/commits?branch=%s&pagelen=%d", ns, slug, url.QueryEscape(branch), limit)
@@ -61,7 +60,6 @@ func (c *Client) ListCommits(ns, slug, branch string, limit int) ([]backend.Comm
 	return commits, nil
 }
 
-// GetCommit fetches a single commit by hash.
 func (c *Client) GetCommit(ns, slug, hash string) (backend.Commit, error) {
 	var w wireCloudCommit
 	path := fmt.Sprintf("/repositories/%s/%s/commit/%s", ns, slug, hash)

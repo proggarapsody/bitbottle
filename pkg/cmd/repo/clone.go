@@ -39,7 +39,6 @@ func NewCmdRepoClone(f *factory.Factory) *cobra.Command {
 
 			cloneURL := buildCloneURL(host, ref, hostCfg)
 
-			// Optional target directory (second positional arg).
 			var dir string
 			if len(args) == 2 {
 				dir = args[1]
@@ -53,14 +52,6 @@ func NewCmdRepoClone(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-// buildCloneURL returns the git clone URL for a repository, honouring the
-// host's configured GitProtocol (defaulting to ssh) and the cloud-vs-server
-// distinction.
-//
-// For Bitbucket Server SSH clones we emit an explicit ssh:// URL — the
-// scp-style "git@host:project/repo.git" form returned by bbinstance.SSHURL
-// only works against the default port and does not encode the
-// project/repo path the same way for self-hosted DC servers.
 func buildCloneURL(host string, ref bbrepo.RepoRef, hostCfg config.HostConfig) string {
 	protocol := hostCfg.GitProtocol
 	if protocol == "" {

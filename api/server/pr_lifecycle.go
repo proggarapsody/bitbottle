@@ -6,7 +6,6 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 )
 
-// UpdatePR updates the title and/or description of a pull request.
 func (c *Client) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
 	body := map[string]string{
 		"title":       in.Title,
@@ -71,7 +70,6 @@ type wirePRWithReviewers struct {
 	Reviewers []wireReviewer `json:"reviewers"`
 }
 
-// RequestReview fetches the current PR, merges in new reviewers (deduped), and PUTs it back.
 func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 	var current wirePRWithReviewers
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
@@ -79,7 +77,6 @@ func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 		return err
 	}
 
-	// Build a deduped set of existing reviewer names.
 	existing := make(map[string]struct{}, len(current.Reviewers))
 	merged := make([]wireReviewer, 0, len(current.Reviewers)+len(users))
 	for _, r := range current.Reviewers {

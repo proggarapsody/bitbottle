@@ -38,9 +38,6 @@ type wireServerPRActivity struct {
 	Comment wireServerPRComment `json:"comment"`
 }
 
-// ListPRComments lists top-level comments on a pull request. Bitbucket Server
-// exposes comments via the activities feed; we filter for COMMENTED actions.
-// All pages are followed (no caller-supplied cap on this endpoint today).
 func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/activities?limit=100", ns, slug, id)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PRComment, error) {
@@ -63,7 +60,6 @@ type wireServerAddPRComment struct {
 	Text string `json:"text"`
 }
 
-// AddPRComment adds a top-level comment to a pull request.
 func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
 	body := wireServerAddPRComment{Text: in.Text}
 	var w wireServerPRComment

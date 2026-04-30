@@ -52,8 +52,6 @@ func errResult(msg string) *mcplib.CallToolResult {
 	return mcplib.NewToolResultError(msg)
 }
 
-// errorEnvelope is the structured payload emitted for typed domain errors.
-// Agents read Code to branch deterministically; Message remains for humans.
 type errorEnvelope struct {
 	Code     string `json:"code"`
 	Host     string `json:"host,omitempty"`
@@ -63,10 +61,6 @@ type errorEnvelope struct {
 	Message  string `json:"message"`
 }
 
-// errResultErr renders err for an MCP tool response. When the error wraps a
-// backend.DomainError, the result body is a JSON envelope with a stable code
-// so AI agents can branch on the error class without parsing prose. Other
-// errors fall back to a plain message.
 func errResultErr(err error) *mcplib.CallToolResult {
 	var de *backend.DomainError
 	if errors.As(err, &de) {
@@ -104,7 +98,6 @@ func domainErrorCode(kind error) string {
 	}
 }
 
-// splitTrimmed splits s by sep and trims whitespace from each part.
 func splitTrimmed(s, sep string) []string {
 	parts := strings.Split(s, sep)
 	result := make([]string, 0, len(parts))

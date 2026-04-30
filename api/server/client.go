@@ -111,27 +111,22 @@ func decodeErrorMessage(body io.Reader) string {
 	return env.Errors[0].Message
 }
 
-// getJSON GETs path and decodes the JSON response into v.
 func (c *Client) getJSON(path string, v any) error {
 	return c.http.GetJSON(path, v)
 }
 
-// getText GETs path and returns the raw body string.
 func (c *Client) getText(path string) (string, error) {
 	return c.http.GetText(path)
 }
 
-// postJSON POSTs body as JSON to path and decodes the response into v.
 func (c *Client) postJSON(path string, body, v any) error {
 	return c.http.PostJSON(path, body, v)
 }
 
-// putJSON PUTs body as JSON to path and decodes the response into v.
 func (c *Client) putJSON(path string, body, v any) error {
 	return c.http.PutJSON(path, body, v)
 }
 
-// delete sends a DELETE request to path with an optional JSON body.
 func (c *Client) delete(path string, body any) error {
 	return c.http.DeleteJSON(path, body)
 }

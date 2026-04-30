@@ -47,8 +47,6 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-// resolveHostname returns the hostname to use: explicit flag, or the single
-// configured host, or an error if ambiguous.
 func resolveHostname(f *factory.Factory, flag string) (string, error) {
 	if flag != "" {
 		return flag, nil
