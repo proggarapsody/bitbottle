@@ -59,6 +59,9 @@ func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 			fmt.Fprintf(f.IOStreams.Out, "Name:      %s\n", r.Slug)
 			fmt.Fprintf(f.IOStreams.Out, "Namespace: %s\n", r.Namespace)
 			fmt.Fprintf(f.IOStreams.Out, "SCM:       %s\n", r.SCM)
+			if r.Description != "" {
+				fmt.Fprintf(f.IOStreams.Out, "Description: %s\n", r.Description)
+			}
 			if r.WebURL != "" {
 				fmt.Fprintf(f.IOStreams.Out, "URL:       %s\n", r.WebURL)
 			}
@@ -78,6 +81,7 @@ func repoFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[b
 	p.AddField(format.Field[backend.Repository]{Name: "name", Header: "NAME", Extract: func(r backend.Repository) any { return r.Name }})
 	p.AddField(format.Field[backend.Repository]{Name: "namespace", Header: "PROJECT", Extract: func(r backend.Repository) any { return r.Namespace }})
 	p.AddField(format.Field[backend.Repository]{Name: "scm", Header: "TYPE", Extract: func(r backend.Repository) any { return r.SCM }})
+	p.AddField(format.Field[backend.Repository]{Name: "description", Header: "DESCRIPTION", Extract: func(r backend.Repository) any { return r.Description }})
 	p.AddField(format.Field[backend.Repository]{Name: "webURL", Header: "URL", Extract: func(r backend.Repository) any { return r.WebURL }})
 	return p
 }

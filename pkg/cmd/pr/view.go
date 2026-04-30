@@ -44,7 +44,14 @@ func NewCmdPRView(f *factory.Factory) *cobra.Command {
 
 			out := f.IOStreams.Out
 			fmt.Fprintf(out, "#%d %s\n", p.ID, p.Title)
-			fmt.Fprintf(out, "State:  %s\n", p.State)
+			state := p.State
+			if p.Draft {
+				state += " (draft)"
+			}
+			fmt.Fprintf(out, "State:  %s\n", state)
+			if p.Description != "" {
+				fmt.Fprintf(out, "\n%s\n\n", p.Description)
+			}
 			author := p.Author.Slug
 			if p.Author.DisplayName != "" {
 				author = p.Author.DisplayName

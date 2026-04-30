@@ -9,11 +9,12 @@ import (
 )
 
 type wireCloudRepo struct {
-	FullName string `json:"full_name"`
-	Slug     string `json:"slug"`
-	Name     string `json:"name"`
-	SCM      string `json:"scm"`
-	Links    struct {
+	FullName    string `json:"full_name"`
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	SCM         string `json:"scm"`
+	Description string `json:"description"`
+	Links       struct {
 		HTML struct {
 			Href string `json:"href"`
 		} `json:"html"`
@@ -28,20 +29,25 @@ func (w wireCloudRepo) toDomain() backend.Repository {
 		slug = parts[1]
 	}
 	return backend.Repository{
-		Slug:      slug,
-		Name:      w.Name,
-		Namespace: ns,
-		SCM:       w.SCM,
-		WebURL:    w.Links.HTML.Href,
+		Slug:        slug,
+		Name:        w.Name,
+		Namespace:   ns,
+		SCM:         w.SCM,
+		WebURL:      w.Links.HTML.Href,
+		Description: w.Description,
 	}
 }
 
-// ListRepos lists repositories visible to the authenticated user, following
+// ListRepos lists repositories in the authenticated user's workspace, following
 // all pagination pages.
 func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
+	user, err := c.GetCurrentUser()
+	if err != nil {
+		return nil, err
+	}
 	var repos []backend.Repository
-	path := fmt.Sprintf("/repositories?pagelen=%d", limit)
-	err := c.http.GetAllJSON(path, func(body []byte) error {
+	path := fmt.Sprintf("/repositories/%s?pagelen=%d", user.Slug, limit)
+	err = c.http.GetAllJSON(path, func(body []byte) error {
 		var page cloudPagedResponse[wireCloudRepo]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return err

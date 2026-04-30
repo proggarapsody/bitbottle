@@ -85,6 +85,27 @@ func TestCloudClient_GetPipeline_IssuesCorrectPath(t *testing.T) {
 	assert.Equal(t, "/repositories/myworkspace/my-service/pipelines/"+uuid, gotPath)
 }
 
+func TestCloudClient_ListPipelines_UUIDHasNoBraces(t *testing.T) {
+	t.Parallel()
+	client, _ := cloudFixtureClient(t, "testdata/pipeline_list.json", 200)
+	pipelines, err := client.ListPipelines("myworkspace", "my-service", 10)
+	require.NoError(t, err)
+	require.NotEmpty(t, pipelines)
+	for _, p := range pipelines {
+		assert.NotContains(t, p.UUID, "{", "UUID should not contain opening brace")
+		assert.NotContains(t, p.UUID, "}", "UUID should not contain closing brace")
+	}
+}
+
+func TestCloudClient_GetPipeline_UUIDHasNoBraces(t *testing.T) {
+	t.Parallel()
+	client, _ := cloudFixtureClient(t, "testdata/pipeline_get.json", 200)
+	p, err := client.GetPipeline("myworkspace", "my-service", "{aabbccdd-1234-5678-abcd-000000000001}")
+	require.NoError(t, err)
+	assert.NotContains(t, p.UUID, "{")
+	assert.NotContains(t, p.UUID, "}")
+}
+
 func TestCloudClient_RunPipeline_PostsCorrectBody(t *testing.T) {
 	t.Parallel()
 	var gotBody map[string]any

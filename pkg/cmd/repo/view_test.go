@@ -100,6 +100,44 @@ func TestRepoView_APIError_PropagatesError(t *testing.T) {
 	assert.Contains(t, err.Error(), "404")
 }
 
+func TestRepoView_ShowsDescription(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			r := testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("my-service"))
+			r.Description = "bitbottle manual test"
+			return r, nil
+		},
+	}
+
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoView(f)
+	cmd.SetArgs([]string{"MYPROJ/my-service"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Contains(t, out.String(), "bitbottle manual test")
+}
+
+func TestRepoView_NoDescriptionLine_WhenEmpty(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			return testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("my-service")), nil
+		},
+	}
+
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoView(f)
+	cmd.SetArgs([]string{"MYPROJ/my-service"})
+	require.NoError(t, cmd.Execute())
+
+	assert.NotContains(t, out.String(), "Description:")
+}
+
 func TestNewCmdRepoView_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})

@@ -70,6 +70,26 @@ func TestCloudClient_ListRepos_Empty(t *testing.T) {
 	assert.Empty(t, repos)
 }
 
+func TestCloudClient_ListRepos_UsesWorkspacePath(t *testing.T) {
+	t.Parallel()
+	var gotRepoPaths []string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/user" {
+			_, _ = w.Write([]byte(`{"nickname":"testws","account_id":"abc","display_name":"Test"}`))
+			return
+		}
+		gotRepoPaths = append(gotRepoPaths, r.URL.Path)
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.ListRepos(10)
+	require.NoError(t, err)
+	require.Len(t, gotRepoPaths, 1)
+	assert.Equal(t, "/repositories/testws", gotRepoPaths[0])
+}
+
 func TestCloudClient_CreateRepo_SendsScmNotScmId(t *testing.T) {
 	t.Parallel()
 	var gotBody []byte

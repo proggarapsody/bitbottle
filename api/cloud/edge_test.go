@@ -20,13 +20,17 @@ import (
 // accumulates values from all pages.
 func TestCloudClient_ListRepos_FollowsNextLink(t *testing.T) {
 	t.Parallel()
-	var requestCount int32
+	var repoRequestCount int32
 	var srv *httptest.Server
 	srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		count := atomic.AddInt32(&requestCount, 1)
 		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/user" {
+			_, _ = io.WriteString(w, `{"nickname":"ws","account_id":"ws","display_name":"WS"}`)
+			return
+		}
+		count := atomic.AddInt32(&repoRequestCount, 1)
 		if count == 1 {
-			nextURL := srv.URL + "/repositories?page=2"
+			nextURL := srv.URL + "/repositories/ws?page=2"
 			body := fmt.Sprintf(`{"pagelen":1,"page":1,"size":2,"values":[
 				{"type":"repository","full_name":"ws/repo-a","slug":"repo-a","name":"repo-a","scm":"git","links":{"html":{"href":"https://bitbucket.org/ws/repo-a"}}}
 			],"next":"%s"}`, nextURL)
@@ -46,8 +50,8 @@ func TestCloudClient_ListRepos_FollowsNextLink(t *testing.T) {
 	require.Len(t, repos, 2, "all pages must be accumulated")
 	assert.Equal(t, "repo-a", repos[0].Slug)
 	assert.Equal(t, "repo-b", repos[1].Slug)
-	assert.Equal(t, int32(2), atomic.LoadInt32(&requestCount),
-		"both pages must be fetched")
+	assert.Equal(t, int32(2), atomic.LoadInt32(&repoRequestCount),
+		"both repo pages must be fetched")
 }
 
 // TestCloudClient_ListPRs_FollowsNextLink verifies that ListPRs follows the

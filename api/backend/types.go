@@ -18,11 +18,12 @@ type Options struct {
 
 // Repository is the domain representation of a Bitbucket repository.
 type Repository struct {
-	Slug      string
-	Name      string
-	Namespace string
-	SCM       string
-	WebURL    string
+	Slug        string
+	Name        string
+	Namespace   string
+	SCM         string
+	WebURL      string
+	Description string
 }
 
 // PullRequest is the domain representation of a Bitbucket pull request.

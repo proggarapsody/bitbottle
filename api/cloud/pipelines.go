@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 )
@@ -40,7 +41,7 @@ func (w wireCloudPipeline) toDomain(ns, slug string) backend.Pipeline {
 		ns, slug, w.BuildNumber,
 	)
 	return backend.Pipeline{
-		UUID:        w.UUID,
+		UUID:        stripBraces(w.UUID),
 		BuildNumber: w.BuildNumber,
 		State:       state,
 		RefType:     w.Target.RefType,
@@ -84,6 +85,12 @@ func braceUUID(uuid string) string {
 		return uuid
 	}
 	return "{" + uuid + "}"
+}
+
+// stripBraces removes leading '{' and trailing '}' from a UUID string as
+// returned by the Bitbucket Cloud API, so the domain model stores a plain UUID.
+func stripBraces(uuid string) string {
+	return strings.Trim(uuid, "{}")
 }
 
 type wireRunPipelineInput struct {
