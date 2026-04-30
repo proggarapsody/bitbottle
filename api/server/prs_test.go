@@ -87,15 +87,25 @@ func TestServerClient_CreatePR_NoDoublePrefix(t *testing.T) {
 	assert.NotContains(t, bodyStr, "refs/heads/refs/heads/")
 }
 
+// newMergePRHandler returns a handler that serves testdata/pr_get.json for all
+// requests and captures the body of the final POST (the actual merge call).
+func newMergePRHandler(t *testing.T, mergeBody *[]byte) http.HandlerFunc {
+	t.Helper()
+	fixture, err := os.ReadFile("testdata/pr_get.json")
+	require.NoError(t, err)
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			*mergeBody, _ = io.ReadAll(r.Body)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(fixture)
+	}
+}
+
 func TestServerClient_MergePR_SendsStrategy(t *testing.T) {
 	t.Parallel()
 	var gotBody []byte
-	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
-		gotBody, _ = io.ReadAll(r.Body)
-		body, _ := os.ReadFile("testdata/pr_get.json")
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(body)
-	})
+	client, _ := newServerClient(t, newMergePRHandler(t, &gotBody))
 	_, err := client.MergePR("MYPROJ", "my-service", 42, backend.MergePRInput{Strategy: "squash"})
 	require.NoError(t, err)
 	assert.Contains(t, string(gotBody), `"strategy":"squash"`)
@@ -104,15 +114,23 @@ func TestServerClient_MergePR_SendsStrategy(t *testing.T) {
 func TestServerClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
 	t.Parallel()
 	var gotBody []byte
-	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
-		gotBody, _ = io.ReadAll(r.Body)
-		body, _ := os.ReadFile("testdata/pr_get.json")
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(body)
-	})
+	client, _ := newServerClient(t, newMergePRHandler(t, &gotBody))
 	_, err := client.MergePR("MYPROJ", "my-service", 42, backend.MergePRInput{})
 	require.NoError(t, err)
 	assert.NotContains(t, string(gotBody), `"strategy"`)
+}
+
+// TestServerClient_MergePR_SendsCurrentVersion verifies that MergePR fetches
+// the PR first and forwards its version in the merge POST body — the field
+// Bitbucket Server requires to avoid HTTP 409 "out-of-date information".
+func TestServerClient_MergePR_SendsCurrentVersion(t *testing.T) {
+	t.Parallel()
+	var gotBody []byte
+	client, _ := newServerClient(t, newMergePRHandler(t, &gotBody))
+	_, err := client.MergePR("MYPROJ", "my-service", 42, backend.MergePRInput{})
+	require.NoError(t, err)
+	// pr_get.json has "version":3; the merge body must echo it back.
+	assert.Contains(t, string(gotBody), `"version":3`)
 }
 
 func TestServerClient_ApprovePR_PostsToApproveEndpoint(t *testing.T) {

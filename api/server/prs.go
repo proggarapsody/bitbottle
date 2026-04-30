@@ -10,6 +10,7 @@ import (
 
 type wirePR struct {
 	ID          int    `json:"id"`
+	Version     int    `json:"version"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	State       string `json:"state"`
@@ -121,19 +122,27 @@ func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.Pu
 }
 
 type wireMergePRInput struct {
+	Version  int    `json:"version"`
 	Message  string `json:"message,omitempty"`
 	Strategy string `json:"strategy,omitempty"`
 }
 
 // MergePR merges a pull request.
+// Bitbucket Server uses optimistic concurrency: the POST body must include the
+// current PR version (from GET), otherwise the server returns HTTP 409.
 func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
+	var current wirePR
+	prPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
+	if err := c.getJSON(prPath, &current); err != nil {
+		return backend.PullRequest{}, err
+	}
 	body := wireMergePRInput{
+		Version:  current.Version,
 		Message:  in.Message,
 		Strategy: in.Strategy,
 	}
 	var w wirePR
-	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/merge", ns, slug, id)
-	if err := c.postJSON(path, body, &w); err != nil {
+	if err := c.postJSON(prPath+"/merge", body, &w); err != nil {
 		return backend.PullRequest{}, err
 	}
 	return w.toDomain(), nil

@@ -25,18 +25,23 @@ func TestPRMerge_Integration_ServerEndToEnd(t *testing.T) {
 		gotMethod string
 		gotPath   string
 	)
+	prJSON := `{
+		"id": 42,
+		"version": 1,
+		"title": "Done",
+		"state": "MERGED",
+		"author": {"user": {"slug": "alice", "displayName": "Alice"}},
+		"fromRef": {"id": "refs/heads/feat/x", "displayId": "feat/x"},
+		"toRef": {"id": "refs/heads/main", "displayId": "main"}
+	}`
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotMethod = r.Method
-		gotPath = r.URL.Path
+		// Record only the merge POST — the GET that fetches the version fires first.
+		if r.Method == http.MethodPost {
+			gotMethod = r.Method
+			gotPath = r.URL.Path
+		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{
-			"id": 42,
-			"title": "Done",
-			"state": "MERGED",
-			"author": {"user": {"slug": "alice", "displayName": "Alice"}},
-			"fromRef": {"id": "refs/heads/feat/x", "displayId": "feat/x"},
-			"toRef": {"id": "refs/heads/main", "displayId": "main"}
-		}`)
+		_, _ = io.WriteString(w, prJSON)
 	}))
 	t.Cleanup(srv.Close)
 
