@@ -186,12 +186,28 @@ type PipelineClient interface {
 	RunPipeline(ns, slug string, in RunPipelineInput) (Pipeline, error)
 }
 
-// AsPipelineClient returns the PipelineClient view of c, or an error if the
-// backend does not support pipelines (i.e. is not Bitbucket Cloud).
-func AsPipelineClient(c Client) (PipelineClient, error) {
+// Feature names a capability that some backends may not implement. The
+// registry maps each Feature to the optional interface a Client must
+// satisfy to expose that capability.
+type Feature string
+
+const (
+	// FeaturePipelines is the Bitbucket Cloud Pipelines capability.
+	FeaturePipelines Feature = "pipelines"
+)
+
+// AsPipelineClient returns the PipelineClient view of c, or a typed
+// *DomainError (Kind=ErrUnsupportedOnHost) if the backend at host does not
+// implement the Pipelines capability.
+func AsPipelineClient(c Client, host string) (PipelineClient, error) {
 	pc, ok := c.(PipelineClient)
 	if !ok {
-		return nil, fmt.Errorf("pipelines are only supported on Bitbucket Cloud")
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Host:    host,
+			Feature: string(FeaturePipelines),
+			Message: fmt.Sprintf("pipelines are not supported on %s (Bitbucket Cloud only)", host),
+		}
 	}
 	return pc, nil
 }
