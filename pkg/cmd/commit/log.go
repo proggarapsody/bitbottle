@@ -35,11 +35,16 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 			}
 
 			if branch == "" {
-				g := git.New(f.GitRunner())
-				if b, gerr := g.CurrentBranch(); gerr == nil && b != "" {
-					branch = b
-				} else {
-					branch = "main"
+				if name, derr := backend.DefaultBranch(client, ref.Project, ref.Slug); derr == nil {
+					branch = name
+				}
+				if branch == "" {
+					g := git.New(f.GitRunner())
+					if b, gerr := g.CurrentBranch(); gerr == nil && b != "" {
+						branch = b
+					} else {
+						branch = "main"
+					}
 				}
 			}
 

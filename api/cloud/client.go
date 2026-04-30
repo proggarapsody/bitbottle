@@ -11,6 +11,15 @@ import (
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
 
+// hostFromURL returns the scheme://host portion of a URL, or the URL itself
+// if it cannot be parsed. Used to populate backend.DomainError.Host.
+func hostFromURL(rawURL string) string {
+	if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
+		return u.Scheme + "://" + u.Host
+	}
+	return rawURL
+}
+
 // HTTPClient is the transport interface for making HTTP requests.
 type HTTPClient = httpx.Doer
 
@@ -31,7 +40,7 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			decodeErrorMessage,
 			httpx.ContentTypeWhenBody,
 			cloudPaginator{},
-		),
+		).UseDomainErrors(hostFromURL(baseURL)),
 	}
 }
 

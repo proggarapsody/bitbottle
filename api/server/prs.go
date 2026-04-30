@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 type wirePR struct {
@@ -65,21 +66,21 @@ func ensureRefsHeads(branch string) string {
 	return "refs/heads/" + branch
 }
 
-// ListPRs lists pull requests for a repository, following all pagination pages.
+// ListPRs lists pull requests for a repository, following pagination until
+// the total cap of `limit` is reached.
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
-	var prs []backend.PullRequest
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests?state=%s&limit=%d", ns, slug, state, limit)
-	err := c.http.GetAllJSON(path, func(body []byte) error {
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.PullRequest, error) {
 		var page PagedResponse[wirePR]
 		if err := json.Unmarshal(body, &page); err != nil {
-			return err
+			return nil, err
 		}
+		out := make([]backend.PullRequest, 0, len(page.Values))
 		for _, w := range page.Values {
-			prs = append(prs, w.toDomain())
+			out = append(out, w.toDomain())
 		}
-		return nil
-	})
-	return prs, err
+		return out, nil
+	}, limit)
 }
 
 // GetPR fetches a single pull request.

@@ -28,7 +28,7 @@ func NewCmdPipelineRun(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			pc, err := backend.AsPipelineClient(client)
+			pc, err := backend.AsPipelineClient(client, ref.Host)
 			if err != nil {
 				return err
 			}

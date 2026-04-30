@@ -11,9 +11,17 @@ import (
 func NewCmdCompletion(f *factory.Factory) *cobra.Command {
 	var shell string
 	cmd := &cobra.Command{
-		Use:   "completion",
-		Short: "Generate shell completion scripts",
+		Use:       "completion [bash|zsh|fish|powershell]",
+		Short:     "Generate shell completion scripts",
+		ValidArgs: []string{"bash", "zsh", "fish", "powershell"},
+		Args:      cobra.MatchAll(cobra.MaximumNArgs(1), cobra.OnlyValidArgs),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 1 {
+				shell = args[0]
+			}
+			if shell == "" {
+				return fmt.Errorf("shell is required: bash, zsh, fish, or powershell")
+			}
 			switch shell {
 			case "bash":
 				return cmd.Root().GenBashCompletion(f.IOStreams.Out)
@@ -29,6 +37,5 @@ func NewCmdCompletion(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&shell, "shell", "s", "", "Shell type: bash, zsh, fish, powershell")
-	_ = cmd.MarkFlagRequired("shell")
 	return cmd
 }

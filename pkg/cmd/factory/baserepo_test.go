@@ -13,7 +13,9 @@ import (
 )
 
 // TestBaseRepo_InfersFromGitRemote verifies BaseRepo auto-detects the
-// repository from `git remote get-url origin`.
+// repository from `git remote get-url origin`. With no bitbottle.* keys
+// pinned, the FakeRunner answers those reads as missing without consuming
+// a queued response, and BaseRepo falls through to the remote.
 func TestBaseRepo_InfersFromGitRemote(t *testing.T) {
 	t.Parallel()
 
@@ -70,4 +72,29 @@ func TestBaseRepo_NotAuthenticated_HintsAuthLogin(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "auth login",
 		"error should hint at running auth login when no hosts configured")
+}
+
+// TestBaseRepo_PinnedDefault_BypassesRemote pins PRD #47's wedge: when
+// `bitbottle repo set-default` has written bitbottle.* keys to the local
+// git config, BaseRepo returns those values without consulting the remote.
+func TestBaseRepo_PinnedDefault_BypassesRemote(t *testing.T) {
+	t.Parallel()
+
+	runner := testhelpers.NewFakeRunner()
+	runner.BitbottleConfig = map[string]string{
+		"bitbottle.host":    "bb.example.com",
+		"bitbottle.project": "PINNED",
+		"bitbottle.slug":    "pinned-repo",
+	}
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
+		GitRunner:     runner,
+	})
+
+	ref, err := f.BaseRepo()
+	require.NoError(t, err)
+	assert.Equal(t, "bb.example.com", ref.Host)
+	assert.Equal(t, "PINNED", ref.Project)
+	assert.Equal(t, "pinned-repo", ref.Slug)
+	runner.AssertNotCalled(t, "remote", "get-url", "origin")
 }

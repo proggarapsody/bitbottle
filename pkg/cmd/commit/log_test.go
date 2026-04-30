@@ -98,6 +98,12 @@ func TestCommitLog_DefaultBranch(t *testing.T) {
 	var gotBranch string
 	fake := &testhelpers.FakeClient{
 		T: t,
+		ListBranchesFn: func(ns, slug string, limit int) ([]backend.Branch, error) {
+			return []backend.Branch{
+				{Name: "master", IsDefault: false},
+				{Name: "dev", IsDefault: true},
+			}, nil
+		},
 		ListCommitsFn: func(ns, slug, branch string, limit int) ([]backend.Commit, error) {
 			gotBranch = branch
 			return nil, nil
@@ -112,8 +118,33 @@ func TestCommitLog_DefaultBranch(t *testing.T) {
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 
-	// Without --branch the command resolves the current git branch or falls back to "main".
-	assert.NotEmpty(t, gotBranch)
+	assert.Equal(t, "dev", gotBranch)
+}
+
+func TestCommitLog_DefaultBranch_FallsBackToMain(t *testing.T) {
+	t.Parallel()
+
+	var gotBranch string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListBranchesFn: func(ns, slug string, limit int) ([]backend.Branch, error) {
+			return []backend.Branch{{Name: "feature-x", IsDefault: false}}, nil
+		},
+		ListCommitsFn: func(ns, slug, branch string, limit int) ([]backend.Commit, error) {
+			gotBranch = branch
+			return nil, nil
+		},
+	}
+
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig:   commitConfig,
+		BackendOverride: fake,
+	})
+	cmd := commit.NewCmdCommitLog(f)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "main", gotBranch)
 }
 
 func TestCommitLog_JSONOutput(t *testing.T) {

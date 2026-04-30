@@ -1,8 +1,11 @@
 package cloud_test
 
 import (
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,6 +57,35 @@ func TestCloudClient_ListBranches_IsDefaultFalse(t *testing.T) {
 	for _, b := range branches {
 		assert.False(t, b.IsDefault)
 	}
+}
+
+// TestCloudClient_ListBranches_RespectsTotalLimit verifies that --limit caps
+// the total branches returned across paginated Cloud responses. PRD #47.
+func TestCloudClient_ListBranches_RespectsTotalLimit(t *testing.T) {
+	t.Parallel()
+	var count int32
+	var srv *httptest.Server
+	srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		c := atomic.AddInt32(&count, 1)
+		if c == 1 {
+			next := srv.URL + "/repositories/ws/repo/refs/branches?page=2"
+			body := fmt.Sprintf(`{"pagelen":2,"values":[`+
+				`{"name":"a","target":{"hash":"1"}},`+
+				`{"name":"b","target":{"hash":"2"}}],"next":"%s"}`, next)
+			_, _ = io.WriteString(w, body)
+			return
+		}
+		_, _ = io.WriteString(w, `{"pagelen":2,"values":[`+
+			`{"name":"c","target":{"hash":"3"}},`+
+			`{"name":"d","target":{"hash":"4"}}],"next":""}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	got, err := client.ListBranches("ws", "repo", 2)
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
 }
 
 func TestCloudClient_ListBranches_Empty(t *testing.T) {

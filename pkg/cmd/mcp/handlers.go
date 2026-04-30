@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -51,6 +52,58 @@ func errResult(msg string) *mcplib.CallToolResult {
 	return mcplib.NewToolResultError(msg)
 }
 
+// errorEnvelope is the structured payload emitted for typed domain errors.
+// Agents read Code to branch deterministically; Message remains for humans.
+type errorEnvelope struct {
+	Code     string `json:"code"`
+	Host     string `json:"host,omitempty"`
+	Feature  string `json:"feature,omitempty"`
+	Resource string `json:"resource,omitempty"`
+	ID       string `json:"id,omitempty"`
+	Message  string `json:"message"`
+}
+
+// errResultErr renders err for an MCP tool response. When the error wraps a
+// backend.DomainError, the result body is a JSON envelope with a stable code
+// so AI agents can branch on the error class without parsing prose. Other
+// errors fall back to a plain message.
+func errResultErr(err error) *mcplib.CallToolResult {
+	var de *backend.DomainError
+	if errors.As(err, &de) {
+		env := errorEnvelope{
+			Code:     domainErrorCode(de.Kind),
+			Host:     de.Host,
+			Feature:  de.Feature,
+			Resource: de.Resource,
+			ID:       de.ID,
+			Message:  de.Error(),
+		}
+		if data, mErr := json.Marshal(env); mErr == nil {
+			return mcplib.NewToolResultError(string(data))
+		}
+	}
+	return mcplib.NewToolResultError(err.Error())
+}
+
+func domainErrorCode(kind error) string {
+	switch {
+	case errors.Is(kind, backend.ErrNotFound):
+		return "not_found"
+	case errors.Is(kind, backend.ErrAuth):
+		return "auth"
+	case errors.Is(kind, backend.ErrPermission):
+		return "permission"
+	case errors.Is(kind, backend.ErrUnsupportedOnHost):
+		return "unsupported_on_host"
+	case errors.Is(kind, backend.ErrConflict):
+		return "conflict"
+	case errors.Is(kind, backend.ErrTransport):
+		return "transport"
+	default:
+		return "error"
+	}
+}
+
 // splitTrimmed splits s by sep and trims whitespace from each part.
 func splitTrimmed(s, sep string) []string {
 	parts := strings.Split(s, sep)
@@ -72,7 +125,7 @@ func requireString(req mcplib.CallToolRequest, key string) (string, error) {
 func (h *handlers) listHosts(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	cfg, err := h.f.Config()
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(cfg.Hosts())
 }
@@ -83,11 +136,11 @@ func (h *handlers) listRepos(_ context.Context, req mcplib.CallToolRequest) (*mc
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	repos, err := client.ListRepos(limit)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(repos)
 }
@@ -96,20 +149,20 @@ func (h *handlers) getRepo(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	repo, err := client.GetRepo(project, slug)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(repo)
 }
@@ -118,18 +171,18 @@ func (h *handlers) createRepo(_ context.Context, req mcplib.CallToolRequest) (*m
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	name, err := requireString(req, "name")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	description := req.GetString("description", "")
 	private := req.GetBool("private", false)
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	repo, err := client.CreateRepo(project, backend.CreateRepoInput{
 		Name:        name,
@@ -138,7 +191,7 @@ func (h *handlers) createRepo(_ context.Context, req mcplib.CallToolRequest) (*m
 		Description: description,
 	})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(repo)
 }
@@ -147,19 +200,19 @@ func (h *handlers) deleteRepo(_ context.Context, req mcplib.CallToolRequest) (*m
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.DeleteRepo(project, slug); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText("{}"), nil
 }
@@ -168,22 +221,22 @@ func (h *handlers) listPRs(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	state := req.GetString("state", "OPEN")
 	limit := req.GetInt("limit", 30)
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	prs, err := client.ListPRs(project, slug, state, limit)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(prs)
 }
@@ -192,11 +245,11 @@ func (h *handlers) getPR(_ context.Context, req mcplib.CallToolRequest) (*mcplib
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -205,11 +258,11 @@ func (h *handlers) getPR(_ context.Context, req mcplib.CallToolRequest) (*mcplib
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pr, err := client.GetPR(project, slug, id)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pr)
 }
@@ -218,30 +271,30 @@ func (h *handlers) createPR(_ context.Context, req mcplib.CallToolRequest) (*mcp
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	title, err := requireString(req, "title")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	fromBranch, err := requireString(req, "from_branch")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	toBranch, err := requireString(req, "to_branch")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	body := req.GetString("body", "")
 	draft := req.GetBool("draft", false)
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pr, err := client.CreatePR(project, slug, backend.CreatePRInput{
 		Title:       title,
@@ -251,7 +304,7 @@ func (h *handlers) createPR(_ context.Context, req mcplib.CallToolRequest) (*mcp
 		ToBranch:    toBranch,
 	})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pr)
 }
@@ -260,11 +313,11 @@ func (h *handlers) mergePR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -274,11 +327,11 @@ func (h *handlers) mergePR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pr, err := client.MergePR(project, slug, id, backend.MergePRInput{Strategy: strategy})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pr)
 }
@@ -287,11 +340,11 @@ func (h *handlers) approvePR(_ context.Context, req mcplib.CallToolRequest) (*mc
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -300,10 +353,10 @@ func (h *handlers) approvePR(_ context.Context, req mcplib.CallToolRequest) (*mc
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.ApprovePR(project, slug, id); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText("{}"), nil
 }
@@ -312,11 +365,11 @@ func (h *handlers) getPRDiff(_ context.Context, req mcplib.CallToolRequest) (*mc
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -325,11 +378,11 @@ func (h *handlers) getPRDiff(_ context.Context, req mcplib.CallToolRequest) (*mc
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	diff, err := client.GetPRDiff(project, slug, id)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText(diff), nil
 }
@@ -338,23 +391,23 @@ func (h *handlers) deleteBranch(_ context.Context, req mcplib.CallToolRequest) (
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	branch, err := requireString(req, "branch")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.DeleteBranch(project, slug, branch); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText("{}"), nil
 }
@@ -364,11 +417,11 @@ func (h *handlers) getCurrentUser(_ context.Context, req mcplib.CallToolRequest)
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	user, err := client.GetCurrentUser()
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(user)
 }
@@ -379,20 +432,20 @@ func (h *handlers) listBranches(_ context.Context, req mcplib.CallToolRequest) (
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	branches, err := client.ListBranches(project, slug, limit)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(branches)
 }
@@ -403,24 +456,24 @@ func (h *handlers) listPipelines(_ context.Context, req mcplib.CallToolRequest) 
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
-	pc, err := backend.AsPipelineClient(client)
+	pc, err := backend.AsPipelineClient(client, hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pipelines, err := pc.ListPipelines(project, slug, limit)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pipelines)
 }
@@ -430,28 +483,28 @@ func (h *handlers) getPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	uuid, err := requireString(req, "uuid")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
-	pc, err := backend.AsPipelineClient(client)
+	pc, err := backend.AsPipelineClient(client, hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pl, err := pc.GetPipeline(project, slug, uuid)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pl)
 }
@@ -461,31 +514,31 @@ func (h *handlers) createBranch(_ context.Context, req mcplib.CallToolRequest) (
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	name, err := requireString(req, "name")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	startAt, err := requireString(req, "start_at")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	br, err := client.CreateBranch(project, slug, backend.CreateBranchInput{
 		Name:    name,
 		StartAt: startAt,
 	})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(br)
 }
@@ -496,20 +549,20 @@ func (h *handlers) listTags(_ context.Context, req mcplib.CallToolRequest) (*mcp
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	tags, err := client.ListTags(project, slug, limit)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(tags)
 }
@@ -519,25 +572,25 @@ func (h *handlers) createTag(_ context.Context, req mcplib.CallToolRequest) (*mc
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	name, err := requireString(req, "name")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	startAt, err := requireString(req, "start_at")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	message := req.GetString("message", "")
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	t, err := client.CreateTag(project, slug, backend.CreateTagInput{
 		Name:    name,
@@ -545,7 +598,7 @@ func (h *handlers) createTag(_ context.Context, req mcplib.CallToolRequest) (*mc
 		Message: message,
 	})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(t)
 }
@@ -555,23 +608,23 @@ func (h *handlers) deleteTag(_ context.Context, req mcplib.CallToolRequest) (*mc
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	name, err := requireString(req, "name")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.DeleteTag(project, slug, name); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText("{}"), nil
 }
@@ -580,11 +633,11 @@ func (h *handlers) updatePR(_ context.Context, req mcplib.CallToolRequest) (*mcp
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -595,14 +648,14 @@ func (h *handlers) updatePR(_ context.Context, req mcplib.CallToolRequest) (*mcp
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pr, err := client.UpdatePR(project, slug, id, backend.UpdatePRInput{
 		Title:       title,
 		Description: body,
 	})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pr)
 }
@@ -611,11 +664,11 @@ func (h *handlers) declinePR(_ context.Context, req mcplib.CallToolRequest) (*mc
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -624,10 +677,10 @@ func (h *handlers) declinePR(_ context.Context, req mcplib.CallToolRequest) (*mc
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.DeclinePR(project, slug, id); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText("{}"), nil
 }
@@ -636,11 +689,11 @@ func (h *handlers) unapprovePR(_ context.Context, req mcplib.CallToolRequest) (*
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -649,10 +702,10 @@ func (h *handlers) unapprovePR(_ context.Context, req mcplib.CallToolRequest) (*
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.UnapprovePR(project, slug, id); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText("{}"), nil
 }
@@ -661,11 +714,11 @@ func (h *handlers) readyPR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -674,14 +727,14 @@ func (h *handlers) readyPR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.ReadyPR(project, slug, id); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pr, err := client.GetPR(project, slug, id)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pr)
 }
@@ -690,11 +743,11 @@ func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) 
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -702,7 +755,7 @@ func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) 
 	}
 	reviewers, err := requireString(req, "reviewers")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	var users []string
@@ -714,10 +767,10 @@ func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) 
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	if err := client.RequestReview(project, slug, id, users); err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return mcplib.NewToolResultText("{}"), nil
 }
@@ -726,22 +779,22 @@ func (h *handlers) listCommits(_ context.Context, req mcplib.CallToolRequest) (*
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	branch := req.GetString("branch", "main")
 	limit := req.GetInt("limit", 30)
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	commits, err := client.ListCommits(project, slug, branch, limit)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(commits)
 }
@@ -750,24 +803,24 @@ func (h *handlers) getCommit(_ context.Context, req mcplib.CallToolRequest) (*mc
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	hash, err := requireString(req, "hash")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	commit, err := client.GetCommit(project, slug, hash)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(commit)
 }
@@ -777,28 +830,28 @@ func (h *handlers) runPipeline(_ context.Context, req mcplib.CallToolRequest) (*
 
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	branch, err := requireString(req, "branch")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
-	pc, err := backend.AsPipelineClient(client)
+	pc, err := backend.AsPipelineClient(client, hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	pl, err := pc.RunPipeline(project, slug, backend.RunPipelineInput{Branch: branch})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(pl)
 }
@@ -807,11 +860,11 @@ func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest)
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -819,11 +872,11 @@ func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest)
 	}
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	cmts, err := client.ListPRComments(project, slug, id)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(cmts)
 }
@@ -832,11 +885,11 @@ func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	id := req.GetInt("id", 0)
 	if id == 0 {
@@ -844,15 +897,15 @@ func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (
 	}
 	body, err := requireString(req, "body")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	c, err := client.AddPRComment(project, slug, id, backend.AddPRCommentInput{Text: body})
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(c)
 }
@@ -861,23 +914,23 @@ func (h *handlers) listCommitStatuses(_ context.Context, req mcplib.CallToolRequ
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	slug, err := requireString(req, "slug")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	hash, err := requireString(req, "hash")
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	statuses, err := client.ListCommitStatuses(project, slug, hash)
 	if err != nil {
-		return errResult(err.Error()), nil
+		return errResultErr(err), nil
 	}
 	return jsonResult(statuses)
 }

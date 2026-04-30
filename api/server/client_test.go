@@ -95,6 +95,27 @@ func TestServerClient_GetJSON_401(t *testing.T) {
 	assert.Equal(t, 401, httpErr.StatusCode)
 }
 
+// TestServerClient_GetJSON_404_IsErrNotFound verifies that a 404 from the
+// adapter surfaces as a typed backend.ErrNotFound, with the underlying
+// HTTPError still reachable via errors.As. PRD #47, audit concern 5.
+func TestServerClient_GetJSON_404_IsErrNotFound(t *testing.T) {
+	t.Parallel()
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = io.WriteString(w, `{"errors":[{"message":"Repository not found"}]}`)
+	})
+	_, err := client.GetRepo("P", "missing")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, backend.ErrNotFound)
+	var httpErr *backend.HTTPError
+	require.ErrorAs(t, err, &httpErr,
+		"underlying HTTPError must remain reachable for callers that need status detail")
+	assert.Equal(t, 404, httpErr.StatusCode)
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.NotEmpty(t, de.Host, "host must be populated for MCP structured emission")
+}
+
 func TestServerClient_PostJSON_Body(t *testing.T) {
 	t.Parallel()
 	var gotBody []byte

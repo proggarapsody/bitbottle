@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 type wireServerPRComment struct {
@@ -39,24 +40,23 @@ type wireServerPRActivity struct {
 
 // ListPRComments lists top-level comments on a pull request. Bitbucket Server
 // exposes comments via the activities feed; we filter for COMMENTED actions.
-// Follows all pagination pages.
+// All pages are followed (no caller-supplied cap on this endpoint today).
 func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
-	var out []backend.PRComment
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/activities?limit=100", ns, slug, id)
-	err := c.http.GetAllJSON(path, func(body []byte) error {
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.PRComment, error) {
 		var page PagedResponse[wireServerPRActivity]
 		if err := json.Unmarshal(body, &page); err != nil {
-			return err
+			return nil, err
 		}
+		out := make([]backend.PRComment, 0, len(page.Values))
 		for _, a := range page.Values {
 			if a.Action != "COMMENTED" || a.Comment.ID == 0 {
 				continue
 			}
 			out = append(out, a.Comment.toDomain())
 		}
-		return nil
-	})
-	return out, err
+		return out, nil
+	}, 0)
 }
 
 type wireServerAddPRComment struct {

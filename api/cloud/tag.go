@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 type wireCloudTag struct {
@@ -30,21 +31,21 @@ func (w wireCloudTag) toDomain() backend.Tag {
 	}
 }
 
-// ListTags lists tags for a repository, following all pagination pages.
+// ListTags lists tags for a repository, capping the total returned at limit
+// (limit <= 0 means unbounded).
 func (c *Client) ListTags(ns, slug string, limit int) ([]backend.Tag, error) {
-	var tags []backend.Tag
 	path := fmt.Sprintf("/repositories/%s/%s/refs/tags?pagelen=%d", ns, slug, limit)
-	err := c.http.GetAllJSON(path, func(body []byte) error {
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.Tag, error) {
 		var page cloudPagedResponse[wireCloudTag]
 		if err := json.Unmarshal(body, &page); err != nil {
-			return err
+			return nil, err
 		}
+		out := make([]backend.Tag, 0, len(page.Values))
 		for _, w := range page.Values {
-			tags = append(tags, w.toDomain())
+			out = append(out, w.toDomain())
 		}
-		return nil
-	})
-	return tags, err
+		return out, nil
+	}, limit)
 }
 
 type wireCloudCreateTag struct {

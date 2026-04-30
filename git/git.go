@@ -41,6 +41,26 @@ func (g *Git) RemoteURL(name string) (string, error) {
 	return strings.TrimSpace(stdout), nil
 }
 
+// GetConfig reads a value from the local repository's git config. A missing
+// key returns ("", nil) — git config exits non-zero in that case but callers
+// should treat absence as "fall back to other inference" rather than as an
+// error condition.
+func (g *Git) GetConfig(key string) (string, error) {
+	stdout, _, err := g.runner.Run("config", "--local", "--get", key)
+	if err != nil {
+		return "", nil
+	}
+	return strings.TrimSpace(stdout), nil
+}
+
+// SetConfig writes a key-value pair to the local repository's git config.
+// Used by `repo set-default` to pin a chosen Bitbucket coordinate so future
+// commands in this checkout do not consult the git remote.
+func (g *Git) SetConfig(key, value string) error {
+	_, _, err := g.runner.Run("config", "--local", key, value)
+	return err
+}
+
 // HasUncommittedChanges returns true if the working tree is dirty.
 func (g *Git) HasUncommittedChanges() (bool, error) {
 	stdout, _, err := g.runner.Run("status", "--porcelain")
