@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 type wireCloudRepo struct {
@@ -38,26 +39,25 @@ func (w wireCloudRepo) toDomain() backend.Repository {
 	}
 }
 
-// ListRepos lists repositories in the authenticated user's workspace, following
-// all pagination pages.
+// ListRepos lists repositories in the authenticated user's workspace, capping
+// the total returned at limit (limit <= 0 means unbounded).
 func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
 	user, err := c.GetCurrentUser()
 	if err != nil {
 		return nil, err
 	}
-	var repos []backend.Repository
 	path := fmt.Sprintf("/repositories/%s?pagelen=%d", user.Slug, limit)
-	err = c.http.GetAllJSON(path, func(body []byte) error {
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
 		var page cloudPagedResponse[wireCloudRepo]
 		if err := json.Unmarshal(body, &page); err != nil {
-			return err
+			return nil, err
 		}
+		out := make([]backend.Repository, 0, len(page.Values))
 		for _, w := range page.Values {
-			repos = append(repos, w.toDomain())
+			out = append(out, w.toDomain())
 		}
-		return nil
-	})
-	return repos, err
+		return out, nil
+	}, limit)
 }
 
 // GetRepo fetches a single repository.

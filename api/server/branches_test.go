@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,6 +55,31 @@ func TestServerClient_ListBranches_MapsLatestHash(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, branches, 2)
 	assert.Equal(t, "abc1234def5", branches[0].LatestHash)
+}
+
+// TestServerClient_ListBranches_RespectsTotalLimit asserts that --limit
+// caps the total number of branches returned across all pages, not the
+// per-page hint. See PRD #47, audit concern 1.
+func TestServerClient_ListBranches_RespectsTotalLimit(t *testing.T) {
+	t.Parallel()
+	page1 := `{"size":2,"isLastPage":false,"nextPageStart":2,"start":0,"values":[` +
+		`{"id":"refs/heads/a","displayId":"a","isDefault":false,"latestCommit":"1"},` +
+		`{"id":"refs/heads/b","displayId":"b","isDefault":false,"latestCommit":"2"}]}`
+	page2 := `{"size":2,"isLastPage":true,"start":2,"values":[` +
+		`{"id":"refs/heads/c","displayId":"c","isDefault":false,"latestCommit":"3"},` +
+		`{"id":"refs/heads/d","displayId":"d","isDefault":false,"latestCommit":"4"}]}`
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Query().Get("start") == "2" {
+			_, _ = io.WriteString(w, page2)
+			return
+		}
+		_, _ = io.WriteString(w, page1)
+	})
+
+	got, err := client.ListBranches("PROJ", "my-repo", 2)
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
 }
 
 func TestServerClient_ListBranches_Empty(t *testing.T) {

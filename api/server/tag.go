@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 type wireServerTag struct {
@@ -21,21 +22,21 @@ func (w wireServerTag) toDomain() backend.Tag {
 	}
 }
 
-// ListTags lists tags for a repository, following all pagination pages.
+// ListTags lists tags for a repository, capping the total returned at limit
+// (limit <= 0 means unbounded).
 func (c *Client) ListTags(ns, slug string, limit int) ([]backend.Tag, error) {
-	var tags []backend.Tag
 	path := fmt.Sprintf("/projects/%s/repos/%s/tags?limit=%d", ns, slug, limit)
-	err := c.http.GetAllJSON(path, func(body []byte) error {
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.Tag, error) {
 		var page PagedResponse[wireServerTag]
 		if err := json.Unmarshal(body, &page); err != nil {
-			return err
+			return nil, err
 		}
+		out := make([]backend.Tag, 0, len(page.Values))
 		for _, w := range page.Values {
-			tags = append(tags, w.toDomain())
+			out = append(out, w.toDomain())
 		}
-		return nil
-	})
-	return tags, err
+		return out, nil
+	}, limit)
 }
 
 type wireServerCreateTag struct {

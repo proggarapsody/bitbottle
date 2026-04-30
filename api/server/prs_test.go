@@ -30,6 +30,28 @@ func TestServerClient_ListPRs_MapsFromBranch(t *testing.T) {
 	assert.Equal(t, "fix/login", prs[0].FromBranch)
 }
 
+func TestServerClient_ListPRs_RespectsTotalLimit(t *testing.T) {
+	t.Parallel()
+	page1 := `{"size":2,"isLastPage":false,"nextPageStart":2,"start":0,"values":[` +
+		`{"id":1,"title":"a","author":{"user":{"slug":"u"}},"fromRef":{"id":"refs/heads/x"},"toRef":{"id":"refs/heads/main"},"links":{"self":[{"href":"http://h/1"}]}},` +
+		`{"id":2,"title":"b","author":{"user":{"slug":"u"}},"fromRef":{"id":"refs/heads/x"},"toRef":{"id":"refs/heads/main"},"links":{"self":[{"href":"http://h/2"}]}}]}`
+	page2 := `{"size":2,"isLastPage":true,"start":2,"values":[` +
+		`{"id":3,"title":"c","author":{"user":{"slug":"u"}},"fromRef":{"id":"refs/heads/x"},"toRef":{"id":"refs/heads/main"},"links":{"self":[{"href":"http://h/3"}]}},` +
+		`{"id":4,"title":"d","author":{"user":{"slug":"u"}},"fromRef":{"id":"refs/heads/x"},"toRef":{"id":"refs/heads/main"},"links":{"self":[{"href":"http://h/4"}]}}]}`
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Query().Get("start") == "2" {
+			_, _ = io.WriteString(w, page2)
+			return
+		}
+		_, _ = io.WriteString(w, page1)
+	})
+
+	prs, err := client.ListPRs("MYPROJ", "my-service", "ALL", 2)
+	require.NoError(t, err)
+	assert.Len(t, prs, 2)
+}
+
 func TestServerClient_GetPR_MapsAllFields(t *testing.T) {
 	t.Parallel()
 	client := fixtureClient(t, "testdata/pr_get.json", 200)

@@ -45,7 +45,7 @@ func TestCloudClient_ListRepos_FollowsNextLink(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
-	repos, err := client.ListRepos(1)
+	repos, err := client.ListRepos(10)
 	require.NoError(t, err)
 	require.Len(t, repos, 2, "all pages must be accumulated")
 	assert.Equal(t, "repo-a", repos[0].Slug)
@@ -79,7 +79,7 @@ func TestCloudClient_ListPRs_FollowsNextLink(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
-	prs, err := client.ListPRs("ws", "repo", "OPEN", 1)
+	prs, err := client.ListPRs("ws", "repo", "OPEN", 10)
 	require.NoError(t, err)
 	require.Len(t, prs, 2, "all pages must be accumulated")
 	assert.Equal(t, 1, prs[0].ID)

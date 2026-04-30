@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 // wire types for JSON deserialization from Bitbucket Data Center responses.
@@ -40,21 +41,21 @@ func (w wireRepository) toDomain() backend.Repository {
 	}
 }
 
-// ListRepos lists repositories accessible to the authenticated user, following
-// all pagination pages.
+// ListRepos lists repositories accessible to the authenticated user, capping
+// the total returned at limit (limit <= 0 means unbounded).
 func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
-	var repos []backend.Repository
-	err := c.http.GetAllJSON(fmt.Sprintf("/repos?limit=%d", limit), func(body []byte) error {
+	path := fmt.Sprintf("/repos?limit=%d", limit)
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
 		var page PagedResponse[wireRepository]
 		if err := json.Unmarshal(body, &page); err != nil {
-			return err
+			return nil, err
 		}
+		out := make([]backend.Repository, 0, len(page.Values))
 		for _, w := range page.Values {
-			repos = append(repos, w.toDomain())
+			out = append(out, w.toDomain())
 		}
-		return nil
-	})
-	return repos, err
+		return out, nil
+	}, limit)
 }
 
 // GetRepo fetches a single repository.
