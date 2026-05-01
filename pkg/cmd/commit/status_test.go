@@ -1,7 +1,9 @@
 package commit_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +12,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -40,6 +43,42 @@ func TestCommitStatus_RendersTable(t *testing.T) {
 	assert.Contains(t, got, "SUCCESSFUL")
 	assert.Contains(t, got, "lint-1")
 	assert.Contains(t, got, "FAILED")
+}
+
+// TestCommitStatus_TTY_ColorsState verifies that on a TTY the STATE column
+// is wrapped in ANSI color codes — green for SUCCESSFUL, red for FAILED — so
+// users can spot failed builds at a glance. In non-TTY mode (already covered
+// by TestCommitStatus_RendersTable) the value must remain plain so piped
+// consumers like jq see the raw state string.
+func TestCommitStatus_TTY_ColorsState(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListCommitStatusesFn: func(ns, slug, hash string) ([]backend.CommitStatus, error) {
+			return []backend.CommitStatus{
+				{Key: "build-1", State: "SUCCESSFUL", Name: "CI"},
+				{Key: "lint-1", State: "FAILED", Name: "Lint"},
+			}, nil
+		},
+	}
+	ios := iostreams.TestTTY()
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig:   commitConfig,
+		BackendOverride: fake,
+		IOStreams:       ios,
+	})
+	cmd := commit.NewCmdCommitStatus(f)
+	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234"})
+	require.NoError(t, cmd.Execute())
+
+	got := ios.Out.(*bytes.Buffer).String()
+
+	// SUCCESSFUL appears wrapped in green ANSI (\x1b[32m ... \x1b[0m)
+	assert.True(t, strings.Contains(got, "\x1b[32m") && strings.Contains(got, "SUCCESSFUL"),
+		"expected green ANSI around SUCCESSFUL in TTY output, got:\n%s", got)
+	// FAILED appears wrapped in red ANSI (\x1b[31m ... \x1b[0m)
+	assert.True(t, strings.Contains(got, "\x1b[31m") && strings.Contains(got, "FAILED"),
+		"expected red ANSI around FAILED in TTY output, got:\n%s", got)
 }
 
 func TestCommitStatus_JSONOutput(t *testing.T) {

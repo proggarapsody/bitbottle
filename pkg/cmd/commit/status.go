@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
 
 func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
@@ -44,9 +45,30 @@ func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
 func commitStatusFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.CommitStatus] {
 	p := format.New[backend.CommitStatus](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
 	p.AddField(format.Field[backend.CommitStatus]{Name: "key", Header: "KEY", Extract: func(s backend.CommitStatus) any { return s.Key }})
-	p.AddField(format.Field[backend.CommitStatus]{Name: "state", Header: "STATE", Extract: func(s backend.CommitStatus) any { return s.State }})
+	p.AddField(format.Field[backend.CommitStatus]{
+		Name:      "state",
+		Header:    "STATE",
+		Extract:   func(s backend.CommitStatus) any { return s.State },
+		ColorFunc: commitStatusStateColor(f.IOStreams),
+	})
 	p.AddField(format.Field[backend.CommitStatus]{Name: "name", Header: "NAME", Extract: func(s backend.CommitStatus) any { return s.Name }})
 	p.AddField(format.Field[backend.CommitStatus]{Name: "description", Header: "DESCRIPTION", Extract: func(s backend.CommitStatus) any { return s.Description }})
 	p.AddField(format.Field[backend.CommitStatus]{Name: "url", Header: "URL", Extract: func(s backend.CommitStatus) any { return s.URL }})
 	return p
+}
+
+// commitStatusStateColor maps Bitbucket build-status state strings to colors.
+// Green for SUCCESSFUL, red for FAILED. INPROGRESS and unknown states render
+// uncolored — neutral states would be misleading in green/red.
+func commitStatusStateColor(ios *iostreams.IOStreams) func(string) string {
+	return func(state string) string {
+		switch state {
+		case "SUCCESSFUL":
+			return ios.ColorGreen(state)
+		case "FAILED":
+			return ios.ColorRed(state)
+		default:
+			return state
+		}
+	}
 }

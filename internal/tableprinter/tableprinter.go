@@ -3,11 +3,30 @@ package tableprinter
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/proggarapsody/bitbottle/internal/text"
 )
+
+// ansiEscape matches ANSI CSI color/style escape sequences.
+var ansiEscape = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+// visibleLen returns the number of visible runes in s, excluding ANSI CSI escape sequences.
+func visibleLen(s string) int {
+	return utf8.RuneCountInString(ansiEscape.ReplaceAllString(s, ""))
+}
+
+// padRight pads s with spaces on the right so that its visible width equals width.
+// ANSI escape sequences in s are excluded from the width calculation.
+func padRight(s string, width int) string {
+	vl := visibleLen(s)
+	if vl >= width {
+		return s
+	}
+	return s + strings.Repeat(" ", width-vl)
+}
 
 // TablePrinter renders aligned tabular output.
 type TablePrinter struct {
@@ -60,7 +79,7 @@ func (t *TablePrinter) Render() error {
 	if t.isTTY {
 		for _, row := range measureRows {
 			for i, cell := range row {
-				if w := utf8.RuneCountInString(cell); w > widths[i] {
+				if w := visibleLen(cell); w > widths[i] {
 					widths[i] = w
 				}
 			}
@@ -73,14 +92,14 @@ func (t *TablePrinter) Render() error {
 			switch {
 			case t.isTTY && i < len(row)-1:
 				// Intermediate columns: pad to column width for alignment.
-				parts[i] = fmt.Sprintf("%-*s", widths[i], cell)
+				parts[i] = padRight(cell, widths[i])
 			case t.isTTY && t.maxWidth > 0:
 				// Last column in TTY mode: truncate to remaining terminal width.
 				used := 0
 				for j := 0; j < len(row)-1; j++ {
 					used += widths[j] + 1 // padded width + tab separator
 				}
-				if remaining := t.maxWidth - used; remaining > 0 {
+				if remaining := t.maxWidth - used; remaining > 0 && visibleLen(cell) > remaining {
 					parts[i] = text.Truncate(cell, remaining)
 				} else {
 					parts[i] = cell

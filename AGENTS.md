@@ -14,3 +14,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full workflow, code style, and testin
 - **Output:** always via `f.IOStreams`, never `os.Stdout`/`fmt.Println`.
 - **Tests:** use `factory.NewTestFactory` — no real filesystem, keyring, or network.
 - **New command:** `pkg/cmd/<group>/<action>.go` → register in `<group>.go` → implement in both `api/cloud` and `api/server`.
+- **Libraries:** prefer well-known, widely-adopted libraries over hand-rolled solutions when the problem is solved (color, retry, diff, term I/O, etc.). Don't reinvent. Pick the most popular/maintained option (e.g. `fatih/color` for ANSI color, `go-gh` patterns when porting gh behavior). Hand-roll only when the dependency footprint clearly outweighs the value or when a library would force an awkward API onto our `IOStreams`/`Factory` shape.
