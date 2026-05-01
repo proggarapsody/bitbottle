@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/proggarapsody/bitbottle/compare/v1.8.0...v1.9.0) (2026-05-01)
+
+
+### Features
+
+* add pager and ANSI color output (Scope T) ([#53](https://github.com/proggarapsody/bitbottle/issues/53)) ([b64f8f2](https://github.com/proggarapsody/bitbottle/commit/b64f8f27a2bb19c482e1e2d328928f915886de83))
+
 ## [1.8.0](https://github.com/proggarapsody/bitbottle/compare/v1.7.3...v1.8.0) (2026-04-30)
 
 
