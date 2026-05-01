@@ -53,6 +53,16 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			// Long histories are the rule, not the exception, so we always
+			// route through $PAGER on a TTY. No-op when piped or in --json.
+			// Must start the pager BEFORE constructing the printer because
+			// format.New captures IOStreams.Out at construction; StartPager
+			// rewires Out to the pager's stdin.
+			if perr := f.IOStreams.StartPager(); perr != nil {
+				return perr
+			}
+			defer f.IOStreams.StopPager()
+
 			p := commitLogFields(f, jsonFields, jqExpr)
 			for _, c := range commits {
 				p.AddItem(c)

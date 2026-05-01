@@ -1,7 +1,9 @@
 package commit_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -145,6 +148,46 @@ func TestCommitLog_DefaultBranch_FallsBackToMain(t *testing.T) {
 	require.NoError(t, cmd.Execute())
 
 	assert.Equal(t, "main", gotBranch)
+}
+
+// TestCommitLog_TTY_StreamsThroughPager verifies that on a TTY the commit
+// log output is piped through $PAGER. We use `tr a-z A-Z` as a transforming
+// pager so the assertion only passes if bytes actually went through the
+// subprocess — proves StartPager/StopPager are wired into the log command.
+func TestCommitLog_TTY_StreamsThroughPager(t *testing.T) {
+	if testing.Short() {
+		t.Skip("spawns a pager subprocess")
+	}
+	t.Setenv("PAGER", "tr a-z A-Z")
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListCommitsFn: func(ns, slug, branch string, limit int) ([]backend.Commit, error) {
+			return []backend.Commit{
+				{
+					Hash:      "abc1234def567890",
+					Message:   "feat: add new feature",
+					Author:    backend.User{Slug: "alice"},
+					Timestamp: time.Now().Add(-1 * time.Hour),
+				},
+			}, nil
+		},
+	}
+
+	ios := iostreams.TestTTY()
+	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
+		InitialConfig:   commitConfig,
+		BackendOverride: fake,
+		IOStreams:       ios,
+	})
+	cmd := commit.NewCmdCommitLog(f)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main"})
+	require.NoError(t, cmd.Execute())
+
+	got := ios.Out.(*bytes.Buffer).String()
+	// "feat: add new feature" → "FEAT: ADD NEW FEATURE" only if pager ran.
+	assert.True(t, strings.Contains(got, "FEAT: ADD NEW FEATURE"),
+		"commit log should be transformed by pager, got: %q", got)
 }
 
 func TestCommitLog_JSONOutput(t *testing.T) {

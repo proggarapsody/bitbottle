@@ -24,6 +24,14 @@ func NewCmdPRDiff(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			// Stream diff through $PAGER on a TTY so users with `delta`/`bat`
+			// configured get rich rendering, and large diffs don't blast past
+			// the screen. No-op when piping or not a TTY.
+			if perr := f.IOStreams.StartPager(); perr != nil {
+				return perr
+			}
+			defer f.IOStreams.StopPager()
+
 			fmt.Fprint(f.IOStreams.Out, diff)
 			return nil
 		},

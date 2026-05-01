@@ -22,6 +22,10 @@ type Field[T any] struct {
 	// JSONOnly marks a field that is available via --json but omitted from the
 	// default table output (e.g. UUID, webURL columns that clutter the TTY view).
 	JSONOnly bool
+	// ColorFunc, if set, is applied to the rendered string in TTY table mode
+	// only. It is intentionally NOT applied to JSON output, where consumers
+	// expect raw values, nor in non-TTY table mode (piped output).
+	ColorFunc func(string) string
 }
 
 // Printer renders a slice of T in the correct output mode.
@@ -96,7 +100,11 @@ func (p *Printer[T]) renderTable() error {
 	}
 	for _, item := range p.items {
 		for _, f := range tableFields {
-			tp.AddField(fmt.Sprintf("%v", f.Extract(item)))
+			val := fmt.Sprintf("%v", f.Extract(item))
+			if p.isTTY && f.ColorFunc != nil {
+				val = f.ColorFunc(val)
+			}
+			tp.AddField(val)
 		}
 		tp.EndRow()
 	}

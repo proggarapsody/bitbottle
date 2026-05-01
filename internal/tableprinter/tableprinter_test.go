@@ -180,6 +180,37 @@ func TestTablePrinter_Render_UTF8_ColumnWidth(t *testing.T) {
 	assert.True(t, strings.HasPrefix(lines[1], "ab  "), "UTF-8 col should be padded by rune count: %q", lines[1])
 }
 
+// TestTablePrinter_Render_TTY_ANSIColorDoesNotBreakAlignment verifies that
+// ANSI escape sequences are excluded from column-width measurements so that
+// colored cells still align with plain-text cells.
+func TestTablePrinter_Render_TTY_ANSIColorDoesNotBreakAlignment(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	tp := tableprinter.New(&buf, true, 200)
+	// row 1: "SUCCESSFUL" wrapped in green ANSI codes (10 visible chars)
+	tp.AddField("\033[32mSUCCESSFUL\033[0m")
+	tp.AddField("build-1")
+	tp.EndRow()
+	// row 2: "FAILED" plain (6 visible chars) — should be padded to 10
+	tp.AddField("FAILED")
+	tp.AddField("lint-1")
+	tp.EndRow()
+	require.NoError(t, tp.Render())
+
+	lines := strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
+	require.Len(t, lines, 2)
+
+	// Split on tab to get columns
+	parts0 := strings.SplitN(lines[0], "\t", 2)
+	parts1 := strings.SplitN(lines[1], "\t", 2)
+	require.Len(t, parts0, 2)
+	require.Len(t, parts1, 2)
+
+	// The visible content of col0 in both rows should be padded to the same visual width.
+	// "FAILED" (6 chars) must be padded with 4 spaces to match "SUCCESSFUL" (10 visible chars).
+	assert.Equal(t, "FAILED    ", parts1[0], "FAILED should be padded to 10 visible chars")
+}
+
 func BenchmarkTablePrinter_Render_1000Rows(b *testing.B) {
 	for range b.N {
 		tp := tableprinter.New(io.Discard, false, 80)
