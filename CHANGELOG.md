@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/proggarapsody/bitbottle/compare/v1.9.1...v1.10.0) (2026-05-02)
+
+
+### Features
+
+* add Claude skill for bitbottle CLI ([#57](https://github.com/proggarapsody/bitbottle/issues/57)) ([7bd5bb9](https://github.com/proggarapsody/bitbottle/commit/7bd5bb98231058c017b728392908d221e1761da7))
+
 ## [1.9.1](https://github.com/proggarapsody/bitbottle/compare/v1.9.0...v1.9.1) (2026-05-02)
 
 
