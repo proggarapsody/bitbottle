@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/proggarapsody/bitbottle/compare/v1.9.0...v1.9.1) (2026-05-02)
+
+
+### Bug Fixes
+
+* **ci:** untrack dist/bitbottle and ignore /dist/ ([#55](https://github.com/proggarapsody/bitbottle/issues/55)) ([f8d07bb](https://github.com/proggarapsody/bitbottle/commit/f8d07bb3ea24d747ad503784fb334400fdd480e4))
+
 ## [1.9.0](https://github.com/proggarapsody/bitbottle/compare/v1.8.0...v1.9.0) (2026-05-01)
 
 
