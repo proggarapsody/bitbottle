@@ -13,5 +13,10 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "files": [
+    "bin/run.js",
+    "install.js",
+    "README.md"
+  ]
 }
