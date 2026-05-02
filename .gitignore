@@ -1,6 +1,9 @@
 # Build output (root-level binary only)
 /bitbottle
 
+# GoReleaser output
+/dist/
+
 # TDD cycle artifacts
 .tdd-cycle/
 
