@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/proggarapsody/bitbottle/compare/v1.10.0...v1.11.0) (2026-05-02)
+
+
+### Features
+
+* **npm:** include README in published npm bundle ([#59](https://github.com/proggarapsody/bitbottle/issues/59)) ([11e3264](https://github.com/proggarapsody/bitbottle/commit/11e32641b3068401ecdc03b9a0d37ab0e420252a))
+
 ## [1.10.0](https://github.com/proggarapsody/bitbottle/compare/v1.9.1...v1.10.0) (2026-05-02)
 
 
