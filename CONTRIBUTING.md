@@ -15,44 +15,43 @@ bitbottle follows the [GitHub CLI](https://github.com/cli/cli) design philosophy
 
 ## Branch strategy
 
+All work branches off `main` directly:
+
 ```
-main  ←── PRs only, protected ──── triggers release on tag push
+main  ←── PRs only, protected, triggers release on tag push
  ↑
-dev   ←── daily work, CI runs here
- ↑
-feature/*, fix/*, chore/*
+feature/*, fix/*, docs/*, chore/*   (short-lived; delete after merge)
 ```
 
 | Branch | Purpose | Direct push |
-|--------|---------|-------------|
+|---|---|---|
 | `main` | Production; every commit is a release candidate | Blocked — PRs only |
-| `dev` | Integration; CI (test + lint + build) runs on every push | Allowed |
 | `feature/*` etc. | Short-lived work branches | Allowed |
 
-**main is protected.** Force-push and direct push are blocked. All changes must arrive via a PR from `dev`. CI (Test, Lint, Build) must pass before a PR can be merged.
+**main is protected.** Force-push and direct push are blocked. All changes arrive via PR. CI (Test, Lint, Build) must pass before merging.
 
 ---
 
 ## Development workflow
 
 ```bash
-# 1. Start from dev
-git checkout dev
-git pull
+# 1. Start from main
+git checkout main && git pull
 
 # 2. Create a work branch
 git checkout -b feature/my-thing
 
-# 3. Develop, commit
+# 3. Develop and commit (Conventional Commits required)
 git add ...
 git commit -m "feat: add my thing"
 
-# 4. Push and open a PR against dev (for review / sharing)
+# 4. Push and open a PR against main
 git push -u origin feature/my-thing
-gh pr create --base dev
+gh pr create --base main
 
-# 5. After review, merge into dev
-# CI runs on dev automatically after merge
+# 5. Update branch if main has advanced, wait for CI, then merge (squash)
+gh pr update-branch <N>
+gh pr merge <N> --squash --delete-branch
 ```
 
 ---
@@ -61,41 +60,30 @@ gh pr create --base dev
 
 Releases are fully automated via [Release Please](https://github.com/googleapis/release-please).
 
-```bash
-# 1. Open a PR from dev → main
-gh pr create --base main --head dev --title "Release vX.Y.Z"
-
-# 2. CI (Test, Lint, Build) must pass — merge when green
-```
-
-After the PR merges, Release Please automatically opens a **"Release vX.Y.Z"** PR on `main` with a computed version (based on conventional commit types) and an updated `CHANGELOG.md`. Merge that PR to trigger the release — no manual tagging needed.
+After a PR with a `feat:` or `fix:` commit merges to `main`, Release Please automatically opens a versioned release PR. Merge that PR to trigger the full release — no manual tagging needed.
 
 **Version bumps follow conventional commits:**
 
 | Commit prefix | Bump |
 |---|---|
-| `fix:` | patch (0.1.0 → 0.1.1) |
-| `feat:` | minor (0.1.0 → 0.2.0) |
-| `feat!:` or `BREAKING CHANGE` | major (0.1.0 → 1.0.0) |
+| `fix:` | patch (1.0.0 → 1.0.1) |
+| `feat:` | minor (1.0.0 → 1.1.0) |
+| `feat!:` or `BREAKING CHANGE` | major (1.0.0 → 2.0.0) |
 
 Merging the Release Please PR triggers the release workflow, which:
 - Builds binaries for Linux, macOS (arm64 + amd64), and Windows
-- Creates a GitHub release with a changelog and checksums
-- Builds `.deb`, `.rpm`, and `.apk` packages attached to the release
+- Creates a GitHub release with changelog and checksums
+- Builds `.deb`, `.rpm`, and `.apk` packages
 - Pushes multi-arch Docker images to `proggarapsody/bitbottle` on Docker Hub
+- Publishes `@proggarapsody/bitbottle` to npm (with README bundled)
 
 **Required secrets** (set in repo Settings → Secrets → Actions):
 
 | Secret | Purpose |
-|--------|---------|
-| `RELEASE_PLEASE_TOKEN` | PAT with contents+PRs write on this repo |
-| `DOCKER_PASSWORD` | Docker Hub password / access token for `proggarapsody` |
-| `NPM_TOKEN` | **Granular Access Token** (not classic) with "Bypass two-factor authentication" enabled and read+write on `@proggarapsody/bitbottle` |
-
-
-**Versioning follows [Semantic Versioning](https://semver.org/):**
-- `vMAJOR.MINOR.PATCH` — breaking change / new feature / bug fix
-- Use `-rc.N` suffix for release candidates (`v1.0.0-rc.1`)
+|---|---|
+| `RELEASE_PLEASE_TOKEN` | PAT with contents + PRs write |
+| `DOCKER_PASSWORD` | Docker Hub access token for `proggarapsody` |
+| `NPM_TOKEN` | Granular Access Token with read+write on `@proggarapsody/bitbottle` |
 
 ---
 
@@ -107,6 +95,9 @@ go version
 
 # Fetch dependencies
 go mod tidy
+
+# Install git hooks (golangci-lint pre-commit)
+make setup
 
 # Build
 make build
@@ -133,7 +124,7 @@ make lint
   ```
 - Column headers printed by list commands must be **uppercase** (e.g. `SLUG`, `TITLE`).
 - Keep methods short; extract helpers when cyclomatic complexity exceeds 10.
-- No comments that restate what the code already says. Only comment the *why* when it is non-obvious.
+- No comments that restate what the code already says. Only comment the *why* when non-obvious.
 
 ---
 
@@ -143,6 +134,7 @@ make lint
 2. Register the command in `pkg/cmd/<group>/<group>.go`.
 3. Add unit tests in `<action>_test.go` and integration tests in `<action>_integration_test.go`.
 4. Use `factory.NewTestFactory` in tests — never touch the real filesystem, keyring, or network.
+5. If the command exposes new Bitbucket operations, add the corresponding MCP tool in `pkg/cmd/mcp/`.
 
 ---
 
@@ -152,4 +144,11 @@ make lint
 - **Integration tests** use `httptest.NewTLSServer` and `factory.NewTestFactory` (`list_integration_test.go`).
 - Always run `go test ./... -race` before opening a PR.
 - Test names follow `Test<Package>_<Scenario>_<Outcome>`.
-- Use `require` for fatal assertions (stops the test), `assert` for non-fatal ones.
+- Use `require` for fatal assertions, `assert` for non-fatal ones.
+- Coverage targets: **≥ 80%** on `api/cloud`, `api/server`, and `pkg/cmd/*`.
+
+---
+
+## Important: do not commit build artifacts
+
+`/dist/` is gitignored — never commit binaries or GoReleaser output. CI will reject tracked files in `dist/` or files larger than 1 MB.
