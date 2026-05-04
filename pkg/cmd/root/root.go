@@ -3,6 +3,8 @@ package root
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
+
 	"github.com/proggarapsody/bitbottle/pkg/cmd/alias"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/api"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
@@ -44,6 +46,10 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(alias.NewCmdAlias(f, builtinNames(cmd)))
 
 	SetHelpFunc(cmd)
+
+	// Wrap pager-annotated commands once after tree assembly so that
+	// individual commands no longer need StartPager/StopPager boilerplate.
+	cmdutil.EnablePagerForAnnotated(cmd, f.IOStreams)
 
 	return cmd
 }

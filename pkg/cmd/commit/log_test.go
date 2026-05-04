@@ -13,6 +13,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -181,6 +182,7 @@ func TestCommitLog_TTY_StreamsThroughPager(t *testing.T) {
 		IOStreams:       ios,
 	})
 	cmd := commit.NewCmdCommitLog(f)
+	cmdutil.EnablePagerForAnnotated(cmd, ios)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main"})
 	require.NoError(t, cmd.Execute())
 

@@ -9,6 +9,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/aliases"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/root"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // Injected at build time by goreleaser (-X ldflags).
@@ -31,7 +32,10 @@ func main() {
 	cmd.SetArgs(args)
 
 	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		// Surface typed DomainErrors as user-actionable messages; pass
+		// through anything else verbatim. SilenceErrors is set on root
+		// so cobra doesn't double-print.
+		cmdutil.ExplainError(f.IOStreams, err)
 		os.Exit(1)
 	}
 }
