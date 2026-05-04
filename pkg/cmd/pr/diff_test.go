@@ -10,6 +10,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -68,6 +69,9 @@ func TestPRDiff_TTY_StreamsThroughPager(t *testing.T) {
 		GitRunner:       newPRRunner(),
 	})
 	cmd := pr.NewCmdPRDiff(f)
+	// Mirror what NewCmdRoot does: wrap pager-annotated commands once after
+	// the tree is assembled. Without this, the test bypasses the wiring.
+	cmdutil.EnablePagerForAnnotated(cmd, ios)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 

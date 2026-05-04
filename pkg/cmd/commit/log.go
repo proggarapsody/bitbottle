@@ -10,6 +10,7 @@ import (
 	"github.com/proggarapsody/bitbottle/git"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
@@ -23,6 +24,12 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 		Use:   "log PROJECT/REPO",
 		Short: "List commits",
 		Args:  cobra.ExactArgs(1),
+		// Long histories are the rule for repos with real history, so we
+		// always route through $PAGER on a TTY. The annotation handler at
+		// the root wires StartPager/StopPager around RunE — see
+		// cmdutil.EnablePagerForAnnotated. By the time format.New captures
+		// IOStreams.Out below, Out is already the pager pipe.
+		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ref, err := f.ResolveRef(args[0], hostname)
 			if err != nil {
@@ -52,16 +59,6 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			// Long histories are the rule, not the exception, so we always
-			// route through $PAGER on a TTY. No-op when piped or in --json.
-			// Must start the pager BEFORE constructing the printer because
-			// format.New captures IOStreams.Out at construction; StartPager
-			// rewires Out to the pager's stdin.
-			if perr := f.IOStreams.StartPager(); perr != nil {
-				return perr
-			}
-			defer f.IOStreams.StopPager()
 
 			p := commitLogFields(f, jsonFields, jqExpr)
 			for _, c := range commits {
