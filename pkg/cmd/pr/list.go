@@ -1,12 +1,10 @@
 package pr
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -22,7 +20,7 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 		Short: "List pull requests",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := resolveRepoRef(f, args, hostname)
+			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err
 			}
@@ -50,43 +48,4 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
-}
-
-func resolveRepoRef(f *factory.Factory, args []string, hostnameFlag string) (bbrepo.RepoRef, error) {
-	var ref bbrepo.RepoRef
-	var err error
-
-	if len(args) == 1 {
-		ref, err = bbrepo.Parse(args[0])
-		if err != nil {
-			return bbrepo.RepoRef{}, err
-		}
-	} else {
-		ref, err = f.BaseRepo()
-		if err != nil {
-			return bbrepo.RepoRef{}, err
-		}
-	}
-
-	if hostnameFlag != "" {
-		ref.Host = hostnameFlag
-		return ref, nil
-	}
-
-	if ref.Host == "" {
-		cfg, cerr := f.Config()
-		if cerr != nil {
-			return bbrepo.RepoRef{}, cerr
-		}
-		hosts := cfg.Hosts()
-		switch len(hosts) {
-		case 0:
-			return bbrepo.RepoRef{}, fmt.Errorf("not authenticated; run `bitbottle auth login` first")
-		case 1:
-			ref.Host = hosts[0]
-		default:
-			return bbrepo.RepoRef{}, fmt.Errorf("multiple hosts configured; use --hostname to specify one")
-		}
-	}
-	return ref, nil
 }

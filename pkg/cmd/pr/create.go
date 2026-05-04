@@ -21,7 +21,7 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 		Use:   "create",
 		Short: "Create a pull request",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := resolveRepoRef(f, args, "")
+			ref, err := factory.ResolveTarget(f, args, "")
 			if err != nil {
 				return err
 			}

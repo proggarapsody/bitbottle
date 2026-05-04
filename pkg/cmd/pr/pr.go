@@ -55,7 +55,7 @@ func resolvePRTarget(f *factory.Factory, args []string, hostnameFlag string) (bb
 		return bbrepo.RepoRef{}, 0, nil, err
 	}
 
-	ref, err := resolveRepoRef(f, []string{}, hostnameFlag)
+	ref, err := factory.ResolveTarget(f, nil, hostnameFlag)
 	if err != nil {
 		return bbrepo.RepoRef{}, 0, nil, err
 	}

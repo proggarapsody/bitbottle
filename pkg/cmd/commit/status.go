@@ -17,7 +17,7 @@ func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
 		Short: "List build / CI statuses for a commit",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := f.ResolveRef(args[0], hostname)
+			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err
 			}

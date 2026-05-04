@@ -9,46 +9,44 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-// TestResolveRef_SingleConfiguredHost_AutoPicked pins PRD #47 host-inference
-// rule (a): when exactly one host is configured, ResolveRef picks it without
-// requiring --hostname.
-func TestResolveRef_SingleConfiguredHost_AutoPicked(t *testing.T) {
+// These tests pin PRD #47 host-inference behavior end-to-end through
+// the public ResolveTarget surface. They previously exercised the now-
+// removed Factory.ResolveRef; the rules they protect are unchanged:
+// single-host = auto-pick, multi-host without flag = error, --hostname
+// always wins.
+
+func TestResolveTarget_E2E_SingleConfiguredHost_AutoPicked(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
 		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
 	})
-	ref, err := f.ResolveRef("MYPROJ/myrepo", "")
+	ref, err := factory.ResolveTarget(f, []string{"MYPROJ/myrepo"}, "")
 	require.NoError(t, err)
 	assert.Equal(t, "bb.example.com", ref.Host)
 	assert.Equal(t, "MYPROJ", ref.Project)
 	assert.Equal(t, "myrepo", ref.Slug)
 }
 
-// TestResolveRef_MultipleHosts_ErrorsWithoutFlag pins PRD #47 host-inference
-// rule: with two hosts and no --hostname, the resolver errors rather than
-// guessing.
-func TestResolveRef_MultipleHosts_ErrorsWithoutFlag(t *testing.T) {
+func TestResolveTarget_E2E_MultipleHosts_ErrorsWithoutFlag(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
 		InitialConfig: "" +
 			"bb1.example.com:\n  oauth_token: tok1\n" +
 			"bb2.example.com:\n  oauth_token: tok2\n",
 	})
-	_, err := f.ResolveRef("P/r", "")
+	_, err := factory.ResolveTarget(f, []string{"P/r"}, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "multiple hosts")
 }
 
-// TestResolveRef_HostnameFlag_DisambiguatesMultiHost pins the rule that an
-// explicit --hostname picks the host even when multiple are configured.
-func TestResolveRef_HostnameFlag_DisambiguatesMultiHost(t *testing.T) {
+func TestResolveTarget_E2E_HostnameFlag_DisambiguatesMultiHost(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
 		InitialConfig: "" +
 			"bb1.example.com:\n  oauth_token: tok1\n" +
 			"bb2.example.com:\n  oauth_token: tok2\n",
 	})
-	ref, err := f.ResolveRef("P/r", "bb2.example.com")
+	ref, err := factory.ResolveTarget(f, []string{"P/r"}, "bb2.example.com")
 	require.NoError(t, err)
 	assert.Equal(t, "bb2.example.com", ref.Host)
 }
