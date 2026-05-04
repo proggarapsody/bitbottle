@@ -23,7 +23,7 @@ func NewCmdTagList(f *factory.Factory) *cobra.Command {
 		Short: "List tags",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := f.ResolveRef(args[0], hostname)
+			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err
 			}

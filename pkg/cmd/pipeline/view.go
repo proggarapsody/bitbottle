@@ -20,7 +20,7 @@ func NewCmdPipelineView(f *factory.Factory) *cobra.Command {
 		Short: "View a pipeline",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := f.ResolveRef(args[0], hostname)
+			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err
 			}
