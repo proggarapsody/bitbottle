@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/proggarapsody/bitbottle/compare/v1.11.0...v1.12.0) (2026-05-04)
+
+
+### Features
+
+* unified repo resolution via factory.ResolveTarget (gh-style) ([#63](https://github.com/proggarapsody/bitbottle/issues/63)) ([c2bf0f2](https://github.com/proggarapsody/bitbottle/commit/c2bf0f2eaca2c93c7c9de5538fd077bd9947a440))
+
 ## [1.11.0](https://github.com/proggarapsody/bitbottle/compare/v1.10.0...v1.11.0) (2026-05-02)
 
 
