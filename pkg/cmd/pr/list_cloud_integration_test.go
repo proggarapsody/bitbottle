@@ -7,10 +7,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 )
 
@@ -34,11 +35,9 @@ func TestPRList_CloudIntegration_PrintsTitlesFromCloudEnvelope(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListCloudConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListCloudConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
@@ -65,11 +64,9 @@ func TestPRList_CloudIntegration_EmptyCloudEnvelope(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListCloudConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListCloudConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
@@ -93,11 +90,9 @@ func TestPRList_CloudIntegration_ErrorContractSurfacesMessage(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListCloudConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListCloudConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"myworkspace/missing"})
@@ -122,11 +117,9 @@ func TestPRList_CloudIntegration_BackendTypeOverrideForcesCloud(t *testing.T) {
 
 	hostsYML := "internal.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n  backend_type: cloud\n"
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: hostsYML,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: hostsYML})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	// Explicit --hostname so the command uses the configured host.

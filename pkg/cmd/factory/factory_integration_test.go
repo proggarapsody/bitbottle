@@ -8,17 +8,18 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 // TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient verifies that:
 //  1. hosts.yml written to disk is accessible via Config().Get(), and
 //  2. The factory-built client makes real HTTP requests (the test-token is wired,
-//     not the pipeline-token — NewTestFactory always uses "test-token" for isolation).
+//     not the pipeline-token — factorytest.New always uses "test-token" for isolation).
 func TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient(t *testing.T) {
 	t.Parallel()
 
@@ -35,11 +36,9 @@ func TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient(t *testing.T) {
 	hostsYML := "bb.example.com:\n  oauth_token: pipeline-token\n  git_protocol: ssh\n"
 	require.NoError(t, os.WriteFile(filepath.Join(configDir, "hosts.yml"), []byte(hostsYML), 0o600))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		ConfigDir:  configDir,
-		HTTPClient: srv.Client(),
-		BaseURL:    func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{ConfigDir: configDir})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
@@ -71,10 +70,9 @@ func TestFactory_Integration_MissingConfigNotAnError(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	// Config dir is empty — no hosts.yml.
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		HTTPClient: srv.Client(),
-		BaseURL:    func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	// Backend must not error when config file is absent.
 	client, err := f.Backend("bb.example.com")
@@ -91,7 +89,7 @@ func TestFactory_Integration_MultipleClosureCallsShareConfig(t *testing.T) {
 	hostsYML := "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n"
 	require.NoError(t, os.WriteFile(filepath.Join(configDir, "hosts.yml"), []byte(hostsYML), 0o600))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{ConfigDir: configDir})
+	f, _, _ := factorytest.New(t, factorytest.Opts{ConfigDir: configDir})
 
 	// Call Config twice — should not error.
 	cfg1, err := f.Config()
@@ -120,10 +118,9 @@ func TestFactory_Integration_BaseURLNoDoubleSlash(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	// BaseURL returns URL with trailing slash — NewClient must strip it.
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		HTTPClient: srv.Client(),
-		BaseURL:    func(hostname string) string { return srv.URL + "/" },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL + "/" }
 
 	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
@@ -134,7 +131,7 @@ func TestFactory_Integration_BaseURLNoDoubleSlash(t *testing.T) {
 }
 
 // TestFactory_Integration_HTTPClientUsesProvidedHTTPClient verifies that the
-// HTTPClient injected via TestFactoryOpts is actually used for requests
+// HTTPClient injected via factorytest.Opts is actually used for requests
 // (not the default transport). This ensures test isolation is guaranteed.
 func TestFactory_Integration_HTTPClientUsesProvidedHTTPClient(t *testing.T) {
 	t.Parallel()
@@ -147,10 +144,9 @@ func TestFactory_Integration_HTTPClientUsesProvidedHTTPClient(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		HTTPClient: srv.Client(),
-		BaseURL:    func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
@@ -161,12 +157,12 @@ func TestFactory_Integration_HTTPClientUsesProvidedHTTPClient(t *testing.T) {
 }
 
 // TestFactory_Integration_noopHTTPClientPreventsRealNetwork verifies that the
-// default noopHTTPClient in NewTestFactory returns 404 and prevents accidental
+// default noopHTTPClient in factorytest.New returns 404 and prevents accidental
 // real network calls when no HTTPClient is provided.
 func TestFactory_Integration_noopHTTPClientPreventsRealNetwork(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
 
@@ -191,10 +187,9 @@ func TestBackend_Dispatch_BitbucketOrgRoutesToCloud(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		HTTPClient: srv.Client(),
-		BaseURL:    func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	client, err := f.Backend("bitbucket.org")
 	require.NoError(t, err)
@@ -218,10 +213,9 @@ func TestBackend_Dispatch_CustomHostRoutesToServer(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		HTTPClient: srv.Client(),
-		BaseURL:    func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	client, err := f.Backend("git.example.com")
 	require.NoError(t, err)
@@ -245,11 +239,9 @@ func TestBackend_Dispatch_BackendTypeCloudOverride(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		HTTPClient:  srv.Client(),
-		BaseURL:     func(hostname string) string { return srv.URL },
-		BackendType: "cloud",
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{BackendType: "cloud"})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	client, err := f.Backend("git.example.com")
 	require.NoError(t, err)
@@ -273,11 +265,9 @@ func TestBackend_Dispatch_BackendTypeServerOverride(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		HTTPClient:  srv.Client(),
-		BaseURL:     func(hostname string) string { return srv.URL },
-		BackendType: "server",
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{BackendType: "server"})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	client, err := f.Backend("bitbucket.org")
 	require.NoError(t, err)

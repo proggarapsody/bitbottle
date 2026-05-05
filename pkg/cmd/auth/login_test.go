@@ -7,19 +7,20 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdAuthLogin_HasRequiredFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := auth.NewCmdAuthLogin(f)
 	assert.NotNil(t, cmd.Flag("hostname"))
 	assert.NotNil(t, cmd.Flag("git-protocol"))
@@ -32,7 +33,7 @@ func TestNewCmdAuthLogin_HasRequiredFlags(t *testing.T) {
 
 func TestNewCmdAuthLogin_GitProtocolDefault(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := auth.NewCmdAuthLogin(f)
 	flag := cmd.Flag("git-protocol")
 	require.NotNil(t, flag)
@@ -52,11 +53,10 @@ func TestAuthLogin_WithToken_StoresCredentials(t *testing.T) {
 	ios.In = io.NopCloser(strings.NewReader("new-token\n"))
 	kr := testhelpers.NewFakeKeyring()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-		Keyring:         kr,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
+	f.Keyring = kr
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice", "--with-token"})
 	require.NoError(t, cmd.Execute())
@@ -87,11 +87,10 @@ func TestAuthLogin_Cloud_WithEmail_StoresAuthUser(t *testing.T) {
 	ios.In = io.NopCloser(strings.NewReader("my-api-token\n"))
 	kr := testhelpers.NewFakeKeyring()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-		Keyring:         kr,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
+	f.Keyring = kr
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{
 		"--hostname", "bitbucket.org",
@@ -115,9 +114,8 @@ func TestAuthLogin_Cloud_MissingEmail_Errors(t *testing.T) {
 	ios := iostreams.Test() // non-TTY so no interactive prompt
 	ios.In = io.NopCloser(strings.NewReader("my-api-token\n"))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		IOStreams: ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.IOStreams = ios
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bitbucket.org", "--with-token"})
 	err := cmd.Execute()
@@ -132,9 +130,8 @@ func TestAuthLogin_Cloud_UsernameFlag_Errors(t *testing.T) {
 	ios := iostreams.Test()
 	ios.In = io.NopCloser(strings.NewReader("my-api-token\n"))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		IOStreams: ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.IOStreams = ios
 	cmd := auth.NewCmdAuthLogin(f)
 	// --username is for Server/DC; on Cloud it must error and guide user to --email
 	cmd.SetArgs([]string{
@@ -153,9 +150,8 @@ func TestAuthLogin_MissingHostname_Errors(t *testing.T) {
 
 	ios := iostreams.Test()
 	ios.In = io.NopCloser(strings.NewReader("tok\n"))
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		IOStreams: ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.IOStreams = ios
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--with-token"})
 	err := cmd.Execute()
@@ -175,10 +171,9 @@ func TestAuthLogin_GetCurrentUser_Fails_Errors(t *testing.T) {
 	ios := iostreams.Test()
 	ios.In = io.NopCloser(strings.NewReader("bad-token\n"))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--with-token"})
 	err := cmd.Execute()
@@ -208,10 +203,9 @@ func TestAuthLogin_TTY_Cloud_PromptsForEmail(t *testing.T) {
 	// Sequence: email → choice "2" (paste) → token
 	ios.In = io.NopCloser(ttyInput("alice@example.com", "2", "my-token"))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bitbucket.org"}) // no --email
 	require.NoError(t, cmd.Execute())
@@ -242,12 +236,11 @@ func TestAuthLogin_TTY_OpensBrowser_Server(t *testing.T) {
 	browser := &testhelpers.FakeBrowserLauncher{}
 	kr := testhelpers.NewFakeKeyring()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-		Keyring:         kr,
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
+	f.Keyring = kr
+	f.Browser = browser
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
 	require.NoError(t, cmd.Execute())
@@ -273,12 +266,11 @@ func TestAuthLogin_TTY_OpensBrowser_Cloud(t *testing.T) {
 	browser := &testhelpers.FakeBrowserLauncher{}
 	kr := testhelpers.NewFakeKeyring()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-		Keyring:         kr,
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
+	f.Keyring = kr
+	f.Browser = browser
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bitbucket.org", "--email", "alice@example.com"})
 	require.NoError(t, cmd.Execute())
@@ -302,11 +294,10 @@ func TestAuthLogin_TTY_ChoiceTwo_NoBrowser(t *testing.T) {
 	ios.In = io.NopCloser(ttyInput("2", "my-token"))
 	browser := &testhelpers.FakeBrowserLauncher{}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
+	f.Browser = browser
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
 	require.NoError(t, cmd.Execute())
@@ -327,10 +318,9 @@ func TestAuthLogin_TTY_PromptsForUsername(t *testing.T) {
 	// Sequence: username → choice "2" → token
 	ios.In = io.NopCloser(ttyInput("alice", "2", "my-token"))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com"}) // no --username
 	require.NoError(t, cmd.Execute())
@@ -353,11 +343,10 @@ func TestAuthLogin_TTY_BrowserError_IsNonFatal(t *testing.T) {
 	ios.In = io.NopCloser(ttyInput("1", "", "my-token"))
 	browser := &testhelpers.FakeBrowserLauncher{Err: errors.New("no display")}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
+	f.Browser = browser
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice"})
 	require.NoError(t, cmd.Execute(), "browser failure must not abort login")
@@ -381,11 +370,10 @@ func TestAuthLogin_KeyringError_IsNonFatal(t *testing.T) {
 	kr := testhelpers.NewFakeKeyring()
 	kr.SetErr = errors.New("keyring unavailable")
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		IOStreams:       ios,
-		Keyring:         kr,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
+	f.Keyring = kr
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com", "--username", "alice", "--with-token"})
 	err := cmd.Execute()

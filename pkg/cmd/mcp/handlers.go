@@ -21,23 +21,16 @@ func newHandlers(f *factory.Factory) *handlers {
 	return &handlers{f: f}
 }
 
+// resolveBackend picks a host and dials a backend client. Host
+// inference (single-host fallback, ambiguity errors) is delegated
+// to factory.ResolveHost so the rule lives in exactly one place —
+// the same place ResolveTarget consults for bare PROJECT/REPO args.
 func (h *handlers) resolveBackend(hostname string) (backend.Client, error) {
-	if hostname != "" {
-		return h.f.Backend(hostname)
-	}
-	cfg, err := h.f.Config()
+	host, err := factory.ResolveHost(h.f, hostname)
 	if err != nil {
 		return nil, err
 	}
-	hosts := cfg.Hosts()
-	switch len(hosts) {
-	case 0:
-		return nil, fmt.Errorf("not authenticated; run `bitbottle auth login` first")
-	case 1:
-		return h.f.Backend(hosts[0])
-	default:
-		return nil, fmt.Errorf("multiple hosts configured; specify hostname")
-	}
+	return h.f.Backend(host)
 }
 
 func jsonResult(v any) (*mcplib.CallToolResult, error) {

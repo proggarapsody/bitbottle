@@ -7,10 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 )
 
@@ -48,11 +49,9 @@ func TestRepoCreate_Integration_ServerEndToEnd(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n",
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n"})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	// Build the full repo command tree so we exercise cobra dispatch end to end.
 	root := repo.NewCmdRepo(f)
@@ -79,11 +78,9 @@ func TestRepoCreate_Integration_ServerError(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n",
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n"})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	root := repo.NewCmdRepo(f)
 	root.SetArgs([]string{"create", "myrepo", "--project", "MYPROJ"})

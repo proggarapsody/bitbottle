@@ -8,10 +8,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 )
 
@@ -36,11 +37,9 @@ func TestRepoList_CloudIntegration_PrintsSlugsFromCloudEnvelope(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListCloudConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListCloudConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	buf := &bytes.Buffer{}
@@ -71,11 +70,9 @@ func TestRepoList_CloudIntegration_ErrorContractSurfacesMessage(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListCloudConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListCloudConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	err = cmd.Execute()
@@ -97,11 +94,9 @@ func TestRepoList_CloudIntegration_EmptyCloudEnvelope(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListCloudConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListCloudConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	require.NoError(t, cmd.Execute())
@@ -125,11 +120,9 @@ func TestRepoList_CloudIntegration_BackendTypeOverrideForcesCloud(t *testing.T) 
 
 	hostsYML := "internal.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n  backend_type: cloud\n"
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: hostsYML,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: hostsYML})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	require.NoError(t, cmd.Execute())

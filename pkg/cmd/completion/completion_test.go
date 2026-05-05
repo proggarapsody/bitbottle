@@ -3,10 +3,11 @@ package completion_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/root"
 )
 
@@ -14,9 +15,7 @@ const completionConfig = "bitbucket.org:\n  oauth_token: tok\n  user: alice\n  g
 
 func executeCompletion(t *testing.T, shell string) (string, error) {
 	t.Helper()
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: completionConfig,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: completionConfig})
 	rootCmd := root.NewCmdRoot(f)
 	rootCmd.SetArgs([]string{"completion", shell})
 	err := rootCmd.Execute()
@@ -25,9 +24,7 @@ func executeCompletion(t *testing.T, shell string) (string, error) {
 
 func executeCompletionFlag(t *testing.T, shell string) (string, error) {
 	t.Helper()
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: completionConfig,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: completionConfig})
 	rootCmd := root.NewCmdRoot(f)
 	rootCmd.SetArgs([]string{"completion", "--shell", shell})
 	err := rootCmd.Execute()

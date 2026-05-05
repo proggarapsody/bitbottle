@@ -6,10 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -36,11 +37,9 @@ func TestTagDelete_ConfirmationPrompt_Abort(t *testing.T) {
 		IsStderrTTY: func() bool { return false },
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-		IOStreams:       ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
 	cmd := tag.NewCmdTagDelete(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0"})
 	require.NoError(t, cmd.Execute())
@@ -69,11 +68,9 @@ func TestTagDelete_ConfirmationPrompt_Confirm(t *testing.T) {
 		IsStderrTTY: func() bool { return false },
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-		IOStreams:       ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
 	cmd := tag.NewCmdTagDelete(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0"})
 	require.NoError(t, cmd.Execute())
@@ -93,10 +90,8 @@ func TestTagDelete_SkipsPromptWithConfirmFlag(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagDelete(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0", "--confirm"})
 	require.NoError(t, cmd.Execute())
@@ -114,10 +109,8 @@ func TestTagDelete_APIError_PropagatesError(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagDelete(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0", "--confirm"})
 	err := cmd.Execute()

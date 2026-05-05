@@ -5,11 +5,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -26,7 +27,7 @@ func newPRCreateRunner() *testhelpers.FakeRunner {
 
 func TestNewCmdPRCreate_HasFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRCreate(f)
 	assert.NotNil(t, cmd.Flag("title"))
 	assert.NotNil(t, cmd.Flag("body"))
@@ -152,7 +153,7 @@ func TestPRCreate_APIError_PropagatesError(t *testing.T) {
 
 func TestNewCmdPRCreate_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRCreate(f)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))

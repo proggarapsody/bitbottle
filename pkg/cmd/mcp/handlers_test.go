@@ -6,12 +6,13 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -20,10 +21,8 @@ const multiHostConfig = "git.example.com:\n  oauth_token: tok\ngit.other.com:\n 
 
 func newHandlersWithFake(t *testing.T, cfg string, fake *testhelpers.FakeClient) *handlers {
 	t.Helper()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   cfg,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cfg})
+	factorytest.UseBackend(f, fake)
 	return newHandlers(f)
 }
 
@@ -727,10 +726,8 @@ func TestListPipelines_NotCloudCapable_ReturnsError(t *testing.T) {
 	// FakeClient wrapped as plain backend.Client — no PipelineClient methods visible
 	type serverOnlyFake struct{ backend.Client }
 	fake := &serverOnlyFake{Client: &testhelpers.FakeClient{}}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   singleHostConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	factorytest.UseBackend(f, fake)
 	h := newHandlers(f)
 	result, err := h.listPipelines(context.Background(), makeReq(map[string]any{
 		"project": "myworkspace",

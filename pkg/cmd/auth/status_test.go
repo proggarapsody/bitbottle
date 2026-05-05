@@ -3,16 +3,17 @@ package auth_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func TestNewCmdAuthStatus_HasHostnameFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := auth.NewCmdAuthStatus(f)
 	assert.NotNil(t, cmd.Flag("hostname"))
 }
@@ -20,9 +21,7 @@ func TestNewCmdAuthStatus_HasHostnameFlag(t *testing.T) {
 func TestAuthStatus_PrintsConfiguredHosts(t *testing.T) {
 	t.Parallel()
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: authConfig,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: authConfig})
 	cmd := auth.NewCmdAuthStatus(f)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())
@@ -35,7 +34,7 @@ func TestAuthStatus_PrintsConfiguredHosts(t *testing.T) {
 func TestAuthStatus_NoHosts_PrintsNothing(t *testing.T) {
 	t.Parallel()
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, out, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := auth.NewCmdAuthStatus(f)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())

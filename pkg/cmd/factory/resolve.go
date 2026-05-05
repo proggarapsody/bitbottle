@@ -54,21 +54,56 @@ func ResolveTarget(f *Factory, args []string, hostnameFlag string) (bbrepo.RepoR
 	return ref, nil
 }
 
-func inferHost(f *Factory, ref *bbrepo.RepoRef) error {
+// ResolveHost returns the host the caller should target.
+//
+// Rules:
+//  1. If hostname is non-empty, it wins — no config lookup is performed.
+//     Callers that already know which host they want (e.g. a --hostname
+//     flag, or an MCP tool's `hostname` arg) shouldn't pay for IO.
+//  2. Otherwise consult config:
+//     - exactly one host configured  → use it
+//     - zero hosts                   → "not authenticated" error
+//     - multiple hosts               → "specify hostname" error
+//
+// This is the single host-inference rule shared by both surfaces:
+// the CLI's ResolveTarget (when args contain a bare PROJECT/REPO) and
+// the MCP handlers (which take hostname as a tool arg, never positional).
+func ResolveHost(f *Factory, hostname string) (string, error) {
+	if hostname != "" {
+		return hostname, nil
+	}
 	cfg, err := f.Config()
 	if err != nil {
-		return err
+		return "", err
 	}
 	hosts := cfg.Hosts()
 	switch len(hosts) {
 	case 0:
-		return fmt.Errorf("not authenticated; run `bitbottle auth login` first")
+		return "", fmt.Errorf("not authenticated; run `bitbottle auth login` first")
 	case 1:
-		ref.Host = hosts[0]
-		return nil
+		return hosts[0], nil
 	default:
-		return fmt.Errorf("multiple hosts configured; specify HOST/PROJECT/REPO or use --hostname")
+		return "", fmt.Errorf("multiple hosts configured; specify hostname")
 	}
+}
+
+// inferHost is the bare-PROJECT/REPO branch of ResolveTarget. The
+// host-discovery rule lives in ResolveHost; this wrapper exists only
+// to surface the *target-specific* multi-host error message that
+// guides users toward HOST/PROJECT/REPO rather than a bare --hostname.
+func inferHost(f *Factory, ref *bbrepo.RepoRef) error {
+	host, err := ResolveHost(f, "")
+	if err != nil {
+		// Rewrite the multi-host message so it fits the positional-arg
+		// context (the user just typed PROJECT/REPO; tell them to add
+		// the host or pass --hostname).
+		if strings.Contains(err.Error(), "multiple hosts") {
+			return fmt.Errorf("multiple hosts configured; specify HOST/PROJECT/REPO or use --hostname")
+		}
+		return err
+	}
+	ref.Host = host
+	return nil
 }
 
 // parseTargetArg accepts "HOST/PROJECT/REPO" or "PROJECT/REPO".

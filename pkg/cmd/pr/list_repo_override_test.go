@@ -3,11 +3,13 @@ package pr_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -27,11 +29,9 @@ func TestPRList_RepoOverrideFlag_PassesProjectAndSlugToBackend(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   "bb.example.com:\n  oauth_token: tok\n",
-		BackendOverride: fake,
-		GitRunner:       testhelpers.NewFakeRunner(),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n"})
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return testhelpers.NewFakeRunner() }
 
 	root := pr.NewCmdPR(f)
 	root.SetArgs([]string{"list", "-R", "MYPROJ/myrepo"})

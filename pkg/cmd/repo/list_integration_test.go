@@ -7,10 +7,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 )
 
@@ -30,11 +31,9 @@ func TestRepoList_Integration_PrintsRepoSlugs(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	require.NoError(t, cmd.Execute())
@@ -57,11 +56,9 @@ func TestRepoList_Integration_RespectsLimit(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	cmd.SetArgs([]string{"--limit", "5"})
@@ -84,11 +81,9 @@ func TestRepoList_Integration_EmptyResultPrintsNothing(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	require.NoError(t, cmd.Execute())
@@ -111,11 +106,9 @@ func TestRepoList_Integration_APIErrorSurfaced(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	err = cmd.Execute()
@@ -127,7 +120,7 @@ func TestRepoList_Integration_APIErrorSurfaced(t *testing.T) {
 func TestRepoList_Integration_NoConfigError(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 
 	cmd := repo.NewCmdRepoList(f)
 	err := cmd.Execute()
@@ -149,14 +142,12 @@ func TestRepoList_Integration_ExplicitHostname(t *testing.T) {
 
 	// Seed a different host in config; --hostname should override it.
 	var gotHost string
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "other.example.com:\n  oauth_token: other-tok\n  git_protocol: ssh\n",
-		HTTPClient:    srv.Client(),
-		BaseURL: func(hostname string) string {
-			gotHost = hostname
-			return srv.URL
-		},
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "other.example.com:\n  oauth_token: other-tok\n  git_protocol: ssh\n"})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string {
+		gotHost = hostname
+		return srv.URL
+	}
 
 	cmd := repo.NewCmdRepoList(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com"})
@@ -177,11 +168,9 @@ func TestRepoList_Integration_ServerError(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: repoListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
 	err := cmd.Execute()

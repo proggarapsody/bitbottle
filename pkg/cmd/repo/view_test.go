@@ -5,25 +5,26 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdRepoView_HasWebFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoView(f)
 	assert.NotNil(t, cmd.Flag("web"))
 }
 
 func TestNewCmdRepoView_RequiresArg(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoView(f)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
@@ -68,11 +69,9 @@ func TestRepoView_WebFlag_OpensBrowser(t *testing.T) {
 	}
 	browser := &testhelpers.FakeBrowserLauncher{}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   repoConfig,
-		BackendOverride: fake,
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoConfig})
+	factorytest.UseBackend(f, fake)
+	f.Browser = browser
 	cmd := repo.NewCmdRepoView(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "--web"})
 	require.NoError(t, cmd.Execute())
@@ -140,7 +139,7 @@ func TestRepoView_NoDescriptionLine_WhenEmpty(t *testing.T) {
 
 func TestNewCmdRepoView_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoView(f)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))

@@ -9,18 +9,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestRepoView_HasHostnameFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoView(f)
 	assert.NotNil(t, cmd.Flag("hostname"), "repo view should have a --hostname flag like repo list")
 }
@@ -40,15 +41,12 @@ func TestRepoView_ExplicitHostname_UsesProvidedHost(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		// Two hosts configured — without --hostname this would error.
-		InitialConfig: "bb1.example.com:\n  oauth_token: tok1\nbb2.example.com:\n  oauth_token: tok2\n",
-		HTTPClient:    srv.Client(),
-		BaseURL: func(hostname string) string {
-			gotHost = hostname
-			return srv.URL
-		},
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb1.example.com:\n  oauth_token: tok1\nbb2.example.com:\n  oauth_token: tok2\n"})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string {
+		gotHost = hostname
+		return srv.URL
+	}
 
 	cmd := repo.NewCmdRepoView(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "--hostname", "bb2.example.com"})
@@ -66,10 +64,8 @@ func TestRepoView_MultipleHosts_NoFlag_ReturnsError(t *testing.T) {
 			return testhelpers.BackendRepoFactory(), nil
 		},
 	}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   "bb1.example.com:\n  oauth_token: tok1\nbb2.example.com:\n  oauth_token: tok2\n",
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb1.example.com:\n  oauth_token: tok1\nbb2.example.com:\n  oauth_token: tok2\n"})
+	factorytest.UseBackend(f, fake)
 
 	cmd := repo.NewCmdRepoView(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})

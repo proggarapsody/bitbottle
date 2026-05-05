@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/alias"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 )
 
 func TestAliasSet_PersistsToDisk(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{ConfigDir: dir})
+	f, _, _ := factorytest.New(t, factorytest.Opts{ConfigDir: dir})
 	cmd := alias.NewCmdAlias(f, []string{"pr", "repo", "alias"})
 	cmd.SetArgs([]string{"set", "prs", "pr list --author @me"})
 	require.NoError(t, cmd.Execute())
@@ -27,7 +27,7 @@ func TestAliasList_PrintsEntries(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{ConfigDir: dir})
+	f, out, _ := factorytest.New(t, factorytest.Opts{ConfigDir: dir})
 
 	for _, args := range [][]string{
 		{"set", "prs", "pr list --author @me"},
@@ -52,7 +52,7 @@ func TestAliasDelete_RemovesEntry(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{ConfigDir: dir})
+	f, _, _ := factorytest.New(t, factorytest.Opts{ConfigDir: dir})
 
 	set := alias.NewCmdAlias(f, []string{"pr", "repo", "alias"})
 	set.SetArgs([]string{"set", "prs", "pr list"})
@@ -71,7 +71,7 @@ func TestAliasDelete_RemovesEntry(t *testing.T) {
 func TestAliasSet_RejectsBuiltinShadow(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{ConfigDir: t.TempDir()})
+	f, _, _ := factorytest.New(t, factorytest.Opts{ConfigDir: t.TempDir()})
 	cmd := alias.NewCmdAlias(f, []string{"pr", "repo", "alias"})
 	cmd.SetArgs([]string{"set", "pr", "something else"})
 	err := cmd.Execute()

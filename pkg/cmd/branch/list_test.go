@@ -4,12 +4,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -17,7 +18,7 @@ const branchConfig = "bitbucket.org:\n  oauth_token: tok\n  user: alice\n  git_p
 
 func TestNewCmdBranchList_HasFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := branch.NewCmdBranchList(f)
 	assert.NotNil(t, cmd.Flag("limit"))
 	assert.NotNil(t, cmd.Flag("json"))
@@ -26,14 +27,14 @@ func TestNewCmdBranchList_HasFlags(t *testing.T) {
 
 func TestNewCmdBranchList_LimitDefault(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := branch.NewCmdBranchList(f)
 	assert.Equal(t, "30", cmd.Flag("limit").DefValue)
 }
 
 func TestNewCmdBranchList_RequiresArg(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := branch.NewCmdBranchList(f)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
@@ -53,10 +54,8 @@ func TestBranchList_PrintsNames(t *testing.T) {
 		},
 	}
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
@@ -78,10 +77,8 @@ func TestBranchList_TruncatesHash(t *testing.T) {
 		},
 	}
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
@@ -103,10 +100,8 @@ func TestBranchList_JSON_FieldsOutput(t *testing.T) {
 		},
 	}
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "name,default"})
 	require.NoError(t, cmd.Execute())
@@ -129,10 +124,8 @@ func TestBranchList_JQ_FilterOutput(t *testing.T) {
 		},
 	}
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "name", "--jq", ".[] | .name"})
 	require.NoError(t, cmd.Execute())

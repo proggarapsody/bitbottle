@@ -4,20 +4,19 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	configcmd "github.com/proggarapsody/bitbottle/pkg/cmd/config"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func TestConfigSetGet_RoundTrips(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		ConfigDir: dir,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{ConfigDir: dir})
 
 	setCmd := configcmd.NewCmdConfig(f)
 	setCmd.SetArgs([]string{"set", "editor", "nvim"})
@@ -35,9 +34,7 @@ func TestConfigSetGet_RoundTrips(t *testing.T) {
 func TestConfigGet_UnknownKey_Errors(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		ConfigDir: t.TempDir(),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{ConfigDir: t.TempDir()})
 	cmd := configcmd.NewCmdConfig(f)
 	cmd.SetArgs([]string{"get", "notakey"})
 	err := cmd.Execute()
@@ -48,9 +45,7 @@ func TestConfigGet_UnknownKey_Errors(t *testing.T) {
 func TestConfigSet_RejectsUnknownKey(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		ConfigDir: t.TempDir(),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{ConfigDir: t.TempDir()})
 	cmd := configcmd.NewCmdConfig(f)
 	cmd.SetArgs([]string{"set", "secret_url", "x"})
 	err := cmd.Execute()
@@ -62,9 +57,7 @@ func TestConfigList_PrintsAllSetValues(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		ConfigDir: dir,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{ConfigDir: dir})
 
 	for _, args := range [][]string{
 		{"set", "editor", "vim"},
@@ -88,9 +81,7 @@ func TestConfigSet_PerHostOverride(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		ConfigDir: dir,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{ConfigDir: dir})
 
 	set := configcmd.NewCmdConfig(f)
 	set.SetArgs([]string{"set", "git_protocol", "https", "--host", "bb.example.com"})

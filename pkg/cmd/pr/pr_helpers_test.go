@@ -11,7 +11,9 @@ import (
 	"testing"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -34,9 +36,8 @@ func newPRRunner(extra ...testhelpers.RunResponse) *testhelpers.FakeRunner {
 // runner (use newPRRunner() for the common single-response case).
 func newPRFactory(t *testing.T, fake backend.Client, runner *testhelpers.FakeRunner) (*factory.Factory, *bytes.Buffer, *bytes.Buffer) {
 	t.Helper()
-	return factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   prConfig,
-		BackendOverride: fake,
-		GitRunner:       runner,
-	})
+	f, out, errOut := factorytest.New(t, factorytest.Opts{InitialConfig: prConfig})
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return runner }
+	return f, out, errOut
 }

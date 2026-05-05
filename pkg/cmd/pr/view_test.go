@@ -5,25 +5,27 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdPRView_HasWebFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRView(f)
 	assert.NotNil(t, cmd.Flag("web"))
 }
 
 func TestNewCmdPRView_RequiresArg(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRView(f)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
@@ -67,12 +69,10 @@ func TestPRView_WebFlag_OpensBrowser(t *testing.T) {
 		},
 	}
 	browser := &testhelpers.FakeBrowserLauncher{}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   prConfig,
-		BackendOverride: fake,
-		GitRunner:       newPRRunner(),
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prConfig})
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return newPRRunner() }
+	f.Browser = browser
 	cmd := pr.NewCmdPRView(f)
 	cmd.SetArgs([]string{"42", "--web"})
 	require.NoError(t, cmd.Execute())
@@ -162,7 +162,7 @@ func TestPRView_NoDraftIndicator_WhenNotDraft(t *testing.T) {
 
 func TestNewCmdPRView_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRView(f)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))

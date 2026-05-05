@@ -4,18 +4,20 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdPRMerge_HasFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRMerge(f)
 	assert.NotNil(t, cmd.Flag("merge"))
 	assert.NotNil(t, cmd.Flag("squash"))
@@ -24,7 +26,7 @@ func TestNewCmdPRMerge_HasFlags(t *testing.T) {
 
 func TestNewCmdPRMerge_RequiresArg(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRMerge(f)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
@@ -72,10 +74,8 @@ func TestPRMerge_SquashStrategy_CallsAPI(t *testing.T) {
 func TestPRMerge_BothMergeAndSquash_Errors(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prConfig,
-		GitRunner:     newPRRunner(),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prConfig})
+	f.GitRunner = func() run.Runner { return newPRRunner() }
 	cmd := pr.NewCmdPRMerge(f)
 	cmd.SetArgs([]string{"42", "--merge", "--squash"})
 	err := cmd.Execute()

@@ -5,10 +5,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -22,10 +24,8 @@ func TestBaseRepo_InfersFromGitRemote(t *testing.T) {
 	runner := testhelpers.NewFakeRunner(
 		testhelpers.RunResponse{Stdout: "ssh://git@bb.example.com:7999/MYPROJ/myrepo.git\n"},
 	)
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
-		GitRunner:     runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n"})
+	f.GitRunner = func() run.Runner { return runner }
 
 	ref, err := f.BaseRepo()
 	require.NoError(t, err)
@@ -42,10 +42,8 @@ func TestBaseRepo_NoGitRepo_ReturnsCleanError(t *testing.T) {
 	runner := testhelpers.NewFakeRunner(
 		testhelpers.RunResponse{Err: errors.New("exit status 128")},
 	)
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
-		GitRunner:     runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n"})
+	f.GitRunner = func() run.Runner { return runner }
 
 	_, err := f.BaseRepo()
 	require.Error(t, err)
@@ -63,10 +61,8 @@ func TestBaseRepo_NotAuthenticated_HintsAuthLogin(t *testing.T) {
 	runner := testhelpers.NewFakeRunner(
 		testhelpers.RunResponse{Err: errors.New("exit status 128")},
 	)
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		// No InitialConfig — no hosts configured.
-		GitRunner: runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.GitRunner = func() run.Runner { return runner }
 
 	_, err := f.BaseRepo()
 	require.Error(t, err)
@@ -86,10 +82,8 @@ func TestBaseRepo_PinnedDefault_BypassesRemote(t *testing.T) {
 		"bitbottle.project": "PINNED",
 		"bitbottle.slug":    "pinned-repo",
 	}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
-		GitRunner:     runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n"})
+	f.GitRunner = func() run.Runner { return runner }
 
 	ref, err := f.BaseRepo()
 	require.NoError(t, err)

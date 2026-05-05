@@ -3,10 +3,11 @@ package pr_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 )
 
@@ -15,7 +16,7 @@ import (
 func TestPRList_InvalidRepoArgFormat(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"noslash"})
 	err := cmd.Execute()
@@ -27,7 +28,7 @@ func TestPRList_InvalidRepoArgFormat(t *testing.T) {
 func TestPRList_TooManySlashesInArg(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"A/B/C"})
 	err := cmd.Execute()
@@ -37,7 +38,7 @@ func TestPRList_TooManySlashesInArg(t *testing.T) {
 // TestPRList_LimitDefaultIs30 verifies the limit flag defaults to 30.
 func TestPRList_LimitDefaultIs30(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	assert.Equal(t, "30", cmd.Flag("limit").DefValue)
 }

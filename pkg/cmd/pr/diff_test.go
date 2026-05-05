@@ -5,10 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
@@ -17,7 +19,7 @@ import (
 
 func TestNewCmdPRDiff_RequiresArg(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRDiff(f)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
@@ -62,12 +64,10 @@ func TestPRDiff_TTY_StreamsThroughPager(t *testing.T) {
 	}
 
 	ios := iostreams.TestTTY()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		IOStreams:       ios,
-		BackendOverride: fake,
-		InitialConfig:   prConfig,
-		GitRunner:       newPRRunner(),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prConfig})
+	f.IOStreams = ios
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return newPRRunner() }
 	cmd := pr.NewCmdPRDiff(f)
 	// Mirror what NewCmdRoot does: wrap pager-annotated commands once after
 	// the tree is assembled. Without this, the test bypasses the wiring.

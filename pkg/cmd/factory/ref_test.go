@@ -3,6 +3,8 @@ package factory_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,9 +19,7 @@ import (
 
 func TestResolveTarget_E2E_SingleConfiguredHost_AutoPicked(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n"})
 	ref, err := factory.ResolveTarget(f, []string{"MYPROJ/myrepo"}, "")
 	require.NoError(t, err)
 	assert.Equal(t, "bb.example.com", ref.Host)
@@ -29,11 +29,9 @@ func TestResolveTarget_E2E_SingleConfiguredHost_AutoPicked(t *testing.T) {
 
 func TestResolveTarget_E2E_MultipleHosts_ErrorsWithoutFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "" +
-			"bb1.example.com:\n  oauth_token: tok1\n" +
-			"bb2.example.com:\n  oauth_token: tok2\n",
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "" +
+		"bb1.example.com:\n  oauth_token: tok1\n" +
+		"bb2.example.com:\n  oauth_token: tok2\n"})
 	_, err := factory.ResolveTarget(f, []string{"P/r"}, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "multiple hosts")
@@ -41,11 +39,9 @@ func TestResolveTarget_E2E_MultipleHosts_ErrorsWithoutFlag(t *testing.T) {
 
 func TestResolveTarget_E2E_HostnameFlag_DisambiguatesMultiHost(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "" +
-			"bb1.example.com:\n  oauth_token: tok1\n" +
-			"bb2.example.com:\n  oauth_token: tok2\n",
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "" +
+		"bb1.example.com:\n  oauth_token: tok1\n" +
+		"bb2.example.com:\n  oauth_token: tok2\n"})
 	ref, err := factory.ResolveTarget(f, []string{"P/r"}, "bb2.example.com")
 	require.NoError(t, err)
 	assert.Equal(t, "bb2.example.com", ref.Host)

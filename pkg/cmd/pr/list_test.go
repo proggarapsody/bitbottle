@@ -4,18 +4,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdPRList_HasFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	assert.NotNil(t, cmd.Flag("state"))
 	assert.NotNil(t, cmd.Flag("limit"))
@@ -24,21 +25,21 @@ func TestNewCmdPRList_HasFlags(t *testing.T) {
 
 func TestNewCmdPRList_StateDefault(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	assert.Equal(t, "open", cmd.Flag("state").DefValue)
 }
 
 func TestNewCmdPRList_LimitDefault(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	assert.Equal(t, "30", cmd.Flag("limit").DefValue)
 }
 
 func TestNewCmdPRList_NoRemoteReturnsError(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -48,7 +49,7 @@ func TestNewCmdPRList_NoRemoteReturnsError(t *testing.T) {
 
 func TestNewCmdPRList_AcceptsMaxOneArg(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"PROJ/repo", "extra"})
 	err := cmd.Execute()
@@ -57,7 +58,7 @@ func TestNewCmdPRList_AcceptsMaxOneArg(t *testing.T) {
 
 func TestNewCmdPRList_HasJQFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
 	assert.NotNil(t, cmd.Flag("jq"))
 }

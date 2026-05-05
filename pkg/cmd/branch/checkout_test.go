@@ -3,17 +3,19 @@ package branch_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestBranchCheckout_RequiresOneArg(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := branch.NewCmdBranchCheckout(f)
 	cmd.SetArgs([]string{}) // no branch name
 	err := cmd.Execute()
@@ -31,9 +33,8 @@ func TestBranchCheckout_FetchesAndChecksOutExistingBranch(t *testing.T) {
 		testhelpers.RunResponse{Stdout: "feat/x\n"}, // branch --list (exists)
 		testhelpers.RunResponse{},                   // checkout
 	)
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		GitRunner: runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.GitRunner = func() run.Runner { return runner }
 	cmd := branch.NewCmdBranchCheckout(f)
 	cmd.SetArgs([]string{"feat/x"})
 	require.NoError(t, cmd.Execute())
@@ -54,9 +55,8 @@ func TestBranchCheckout_CreatesTrackingBranchWhenNotLocal(t *testing.T) {
 		testhelpers.RunResponse{Stdout: ""}, // branch --list (absent)
 		testhelpers.RunResponse{},           // checkout -b ...
 	)
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		GitRunner: runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	f.GitRunner = func() run.Runner { return runner }
 	cmd := branch.NewCmdBranchCheckout(f)
 	cmd.SetArgs([]string{"feat/new"})
 	require.NoError(t, cmd.Execute())

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/root"
 )
 
@@ -17,7 +18,7 @@ import (
 func TestRootHelp_PRList_ShowsArgumentsSection(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := root.NewCmdRoot(f)
 
 	out := &bytes.Buffer{}
@@ -38,7 +39,7 @@ func TestRootHelp_PRList_ShowsArgumentsSection(t *testing.T) {
 func TestRootHelp_RepoView_ShowsArgumentsSection(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := root.NewCmdRoot(f)
 
 	out := &bytes.Buffer{}

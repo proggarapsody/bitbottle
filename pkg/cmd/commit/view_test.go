@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -30,10 +31,8 @@ func TestCommitView_PrintsDetail(t *testing.T) {
 		},
 	}
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   commitConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitView(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234def567890abcdef1234567890abcdef12"})
 	require.NoError(t, cmd.Execute())
@@ -62,11 +61,9 @@ func TestCommitView_WebFlag(t *testing.T) {
 	}
 
 	browser := &testhelpers.FakeBrowserLauncher{}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   commitConfig,
-		BackendOverride: fake,
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	factorytest.UseBackend(f, fake)
+	f.Browser = browser
 	cmd := commit.NewCmdCommitView(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234def567890", "--web"})
 	require.NoError(t, cmd.Execute())

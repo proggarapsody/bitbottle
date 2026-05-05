@@ -4,18 +4,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdRepoList_HasFlags(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
 	assert.NotNil(t, cmd.Flag("limit"))
 	assert.NotNil(t, cmd.Flag("json"))
@@ -23,14 +24,14 @@ func TestNewCmdRepoList_HasFlags(t *testing.T) {
 
 func TestNewCmdRepoList_LimitDefault(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
 	assert.Equal(t, "30", cmd.Flag("limit").DefValue)
 }
 
 func TestNewCmdRepoList_NoConfigReturnsError(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -39,14 +40,14 @@ func TestNewCmdRepoList_NoConfigReturnsError(t *testing.T) {
 
 func TestNewCmdRepoList_HasHostnameFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
 	assert.NotNil(t, cmd.Flag("hostname"))
 }
 
 func TestNewCmdRepoList_HasJQFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
 	assert.NotNil(t, cmd.Flag("jq"))
 }
