@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.1](https://github.com/proggarapsody/bitbottle/compare/v1.14.0...v1.14.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* **skill:** audit round-3 + sync_help drift detector ([#74](https://github.com/proggarapsody/bitbottle/issues/74)) ([3a5f49c](https://github.com/proggarapsody/bitbottle/commit/3a5f49ca59dbd9db3258fa69ef0140d676be1523))
+
 ## [1.14.0](https://github.com/proggarapsody/bitbottle/compare/v1.13.1...v1.14.0) (2026-05-05)
 
 
