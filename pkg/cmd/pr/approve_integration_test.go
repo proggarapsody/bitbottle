@@ -5,10 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -35,12 +37,10 @@ func TestPRApprove_Integration_ServerEndToEnd(t *testing.T) {
 		testhelpers.RunResponse{Stdout: "ssh://git@bb.example.com:7999/myproj/myrepo.git\n"},
 	)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n",
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-		GitRunner:     runner,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n"})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
+	f.GitRunner = func() run.Runner { return runner }
 
 	root := pr.NewCmdPR(f)
 	root.SetArgs([]string{"approve", "42"})

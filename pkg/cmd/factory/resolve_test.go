@@ -112,6 +112,96 @@ func TestResolveTarget_BareProjectRepo_MultiHost_Errors(t *testing.T) {
 		"multi-host ambiguity should surface a guiding message; got: %v", err)
 }
 
+// TestResolveHost_ExplicitHostnameWins verifies the cheapest, most common
+// case: when the caller already knows which host they want (because the
+// user typed --hostname or the MCP tool received a `hostname` arg), we
+// return it verbatim and never touch config. The config-lookup branch is
+// purely a fallback for when the caller has nothing.
+func TestResolveHost_ExplicitHostnameWins(t *testing.T) {
+	t.Parallel()
+
+	f := &factory.Factory{
+		Config: func() (*config.Config, error) {
+			t.Fatal("Config must NOT be loaded when hostname is explicit")
+			return nil, nil
+		},
+	}
+
+	got, err := factory.ResolveHost(f, "git.example.com")
+	require.NoError(t, err)
+	assert.Equal(t, "git.example.com", got)
+}
+
+// TestResolveHost_EmptyHostname_SingleHostInferred verifies the
+// most user-friendly fallback: when only one host is authenticated,
+// callers don't need to spell it out. This preserves the gh-style UX
+// users already get from ResolveTarget for bare PROJECT/REPO args.
+func TestResolveHost_EmptyHostname_SingleHostInferred(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	require.NoError(t, writeHosts(dir, "git.only.com:\n  oauth_token: tok\n  user: alice\n"))
+	cfg := config.New(dir)
+
+	f := &factory.Factory{
+		Config: func() (*config.Config, error) {
+			require.NoError(t, cfg.Load())
+			return cfg, nil
+		},
+	}
+
+	got, err := factory.ResolveHost(f, "")
+	require.NoError(t, err)
+	assert.Equal(t, "git.only.com", got)
+}
+
+// TestResolveHost_EmptyHostname_NoHosts_Errors verifies the friendly
+// "not authenticated" message we surface when nothing is configured.
+// MCP relies on this exact wording for its error envelope.
+func TestResolveHost_EmptyHostname_NoHosts_Errors(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	cfg := config.New(dir) // no hosts.yml written
+
+	f := &factory.Factory{
+		Config: func() (*config.Config, error) {
+			_ = cfg.Load() // missing file is fine
+			return cfg, nil
+		},
+	}
+
+	_, err := factory.ResolveHost(f, "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not authenticated")
+}
+
+// TestResolveHost_EmptyHostname_MultiHost_Errors verifies that
+// ambiguity is surfaced rather than guessed at — the user must
+// specify which host they meant. The error guides them toward the
+// fix (a hostname).
+func TestResolveHost_EmptyHostname_MultiHost_Errors(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	require.NoError(t, writeHosts(dir,
+		"git.a.com:\n  oauth_token: tok1\n  user: alice\n"+
+			"git.b.com:\n  oauth_token: tok2\n  user: alice\n"))
+	cfg := config.New(dir)
+
+	f := &factory.Factory{
+		Config: func() (*config.Config, error) {
+			require.NoError(t, cfg.Load())
+			return cfg, nil
+		},
+	}
+
+	_, err := factory.ResolveHost(f, "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "multiple hosts")
+	assert.Contains(t, err.Error(), "hostname")
+}
+
 // writeHosts is a tiny helper to seed a test config.
 func writeHosts(dir, contents string) error {
 	return writeFileTo(filepath.Join(dir, "hosts.yml"), contents)

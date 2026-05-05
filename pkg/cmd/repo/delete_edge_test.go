@@ -6,10 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -32,11 +33,9 @@ func TestRepoDelete_TTYConfirmAborted(t *testing.T) {
 	ios.In = io.NopCloser(strings.NewReader("n\n"))
 	ios.Out = stdout
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   repoConfig,
-		BackendOverride: fake,
-		IOStreams:       ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoConfig})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
 
 	cmd := repo.NewCmdRepoDelete(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})

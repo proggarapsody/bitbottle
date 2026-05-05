@@ -7,10 +7,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -33,11 +35,9 @@ func TestPRList_Integration_PrintsPRTitles(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
@@ -62,11 +62,9 @@ func TestPRList_Integration_StateFilterPassedToAPI(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "--state", "merged"})
@@ -90,11 +88,9 @@ func TestPRList_Integration_APIErrorSurfaced(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
@@ -113,11 +109,9 @@ func TestPRList_Integration_EmptyResultPrintsNothing(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
@@ -143,12 +137,10 @@ func TestPRList_Integration_DetectsFromGitRemote(t *testing.T) {
 		testhelpers.RunResponse{Stdout: "git@bb.example.com:MYPROJ/my-service.git\n"},
 	)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-		GitRunner:     runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
+	f.GitRunner = func() run.Runner { return runner }
 
 	cmd := pr.NewCmdPRList(f)
 	require.NoError(t, cmd.Execute())
@@ -169,11 +161,9 @@ func TestPRList_Integration_ServerError(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: prListConfig,
-		HTTPClient:    srv.Client(),
-		BaseURL:       func(hostname string) string { return srv.URL },
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := pr.NewCmdPRList(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})

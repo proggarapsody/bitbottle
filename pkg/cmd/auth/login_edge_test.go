@@ -3,12 +3,13 @@ package auth_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -19,9 +20,7 @@ import (
 func TestAuthLogin_NonTTY_NoToken_Errors(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		// TestFactory defaults: IsStdoutTTY = false, no stored config.
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com"})
 	err := cmd.Execute()
@@ -46,12 +45,8 @@ func TestAuthLogin_NonTTY_StoredToken_Revalidates(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		BackendOverride: fake,
-		// Seed the config with an existing token so the non-TTY path
-		// can pick it up without --with-token.
-		InitialConfig: "bb.example.com:\n  oauth_token: existing-token\n  user: alice\n  git_protocol: ssh\n",
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: existing-token\n  user: alice\n  git_protocol: ssh\n"})
+	factorytest.UseBackend(f, fake)
 	cmd := auth.NewCmdAuthLogin(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com"})
 	require.NoError(t, cmd.Execute())

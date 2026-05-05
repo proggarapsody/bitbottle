@@ -9,12 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/api"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
 
@@ -76,10 +77,8 @@ func TestAPI_Method_OverridesVerb(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: ``}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"--method", "DELETE", "2.0/repositories/me/x"})
 	require.NoError(t, cmd.Execute())
@@ -95,10 +94,8 @@ func TestAPI_HostnameFlag_TargetsHost(t *testing.T) {
 		"bb.other.com:\n  oauth_token: tok2\n  user: bob\n  git_protocol: ssh\n"
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: twoHosts,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: twoHosts})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"--hostname", "bb.other.com", "rest/api/1.0/projects"})
 	require.NoError(t, cmd.Execute())
@@ -116,10 +113,8 @@ func TestAPI_CloudHost_RemapsToAPIHost(t *testing.T) {
 	const cloudHostConfig = "bitbucket.org:\n  oauth_token: mytoken\n  auth_user: user@example.com\n  git_protocol: ssh\n"
 
 	stub := &stubHTTP{respBody: `{"username":"clouduser"}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: cloudHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cloudHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"2.0/user"})
@@ -138,10 +133,8 @@ func TestAPI_AmbiguousHost_Errors(t *testing.T) {
 		"bb.other.com:\n  oauth_token: tok2\n  user: bob\n  git_protocol: ssh\n"
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: twoHosts,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: twoHosts})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"2.0/user"})
 	err := cmd.Execute()
@@ -153,10 +146,8 @@ func TestAPI_Header_AddsCustomHeader(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"-H", "X-Custom: yes", "-H", "X-Another: no", "2.0/user"})
 	require.NoError(t, cmd.Execute())
@@ -169,10 +160,8 @@ func TestAPI_Non2xx_ReturnsError(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{status: 404, respBody: `{"error":{"message":"not found"}}`}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"2.0/missing"})
 	err := cmd.Execute()
@@ -186,10 +175,8 @@ func TestAPI_TypedField_BuildsJSONBodyAndDefaultsToPOST(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{
 		"-F", "title=My PR",
@@ -208,10 +195,8 @@ func TestAPI_StringField_KeepsValueAsString(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"-f", "version=42", "2.0/repositories/me/x"})
 	require.NoError(t, cmd.Execute())
@@ -223,11 +208,9 @@ func TestAPI_Input_StreamsRawBody(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-		IOStreams:     iostreamsWithStdin(`{"raw":"yes"}`),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
+	f.IOStreams = iostreamsWithStdin(`{"raw":"yes"}`)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"--input", "-", "-X", "PUT", "2.0/repositories/me/x"})
 	require.NoError(t, cmd.Execute())
@@ -240,10 +223,8 @@ func TestAPI_JQ_FiltersJSONResponse(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{"values":[{"name":"a"},{"name":"b"}]}`}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"--jq", ".values[].name", "2.0/repositories/me"})
 	require.NoError(t, cmd.Execute())
@@ -256,10 +237,8 @@ func TestAPI_JQ_NonJSONResponse_Errors(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `not json`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"--jq", ".foo", "2.0/x"})
 	err := cmd.Execute()
@@ -271,10 +250,8 @@ func TestAPI_VariableExpansion_FromBaseRepo(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	f.BaseRepo = func() (bbrepo.RepoRef, error) {
 		return bbrepo.RepoRef{Host: "bb.example.com", Project: "PROJ", Slug: "myrepo"}, nil
 	}
@@ -293,10 +270,8 @@ func TestAPI_VariableExpansion_CloudAliases(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	f.BaseRepo = func() (bbrepo.RepoRef, error) {
 		return bbrepo.RepoRef{Host: "bitbucket.org", Project: "myws", Slug: "myrepo"}, nil
 	}
@@ -315,10 +290,8 @@ func TestAPI_VariableExpansion_NoRepo_Errors(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{}`}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	f.BaseRepo = func() (bbrepo.RepoRef, error) {
 		return bbrepo.RepoRef{}, fmt.Errorf("no remotes")
 	}
@@ -339,10 +312,8 @@ func TestAPI_Paginate_CloudFollowsNextURL(t *testing.T) {
 			`{"values":[{"id":3}]}`,
 		},
 	}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"--paginate", "2.0/repositories/me/x"})
 	require.NoError(t, cmd.Execute())
@@ -365,10 +336,8 @@ func TestAPI_Paginate_ServerWalksNextPageStart(t *testing.T) {
 			`{"values":[{"id":2}],"isLastPage":true}`,
 		},
 	}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"--paginate", "rest/api/1.0/projects/PROJ/repos/x/pull-requests"})
 	require.NoError(t, cmd.Execute())
@@ -385,10 +354,8 @@ func TestAPI_GET_PrintsBody(t *testing.T) {
 	t.Parallel()
 
 	stub := &stubHTTP{respBody: `{"username":"alice"}`}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: apiHostConfig,
-		HTTPClient:    stub,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: apiHostConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
 
 	cmd := api.NewCmdAPI(f)
 	cmd.SetArgs([]string{"2.0/user"})

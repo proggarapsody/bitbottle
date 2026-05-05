@@ -4,22 +4,21 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestBranchCreate_RequiresStartAt(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{T: t}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "feat/x"}) // missing --start-at
 	err := cmd.Execute()
@@ -35,10 +34,8 @@ func TestBranchCreate_PrintsConfirmation(t *testing.T) {
 			return backend.Branch{Name: in.Name, LatestHash: "abc123"}, nil
 		},
 	}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "feat/x", "--start-at", "main"})
 	require.NoError(t, cmd.Execute())
@@ -55,10 +52,8 @@ func TestBranchCreate_PassesNameToAPI(t *testing.T) {
 			return backend.Branch{Name: in.Name}, nil
 		},
 	}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "feat/my-feature", "--start-at", "main"})
 	require.NoError(t, cmd.Execute())
@@ -75,10 +70,8 @@ func TestBranchCreate_PassesStartAtToAPI(t *testing.T) {
 			return backend.Branch{Name: in.Name}, nil
 		},
 	}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "feat/x", "--start-at", "develop"})
 	require.NoError(t, cmd.Execute())
@@ -94,10 +87,8 @@ func TestBranchCreate_APIError_PropagatesError(t *testing.T) {
 			return backend.Branch{}, apiErr
 		},
 	}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   branchConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "feat/x", "--start-at", "main"})
 	err := cmd.Execute()

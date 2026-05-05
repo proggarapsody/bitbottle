@@ -4,11 +4,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -17,10 +18,8 @@ func TestTagCreate_RequiresStartAt(t *testing.T) {
 	t.Parallel()
 
 	fake := &testhelpers.FakeClient{T: t}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0"}) // missing --start-at
 	err := cmd.Execute()
@@ -42,10 +41,8 @@ func TestTagCreate_PrintsWebURL(t *testing.T) {
 		},
 	}
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0", "--start-at", "main"})
 	require.NoError(t, cmd.Execute())
@@ -65,10 +62,8 @@ func TestTagCreate_PassesMessageToAPI(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0", "--start-at", "main", "--message", "Release notes"})
 	require.NoError(t, cmd.Execute())
@@ -88,10 +83,8 @@ func TestTagCreate_APIError_PropagatesError(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagCreate(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "v1.0.0", "--start-at", "main"})
 	err := cmd.Execute()

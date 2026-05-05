@@ -3,11 +3,12 @@ package auth_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 // TestAuthStatus_HostnameFilter_UnknownHost verifies that `auth status
@@ -16,9 +17,7 @@ import (
 func TestAuthStatus_HostnameFilter_UnknownHost(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: authConfig, // contains bb.example.com only
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: authConfig})
 	cmd := auth.NewCmdAuthStatus(f)
 	cmd.SetArgs([]string{"--hostname", "other.example.com"})
 	err := cmd.Execute()

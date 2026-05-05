@@ -3,6 +3,9 @@ package factory_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,10 +19,10 @@ import (
 func TestEnableRepoOverride_RepoFlag_OverridesBaseRepo(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb1.example.com:\n  oauth_token: tok\n",
-		GitRunner:     testhelpers.NewFakeRunner(testhelpers.RunResponse{Stdout: "ssh://git@bb1.example.com/AUTO/auto.git\n"}),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb1.example.com:\n  oauth_token: tok\n"})
+	f.GitRunner = func() run.Runner {
+		return testhelpers.NewFakeRunner(testhelpers.RunResponse{Stdout: "ssh://git@bb1.example.com/AUTO/auto.git\n"})
+	}
 
 	root := &cobra.Command{Use: "pr"}
 	factory.EnableRepoOverride(root, f)
@@ -45,10 +48,8 @@ func TestEnableRepoOverride_RepoFlag_OverridesBaseRepo(t *testing.T) {
 func TestEnableRepoOverride_BareProjectRepo_UsesSingleConfiguredHost(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
-		GitRunner:     testhelpers.NewFakeRunner(),
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n"})
+	f.GitRunner = func() run.Runner { return testhelpers.NewFakeRunner() }
 
 	root := &cobra.Command{Use: "pr"}
 	factory.EnableRepoOverride(root, f)
@@ -74,7 +75,7 @@ func TestEnableRepoOverride_BareProjectRepo_UsesSingleConfiguredHost(t *testing.
 func TestEnableRepoOverride_RegistersPersistentFlag(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	root := &cobra.Command{Use: "pr"}
 	factory.EnableRepoOverride(root, f)
 

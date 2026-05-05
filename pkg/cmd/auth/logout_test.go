@@ -3,17 +3,18 @@ package auth_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdAuthLogout_HasHostnameFlag(t *testing.T) {
 	t.Parallel()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := auth.NewCmdAuthLogout(f)
 	assert.NotNil(t, cmd.Flag("hostname"))
 }
@@ -24,10 +25,8 @@ func TestAuthLogout_RemovesCredentials(t *testing.T) {
 	kr := testhelpers.NewFakeKeyring()
 	require.NoError(t, kr.Set("bitbottle", "alice", "tok"))
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: authConfig,
-		Keyring:       kr,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: authConfig})
+	f.Keyring = kr
 	cmd := auth.NewCmdAuthLogout(f)
 	cmd.SetArgs([]string{"--hostname", "bb.example.com"})
 	require.NoError(t, cmd.Execute())
@@ -44,9 +43,7 @@ func TestAuthLogout_RemovesCredentials(t *testing.T) {
 func TestAuthLogout_UnknownHost_Errors(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: authConfig,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: authConfig})
 	cmd := auth.NewCmdAuthLogout(f)
 	cmd.SetArgs([]string{"--hostname", "unknown.example.com"})
 	err := cmd.Execute()
@@ -57,9 +54,7 @@ func TestAuthLogout_UnknownHost_Errors(t *testing.T) {
 func TestAuthLogout_SingleHost_AutoResolves(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: authConfig,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: authConfig})
 	cmd := auth.NewCmdAuthLogout(f)
 	// No --hostname: should auto-resolve to the single configured host.
 	require.NoError(t, cmd.Execute())
@@ -74,9 +69,7 @@ func TestAuthLogout_MultipleHosts_NoHostname_Errors(t *testing.T) {
 	t.Parallel()
 
 	const multiHost = "bb.example.com:\n  oauth_token: tok\n  user: alice\nhub.example.com:\n  oauth_token: tok2\n  user: bob\n"
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: multiHost,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: multiHost})
 	cmd := auth.NewCmdAuthLogout(f)
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -86,7 +79,7 @@ func TestAuthLogout_MultipleHosts_NoHostname_Errors(t *testing.T) {
 func TestAuthLogout_NoHosts_Errors(t *testing.T) {
 	t.Parallel()
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := auth.NewCmdAuthLogout(f)
 	err := cmd.Execute()
 	require.Error(t, err)

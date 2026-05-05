@@ -4,11 +4,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -28,10 +29,8 @@ func TestTagList_PrintsTable(t *testing.T) {
 		},
 	}
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
@@ -53,10 +52,8 @@ func TestTagList_PassesLimitToAPI(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--limit", "50"})
 	require.NoError(t, cmd.Execute())
@@ -74,10 +71,8 @@ func TestTagList_APIError_PropagatesError(t *testing.T) {
 		},
 	}
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   tagConfig,
-		BackendOverride: fake,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := tag.NewCmdTagList(f)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()

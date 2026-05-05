@@ -3,19 +3,18 @@ package auth_test
 import (
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func TestAuthToken_PrintsToken(t *testing.T) {
 	t.Parallel()
 
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: authConfig,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: authConfig})
 	cmd := auth.NewCmdAuthToken(f)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())
@@ -28,9 +27,7 @@ func TestAuthToken_NoToken_ReturnsError(t *testing.T) {
 
 	const noTokenConfig = "bb.example.com:\n  oauth_token: \"\"\n  user: alice\n  git_protocol: ssh\n"
 
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: noTokenConfig,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: noTokenConfig})
 	cmd := auth.NewCmdAuthToken(f)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()

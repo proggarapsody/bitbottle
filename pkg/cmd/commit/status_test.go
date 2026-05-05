@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -30,10 +31,8 @@ func TestCommitStatus_RendersTable(t *testing.T) {
 			}, nil
 		},
 	}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   commitConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitStatus(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234"})
 	require.NoError(t, cmd.Execute())
@@ -62,11 +61,9 @@ func TestCommitStatus_TTY_ColorsState(t *testing.T) {
 		},
 	}
 	ios := iostreams.TestTTY()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   commitConfig,
-		BackendOverride: fake,
-		IOStreams:       ios,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams = ios
 	cmd := commit.NewCmdCommitStatus(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234"})
 	require.NoError(t, cmd.Execute())
@@ -91,10 +88,8 @@ func TestCommitStatus_JSONOutput(t *testing.T) {
 			}, nil
 		},
 	}
-	f, out, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   commitConfig,
-		BackendOverride: fake,
-	})
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitStatus(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234", "--json", "key,state"})
 	require.NoError(t, cmd.Execute())

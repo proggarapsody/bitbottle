@@ -4,10 +4,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -22,10 +24,8 @@ func TestRepoSetDefault_WritesAllThreeKeys(t *testing.T) {
 		testhelpers.RunResponse{}, // SetConfig project
 		testhelpers.RunResponse{}, // SetConfig slug
 	)
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "bb.example.com:\n  oauth_token: tok\n",
-		GitRunner:     runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "bb.example.com:\n  oauth_token: tok\n"})
+	f.GitRunner = func() run.Runner { return runner }
 
 	cmd := repo.NewCmdRepoSetDefault(f)
 	cmd.SetArgs([]string{"bb.example.com/MYPROJ/myrepo"})
@@ -44,10 +44,8 @@ func TestRepoSetDefault_BareProjectRepo_UsesSingleConfiguredHost(t *testing.T) {
 	runner := testhelpers.NewFakeRunner(
 		testhelpers.RunResponse{}, testhelpers.RunResponse{}, testhelpers.RunResponse{},
 	)
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "only.example.com:\n  oauth_token: tok\n",
-		GitRunner:     runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "only.example.com:\n  oauth_token: tok\n"})
+	f.GitRunner = func() run.Runner { return runner }
 
 	cmd := repo.NewCmdRepoSetDefault(f)
 	cmd.SetArgs([]string{"P/r"})
@@ -62,12 +60,10 @@ func TestRepoSetDefault_BareProjectRepo_UsesSingleConfiguredHost(t *testing.T) {
 func TestRepoSetDefault_BareProjectRepo_MultipleHosts_Errors(t *testing.T) {
 	t.Parallel()
 	runner := testhelpers.NewFakeRunner()
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig: "" +
-			"bb1.example.com:\n  oauth_token: tok1\n" +
-			"bb2.example.com:\n  oauth_token: tok2\n",
-		GitRunner: runner,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: "" +
+		"bb1.example.com:\n  oauth_token: tok1\n" +
+		"bb2.example.com:\n  oauth_token: tok2\n"})
+	f.GitRunner = func() run.Runner { return runner }
 
 	cmd := repo.NewCmdRepoSetDefault(f)
 	cmd.SetArgs([]string{"P/r"})

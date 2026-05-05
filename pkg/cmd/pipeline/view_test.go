@@ -4,11 +4,13 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -77,12 +79,10 @@ func TestPipelineView_WebFlag_OpensBrowser(t *testing.T) {
 	}
 
 	browser := &testhelpers.FakeBrowserLauncher{}
-	f, _, _ := factory.NewTestFactory(t, factory.TestFactoryOpts{
-		InitialConfig:   pipelineConfig,
-		BackendOverride: fake,
-		GitRunner:       newPipelineRunner(),
-		Browser:         browser,
-	})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: pipelineConfig})
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return newPipelineRunner() }
+	f.Browser = browser
 	cmd := pipeline.NewCmdPipelineView(f)
 	cmd.SetArgs([]string{"myworkspace/my-service", uuid, "--web"})
 	require.NoError(t, cmd.Execute())
