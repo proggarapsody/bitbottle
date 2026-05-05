@@ -34,20 +34,21 @@ them speculatively.
    command line — it lands in shell history.
 2. **Confirm before destructive ops.** `repo delete`, `branch delete`,
    `tag delete`, `pr decline`, `pr merge` are not undoable. Before
-   running, show the user:
-   - the exact command,
-   - the target host and `PROJECT/REPO`,
-   - the PR ID / branch / tag name,
-   then wait for explicit confirmation.
+   running, show the user the exact command, the resolved host and
+   `PROJECT/REPO`, the PR ID / branch / tag name, then wait for
+   explicit confirmation. Reference files reuse this rule — don't
+   restate it there.
 3. **Don't fabricate flags.** bitbottle has gh-like *shape* but not
    gh-compatible *flags*. If a flag isn't in the reference and the
    user asks for behavior you can't find, run `bitbottle <command> -h`
-   first. Flags that DO NOT exist in 1.13.1 (commonly assumed):
-   `--author`, `--state all`, `--mine`, `--all`, `--reviewer @me`.
-4. **Prefer JSON for automation.** Parsing TTY tables is brittle; use
-   `--json field1,field2 --jq 'expr'` whenever the output feeds another
-   step. Most list/view commands support `--json` and `--jq` — verify
-   per-command with `-h`.
+   first. Phantom flags commonly assumed but **absent**: `--author`,
+   `--mine`, `--all`. Phantom **values**: `--state all` (only
+   `open`/`closed`/`merged` are accepted); `--reviewer @me` (no
+   "self" sentinel — pass the user slug).
+4. **Prefer JSON for automation.** Parsing TTY tables is brittle. Every
+   `list`/`view` command supports `--json fields --jq 'expr'` plus
+   `--limit N`. To discover supported fields for any command, pass a
+   bogus value: `bitbottle <cmd> --json X` — the error lists them.
 5. **Check the version on behavior mismatches.** If a command behaves
    differently from this file, run `bitbottle --version`. This skill
    was last verified against **1.14.0**.
@@ -110,11 +111,7 @@ When you see one of these messages, you know the fix:
 ## Install / version
 
 `npm install -g @proggarapsody/bitbottle` installs the CLI and
-auto-registers this skill across detected agent runtimes (Claude Code,
-Cursor, Codex, …). To check or refresh after a release:
-
-```bash
-bitbottle --version
-bitbottle skill install            # remove + reinstall, picks up latest
-bitbottle skill path               # where the skill landed
-```
+auto-registers this skill. For non-npm installs (Homebrew, Go, bare
+binary): `bitbottle skill install` (refresh), `skill path` (locate),
+`skill remove` (uninstall). Drift check:
+`python3 skills/scripts/sync_help.py`.

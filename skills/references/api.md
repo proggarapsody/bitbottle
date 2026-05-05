@@ -1,9 +1,5 @@
 # bitbottle api passthrough + MCP server
 
-Load this when the task involves raw REST calls (something
-`bitbottle pr/repo/branch/…` doesn't expose) or configuring
-bitbottle as an MCP server for an AI agent.
-
 ## Raw REST passthrough
 
 ```bash

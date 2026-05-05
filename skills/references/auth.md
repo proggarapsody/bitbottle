@@ -1,8 +1,5 @@
 # bitbottle auth, hosts.yml, env vars
 
-Load this when the task involves logging in, multi-host setup,
-explaining `hosts.yml`, or debugging an authentication failure.
-
 ## Login flows
 
 Cloud needs an **email**; Server/DC needs a **username**. The token
