@@ -5,7 +5,7 @@ description: >
   and Cloud. Load when the user asks about bitbottle commands, auth setup, PRs,
   repos, branches, tags, commits, pipelines, or why a command failed. Load even
   if the user just says "bitbottle", mentions "Bitbucket", or pastes a bitbottle
-  error message. Verified against bitbottle 1.13.1.
+  error message. Verified against bitbottle 1.14.0.
 ---
 
 # bitbottle CLI
@@ -50,7 +50,7 @@ them speculatively.
    per-command with `-h`.
 5. **Check the version on behavior mismatches.** If a command behaves
    differently from this file, run `bitbottle --version`. This skill
-   was last verified against **1.13.1**.
+   was last verified against **1.14.0**.
 
 ## Repo targeting (high-frequency)
 
@@ -111,9 +111,10 @@ When you see one of these messages, you know the fix:
 
 `npm install -g @proggarapsody/bitbottle` installs the CLI and
 auto-registers this skill across detected agent runtimes (Claude Code,
-Cursor, Codex, …). To check or refresh:
+Cursor, Codex, …). To check or refresh after a release:
 
 ```bash
 bitbottle --version
-npx -y skills add proggarapsody/bitbottle --global -y
+bitbottle skill install            # remove + reinstall, picks up latest
+bitbottle skill path               # where the skill landed
 ```

@@ -17,6 +17,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/skill"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 )
 
@@ -42,6 +43,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(api.NewCmdAPI(f))
 	cmd.AddCommand(configcmd.NewCmdConfig(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
+	cmd.AddCommand(skill.NewCmdSkill(f))
 
 	cmd.AddCommand(alias.NewCmdAlias(f, builtinNames(cmd)))
 
