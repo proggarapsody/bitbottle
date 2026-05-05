@@ -21,3 +21,4 @@
 
 # Reference repos (local only, not tracked)
 reference/
+__pycache__/
