@@ -1,8 +1,5 @@
 # bitbottle pr — pull request commands
 
-Load this when the task involves PRs: list, view, create, merge,
-review, comment, etc.
-
 ## Command matrix
 
 ```bash
@@ -23,10 +20,13 @@ bitbottle pr comment list 42
 bitbottle pr comment add  42 --body "x"
 ```
 
-## Flag reality check (1.13.1)
+## Flag reality check
 
-- `pr list --state` accepts only `open`, `closed`, `merged`.
-  **No `all`. No `--author`. No `--reviewer` filter.**
+- `pr list --state` accepts only `open`, `closed`, `merged` (no
+  `all`). All `list` commands support `--limit N` (default 30) plus
+  `--json`/`--jq`. `pr create` also has `--json`/`--jq`.
+- No `--author`, `--mine`, or `--reviewer @me` filter — Bitbucket's
+  REST API doesn't expose those.
 - `pr create --head` defaults to the current local branch.
 - `pr merge` requires exactly one of `--merge` or `--squash`.
   `--delete-branch` removes the source branch on the remote (Cloud
@@ -49,18 +49,15 @@ bitbottle pr view 42 --json mergeable --jq '.mergeable' \
   | grep -q true && bitbottle pr merge 42 --squash --delete-branch
 ```
 
-Available `--json` fields vary by command. Run `bitbottle pr list --json X`
-with a wrong field — the error lists every supported name.
+Field discovery applies to every command, not just PR — see SKILL.md
+safety rule 4 (pass a bogus `--json X` to list supported fields).
 
-## Destructive-op checklist
+## Destructive ops
 
-Before running `pr merge` or `pr decline`, confirm with the user:
-
-1. Show the full command to be executed.
-2. Show resolved host + `PROJECT/repo` + PR ID.
-3. State the irreversible effect ("merges and deletes the source
-   branch", "declines and cannot be undone via the API").
-4. Wait for explicit "yes" / "proceed" before running.
+`pr merge` and `pr decline` follow the canonical destructive-op rule
+in SKILL.md (safety rule 2). State the irreversible effect explicitly
+("merges and deletes the source branch", "declines and cannot be
+undone via the API") before asking for confirmation.
 
 ## Common failures
 

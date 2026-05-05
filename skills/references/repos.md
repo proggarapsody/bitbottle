@@ -1,7 +1,7 @@
 # bitbottle repos / branches / tags / commits
 
-Load this when the task involves repository management, branches,
-tags, or commit inspection.
+All `list` commands below support `--limit N`, `--json fields`, and
+`--jq 'expr'` (see SKILL.md safety rule 4 for field discovery).
 
 ## Repos
 
@@ -78,8 +78,7 @@ bitbottle config list
 bitbottle completion --shell bash|zsh|fish|powershell
 ```
 
-## Destructive-op checklist
+## Destructive ops
 
-Same as PR: before `repo delete`, `branch delete`, `tag delete`,
-show command + resolved host + target name, then wait for explicit
-confirmation.
+`repo delete`, `branch delete`, `tag delete` follow the canonical
+destructive-op rule in SKILL.md (safety rule 2).
