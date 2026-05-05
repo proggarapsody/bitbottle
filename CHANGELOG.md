@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.2](https://github.com/proggarapsody/bitbottle/compare/v1.14.1...v1.14.2) (2026-05-05)
+
+
+### Bug Fixes
+
+* **skill:** auto-bump version labels via release-please ([#76](https://github.com/proggarapsody/bitbottle/issues/76)) ([2881aaf](https://github.com/proggarapsody/bitbottle/commit/2881aaf21ce7313299b23c8ff1265d4decbd29c1))
+
 ## [1.14.1](https://github.com/proggarapsody/bitbottle/compare/v1.14.0...v1.14.1) (2026-05-05)
 
 
