@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/proggarapsody/bitbottle/compare/v1.12.0...v1.13.0) (2026-05-05)
+
+
+### Features
+
+* auto-register agent skill on npm postinstall ([#67](https://github.com/proggarapsody/bitbottle/issues/67)) ([105fe02](https://github.com/proggarapsody/bitbottle/commit/105fe02ee0eeda783d440318c41bf161e3b918de))
+
 ## [1.12.0](https://github.com/proggarapsody/bitbottle/compare/v1.11.0...v1.12.0) (2026-05-04)
 
 
