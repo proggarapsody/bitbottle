@@ -1,0 +1,75 @@
+# bitbottle pr — pull request commands
+
+Load this when the task involves PRs: list, view, create, merge,
+review, comment, etc.
+
+## Command matrix
+
+```bash
+bitbottle pr list   [PROJ/repo] [--state open|closed|merged]   # default: open
+bitbottle pr view   42 [--web]
+bitbottle pr create --title "x" --base main [--body "x"] [--draft] [--head BRANCH]
+bitbottle pr merge  42 [--merge|--squash] [--delete-branch]
+bitbottle pr approve   42
+bitbottle pr unapprove 42
+bitbottle pr diff      42                       # unified diff; pipes to pager on TTY
+bitbottle pr checkout  42
+bitbottle pr edit      42 [--title "x"] [--body "x"]
+bitbottle pr decline   42
+bitbottle pr ready     42                       # draft → ready
+bitbottle pr request-review  42 --reviewer alice [--reviewer bob]
+bitbottle pr request-changes 42                 # Cloud only
+bitbottle pr comment list 42
+bitbottle pr comment add  42 --body "x"
+```
+
+## Flag reality check (1.13.1)
+
+- `pr list --state` accepts only `open`, `closed`, `merged`.
+  **No `all`. No `--author`. No `--reviewer` filter.**
+- `pr create --head` defaults to the current local branch.
+- `pr merge` requires exactly one of `--merge` or `--squash`.
+  `--delete-branch` removes the source branch on the remote (Cloud
+  only auto-deletes locally; Server/DC needs a separate `git push`).
+- `pr request-changes` is Cloud-only — Server/DC has no API for it.
+
+## Automation pattern
+
+Whenever the agent is feeding PR data into another step, prefer JSON:
+
+```bash
+# All open PRs by IDs and titles, as a stream of objects
+bitbottle pr list --json id,title --jq '.[]'
+
+# A single PR's body for inspection
+bitbottle pr view 42 --json id,title,body --jq '.body'
+
+# Conditional: merge if mergeable
+bitbottle pr view 42 --json mergeable --jq '.mergeable' \
+  | grep -q true && bitbottle pr merge 42 --squash --delete-branch
+```
+
+Available `--json` fields vary by command. Run `bitbottle pr list --json X`
+with a wrong field — the error lists every supported name.
+
+## Destructive-op checklist
+
+Before running `pr merge` or `pr decline`, confirm with the user:
+
+1. Show the full command to be executed.
+2. Show resolved host + `PROJECT/repo` + PR ID.
+3. State the irreversible effect ("merges and deletes the source
+   branch", "declines and cannot be undone via the API").
+4. Wait for explicit "yes" / "proceed" before running.
+
+## Common failures
+
+- *PR ID exists but `pr approve` errors* → you may already be the
+  author. Bitbucket forbids self-approval. Use a different account
+  or skip approval.
+- *`pr merge` rejects with "not mergeable"* → unresolved comments,
+  failing checks, or required reviewers. Run `pr view ID --web` to
+  inspect.
+- *`pr request-review` adds a reviewer but they can't see it* → on
+  Server/DC the username is the slug, not the display name; on Cloud
+  it's the workspace member nickname.

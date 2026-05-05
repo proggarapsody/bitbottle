@@ -1,0 +1,9 @@
+interface:
+  display_name: bitbottle
+  short_description: >-
+    Bitbucket CLI helper — use when the task involves bitbottle, the
+    bitbottle MCP server, or any Bitbucket Server/DC or Cloud operation
+    (PRs, repos, branches, tags, commits, pipelines, auth, raw API).
+  default_prompt: >-
+    Use the bitbottle skill to drive the bitbottle CLI safely. Load
+    only the relevant reference (auth, pr, repos, api) for the task.
