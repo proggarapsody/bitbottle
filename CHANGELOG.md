@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/proggarapsody/bitbottle/compare/v1.13.0...v1.13.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* correct skill content for 1.13.0 + refresh on reinstall ([#69](https://github.com/proggarapsody/bitbottle/issues/69)) ([6ceb4dc](https://github.com/proggarapsody/bitbottle/commit/6ceb4dc597bc8f36f02d27ebc087875542b27018))
+
 ## [1.13.0](https://github.com/proggarapsody/bitbottle/compare/v1.12.0...v1.13.0) (2026-05-05)
 
 
