@@ -115,15 +115,21 @@ function installSkill() {
   }
 
   console.log("Registering bitbottle agent skill (Claude Code, Cursor, Codex, …)…");
+  const env = { ...process.env, npm_config_yes: "true" };
+  const skillsCmd = (cmd) =>
+    execSync(cmd, { stdio: "ignore", timeout: 60_000, env });
   try {
-    execSync(
-      "npx -y skills add proggarapsody/bitbottle --global -y",
-      {
-        stdio: "ignore",
-        timeout: 60_000,
-        env: { ...process.env, npm_config_yes: "true" },
-      }
-    );
+    // Remove first so reinstalls actually pick up new SKILL.md content.
+    // `skills add` is idempotent and skips when the skill already exists,
+    // which means a fresh `npm i -g` after a release would NOT refresh
+    // the skill — defeating the whole point of postinstall. Removing
+    // first guarantees `add` writes the latest content.
+    try {
+      skillsCmd("npx -y skills remove bitbottle -g -y");
+    } catch (_) {
+      // not installed yet; that's fine
+    }
+    skillsCmd("npx -y skills add proggarapsody/bitbottle --global -y");
     console.log(
       "Agent skill registered. Set BITBOTTLE_SKIP_SKILL_INSTALL=1 to disable on next install."
     );
