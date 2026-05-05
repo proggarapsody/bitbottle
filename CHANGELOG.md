@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/proggarapsody/bitbottle/compare/v1.13.1...v1.14.0) (2026-05-05)
+
+
+### Features
+
+* add `bitbottle skill` subcommand ([#72](https://github.com/proggarapsody/bitbottle/issues/72)) ([adbd131](https://github.com/proggarapsody/bitbottle/commit/adbd1311cfb042cf8af6487dfffa4b87d8916235))
+
 ## [1.13.1](https://github.com/proggarapsody/bitbottle/compare/v1.13.0...v1.13.1) (2026-05-05)
 
 
