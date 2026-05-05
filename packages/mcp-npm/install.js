@@ -80,4 +80,61 @@ downloadFile(url, archiveDest, (err) => {
     console.error("Extraction failed:", e.message);
     process.exit(1);
   }
+
+  // Best-effort: register the bitbottle SKILL.md with any AI agent
+  // runtimes the user has installed (Claude Code, Cursor, Codex, etc.).
+  // Uses vercel-labs/skills which knows the canonical install path for
+  // each runtime and symlinks/copies SKILL.md from the GitHub repo.
+  //
+  // This is fire-and-forget: failures (no network, no agent runtimes,
+  // sudo install on root's HOME) must NOT break the binary install.
+  installSkill();
 });
+
+function installSkill() {
+  // Opt-out via env var.
+  if (process.env.BITBOTTLE_SKIP_SKILL_INSTALL === "1") {
+    return;
+  }
+  // Skip in CI — most CI environments install bitbottle as a build
+  // dependency, not for interactive agent use. Avoids hanging the
+  // pipeline on a no-op skill registration.
+  if (process.env.CI || process.env.GITHUB_ACTIONS) {
+    return;
+  }
+  // Skip when running under sudo: postinstall runs as root, so the
+  // skill would land in /root/.claude/skills (or similar) instead of
+  // the user's home, which silently does nothing useful. Detect via
+  // SUDO_USER and bail with a hint.
+  if (process.env.SUDO_USER && process.getuid && process.getuid() === 0) {
+    console.log(
+      "Skipped agent skill registration (running under sudo). " +
+        "Re-run as your user: npx -y skills add proggarapsody/bitbottle --global -y"
+    );
+    return;
+  }
+
+  console.log("Registering bitbottle agent skill (Claude Code, Cursor, Codex, …)…");
+  try {
+    execSync(
+      "npx -y skills add proggarapsody/bitbottle --global -y",
+      {
+        stdio: "ignore",
+        timeout: 60_000,
+        env: { ...process.env, npm_config_yes: "true" },
+      }
+    );
+    console.log(
+      "Agent skill registered. Set BITBOTTLE_SKIP_SKILL_INSTALL=1 to disable on next install."
+    );
+  } catch (e) {
+    // Non-fatal. Common causes: offline, no agent runtimes installed,
+    // npx blocked by corporate proxy, timeout. The CLI still works.
+    console.log(
+      "Skipped agent skill registration: " +
+        (e.message || "unknown error") +
+        ". " +
+        "Install manually with: npx -y skills add proggarapsody/bitbottle --global -y"
+    );
+  }
+}
