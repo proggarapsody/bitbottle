@@ -26,13 +26,18 @@ $ bitbottle pr create --title "fix: handle empty diff" --base main
 npm install -g @proggarapsody/bitbottle
 ```
 
-This also registers the bundled AI agent skill (`SKILL.md`) with any
-agent runtimes detected on your machine — Claude Code, Cursor, Codex,
-Gemini CLI, and 50+ others — so your agents know how to drive bitbottle
-correctly. Skip with `BITBOTTLE_SKIP_SKILL_INSTALL=1 npm install -g …`.
-Install or refresh manually:
+This also registers the bundled AI agent skill (`SKILL.md` + topic
+references) with any agent runtimes detected on your machine —
+Claude Code, Cursor, Codex, Gemini CLI, and 50+ others — so your
+agents know how to drive bitbottle correctly. Skip with
+`BITBOTTLE_SKIP_SKILL_INSTALL=1 npm install -g …`.
+
+If you installed via Homebrew, Go install, or the bare binary,
+register the skill explicitly:
 ```bash
-npx -y skills add proggarapsody/bitbottle --global -y
+bitbottle skill install            # uses npx; needs Node.js >= 18
+bitbottle skill path               # show where the skill was installed
+bitbottle skill remove             # uninstall
 ```
 
 **Go install:**
