@@ -19,6 +19,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/skill"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook"
 )
 
 func NewCmdRoot(f *factory.Factory) *cobra.Command {
@@ -39,6 +40,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(branch.NewCmdBranch(f))
 	cmd.AddCommand(pipeline.NewCmdPipeline(f))
 	cmd.AddCommand(tag.NewCmdTag(f))
+	cmd.AddCommand(webhook.NewCmdWebhook(f))
 	cmd.AddCommand(commit.NewCmdCommit(f))
 	cmd.AddCommand(api.NewCmdAPI(f))
 	cmd.AddCommand(configcmd.NewCmdConfig(f))
