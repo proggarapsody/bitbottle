@@ -5,7 +5,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/list"
+	cmdLogs "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
 	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
+	cmdSteps "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/steps"
+	cmdVariable "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/variable"
 	cmdView "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/view"
 )
 
@@ -26,5 +29,8 @@ directory.`,
 	cmd.AddCommand(cmdList.NewCmdList(f, nil))
 	cmd.AddCommand(cmdView.NewCmdView(f, nil))
 	cmd.AddCommand(cmdRun.NewCmdRun(f, nil))
+	cmd.AddCommand(cmdSteps.NewCmdSteps(f, nil))
+	cmd.AddCommand(cmdLogs.NewCmdLogs(f, nil))
+	cmd.AddCommand(cmdVariable.NewCmdVariable(f))
 	return cmd
 }
