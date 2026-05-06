@@ -43,6 +43,35 @@ bitbottle pipeline run "$BB_TEST_SERVER_REPO" --branch main
 
 Same: exit non-zero, clear "Cloud only" message.
 
+### 3a. `pipeline steps`
+
+```bash
+bitbottle pipeline steps "$BB_TEST_SERVER_REPO" 00000000-0000-0000-0000-000000000000
+```
+
+Same: exit non-zero, clear "Cloud only" message.
+
+### 3b. `pipeline logs`
+
+```bash
+bitbottle pipeline logs "$BB_TEST_SERVER_REPO" \
+  00000000-0000-0000-0000-000000000000 \
+  11111111-1111-1111-1111-111111111111
+```
+
+Same: exit non-zero, clear "Cloud only" message.
+
+### 3c. `pipeline variable list/set/delete`
+
+```bash
+bitbottle pipeline variable list   "$BB_TEST_SERVER_REPO"
+bitbottle pipeline variable set    "$BB_TEST_SERVER_REPO" KEY value
+bitbottle pipeline variable delete "$BB_TEST_SERVER_REPO" KEY --confirm
+```
+
+Each must exit non-zero with the "Cloud only" message and make no HTTP
+request.
+
 ### 4. With `--hostname` overriding to Server/DC explicitly
 
 ```bash

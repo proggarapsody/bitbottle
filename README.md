@@ -129,10 +129,25 @@ bitbottle branch delete MYPROJ/my-service feature/x
 ### Pipelines _(Cloud only)_
 
 ```bash
-bitbottle pipeline list MYWORKSPACE/my-service
-bitbottle pipeline run  MYWORKSPACE/my-service --branch main
-bitbottle pipeline view MYWORKSPACE/my-service {uuid} --web
+bitbottle pipeline list  MYWORKSPACE/my-service
+bitbottle pipeline run   MYWORKSPACE/my-service --branch main
+bitbottle pipeline view  MYWORKSPACE/my-service {uuid} --web
+
+# Drill into a run:
+bitbottle pipeline steps MYWORKSPACE/my-service {pipeline-uuid}
+bitbottle pipeline logs  MYWORKSPACE/my-service {pipeline-uuid} {step-uuid}
+
+# Repository-level pipeline variables (upsert by KEY):
+bitbottle pipeline variable list   MYWORKSPACE/my-service
+bitbottle pipeline variable set    MYWORKSPACE/my-service DEPLOY_ENV prod
+echo "$TOKEN" | bitbottle pipeline variable set MYWORKSPACE/my-service \
+  API_TOKEN --body=- --secured
+bitbottle pipeline variable delete MYWORKSPACE/my-service DEPLOY_ENV --confirm
 ```
+
+Secured variables redact their value on read (TTY column shows
+`<secured>`, JSON `value` shows `"<secured>"`). Use `--body=-` to read
+the value from stdin so the secret never touches shell history.
 
 ### Raw API
 
