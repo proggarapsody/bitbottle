@@ -79,6 +79,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `repo` | `list` `view` `create` `delete` `clone` `set-default` |
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
+| `webhook` | `list` `view` `create` `delete` |
 | `commit` | `log` `view` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `api` | Raw REST passthrough with pagination, `--jq`, variable expansion |
@@ -148,6 +149,35 @@ bitbottle pipeline variable delete MYWORKSPACE/my-service DEPLOY_ENV --confirm
 Secured variables redact their value on read (TTY column shows
 `<secured>`, JSON `value` shows `"<secured>"`). Use `--body=-` to read
 the value from stdin so the secret never touches shell history.
+
+### Webhooks
+
+```bash
+bitbottle webhook list   MYPROJ/my-service
+bitbottle webhook view   MYPROJ/my-service {id}
+
+# Create
+bitbottle webhook create MYPROJ/my-service \
+  --url https://hooks.example.com/bb \
+  --events 'repo:push,pullrequest:created'
+
+# With shared secret from stdin (keeps secret out of shell history)
+echo "$WEBHOOK_SECRET" | bitbottle webhook create MYPROJ/my-service \
+  --url https://hooks.example.com/bb \
+  --events 'repo:push' \
+  --secret -
+
+# Delete (destructive — --confirm required when not interactive)
+bitbottle webhook delete MYPROJ/my-service {id} --confirm
+```
+
+Event keys differ between backends:
+- **Cloud** uses `repo:push`, `pullrequest:created`, `pullrequest:approved`, …
+- **Server/DC** uses `repo:refs_changed`, `pr:opened`, `pr:merged`, …
+
+`--secret` accepts the raw value, `-` to read from stdin, or `@PATH` to read
+from a file. Trailing newlines from stdin / file are trimmed. Webhook
+secrets are write-only — neither backend returns them on read.
 
 ### Raw API
 

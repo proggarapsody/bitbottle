@@ -121,6 +121,22 @@ type CommitStatusLister interface {
 	ListCommitStatuses(ns, slug, hash string) ([]CommitStatus, error)
 }
 
+type WebhookLister interface {
+	ListWebhooks(ns, slug string) ([]Webhook, error)
+}
+
+type WebhookReader interface {
+	GetWebhook(ns, slug, id string) (Webhook, error)
+}
+
+type WebhookCreator interface {
+	CreateWebhook(ns, slug string, in CreateWebhookInput) (Webhook, error)
+}
+
+type WebhookDeleter interface {
+	DeleteWebhook(ns, slug, id string) error
+}
+
 type Client interface {
 	RepoLister
 	RepoReader
@@ -149,6 +165,10 @@ type Client interface {
 	PRCommentLister
 	PRCommentAdder
 	CommitStatusLister
+	WebhookLister
+	WebhookReader
+	WebhookCreator
+	WebhookDeleter
 }
 
 // ServerCapabilities is implemented only by Bitbucket Data Center clients.
