@@ -67,6 +67,12 @@ type FakeClient struct {
 
 	// Commit status methods
 	ListCommitStatusesFn func(ns, slug, hash string) ([]backend.CommitStatus, error)
+
+	// Webhook methods
+	ListWebhooksFn  func(ns, slug string) ([]backend.Webhook, error)
+	GetWebhookFn    func(ns, slug, id string) (backend.Webhook, error)
+	CreateWebhookFn func(ns, slug string, in backend.CreateWebhookInput) (backend.Webhook, error)
+	DeleteWebhookFn func(ns, slug, id string) error
 }
 
 // Compile-time interface check.
@@ -408,4 +414,44 @@ func (c *FakeClient) ListCommitStatuses(ns, slug, hash string) ([]backend.Commit
 		c.T.Fatalf("unexpected call to FakeClient.ListCommitStatuses; set ListCommitStatusesFn in your test")
 	}
 	return nil, nil
+}
+
+func (c *FakeClient) ListWebhooks(ns, slug string) ([]backend.Webhook, error) {
+	if c.ListWebhooksFn != nil {
+		return c.ListWebhooksFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWebhooks; set ListWebhooksFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetWebhook(ns, slug, id string) (backend.Webhook, error) {
+	if c.GetWebhookFn != nil {
+		return c.GetWebhookFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetWebhook; set GetWebhookFn in your test")
+	}
+	return backend.Webhook{}, nil
+}
+
+func (c *FakeClient) CreateWebhook(ns, slug string, in backend.CreateWebhookInput) (backend.Webhook, error) {
+	if c.CreateWebhookFn != nil {
+		return c.CreateWebhookFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateWebhook; set CreateWebhookFn in your test")
+	}
+	return backend.Webhook{}, nil
+}
+
+func (c *FakeClient) DeleteWebhook(ns, slug, id string) error {
+	if c.DeleteWebhookFn != nil {
+		return c.DeleteWebhookFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteWebhook; set DeleteWebhookFn in your test")
+	}
+	return nil
 }

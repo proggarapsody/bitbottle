@@ -183,3 +183,23 @@ type CommitStatus struct {
 	Description string
 	URL         string
 }
+
+// Webhook is the domain representation of a repository webhook.
+// Both Bitbucket Cloud and Server/DC expose a similar shape — a remote URL,
+// a list of subscribed events, and an active flag. ID is the backend's
+// stable identifier (UUID on Cloud, integer-as-string on Server/DC).
+type Webhook struct {
+	ID     string
+	URL    string
+	Events []string
+	Active bool
+}
+
+// CreateWebhookInput carries the parameters for creating a webhook.
+// Secret is write-only — neither backend returns it on read.
+type CreateWebhookInput struct {
+	URL    string
+	Events []string
+	Active bool
+	Secret string
+}
