@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
@@ -1376,4 +1378,188 @@ func TestGetCommit_MissingProject_ReturnsError(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	assertErrorResult(t, result, "project")
+}
+
+// ---- list_pipeline_steps ----
+
+func TestListPipelineSteps_CallsClientWithUUID(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug, gotUUID string
+	fake := &testhelpers.FakeClient{
+		ListPipelineStepsFn: func(ns, slug, u string) ([]backend.PipelineStep, error) {
+			gotNS, gotSlug, gotUUID = ns, slug, u
+			return []backend.PipelineStep{
+				{UUID: "s1", Name: "Build", State: "SUCCESSFUL", Duration: 42},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listPipelineSteps(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"uuid":    "{p-uuid}",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "myworkspace", gotNS)
+	assert.Equal(t, "my-service", gotSlug)
+	assert.Equal(t, "{p-uuid}", gotUUID)
+	assertJSONContains(t, result, "Build", "")
+}
+
+func TestListPipelineSteps_MissingUUID_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelineSteps(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "uuid")
+}
+
+// ---- get_pipeline_step_log ----
+
+func TestGetPipelineStepLog_StreamsBody(t *testing.T) {
+	t.Parallel()
+	const payload = "log line one\nlog line two\n"
+	fake := &testhelpers.FakeClient{
+		GetPipelineStepLogFn: func(ns, slug, p, s string) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(payload)), nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getPipelineStepLog(context.Background(), makeReq(map[string]any{
+		"project":       "myworkspace",
+		"slug":          "my-service",
+		"pipeline_uuid": "{p-uuid}",
+		"step_uuid":     "{s-uuid}",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, payload, extractText(t, result))
+}
+
+func TestGetPipelineStepLog_MissingStepUUID_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.getPipelineStepLog(context.Background(), makeReq(map[string]any{
+		"project":       "myworkspace",
+		"slug":          "my-service",
+		"pipeline_uuid": "{p-uuid}",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "step_uuid")
+}
+
+// ---- list_pipeline_variables ----
+
+func TestListPipelineVariables_RedactsSecuredValues(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListPipelineVariablesFn: func(ns, slug string) ([]backend.PipelineVariable, error) {
+			return []backend.PipelineVariable{
+				{UUID: "v1", Key: "DEPLOY_ENV", Value: "prod", Secured: false},
+				// Imagine the API leaked a value for a secured var; the handler
+				// must blank it before serialising.
+				{UUID: "v2", Key: "API_TOKEN", Value: "leaked-bytes", Secured: true},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listPipelineVariables(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	text := extractText(t, result)
+	var rows []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(text), &rows))
+	require.Len(t, rows, 2)
+	assert.Equal(t, "prod", rows[0]["Value"])
+	assert.Equal(t, "", rows[1]["Value"], "secured value must be blanked in MCP output")
+}
+
+// ---- set_pipeline_variable ----
+
+func TestSetPipelineVariable_PassesInputThrough(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.PipelineVariableInput
+	fake := &testhelpers.FakeClient{
+		SetPipelineVariableFn: func(ns, slug string, in backend.PipelineVariableInput) (backend.PipelineVariable, error) {
+			gotIn = in
+			return backend.PipelineVariable{UUID: "v1", Key: in.Key, Value: in.Value, Secured: in.Secured}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.setPipelineVariable(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"key":     "DEPLOY_ENV",
+		"value":   "prod",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "DEPLOY_ENV", gotIn.Key)
+	assert.Equal(t, "prod", gotIn.Value)
+	assert.False(t, gotIn.Secured)
+	assertJSONContains(t, result, "DEPLOY_ENV", "")
+}
+
+func TestSetPipelineVariable_SecuredFlag_BlanksReturnedValue(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		SetPipelineVariableFn: func(ns, slug string, in backend.PipelineVariableInput) (backend.PipelineVariable, error) {
+			// API might echo back the value; handler must blank for secured.
+			return backend.PipelineVariable{UUID: "v1", Key: in.Key, Value: "leaked", Secured: true}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.setPipelineVariable(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"key":     "API_TOKEN",
+		"value":   "secret",
+		"secured": true,
+	}))
+	require.NoError(t, err)
+	text := extractText(t, result)
+	assert.NotContains(t, text, "leaked")
+}
+
+// ---- delete_pipeline_variable ----
+
+func TestDeletePipelineVariable_CallsBackendByKey(t *testing.T) {
+	t.Parallel()
+	var gotKey string
+	fake := &testhelpers.FakeClient{
+		DeletePipelineVariableFn: func(ns, slug, key string) error {
+			gotKey = key
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deletePipelineVariable(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"key":     "OBSOLETE",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "OBSOLETE", gotKey)
+	assertJSONContains(t, result, "deleted", "OBSOLETE")
+}
+
+func TestDeletePipelineVariable_NotFound_ReturnsTypedError(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		DeletePipelineVariableFn: func(ns, slug, key string) error {
+			return &backend.DomainError{Kind: backend.ErrNotFound, Message: "not found"}
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deletePipelineVariable(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"key":     "GHOST",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "not_found")
+	_ = errors.New // keep errors import in use
 }
