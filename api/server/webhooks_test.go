@@ -86,7 +86,7 @@ func TestServerClient_CreateWebhook_PostsExpectedBody(t *testing.T) {
 		URL:    "https://example.com/h",
 		Events: []string{"repo:refs_changed"},
 		Active: true,
-		Secret: "shhh",
+		Secret: "redacted-test-value",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, http.MethodPost, gotMethod)
@@ -96,7 +96,7 @@ func TestServerClient_CreateWebhook_PostsExpectedBody(t *testing.T) {
 	// Server expects secret nested under configuration
 	cfg, ok := gotBody["configuration"].(map[string]any)
 	require.True(t, ok, "configuration object expected on Server webhook create")
-	assert.Equal(t, "shhh", cfg["secret"])
+	assert.Equal(t, "redacted-test-value", cfg["secret"])
 	assert.Equal(t, "99", hook.ID)
 }
 

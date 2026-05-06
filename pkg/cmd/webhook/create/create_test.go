@@ -86,10 +86,10 @@ func TestCreate_SecretInline_PassesThrough(t *testing.T) {
 		"myworkspace/my-service",
 		"--url", "https://example.com/hook",
 		"--events", "repo:push",
-		"--secret", "shhh",
+		"--secret", "redacted-test-value",
 	})
 	require.NoError(t, cmd.Execute())
-	assert.Equal(t, "shhh", got.Secret)
+	assert.Equal(t, "redacted-test-value", got.Secret)
 }
 
 func TestCreate_SecretFromFile_TrimsTrailingNewline(t *testing.T) {

@@ -85,13 +85,13 @@ Stdout: `["active","events","id","url"]`.
 ### 6. `webhook create` with `--secret -` reads from stdin
 
 ```bash
-echo "super-secret-token" | bitbottle webhook create "$BB_TEST_CLOUD_REPO" \
+echo "redacted-test-value" | bitbottle webhook create "$BB_TEST_CLOUD_REPO" \
   --url "https://example.com/bb-webhook-test-secret" \
   --events 'repo:push' \
   --secret -
 ```
 
-Exit code: `0`. **Critical:** the literal string `super-secret-token`
+Exit code: `0`. **Critical:** the literal string `redacted-test-value`
 must NOT appear in stdout/stderr, shell history, or any log file.
 
 **Verify in UI:** new webhook entry exists; secret field is set (Bitbucket

@@ -84,14 +84,14 @@ func TestCloudClient_CreateWebhook_PostsExpectedBody(t *testing.T) {
 		URL:    "https://example.com/hook",
 		Events: []string{"repo:push"},
 		Active: true,
-		Secret: "shhh",
+		Secret: "redacted-test-value",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, http.MethodPost, gotMethod)
 	assert.Equal(t, "/repositories/ws/repo/hooks", gotPath)
 	assert.Equal(t, "https://example.com/hook", gotBody["url"])
 	assert.Equal(t, true, gotBody["active"])
-	assert.Equal(t, "shhh", gotBody["secret"])
+	assert.Equal(t, "redacted-test-value", gotBody["secret"])
 	// Cloud calls events "events" and uses a description="bitbottle" placeholder if none given.
 	assert.Contains(t, gotBody, "events")
 	assert.Equal(t, "new-1", hook.ID)

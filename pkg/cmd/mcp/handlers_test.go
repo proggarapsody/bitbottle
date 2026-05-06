@@ -1627,13 +1627,13 @@ func TestCreateWebhook_PassesInputThrough(t *testing.T) {
 		"slug":    "my-service",
 		"url":     "https://example.com/hook",
 		"events":  []any{"repo:push", "pullrequest:created"},
-		"secret":  "shhh",
+		"secret":  "redacted-test-value",
 	}))
 	require.NoError(t, err)
 	assert.Equal(t, "https://example.com/hook", gotIn.URL)
 	assert.Equal(t, []string{"repo:push", "pullrequest:created"}, gotIn.Events)
 	assert.True(t, gotIn.Active, "active defaults to true")
-	assert.Equal(t, "shhh", gotIn.Secret)
+	assert.Equal(t, "redacted-test-value", gotIn.Secret)
 	assertJSONContains(t, result, "new-1", "")
 }
 
