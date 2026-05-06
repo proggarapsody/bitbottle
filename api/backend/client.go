@@ -23,6 +23,10 @@ type RepoDeleter interface {
 	DeleteRepo(ns, slug string) error
 }
 
+type RepoRenamer interface {
+	RenameRepo(ns, slug, newName string) (Repository, error)
+}
+
 type PRLister interface {
 	ListPRs(ns, slug, state string, limit int) ([]PullRequest, error)
 }
@@ -142,6 +146,7 @@ type Client interface {
 	RepoReader
 	RepoWriter
 	RepoDeleter
+	RepoRenamer
 	PRLister
 	PRReader
 	PRCreator
@@ -176,6 +181,14 @@ type ServerCapabilities interface {
 	GetApplicationProperties() (AppProperties, error)
 }
 
+// RepoForker is implemented only by Bitbucket Cloud clients — Bitbucket
+// Server / Data Center has no fork primitive in its REST API. Access via
+// AsRepoForker so the Cloud-only constraint surfaces as a typed
+// ErrUnsupportedOnHost error rather than a panic.
+type RepoForker interface {
+	ForkRepo(ns, slug string, in ForkRepoInput) (Repository, error)
+}
+
 // PipelineClient is implemented only by Bitbucket Cloud clients.
 type PipelineClient interface {
 	ListPipelines(ns, slug string, limit int) ([]Pipeline, error)
@@ -195,6 +208,7 @@ type Feature string
 
 const (
 	FeaturePipelines Feature = "pipelines"
+	FeatureRepoFork  Feature = "repo-fork"
 )
 
 // AsPipelineClient returns the PipelineClient view of c, or a typed
@@ -211,4 +225,20 @@ func AsPipelineClient(c Client, host string) (PipelineClient, error) {
 		}
 	}
 	return pc, nil
+}
+
+// AsRepoForker returns the RepoForker view of c, or a typed *DomainError
+// (Kind=ErrUnsupportedOnHost) if the backend at host has no fork primitive
+// (Bitbucket Server / Data Center).
+func AsRepoForker(c Client, host string) (RepoForker, error) {
+	rf, ok := c.(RepoForker)
+	if !ok {
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Host:    host,
+			Feature: string(FeatureRepoFork),
+			Message: fmt.Sprintf("repo fork is not supported on %s (Bitbucket Cloud only)", host),
+		}
+	}
+	return rf, nil
 }

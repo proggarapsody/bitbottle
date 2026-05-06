@@ -53,6 +53,14 @@ type CreateRepoInput struct {
 	Description string
 }
 
+// ForkRepoInput carries the parameters for forking a Bitbucket Cloud
+// repository. Workspace is required (the fork's destination workspace).
+// Name is optional — when empty, Bitbucket Cloud reuses the source name.
+type ForkRepoInput struct {
+	Workspace string
+	Name      string
+}
+
 // CreatePRInput carries the parameters for creating a pull request.
 type CreatePRInput struct {
 	Title       string
