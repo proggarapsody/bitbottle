@@ -22,5 +22,7 @@ disambiguate when multiple Bitbucket hosts are configured.`,
 	cmd.AddCommand(NewCmdRepoDelete(f))
 	cmd.AddCommand(NewCmdRepoClone(f))
 	cmd.AddCommand(NewCmdRepoSetDefault(f))
+	cmd.AddCommand(NewCmdRepoRename(f))
+	cmd.AddCommand(NewCmdRepoFork(f))
 	return cmd
 }

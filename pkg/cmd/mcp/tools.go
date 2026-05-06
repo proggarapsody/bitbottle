@@ -91,6 +91,37 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 	)
 
 	s.AddTool(
+		mcplib.NewTool("rename_repo",
+			mcplib.WithDescription("Rename a repository (changes name and slug; both backends)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("new_name",
+				mcplib.Description("New repository name"),
+				mcplib.Required(),
+			),
+		),
+		h.renameRepo,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("fork_repo",
+			mcplib.WithDescription("Fork a Bitbucket Cloud repository into a destination workspace (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("into",
+				mcplib.Description("Destination workspace slug"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("name",
+				mcplib.Description("Override the fork's name (defaults to source name)"),
+			),
+		),
+		h.forkRepo,
+	)
+
+	s.AddTool(
 		mcplib.NewTool("list_prs",
 			mcplib.WithDescription("List pull requests for a repository"),
 			optHostname,

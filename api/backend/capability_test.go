@@ -32,3 +32,24 @@ func TestAsPipelineClient_Unsupported_ReturnsTypedError(t *testing.T) {
 	assert.Equal(t, "git.moscow.alfaintra.net", de.Host)
 	assert.Equal(t, string(backend.FeaturePipelines), de.Feature)
 }
+
+// nonForkerClient implements backend.Client but NOT backend.RepoForker.
+type nonForkerClient struct {
+	backend.Client
+}
+
+// TestAsRepoForker_Unsupported_ReturnsTypedError mirrors the pipeline check —
+// Bitbucket Server has no fork primitive, so AsRepoForker on a Server-shaped
+// client must return a typed ErrUnsupportedOnHost so callers can render a
+// helpful error rather than panic on a failed type assertion.
+func TestAsRepoForker_Unsupported_ReturnsTypedError(t *testing.T) {
+	t.Parallel()
+	_, err := backend.AsRepoForker(&nonForkerClient{}, "git.moscow.alfaintra.net")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, backend.ErrUnsupportedOnHost)
+
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.Equal(t, "git.moscow.alfaintra.net", de.Host)
+	assert.Equal(t, string(backend.FeatureRepoFork), de.Feature)
+}

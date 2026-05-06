@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -98,6 +99,27 @@ func TestServerClient_CreateRepo_SendsScmId(t *testing.T) {
 	_, err := client.CreateRepo("MYPROJ", backend.CreateRepoInput{Name: "new-repo", SCM: "git"})
 	require.NoError(t, err)
 	assert.Contains(t, string(gotBody), `"scmId":"git"`)
+}
+
+func TestServerClient_RenameRepo_PutsNewName(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	var gotBody map[string]any
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"slug":"renamed","name":"renamed","scmId":"git","project":{"key":"MYPROJ"},"links":{"self":[{"href":"https://srv/projects/MYPROJ/repos/renamed/browse"}]}}`))
+	})
+	repo, err := client.RenameRepo("MYPROJ", "my-service", "renamed")
+	require.NoError(t, err)
+	assert.Equal(t, http.MethodPut, gotMethod)
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service", gotPath)
+	assert.Equal(t, "renamed", gotBody["name"])
+	assert.Equal(t, "renamed", repo.Slug)
+	assert.Equal(t, "MYPROJ", repo.Namespace)
 }
 
 func TestServerClient_DeleteRepo_204(t *testing.T) {

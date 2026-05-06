@@ -184,6 +184,66 @@ func (h *handlers) createRepo(_ context.Context, req mcplib.CallToolRequest) (*m
 	return jsonResult(repo)
 }
 
+func (h *handlers) renameRepo(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	newName, err := requireString(req, "new_name")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	repo, err := client.RenameRepo(project, slug, newName)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(repo)
+}
+
+func (h *handlers) forkRepo(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	into, err := requireString(req, "into")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	name := req.GetString("name", "")
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	forker, err := backend.AsRepoForker(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	fork, err := forker.ForkRepo(project, slug, backend.ForkRepoInput{
+		Workspace: into,
+		Name:      name,
+	})
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(fork)
+}
+
 func (h *handlers) deleteRepo(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")

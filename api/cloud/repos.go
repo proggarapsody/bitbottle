@@ -87,3 +87,33 @@ func (c *Client) CreateRepo(ns string, in backend.CreateRepoInput) (backend.Repo
 func (c *Client) DeleteRepo(ns, slug string) error {
 	return c.delete(fmt.Sprintf("/repositories/%s/%s", ns, slug))
 }
+
+func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error) {
+	body := map[string]string{"name": newName}
+	var w wireCloudRepo
+	if err := c.putJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), body, &w); err != nil {
+		return backend.Repository{}, err
+	}
+	return w.toDomain(), nil
+}
+
+type wireCloudForkBody struct {
+	Workspace wireCloudForkWorkspace `json:"workspace"`
+	Name      string                 `json:"name,omitempty"`
+}
+
+type wireCloudForkWorkspace struct {
+	Slug string `json:"slug"`
+}
+
+func (c *Client) ForkRepo(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error) {
+	body := wireCloudForkBody{
+		Workspace: wireCloudForkWorkspace{Slug: in.Workspace},
+		Name:      in.Name,
+	}
+	var w wireCloudRepo
+	if err := c.postJSON(fmt.Sprintf("/repositories/%s/%s/forks", ns, slug), body, &w); err != nil {
+		return backend.Repository{}, err
+	}
+	return w.toDomain(), nil
+}

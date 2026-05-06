@@ -32,8 +32,10 @@ them speculatively.
 1. **Never echo tokens.** Pass tokens via stdin (`--with-token`) or
    the `BB_TOKEN` env var. Never put a PAT/App Password on the
    command line — it lands in shell history.
-2. **Confirm before destructive ops.** `repo delete`, `branch delete`,
-   `tag delete`, `webhook delete`, `pr decline`, `pr merge` are not undoable. Before
+2. **Confirm before destructive ops.** `repo delete`, `repo rename`,
+   `branch delete`, `tag delete`, `webhook delete`, `pr decline`,
+   `pr merge` are not undoable. (`repo rename` is included because the
+   slug change breaks existing clones' `origin` URL on Cloud.) Before
    running, show the user the exact command, the resolved host and
    `PROJECT/REPO`, the PR ID / branch / tag name, then wait for
    explicit confirmation. Reference files reuse this rule — don't
