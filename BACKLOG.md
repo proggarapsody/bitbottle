@@ -61,10 +61,10 @@ Current state of every command area against gh feature parity:
 | `repo create` | ✅ | |
 | `repo delete` | ✅ | |
 | `repo clone` | ✅ | |
-| `repo fork` | ❌ | Cloud only |
-| `repo rename` | ❌ | Both backends |
-| `repo archive` | ❌ | Cloud only |
-| `repo set-default` | ❌ | Write `PROJECT/REPO` to `.git/config`; enables arg-free commands |
+| `repo fork` | ✅ | Cloud only — `--into WORKSPACE`, optional `--name`; typed unsupported error on Server |
+| `repo rename` | ✅ | Both backends |
+| `repo archive` | n/a | No Bitbucket primitive (Cloud nor Server) — out of scope |
+| `repo set-default` | ✅ | Writes `bitbottle.host`/`project`/`slug` to local git config; consulted by `f.BaseRepo()` |
 
 ### Pull Requests
 
@@ -192,7 +192,7 @@ Current state of every command area against gh feature parity:
 | G | **PR Lifecycle** | `pr decline`, `pr unapprove`, `pr edit`, `pr ready`, `pr request-review`, `pr request-changes` | Both / Cloud | 1 | ✅ |
 | M | **Shell Completion** | `completion bash\|zsh\|fish\|powershell` | N/A | DX | ✅ |
 | P | **Auth Extras** | `auth token`, `auth refresh` | N/A | DX | ✅ |
-| Q | **Repo Extras** | `repo fork`, `repo rename`, `repo archive`, `repo set-default` | Both / Cloud | 2 | 🔲 |
+| Q | **Repo Extras** | `repo rename`, `repo fork`, `repo set-default` _(`archive` dropped — no Bitbucket primitive)_ | Both / Cloud | 2 | ✅ |
 | F | **Commits** | `commit log`, `commit view` | Both | 1 | ✅ |
 | H | **Pipeline Depth** | `pipeline steps`, `pipeline logs`, `pipeline variable *` | Cloud | 1 | ✅ |
 | I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | ✅ |

@@ -76,7 +76,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 |---|---|
 | `auth` | `login` `logout` `status` `token` `refresh` |
 | `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `ready` `request-review` `comment` |
-| `repo` | `list` `view` `create` `delete` `clone` `set-default` |
+| `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ |
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
@@ -178,6 +178,20 @@ Event keys differ between backends:
 `--secret` accepts the raw value, `-` to read from stdin, or `@PATH` to read
 from a file. Trailing newlines from stdin / file are trimmed. Webhook
 secrets are write-only — neither backend returns them on read.
+
+### Repo extras
+
+```bash
+# Rename (both backends — slug derives from new name on Cloud)
+bitbottle repo rename MYPROJ/my-service my-service-v2
+
+# Fork into another workspace (Bitbucket Cloud only)
+bitbottle repo fork myworkspace/my-service --into otherws
+bitbottle repo fork myworkspace/my-service --into otherws --name my-fork
+```
+
+`repo fork` returns a typed unsupported-capability error on Bitbucket Server /
+Data Center, which has no fork primitive in its REST API.
 
 ### Raw API
 

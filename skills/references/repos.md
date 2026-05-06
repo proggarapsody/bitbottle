@@ -12,10 +12,16 @@ bitbottle repo create NAME --project PROJ [--description "x"] [--private=false]
 bitbottle repo delete PROJ/repo [--confirm]     # destructive
 bitbottle repo clone  PROJ/repo [PATH]
 bitbottle repo set-default HOST/PROJ/repo       # writes .git/config in cwd
+bitbottle repo rename PROJ/repo NEW-NAME        # both backends; slug derives from name on Cloud
+bitbottle repo fork   WS/repo --into TARGET-WS [--name NAME]   # Cloud only
 ```
 
 `repo create --private=false` makes the repo public. Default is
 private. `--private=true` is the explicit form.
+
+`repo fork` is Cloud-only — Bitbucket Server / Data Center has no fork
+primitive in its REST API and the command returns a typed
+unsupported-capability error on Server hosts.
 
 ## Branches
 
