@@ -61,8 +61,8 @@ Current state of every command area against gh feature parity:
 | `repo create` | ✅ | |
 | `repo delete` | ✅ | |
 | `repo clone` | ✅ | |
-| `repo fork` | ✅ | Cloud only — `--into WORKSPACE`, optional `--name`; typed unsupported error on Server |
-| `repo rename` | ✅ | Both backends |
+| `repo fork` | ✅ | Cloud only — required `--into WORKSPACE`, optional `--name`; supports `--json` / `--jq`; typed unsupported error on Server |
+| `repo rename` | ✅ | Both backends; `--confirm` required on non-TTY (slug change breaks clones' `origin` URL on Cloud); supports `--json` / `--jq` |
 | `repo archive` | n/a | No Bitbucket primitive (Cloud nor Server) — out of scope |
 | `repo set-default` | ✅ | Writes `bitbottle.host`/`project`/`slug` to local git config; consulted by `f.BaseRepo()` |
 
