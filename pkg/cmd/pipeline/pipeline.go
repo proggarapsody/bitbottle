@@ -4,8 +4,14 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/list"
+	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
+	cmdView "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/view"
 )
 
+// NewCmdPipeline builds the root `pipeline` command. Subcommands live in their
+// own subpackages (gh-CLI style) so each command's surface is testable in
+// isolation.
 func NewCmdPipeline(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pipeline",
@@ -17,8 +23,8 @@ directory.`,
 		},
 	}
 	factory.EnableRepoOverride(cmd, f)
-	cmd.AddCommand(NewCmdPipelineList(f))
-	cmd.AddCommand(NewCmdPipelineView(f))
-	cmd.AddCommand(NewCmdPipelineRun(f))
+	cmd.AddCommand(cmdList.NewCmdList(f, nil))
+	cmd.AddCommand(cmdView.NewCmdView(f, nil))
+	cmd.AddCommand(cmdRun.NewCmdRun(f, nil))
 	return cmd
 }
