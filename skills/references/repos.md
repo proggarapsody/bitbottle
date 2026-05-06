@@ -55,14 +55,35 @@ default branch is named differently (`master`, `develop`, …).
 ## Pipelines (Cloud only)
 
 ```bash
-bitbottle pipeline list WORKSPACE/repo [--limit N]
-bitbottle pipeline view WORKSPACE/repo UUID [--web]
-bitbottle pipeline run  WORKSPACE/repo --branch BRANCH
+bitbottle pipeline list  WORKSPACE/repo [--limit N]
+bitbottle pipeline view  WORKSPACE/repo UUID [--web]
+bitbottle pipeline run   WORKSPACE/repo --branch BRANCH
+
+# Drill into a run:
+bitbottle pipeline steps WORKSPACE/repo PIPELINE-UUID
+bitbottle pipeline logs  WORKSPACE/repo PIPELINE-UUID STEP-UUID
+
+# Repository-level variables (upsert by KEY):
+bitbottle pipeline variable list   WORKSPACE/repo
+bitbottle pipeline variable set    WORKSPACE/repo KEY [VALUE] [--body=-] [--secured]
+bitbottle pipeline variable delete WORKSPACE/repo KEY --confirm
 ```
 
-Pipeline UUIDs are returned by `pipeline list --json uuid`.
-Self-hosted Server/DC has no pipelines product — these commands
-will error out with "unsupported on host" against any non-Cloud host.
+Pipeline / step UUIDs are returned by `--json uuid`.
+Self-hosted Server/DC has no pipelines product — these commands will
+error out with "unsupported on host" against any non-Cloud host.
+
+**Logs:** plain text, streams to stdout. Pipe to `less`, `grep`, redirect
+to a file. No `--json`.
+
+**Variables:** secured values are redacted on read. The TTY column shows
+`<secured>` and `--json` shows `"value":"<secured>"` — *the same chokepoint*,
+so secrets cannot leak by switching output modes. Always use `--body=-`
+to feed a secret value via stdin; never put it on the command line.
+
+**`pipeline variable set` is upsert by KEY.** Existing → PUT, missing →
+POST. No separate `update` command. Same for `delete`: takes the
+user-friendly KEY, looks up the UUID internally.
 
 ## Other
 

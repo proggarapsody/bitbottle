@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"io"
 	"testing"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -47,9 +48,14 @@ type FakeClient struct {
 	RequestReviewFn func(ns, slug string, id int, users []string) error
 
 	// Pipeline methods (Cloud-only; satisfies backend.PipelineClient when set)
-	ListPipelinesFn func(ns, slug string, limit int) ([]backend.Pipeline, error)
-	GetPipelineFn   func(ns, slug, uuid string) (backend.Pipeline, error)
-	RunPipelineFn   func(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error)
+	ListPipelinesFn          func(ns, slug string, limit int) ([]backend.Pipeline, error)
+	GetPipelineFn            func(ns, slug, uuid string) (backend.Pipeline, error)
+	RunPipelineFn            func(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error)
+	ListPipelineStepsFn      func(ns, slug, uuid string) ([]backend.PipelineStep, error)
+	GetPipelineStepLogFn     func(ns, slug, pipelineUUID, stepUUID string) (io.ReadCloser, error)
+	ListPipelineVariablesFn  func(ns, slug string) ([]backend.PipelineVariable, error)
+	SetPipelineVariableFn    func(ns, slug string, in backend.PipelineVariableInput) (backend.PipelineVariable, error)
+	DeletePipelineVariableFn func(ns, slug, key string) error
 
 	// Commit methods
 	ListCommitsFn func(ns, slug, branch string, limit int) ([]backend.Commit, error)
@@ -302,6 +308,56 @@ func (c *FakeClient) RunPipeline(ns, slug string, in backend.RunPipelineInput) (
 		c.T.Fatalf("unexpected call to FakeClient.RunPipeline; set RunPipelineFn in your test")
 	}
 	return backend.Pipeline{}, nil
+}
+
+func (c *FakeClient) ListPipelineSteps(ns, slug, uuid string) ([]backend.PipelineStep, error) {
+	if c.ListPipelineStepsFn != nil {
+		return c.ListPipelineStepsFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelineSteps; set ListPipelineStepsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetPipelineStepLog(ns, slug, pipelineUUID, stepUUID string) (io.ReadCloser, error) {
+	if c.GetPipelineStepLogFn != nil {
+		return c.GetPipelineStepLogFn(ns, slug, pipelineUUID, stepUUID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipelineStepLog; set GetPipelineStepLogFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) ListPipelineVariables(ns, slug string) ([]backend.PipelineVariable, error) {
+	if c.ListPipelineVariablesFn != nil {
+		return c.ListPipelineVariablesFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelineVariables; set ListPipelineVariablesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) SetPipelineVariable(ns, slug string, in backend.PipelineVariableInput) (backend.PipelineVariable, error) {
+	if c.SetPipelineVariableFn != nil {
+		return c.SetPipelineVariableFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetPipelineVariable; set SetPipelineVariableFn in your test")
+	}
+	return backend.PipelineVariable{}, nil
+}
+
+func (c *FakeClient) DeletePipelineVariable(ns, slug, key string) error {
+	if c.DeletePipelineVariableFn != nil {
+		return c.DeletePipelineVariableFn(ns, slug, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeletePipelineVariable; set DeletePipelineVariableFn in your test")
+	}
+	return nil
 }
 
 func (c *FakeClient) ListCommits(ns, slug, branch string, limit int) ([]backend.Commit, error) {

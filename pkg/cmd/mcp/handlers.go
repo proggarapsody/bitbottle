@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
@@ -920,4 +921,173 @@ func (h *handlers) listCommitStatuses(_ context.Context, req mcplib.CallToolRequ
 		return errResultErr(err), nil
 	}
 	return jsonResult(statuses)
+}
+
+func (h *handlers) listPipelineSteps(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	uuid, err := requireString(req, "uuid")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	pc, err := backend.AsPipelineClient(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	steps, err := pc.ListPipelineSteps(project, slug, uuid)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(steps)
+}
+
+func (h *handlers) getPipelineStepLog(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	pipelineUUID, err := requireString(req, "pipeline_uuid")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	stepUUID, err := requireString(req, "step_uuid")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	pc, err := backend.AsPipelineClient(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	rc, err := pc.GetPipelineStepLog(project, slug, pipelineUUID, stepUUID)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	defer rc.Close() //nolint:errcheck
+	body, err := io.ReadAll(rc)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return mcplib.NewToolResultText(string(body)), nil
+}
+
+func (h *handlers) listPipelineVariables(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	pc, err := backend.AsPipelineClient(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	vars, err := pc.ListPipelineVariables(project, slug)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	// Defensive: even though the wire layer never returns Value for secured
+	// vars, blank it again before serialising in case a future API change
+	// leaks one through.
+	for i := range vars {
+		if vars[i].Secured {
+			vars[i].Value = ""
+		}
+	}
+	return jsonResult(vars)
+}
+
+func (h *handlers) setPipelineVariable(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	key, err := requireString(req, "key")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	value, err := requireString(req, "value")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	secured := req.GetBool("secured", false)
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	pc, err := backend.AsPipelineClient(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	v, err := pc.SetPipelineVariable(project, slug, backend.PipelineVariableInput{
+		Key:     key,
+		Value:   value,
+		Secured: secured,
+	})
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if v.Secured {
+		v.Value = ""
+	}
+	return jsonResult(v)
+}
+
+func (h *handlers) deletePipelineVariable(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	key, err := requireString(req, "key")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	pc, err := backend.AsPipelineClient(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := pc.DeletePipelineVariable(project, slug, key); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]string{"key": key, "status": "deleted"})
 }

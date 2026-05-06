@@ -464,4 +464,81 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.listCommitStatuses,
 	)
+
+	reqUUID := mcplib.WithString("uuid",
+		mcplib.Description("Pipeline UUID"),
+		mcplib.Required(),
+	)
+	reqKey := mcplib.WithString("key",
+		mcplib.Description("Pipeline variable key"),
+		mcplib.Required(),
+	)
+
+	s.AddTool(
+		mcplib.NewTool("list_pipeline_steps",
+			mcplib.WithDescription("List the steps in a pipeline run (Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqUUID,
+		),
+		h.listPipelineSteps,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("get_pipeline_step_log",
+			mcplib.WithDescription("Get the plaintext log of a single pipeline step (Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("pipeline_uuid",
+				mcplib.Description("Pipeline UUID"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("step_uuid",
+				mcplib.Description("Step UUID"),
+				mcplib.Required(),
+			),
+		),
+		h.getPipelineStepLog,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("list_pipeline_variables",
+			mcplib.WithDescription("List repository-level pipeline variables (Bitbucket Cloud only). Secured variable values are not returned."),
+			optHostname,
+			reqProject,
+			reqSlug,
+		),
+		h.listPipelineVariables,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("set_pipeline_variable",
+			mcplib.WithDescription("Create or update a repository-level pipeline variable, upsert by key (destructive write; Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqKey,
+			mcplib.WithString("value",
+				mcplib.Description("Variable value"),
+				mcplib.Required(),
+			),
+			mcplib.WithBoolean("secured",
+				mcplib.Description("Mark as secured (value redacted on read)"),
+			),
+		),
+		h.setPipelineVariable,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("delete_pipeline_variable",
+			mcplib.WithDescription("Delete a repository-level pipeline variable by key (destructive; Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqKey,
+		),
+		h.deletePipelineVariable,
+	)
 }

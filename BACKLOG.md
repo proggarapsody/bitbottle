@@ -103,11 +103,11 @@ Current state of every command area against gh feature parity:
 | `pipeline list` | ✅ | |
 | `pipeline view` | ✅ | |
 | `pipeline run` | ✅ | |
-| `pipeline steps` | ❌ | List steps in a pipeline |
-| `pipeline logs` | ❌ | Stream step log |
-| `pipeline variable list` | ❌ | |
-| `pipeline variable set` | ❌ | |
-| `pipeline variable delete` | ❌ | |
+| `pipeline steps` | ✅ | List steps in a pipeline |
+| `pipeline logs` | ✅ | Stream step log |
+| `pipeline variable list` | ✅ | |
+| `pipeline variable set` | ✅ | Upsert by KEY; `--body=-` reads stdin |
+| `pipeline variable delete` | ✅ | By KEY (UUID lookup is internal) |
 
 ### Commits
 
@@ -194,7 +194,7 @@ Current state of every command area against gh feature parity:
 | P | **Auth Extras** | `auth token`, `auth refresh` | N/A | DX | ✅ |
 | Q | **Repo Extras** | `repo fork`, `repo rename`, `repo archive`, `repo set-default` | Both / Cloud | 2 | 🔲 |
 | F | **Commits** | `commit log`, `commit view` | Both | 1 | ✅ |
-| H | **Pipeline Depth** | `pipeline steps`, `pipeline logs`, `pipeline variable *` | Cloud | 1 | 🔲 |
+| H | **Pipeline Depth** | `pipeline steps`, `pipeline logs`, `pipeline variable *` | Cloud | 1 | ✅ |
 | I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | 🔲 |
 | J | **PR Comments** | `pr comment list`, `pr comment add` | Both | 2 | ✅ |
 | K | **Commit Statuses** | `commit status` | Both | 2 | ✅ |
