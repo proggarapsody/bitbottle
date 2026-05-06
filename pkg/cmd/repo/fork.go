@@ -11,7 +11,7 @@ import (
 )
 
 func NewCmdRepoFork(f *factory.Factory) *cobra.Command {
-	var hostname, into, name string
+	var hostname, into, name, jsonFields, jqExpr string
 
 	cmd := &cobra.Command{
 		Use:   "fork PROJECT/REPO --into WORKSPACE [--name NAME]",
@@ -21,9 +21,6 @@ func NewCmdRepoFork(f *factory.Factory) *cobra.Command {
 			"against a Server host returns a typed unsupported-capability error.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if into == "" {
-				return fmt.Errorf("--into WORKSPACE is required")
-			}
 			ref, err := bbrepo.Parse(args[0])
 			if err != nil {
 				return err
@@ -50,6 +47,13 @@ func NewCmdRepoFork(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			if jsonFields != "" || jqExpr != "" {
+				p := repoFields(f, jsonFields, jqExpr)
+				p.SetSingleItem()
+				p.AddItem(fork)
+				return p.Render()
+			}
+
 			fmt.Fprintf(f.IOStreams.Out, "Forked %s/%s to %s/%s\n",
 				ref.Project, ref.Slug, fork.Namespace, fork.Slug)
 			if fork.WebURL != "" {
@@ -61,5 +65,8 @@ func NewCmdRepoFork(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	cmd.Flags().StringVar(&into, "into", "", "Destination workspace slug (required)")
 	cmd.Flags().StringVar(&name, "name", "", "Override the fork's name (defaults to source name)")
+	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
+	_ = cmd.MarkFlagRequired("into")
 	return cmd
 }

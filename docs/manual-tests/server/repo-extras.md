@@ -28,15 +28,23 @@ bitbottle repo create "$SCRATCH_SLUG" \
 
 Exit code: `0`.
 
-### 2. `repo rename` updates the slug
+### 2. `repo rename` without `--confirm` on non-TTY refuses
 
 ```bash
 export RENAMED_SLUG="${SCRATCH_SLUG}-v2"
-bitbottle repo rename "$SCRATCH_FQN" "$RENAMED_SLUG"
+bitbottle repo rename "$SCRATCH_FQN" "$RENAMED_SLUG" </dev/null
 ```
 
-Exit code: `0`. stdout reports the rename and prints the new
-`PROJECT/slug` coordinate.
+Exit code: non-zero. stderr says `--confirm` is required.
+
+### 3. `repo rename --confirm` updates the slug, supports `--json`
+
+```bash
+bitbottle repo rename "$SCRATCH_FQN" "$RENAMED_SLUG" \
+  --confirm --json slug,namespace --jq '.slug'
+```
+
+Exit code: `0`. stdout is exactly the new slug.
 
 **Verify:**
 ```bash
@@ -47,7 +55,7 @@ bitbottle repo view "$SCRATCH_FQN"
 The first call exits `0`; the second exits non-zero with a clean
 not-found error.
 
-### 3. `repo fork` returns a typed unsupported-capability error
+### 4. `repo fork` returns a typed unsupported-capability error
 
 ```bash
 bitbottle repo fork "$BB_TEST_SERVER_PROJECT/$RENAMED_SLUG" --into anywhere

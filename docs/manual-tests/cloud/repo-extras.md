@@ -10,7 +10,7 @@ Exercise the scope-Q additions: `repo rename` (both backends) and
 - Logged in to `$BB_TEST_CLOUD_HOST`.
 - `BB_TEST_CLOUD_WORKSPACE` set; token has `repository:admin` scope.
 - A second workspace `BB_TEST_CLOUD_FORK_WORKSPACE` you can write to (for
-  the fork step). If you don't have one, skip section 3.
+  the fork steps). If you don't have one, skip sections 4–6.
 - A unique scratch slug:
   ```bash
   export SCRATCH_SLUG="bb-qa-rx-$(date +%s)"
@@ -30,17 +30,27 @@ bitbottle repo create "$SCRATCH_SLUG" \
 
 Exit code: `0`.
 
-### 2. `repo rename` updates name and slug
+### 2. `repo rename` without `--confirm` on non-TTY refuses
 
 ```bash
 export RENAMED_SLUG="${SCRATCH_SLUG}-v2"
-bitbottle repo rename "$SCRATCH_FQN" "$RENAMED_SLUG"
+bitbottle repo rename "$SCRATCH_FQN" "$RENAMED_SLUG" </dev/null
 ```
 
-Exit code: `0`. stdout reports the rename and prints the new
-`workspace/slug` coordinate.
+Exit code: non-zero. stderr says `--confirm` is required (rename changes
+the slug and breaks existing clones).
 
-**Verify:**
+### 3. `repo rename --confirm` updates name and slug, supports `--json`
+
+```bash
+bitbottle repo rename "$SCRATCH_FQN" "$RENAMED_SLUG" \
+  --confirm --json slug,namespace,webURL --jq '.slug'
+```
+
+Exit code: `0`. stdout is exactly the new slug — proves `--json` /
+`--jq` are wired through.
+
+**Verify the rename happened:**
 ```bash
 bitbottle repo view "$BB_TEST_CLOUD_WORKSPACE/$RENAMED_SLUG"
 # old slug should now 404:
@@ -50,9 +60,10 @@ bitbottle repo view "$SCRATCH_FQN"
 The first call exits `0`; the second exits non-zero with a clean
 not-found error (no panic, no stack).
 
-### 3. `repo fork` into another workspace _(Cloud only)_
+### 4. `repo fork` into another workspace _(Cloud only)_
 
-Skip this section if `BB_TEST_CLOUD_FORK_WORKSPACE` is unset.
+Skip this and the next two sections if `BB_TEST_CLOUD_FORK_WORKSPACE` is
+unset.
 
 ```bash
 bitbottle repo fork "$BB_TEST_CLOUD_WORKSPACE/$RENAMED_SLUG" \
@@ -66,7 +77,7 @@ fork web URL.
 `https://bitbucket.org/$BB_TEST_CLOUD_FORK_WORKSPACE/$RENAMED_SLUG`,
 labelled as a fork of the source.
 
-### 4. `repo fork --name` overrides the fork's slug
+### 5. `repo fork --name` overrides the fork's slug
 
 ```bash
 export FORK_NAME="${RENAMED_SLUG}-fork"
@@ -77,13 +88,14 @@ bitbottle repo fork "$BB_TEST_CLOUD_WORKSPACE/$RENAMED_SLUG" \
 
 Exit code: `0`. stdout shows `$BB_TEST_CLOUD_FORK_WORKSPACE/$FORK_NAME`.
 
-### 5. `repo fork` without `--into` errors with a clear message
+### 6. `repo fork` without `--into` errors with a clear message
 
 ```bash
 bitbottle repo fork "$BB_TEST_CLOUD_WORKSPACE/$RENAMED_SLUG"
 ```
 
-Exit code: non-zero. stderr mentions `--into` is required.
+Exit code: non-zero. stderr is cobra's required-flag message:
+`required flag(s) "into" not set`.
 
 ## Cleanup
 

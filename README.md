@@ -182,8 +182,10 @@ secrets are write-only — neither backend returns them on read.
 ### Repo extras
 
 ```bash
-# Rename (both backends — slug derives from new name on Cloud)
-bitbottle repo rename MYPROJ/my-service my-service-v2
+# Rename (both backends — slug derives from new name on Cloud).
+# --confirm is required on non-TTY because the slug change breaks existing
+# clones' origin URL — run `git remote set-url origin ...` after.
+bitbottle repo rename MYPROJ/my-service my-service-v2 --confirm
 
 # Fork into another workspace (Bitbucket Cloud only)
 bitbottle repo fork myworkspace/my-service --into otherws
@@ -191,7 +193,8 @@ bitbottle repo fork myworkspace/my-service --into otherws --name my-fork
 ```
 
 `repo fork` returns a typed unsupported-capability error on Bitbucket Server /
-Data Center, which has no fork primitive in its REST API.
+Data Center, which has no fork primitive in its REST API. Both `rename` and
+`fork` accept `--json fields` and `--jq expr` for structured output.
 
 ### Raw API
 

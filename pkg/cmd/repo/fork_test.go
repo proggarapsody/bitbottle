@@ -30,7 +30,8 @@ func TestRepoFork_RequiresInto(t *testing.T) {
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "--into")
+	// cobra emits: required flag(s) "into" not set
+	assert.Contains(t, err.Error(), `"into"`)
 }
 
 func TestRepoFork_CallsBackendWithTargetWorkspace(t *testing.T) {
@@ -89,6 +90,23 @@ func TestRepoFork_PrintsForkCoordinate(t *testing.T) {
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "otherws/my-service")
+}
+
+func TestRepoFork_JSONOutput(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ForkRepoFn: func(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error) {
+			return backend.Repository{Slug: "my-service", Name: "my-service", Namespace: in.Workspace, WebURL: "https://bitbucket.org/otherws/my-service"}, nil
+		},
+	}
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoFork(f)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws", "--json", "slug,namespace,webURL"})
+	require.NoError(t, cmd.Execute())
+	got := out.String()
+	assert.Contains(t, got, `"slug":"my-service"`)
+	assert.Contains(t, got, `"namespace":"otherws"`)
 }
 
 func TestRepoFork_APIError_Propagates(t *testing.T) {

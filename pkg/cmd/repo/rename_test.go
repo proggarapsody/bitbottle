@@ -34,7 +34,7 @@ func TestRepoRename_CallsBackendWithNewName(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoRename(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed"})
+	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--confirm"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "MYPROJ", gotNS)
 	assert.Equal(t, "my-service", gotSlug)
@@ -51,9 +51,39 @@ func TestRepoRename_PrintsNewCoordinate(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoRename(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed"})
+	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--confirm"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "MYPROJ/renamed")
+}
+
+func TestRepoRename_JSONOutput(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		RenameRepoFn: func(ns, slug, newName string) (backend.Repository, error) {
+			return backend.Repository{Slug: newName, Name: newName, Namespace: ns}, nil
+		},
+	}
+	f, out, _ := newRepoFactory(t, fake)
+	cmd := repo.NewCmdRepoRename(f)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--json", "slug,namespace", "--confirm"})
+	require.NoError(t, cmd.Execute())
+	got := out.String()
+	assert.Contains(t, got, `"slug":"renamed"`)
+	assert.Contains(t, got, `"namespace":"MYPROJ"`)
+}
+
+func TestRepoRename_WithoutConfirm_NonTTY_Errors(t *testing.T) {
+	t.Parallel()
+	// Default IOStreams is non-TTY; renaming changes the slug on Cloud and
+	// breaks every existing clone's origin URL — must require --confirm to
+	// match the safety bar set by `repo delete` for destructive ops.
+	f, _, _ := newRepoFactory(t, nil)
+	cmd := repo.NewCmdRepoRename(f)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "confirm")
 }
 
 func TestRepoRename_APIError_Propagates(t *testing.T) {
@@ -67,7 +97,7 @@ func TestRepoRename_APIError_Propagates(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoRename(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed"})
+	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--confirm"})
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "403")
