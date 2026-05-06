@@ -1,6 +1,9 @@
 package backend
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+)
 
 type RepoLister interface {
 	// ListRepos lists repositories. ns is the workspace (Bitbucket Cloud) or
@@ -158,6 +161,11 @@ type PipelineClient interface {
 	ListPipelines(ns, slug string, limit int) ([]Pipeline, error)
 	GetPipeline(ns, slug, uuid string) (Pipeline, error)
 	RunPipeline(ns, slug string, in RunPipelineInput) (Pipeline, error)
+	ListPipelineSteps(ns, slug, uuid string) ([]PipelineStep, error)
+	GetPipelineStepLog(ns, slug, pipelineUUID, stepUUID string) (io.ReadCloser, error)
+	ListPipelineVariables(ns, slug string) ([]PipelineVariable, error)
+	SetPipelineVariable(ns, slug string, in PipelineVariableInput) (PipelineVariable, error)
+	DeletePipelineVariable(ns, slug, key string) error
 }
 
 // Feature names a capability that some backends may not implement. The

@@ -200,6 +200,28 @@ func (t *Transport) GetText(path string) (string, error) {
 	return string(b), err
 }
 
+// GetStream GETs path and returns the response body for the caller to stream
+// and Close. Sends Accept: text/plain so backends that content-negotiate (e.g.
+// Bitbucket Server diff endpoints) return raw text. The body is closed on any
+// non-2xx status; otherwise the caller owns it.
+func (t *Transport) GetStream(path string) (io.ReadCloser, error) {
+	req, err := t.newRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "text/plain")
+	resp, err := t.do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		err := t.apiError(resp)
+		_ = resp.Body.Close()
+		return nil, err
+	}
+	return resp.Body, nil
+}
+
 func (t *Transport) PostJSON(path string, body, v any) error {
 	return t.sendJSON(http.MethodPost, path, body, v)
 }

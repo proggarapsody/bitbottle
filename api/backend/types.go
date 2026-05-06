@@ -99,6 +99,33 @@ type RunPipelineInput struct {
 	Branch string
 }
 
+// PipelineStep is the domain representation of a single step within a
+// Bitbucket Cloud pipeline run.
+type PipelineStep struct {
+	UUID     string
+	Name     string
+	State    string // PENDING, IN_PROGRESS, SUCCESSFUL, FAILED, ERROR, STOPPED
+	Result   string // populated when State has flattened from COMPLETED
+	Duration int    // seconds
+}
+
+// PipelineVariable is a repository-level pipeline variable on Bitbucket Cloud.
+// Value is empty when Secured is true (the API never returns secured values).
+type PipelineVariable struct {
+	UUID    string
+	Key     string
+	Value   string
+	Secured bool
+}
+
+// PipelineVariableInput carries the parameters for upserting a pipeline
+// variable by Key.
+type PipelineVariableInput struct {
+	Key     string
+	Value   string
+	Secured bool
+}
+
 // Tag is the domain representation of a repository tag.
 type Tag struct {
 	Name    string
