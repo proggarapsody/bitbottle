@@ -101,6 +101,31 @@ func TestPRList_CloudIntegration_ErrorContractSurfacesMessage(t *testing.T) {
 	assert.Contains(t, err.Error(), "404")
 }
 
+// TestPRList_CloudIntegration_ClosedMapsToDeclined verifies that --state closed
+// sends state=DECLINED (not state=CLOSED) to the Cloud API.
+func TestPRList_CloudIntegration_ClosedMapsToDeclined(t *testing.T) {
+	t.Parallel()
+
+	var gotQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"pagelen":10,"values":[],"page":1,"size":0}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: prListCloudConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+	f.BaseURL = func(hostname string) string { return srv.URL }
+
+	cmd := pr.NewCmdPRList(f)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--state", "closed"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Contains(t, gotQuery, "state=DECLINED", "--state closed must send DECLINED to Cloud")
+	assert.NotContains(t, gotQuery, "state=CLOSED")
+}
+
 // TestPRList_CloudIntegration_BackendTypeOverrideForcesCloud verifies that
 // `pr list` on a host configured with backend_type: cloud routes through the
 // Cloud adapter (path is /repositories/.../pullrequests, not /rest/api/...).

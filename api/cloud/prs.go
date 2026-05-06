@@ -34,6 +34,9 @@ type wireCloudPR struct {
 			Href string `json:"href"`
 		} `json:"html"`
 	} `json:"links"`
+	Reviewers []struct {
+		AccountID string `json:"account_id"`
+	} `json:"reviewers"`
 }
 
 func (w wireCloudPR) toDomain() backend.PullRequest {

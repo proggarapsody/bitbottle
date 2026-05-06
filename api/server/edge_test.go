@@ -43,7 +43,7 @@ func TestServerClient_ListRepos_FollowsNextPageStart(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	client := server.NewClient(srv.Client(), srv.URL, "tok", "")
-	repos, err := client.ListRepos(25)
+	repos, err := client.ListRepos("", 25)
 	require.NoError(t, err)
 	require.Len(t, repos, 3, "all pages must be accumulated")
 	assert.Equal(t, "repo-a", repos[0].Slug)
@@ -76,7 +76,7 @@ func TestServerClient_ListRepos_SecondPageHasStartParam(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	client := server.NewClient(srv.Client(), srv.URL, "tok", "")
-	_, _ = client.ListRepos(50)
+	_, _ = client.ListRepos("", 50)
 	assert.Contains(t, secondQuery, "start=50",
 		"second page request must include start=<nextPageStart>")
 	assert.Contains(t, secondQuery, "limit=50",
@@ -96,7 +96,7 @@ func TestServerClient_ListRepos_LimitQueryIncludedOnFirstRequest(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	client := server.NewClient(srv.Client(), srv.URL, "tok", "")
-	_, err := client.ListRepos(50)
+	_, err := client.ListRepos("", 50)
 	require.NoError(t, err)
 	assert.Equal(t, "limit=50", gotQuery)
 }

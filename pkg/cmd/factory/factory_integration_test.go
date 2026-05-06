@@ -125,7 +125,7 @@ func TestFactory_Integration_BaseURLNoDoubleSlash(t *testing.T) {
 	client, err := f.Backend("bb.example.com")
 	require.NoError(t, err)
 
-	_, err = client.ListRepos(10)
+	_, err = client.ListRepos("", 10)
 	require.NoError(t, err)
 	assert.NotContains(t, gotPath, "//", "double slash in request path from factory-built client")
 }

@@ -32,7 +32,7 @@ func fixtureClient(t *testing.T, fixturePath string, status int) *server.Client 
 func TestServerClient_ListRepos_MapsNamespace(t *testing.T) {
 	t.Parallel()
 	client := fixtureClient(t, "testdata/repo_list.json", 200)
-	repos, err := client.ListRepos(25)
+	repos, err := client.ListRepos("", 25)
 	require.NoError(t, err)
 	require.Len(t, repos, 1)
 	assert.Equal(t, "MYPROJ", repos[0].Namespace)
@@ -41,7 +41,7 @@ func TestServerClient_ListRepos_MapsNamespace(t *testing.T) {
 func TestServerClient_ListRepos_MapsSCM(t *testing.T) {
 	t.Parallel()
 	client := fixtureClient(t, "testdata/repo_list.json", 200)
-	repos, err := client.ListRepos(25)
+	repos, err := client.ListRepos("", 25)
 	require.NoError(t, err)
 	require.Len(t, repos, 1)
 	assert.Equal(t, "git", repos[0].SCM)
@@ -50,7 +50,7 @@ func TestServerClient_ListRepos_MapsSCM(t *testing.T) {
 func TestServerClient_ListRepos_MapsWebURL(t *testing.T) {
 	t.Parallel()
 	client := fixtureClient(t, "testdata/repo_list.json", 200)
-	repos, err := client.ListRepos(25)
+	repos, err := client.ListRepos("", 25)
 	require.NoError(t, err)
 	require.Len(t, repos, 1)
 	assert.Contains(t, repos[0].WebURL, "browse")
@@ -59,7 +59,7 @@ func TestServerClient_ListRepos_MapsWebURL(t *testing.T) {
 func TestServerClient_ListRepos_Empty(t *testing.T) {
 	t.Parallel()
 	client := fixtureClient(t, "testdata/repo_list_empty.json", 200)
-	repos, err := client.ListRepos(25)
+	repos, err := client.ListRepos("", 25)
 	require.NoError(t, err)
 	assert.Empty(t, repos)
 }

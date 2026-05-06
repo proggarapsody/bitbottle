@@ -8,6 +8,22 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
+// mapPRState normalises user-facing state names to Bitbucket API values.
+// Bitbucket (both Cloud and Server) uses OPEN/MERGED/DECLINED.
+// "closed" is a common alias for DECLINED; anything else is uppercased as-is.
+func mapPRState(state string) string {
+	switch strings.ToLower(state) {
+	case "closed":
+		return "DECLINED"
+	case "open":
+		return "OPEN"
+	case "merged":
+		return "MERGED"
+	default:
+		return strings.ToUpper(state)
+	}
+}
+
 func NewCmdPRList(f *factory.Factory) *cobra.Command {
 	var state string
 	var limit int
@@ -30,7 +46,7 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			prs, err := client.ListPRs(ref.Project, ref.Slug, strings.ToUpper(state), limit)
+			prs, err := client.ListPRs(ref.Project, ref.Slug, mapPRState(state), limit)
 			if err != nil {
 				return err
 			}

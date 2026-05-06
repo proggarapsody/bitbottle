@@ -91,7 +91,7 @@ func TestListRepos_CallsClientWithLimit(t *testing.T) {
 	t.Parallel()
 	var gotLimit int
 	fake := &testhelpers.FakeClient{
-		ListReposFn: func(limit int) ([]backend.Repository, error) {
+		ListReposFn: func(ns string, limit int) ([]backend.Repository, error) {
 			gotLimit = limit
 			return []backend.Repository{{Slug: "my-repo", Name: "My Repo", Namespace: "PROJ"}}, nil
 		},
@@ -107,7 +107,7 @@ func TestListRepos_DefaultLimit(t *testing.T) {
 	t.Parallel()
 	var gotLimit int
 	fake := &testhelpers.FakeClient{
-		ListReposFn: func(limit int) ([]backend.Repository, error) {
+		ListReposFn: func(ns string, limit int) ([]backend.Repository, error) {
 			gotLimit = limit
 			return nil, nil
 		},
@@ -129,7 +129,7 @@ func TestListRepos_MultipleHosts_NoHostname_ReturnsError(t *testing.T) {
 func TestListRepos_BackendError_ReturnsErrorResult(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
-		ListReposFn: func(limit int) ([]backend.Repository, error) {
+		ListReposFn: func(ns string, limit int) ([]backend.Repository, error) {
 			return nil, errors.New("server unavailable")
 		},
 	}
@@ -146,7 +146,7 @@ func TestListRepos_BackendError_ReturnsErrorResult(t *testing.T) {
 func TestListRepos_DomainError_EmitsStructuredEnvelope(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
-		ListReposFn: func(limit int) ([]backend.Repository, error) {
+		ListReposFn: func(ns string, limit int) ([]backend.Repository, error) {
 			return nil, &backend.DomainError{
 				Kind:    backend.ErrUnsupportedOnHost,
 				Host:    "git.moscow.alfaintra.net",
@@ -614,7 +614,7 @@ func TestDeleteBranch_MissingBranch_ReturnsError(t *testing.T) {
 func TestResolveBackend_ExplicitHostname_Success(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
-		ListReposFn: func(limit int) ([]backend.Repository, error) {
+		ListReposFn: func(ns string, limit int) ([]backend.Repository, error) {
 			return []backend.Repository{{Slug: "r"}}, nil
 		},
 	}

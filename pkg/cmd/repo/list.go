@@ -15,8 +15,9 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 	var hostname string
 
 	cmd := &cobra.Command{
-		Use:   "list",
+		Use:   "list [WORKSPACE]",
 		Short: "List repositories",
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			host, err := resolveHostname(f, hostname)
 			if err != nil {
@@ -28,7 +29,12 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			repos, err := client.ListRepos(limit)
+			ns := ""
+			if len(args) > 0 {
+				ns = args[0]
+			}
+
+			repos, err := client.ListRepos(ns, limit)
 			if err != nil {
 				return err
 			}

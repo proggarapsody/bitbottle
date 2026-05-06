@@ -45,7 +45,7 @@ func TestCloudClient_ListRepos_FollowsNextLink(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
-	repos, err := client.ListRepos(10)
+	repos, err := client.ListRepos("myworkspace", 10)
 	require.NoError(t, err)
 	require.Len(t, repos, 2, "all pages must be accumulated")
 	assert.Equal(t, "repo-a", repos[0].Slug)
@@ -105,7 +105,7 @@ func TestCloudClient_ListRepos_MalformedNextDoesNotPanic(t *testing.T) {
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
 	require.NotPanics(t, func() {
-		repos, err := client.ListRepos(1)
+		repos, err := client.ListRepos("myworkspace", 1)
 		require.NoError(t, err)
 		require.Len(t, repos, 1)
 		assert.Equal(t, "only", repos[0].Slug)

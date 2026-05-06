@@ -43,22 +43,45 @@ func (c *Client) ReadyPR(ns, slug string, id int) error {
 	return c.putJSON(path, body, &result)
 }
 
-// RequestReview adds reviewers to a pull request (one request per user).
+// RequestReview adds reviewers to a pull request using PUT /pullrequests/{id}.
+// It first GETs the current PR to preserve existing reviewers, then PUTs the
+// merged list. This is the only Cloud-supported approach (the /participants
+// endpoint does not support adding reviewers).
 func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
-	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/participants", ns, slug, id)
-	for _, user := range users {
-		body := map[string]any{
-			"user": map[string]string{
-				"account_id": user,
-			},
-			"role": "REVIEWER",
-		}
-		var result struct{}
-		if err := c.postJSON(path, body, &result); err != nil {
-			return err
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
+
+	// 1. Read current PR to preserve existing reviewers.
+	var current wireCloudPR
+	if err := c.getJSON(path, &current); err != nil {
+		return err
+	}
+
+	// 2. Merge existing + new reviewers, deduplicated.
+	seen := make(map[string]bool)
+	type reviewer struct {
+		AccountID string `json:"account_id"`
+	}
+	var reviewers []reviewer
+	for _, r := range current.Reviewers {
+		if !seen[r.AccountID] {
+			seen[r.AccountID] = true
+			reviewers = append(reviewers, reviewer{AccountID: r.AccountID})
 		}
 	}
-	return nil
+	for _, u := range users {
+		if !seen[u] {
+			seen[u] = true
+			reviewers = append(reviewers, reviewer{AccountID: u})
+		}
+	}
+
+	// 3. PUT with updated reviewers (title is required by the Cloud API).
+	body := map[string]any{
+		"title":     current.Title,
+		"reviewers": reviewers,
+	}
+	var result wireCloudPR
+	return c.putJSON(path, body, &result)
 }
 
 // RequestChangesPR requests changes on a pull request (Cloud only).

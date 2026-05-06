@@ -13,7 +13,7 @@ type FakeClient struct {
 	T *testing.T
 
 	// Repo methods
-	ListReposFn  func(limit int) ([]backend.Repository, error)
+	ListReposFn  func(ns string, limit int) ([]backend.Repository, error)
 	GetRepoFn    func(ns, slug string) (backend.Repository, error)
 	CreateRepoFn func(ns string, in backend.CreateRepoInput) (backend.Repository, error)
 	DeleteRepoFn func(ns, slug string) error
@@ -66,9 +66,9 @@ type FakeClient struct {
 // Compile-time interface check.
 var _ backend.Client = (*FakeClient)(nil)
 
-func (c *FakeClient) ListRepos(limit int) ([]backend.Repository, error) {
+func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
 	if c.ListReposFn != nil {
-		return c.ListReposFn(limit)
+		return c.ListReposFn(ns, limit)
 	}
 	return nil, nil
 }

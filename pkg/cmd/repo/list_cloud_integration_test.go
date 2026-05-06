@@ -42,12 +42,13 @@ func TestRepoList_CloudIntegration_PrintsSlugsFromCloudEnvelope(t *testing.T) {
 	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
+	cmd.SetArgs([]string{"myworkspace"})
 	buf := &bytes.Buffer{}
 	cmd.SetOut(buf)
 	require.NoError(t, cmd.Execute())
 
-	// Request went to the Cloud /repositories endpoint.
-	assert.Contains(t, gotPath, "/repositories")
+	// Request went to the Cloud /repositories/myworkspace endpoint.
+	assert.Equal(t, "/repositories/myworkspace", gotPath)
 
 	output := out.String()
 	assert.Contains(t, output, "my-service", "cloud slug should be printed")
@@ -75,6 +76,7 @@ func TestRepoList_CloudIntegration_ErrorContractSurfacesMessage(t *testing.T) {
 	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
+	cmd.SetArgs([]string{"myworkspace"})
 	err = cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "401")
@@ -99,6 +101,7 @@ func TestRepoList_CloudIntegration_EmptyCloudEnvelope(t *testing.T) {
 	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
+	cmd.SetArgs([]string{"myworkspace"})
 	require.NoError(t, cmd.Execute())
 	assert.Empty(t, out.String())
 }
@@ -125,6 +128,7 @@ func TestRepoList_CloudIntegration_BackendTypeOverrideForcesCloud(t *testing.T) 
 	f.BaseURL = func(hostname string) string { return srv.URL }
 
 	cmd := repo.NewCmdRepoList(f)
+	cmd.SetArgs([]string{"myworkspace"})
 	require.NoError(t, cmd.Execute())
 
 	assert.Contains(t, gotPath, "/repositories",

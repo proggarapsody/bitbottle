@@ -65,29 +65,30 @@ func TestCloudClient_ListRepos_MapsWebURL(t *testing.T) {
 func TestCloudClient_ListRepos_Empty(t *testing.T) {
 	t.Parallel()
 	client, _ := cloudFixtureClient(t, "testdata/repo_list_empty.json", 200)
-	repos, err := client.ListRepos(10)
+	repos, err := client.ListRepos("myworkspace", 10)
 	require.NoError(t, err)
 	assert.Empty(t, repos)
 }
 
-func TestCloudClient_ListRepos_UsesWorkspacePath(t *testing.T) {
+// TestCloudClient_ListRepos_ExplicitNamespaceNoUserCall verifies that ListRepos
+// with an explicit namespace hits /repositories/{ns} directly and never calls /user.
+func TestCloudClient_ListRepos_ExplicitNamespaceNoUserCall(t *testing.T) {
 	t.Parallel()
-	var gotRepoPaths []string
+	var requestPaths []string
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestPaths = append(requestPaths, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/user" {
-			_, _ = w.Write([]byte(`{"nickname":"testws","account_id":"abc","display_name":"Test"}`))
-			return
-		}
-		gotRepoPaths = append(gotRepoPaths, r.URL.Path)
 		_, _ = w.Write([]byte(`{"values":[]}`))
 	}))
 	t.Cleanup(srv.Close)
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
-	_, err := client.ListRepos(10)
+	_, err := client.ListRepos("explicit-ws", 10)
 	require.NoError(t, err)
-	require.Len(t, gotRepoPaths, 1)
-	assert.Equal(t, "/repositories/testws", gotRepoPaths[0])
+	for _, p := range requestPaths {
+		assert.NotEqual(t, "/user", p, "ListRepos with explicit namespace must not call /user")
+	}
+	require.Len(t, requestPaths, 1)
+	assert.Equal(t, "/repositories/explicit-ws", requestPaths[0])
 }
 
 func TestCloudClient_CreateRepo_SendsScmNotScmId(t *testing.T) {

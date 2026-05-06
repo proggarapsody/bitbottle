@@ -118,13 +118,14 @@ func (h *handlers) listHosts(_ context.Context, _ mcplib.CallToolRequest) (*mcpl
 
 func (h *handlers) listRepos(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
+	namespace := req.GetString("namespace", "")
 	limit := req.GetInt("limit", 30)
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	repos, err := client.ListRepos(limit)
+	repos, err := client.ListRepos(namespace, limit)
 	if err != nil {
 		return errResultErr(err), nil
 	}

@@ -39,7 +39,9 @@ func (w wireRepository) toDomain() backend.Repository {
 	}
 }
 
-func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
+// ListRepos lists all repositories accessible to the authenticated user.
+// ns is ignored for Bitbucket Server (the REST API lists across all projects).
+func (c *Client) ListRepos(_ string, limit int) ([]backend.Repository, error) {
 	path := fmt.Sprintf("/repos?limit=%d", limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
 		var page PagedResponse[wireRepository]

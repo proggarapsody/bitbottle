@@ -132,7 +132,7 @@ func BenchmarkServerClient_ListRepos_Decode100(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		repos, err := client.ListRepos(100)
+		repos, err := client.ListRepos("", 100)
 		if err != nil {
 			b.Fatal(err)
 		}

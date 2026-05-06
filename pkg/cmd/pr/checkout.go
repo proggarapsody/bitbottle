@@ -1,6 +1,8 @@
 package pr
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/git"
@@ -25,7 +27,7 @@ func NewCmdPRCheckout(f *factory.Factory) *cobra.Command {
 
 			g := git.New(f.GitRunner())
 			if err := g.Fetch("origin", pr.FromBranch); err != nil {
-				return err
+				return fmt.Errorf("run inside a local clone of %s/%s: %w", ref.Project, ref.Slug, err)
 			}
 			return g.Checkout(pr.FromBranch)
 		},

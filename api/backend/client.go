@@ -3,7 +3,9 @@ package backend
 import "fmt"
 
 type RepoLister interface {
-	ListRepos(limit int) ([]Repository, error)
+	// ListRepos lists repositories. ns is the workspace (Bitbucket Cloud) or
+	// project key (Bitbucket Server); pass "" for Server to list all repos.
+	ListRepos(ns string, limit int) ([]Repository, error)
 }
 
 type RepoReader interface {

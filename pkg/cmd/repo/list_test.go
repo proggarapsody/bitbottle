@@ -57,7 +57,7 @@ func TestRepoList_JSON_FieldsOutput(t *testing.T) {
 
 	fake := &testhelpers.FakeClient{
 		T: t,
-		ListReposFn: func(limit int) ([]backend.Repository, error) {
+		ListReposFn: func(ns string, limit int) ([]backend.Repository, error) {
 			return []backend.Repository{
 				testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("svc-a")),
 				testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("svc-b")),
@@ -81,7 +81,7 @@ func TestRepoList_JQ_FilterOutput(t *testing.T) {
 
 	fake := &testhelpers.FakeClient{
 		T: t,
-		ListReposFn: func(limit int) ([]backend.Repository, error) {
+		ListReposFn: func(ns string, limit int) ([]backend.Repository, error) {
 			return []backend.Repository{
 				testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("alpha")),
 				testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug("beta")),

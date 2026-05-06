@@ -46,6 +46,28 @@ func TestPRCheckout_FetchesAndChecksOutBranch(t *testing.T) {
 	runner.AssertCalled(t, "checkout", "feat/x")
 }
 
+func TestPRCheckout_GitError_WrapsWithCloneHint(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(
+				testhelpers.BackendPRWithID(42),
+				testhelpers.BackendPRWithFromBranch("feat/x"),
+			), nil
+		},
+	}
+	// remote get-url ok; git fetch fails.
+	runner := newPRRunner(testhelpers.RunResponse{Err: errors.New("exit status 128")})
+	f, _, _ := newPRFactory(t, fake, runner)
+	cmd := pr.NewCmdPRCheckout(f)
+	cmd.SetArgs([]string{"42"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "run inside a local clone of")
+}
+
 func TestPRCheckout_GitError_PropagatesError(t *testing.T) {
 	t.Parallel()
 

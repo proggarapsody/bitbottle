@@ -88,24 +88,50 @@ func TestCloudClient_ReadyPR_SendsDraftFalse(t *testing.T) {
 	assert.Contains(t, string(gotBody), `"draft":false`)
 }
 
-func TestCloudClient_RequestReview_SendsOneRequestPerUser(t *testing.T) {
+// TestCloudClient_RequestReview_UsesPutWithReviewersList verifies that
+// RequestReview issues exactly 2 requests: GET to read the current PR, then
+// PUT to /pullrequests/{id} carrying the merged reviewers list.
+func TestCloudClient_RequestReview_UsesPutWithReviewersList(t *testing.T) {
 	t.Parallel()
+	var methods []string
 	var paths []string
-	var bodies []string
+	var putBody []byte
 	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		methods = append(methods, r.Method)
 		paths = append(paths, r.URL.Path)
-		b, _ := io.ReadAll(r.Body)
-		bodies = append(bodies, string(b))
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{}`)
+		if r.Method == http.MethodPut {
+			putBody, _ = io.ReadAll(r.Body)
+		}
+		_, _ = w.Write(prGetBody(t))
 	})
 	err := client.RequestReview("myworkspace", "my-service", 7, []string{"alice", "bob"})
 	require.NoError(t, err)
-	require.Len(t, paths, 2)
-	assert.Equal(t, "/repositories/myworkspace/my-service/pullrequests/7/participants", paths[0])
-	assert.Equal(t, "/repositories/myworkspace/my-service/pullrequests/7/participants", paths[1])
-	assert.Contains(t, bodies[0], "alice")
-	assert.Contains(t, bodies[1], "bob")
+	require.Len(t, methods, 2, "expect exactly GET then PUT")
+	assert.Equal(t, http.MethodGet, methods[0], "first call must be GET (read current PR)")
+	assert.Equal(t, http.MethodPut, methods[1], "second call must be PUT (update reviewers)")
+	assert.Equal(t, "/repositories/myworkspace/my-service/pullrequests/7", paths[1])
+	assert.Contains(t, string(putBody), "alice")
+	assert.Contains(t, string(putBody), "bob")
+}
+
+// TestCloudClient_RequestReview_PreservesExistingReviewers verifies that
+// reviewers already on the PR are preserved when adding new ones.
+func TestCloudClient_RequestReview_PreservesExistingReviewers(t *testing.T) {
+	t.Parallel()
+	var putBody []byte
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPut {
+			putBody, _ = io.ReadAll(r.Body)
+		}
+		// PR with an existing reviewer "charlie"
+		_, _ = io.WriteString(w, `{"id":7,"title":"My PR","reviewers":[{"account_id":"charlie"}],"source":{"branch":{"name":"feat"}},"destination":{"branch":{"name":"main"}},"links":{"html":{"href":""}}}`)
+	})
+	err := client.RequestReview("myworkspace", "my-service", 7, []string{"alice"})
+	require.NoError(t, err)
+	assert.Contains(t, string(putBody), "charlie", "existing reviewer must be preserved")
+	assert.Contains(t, string(putBody), "alice", "new reviewer must be added")
 }
 
 func TestCloudClient_RequestChangesPR_IssuesCorrectPath(t *testing.T) {

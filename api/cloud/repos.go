@@ -39,12 +39,11 @@ func (w wireCloudRepo) toDomain() backend.Repository {
 	}
 }
 
-func (c *Client) ListRepos(limit int) ([]backend.Repository, error) {
-	user, err := c.GetCurrentUser()
-	if err != nil {
-		return nil, err
+func (c *Client) ListRepos(ns string, limit int) ([]backend.Repository, error) {
+	if ns == "" {
+		return nil, fmt.Errorf("workspace required for Bitbucket Cloud; use: repo list WORKSPACE")
 	}
-	path := fmt.Sprintf("/repositories/%s?pagelen=%d", user.Slug, limit)
+	path := fmt.Sprintf("/repositories/%s?pagelen=%d", ns, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
 		var page cloudPagedResponse[wireCloudRepo]
 		if err := json.Unmarshal(body, &page); err != nil {

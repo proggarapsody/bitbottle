@@ -37,7 +37,7 @@ func TestBackend_Integration_CloudEndToEnd_ListRepos(t *testing.T) {
 	client, err := f.Backend("bitbucket.org")
 	require.NoError(t, err)
 
-	repos, err := client.ListRepos(10)
+	repos, err := client.ListRepos("ws", 10)
 	require.NoError(t, err)
 	require.Len(t, repos, 1)
 
@@ -70,7 +70,7 @@ func TestBackend_Integration_ServerEndToEnd_ListRepos(t *testing.T) {
 	client, err := f.Backend("git.example.com")
 	require.NoError(t, err)
 
-	repos, err := client.ListRepos(10)
+	repos, err := client.ListRepos("", 10)
 	require.NoError(t, err)
 	require.Len(t, repos, 1)
 
@@ -100,7 +100,7 @@ func TestBackend_Integration_CloudErrorContract_Translates4xx(t *testing.T) {
 	client, err := f.Backend("bitbucket.org")
 	require.NoError(t, err)
 
-	_, err = client.ListRepos(10)
+	_, err = client.ListRepos("myworkspace", 10)
 	require.Error(t, err)
 
 	var httpErr *backend.HTTPError
@@ -129,7 +129,7 @@ func TestBackend_Integration_ServerErrorContract_Translates4xx(t *testing.T) {
 	client, err := f.Backend("git.example.com")
 	require.NoError(t, err)
 
-	_, err = client.ListRepos(10)
+	_, err = client.ListRepos("", 10)
 	require.Error(t, err)
 
 	var httpErr *backend.HTTPError
@@ -165,7 +165,7 @@ func TestBackend_Integration_ConfigDrivenDispatch_BackendTypeCloudForcesCloud(t 
 	client, err := f.Backend("git.example.com")
 	require.NoError(t, err)
 
-	_, err = client.ListRepos(10)
+	_, err = client.ListRepos("myworkspace", 10)
 	require.NoError(t, err)
 
 	// Cloud dispatch proven by path containing /repositories (not /repos).
@@ -196,7 +196,7 @@ func TestBackend_Integration_ConfigDrivenDispatch_BackendTypeServerForcesServer(
 	client, err := f.Backend("bitbucket.org")
 	require.NoError(t, err)
 
-	_, err = client.ListRepos(10)
+	_, err = client.ListRepos("", 10)
 	require.NoError(t, err)
 
 	// Server dispatch proven by path ending /repos.
