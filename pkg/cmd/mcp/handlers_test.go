@@ -1711,3 +1711,92 @@ func TestDeleteWebhook_NotFound_ReturnsTypedError(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "not_found")
 }
+
+// ---- rename_repo ----
+
+func TestRenameRepo_CallsBackendWithNewName(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug, gotNew string
+	fake := &testhelpers.FakeClient{
+		RenameRepoFn: func(ns, slug, newName string) (backend.Repository, error) {
+			gotNS, gotSlug, gotNew = ns, slug, newName
+			return backend.Repository{Slug: newName, Name: newName, Namespace: ns}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.renameRepo(context.Background(), makeReq(map[string]any{
+		"project":  "myworkspace",
+		"slug":     "my-service",
+		"new_name": "renamed",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "myworkspace", gotNS)
+	assert.Equal(t, "my-service", gotSlug)
+	assert.Equal(t, "renamed", gotNew)
+	assertJSONContains(t, result, "renamed", "")
+}
+
+func TestRenameRepo_RequiresNewName(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{})
+	result, err := h.renameRepo(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "new_name")
+}
+
+// ---- fork_repo ----
+
+func TestForkRepo_CallsBackendWithTargetWorkspace(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.ForkRepoInput
+	fake := &testhelpers.FakeClient{
+		ForkRepoFn: func(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error) {
+			gotIn = in
+			return backend.Repository{Slug: "my-service", Name: "my-service", Namespace: in.Workspace}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.forkRepo(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"into":    "otherws",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "otherws", gotIn.Workspace)
+	assert.Empty(t, gotIn.Name)
+	assertJSONContains(t, result, "otherws", "")
+}
+
+func TestForkRepo_NameOverride(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.ForkRepoInput
+	fake := &testhelpers.FakeClient{
+		ForkRepoFn: func(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error) {
+			gotIn = in
+			return backend.Repository{Slug: in.Name, Name: in.Name, Namespace: in.Workspace}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	_, err := h.forkRepo(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"into":    "otherws",
+		"name":    "renamed-fork",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "renamed-fork", gotIn.Name)
+}
+
+func TestForkRepo_RequiresInto(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{})
+	result, err := h.forkRepo(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "into")
+}
