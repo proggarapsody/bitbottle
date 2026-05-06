@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.3](https://github.com/proggarapsody/bitbottle/compare/v1.14.2...v1.14.3) (2026-05-06)
+
+
+### Bug Fixes
+
+* repair 4 Cloud API bugs found during manual testing ([1f19891](https://github.com/proggarapsody/bitbottle/commit/1f19891e22d51de934c71d10cd5b1a822e5ec18c))
+
 ## [1.14.2](https://github.com/proggarapsody/bitbottle/compare/v1.14.1...v1.14.2) (2026-05-05)
 
 
