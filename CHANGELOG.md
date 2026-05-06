@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/proggarapsody/bitbottle/compare/v1.15.0...v1.16.0) (2026-05-06)
+
+
+### Features
+
+* scope Q — Repo Extras (rename, fork) + set-default flip ([#83](https://github.com/proggarapsody/bitbottle/issues/83)) ([bab3c93](https://github.com/proggarapsody/bitbottle/commit/bab3c93a9cf861bf021af1354cc4514fbe5a2622))
+
 ## [1.15.0](https://github.com/proggarapsody/bitbottle/compare/v1.14.3...v1.15.0) (2026-05-06)
 
 
