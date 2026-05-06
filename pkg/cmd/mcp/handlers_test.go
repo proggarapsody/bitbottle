@@ -1563,3 +1563,151 @@ func TestDeletePipelineVariable_NotFound_ReturnsTypedError(t *testing.T) {
 	assertErrorResult(t, result, "not_found")
 	_ = errors.New // keep errors import in use
 }
+
+// ---- list_webhooks ----
+
+func TestListWebhooks_PassesProjectAndSlug(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug string
+	fake := &testhelpers.FakeClient{
+		ListWebhooksFn: func(ns, slug string) ([]backend.Webhook, error) {
+			gotNS, gotSlug = ns, slug
+			return []backend.Webhook{
+				{ID: "abc-1", URL: "https://example.com/h", Active: true, Events: []string{"repo:push"}},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listWebhooks(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "myworkspace", gotNS)
+	assert.Equal(t, "my-service", gotSlug)
+	assertJSONContains(t, result, "abc-1", "https://example.com/h")
+}
+
+// ---- get_webhook ----
+
+func TestGetWebhook_PassesID(t *testing.T) {
+	t.Parallel()
+	var gotID string
+	fake := &testhelpers.FakeClient{
+		GetWebhookFn: func(ns, slug, id string) (backend.Webhook, error) {
+			gotID = id
+			return backend.Webhook{ID: id, URL: "https://example.com/h", Active: true}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getWebhook(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"id":      "abc-1",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "abc-1", gotID)
+	assertJSONContains(t, result, "abc-1", "")
+}
+
+// ---- create_webhook ----
+
+func TestCreateWebhook_PassesInputThrough(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.CreateWebhookInput
+	fake := &testhelpers.FakeClient{
+		CreateWebhookFn: func(ns, slug string, in backend.CreateWebhookInput) (backend.Webhook, error) {
+			gotIn = in
+			return backend.Webhook{ID: "new-1", URL: in.URL, Active: in.Active, Events: in.Events}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.createWebhook(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"url":     "https://example.com/hook",
+		"events":  []any{"repo:push", "pullrequest:created"},
+		"secret":  "shhh",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "https://example.com/hook", gotIn.URL)
+	assert.Equal(t, []string{"repo:push", "pullrequest:created"}, gotIn.Events)
+	assert.True(t, gotIn.Active, "active defaults to true")
+	assert.Equal(t, "shhh", gotIn.Secret)
+	assertJSONContains(t, result, "new-1", "")
+}
+
+func TestCreateWebhook_ActiveExplicitFalse(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.CreateWebhookInput
+	fake := &testhelpers.FakeClient{
+		CreateWebhookFn: func(ns, slug string, in backend.CreateWebhookInput) (backend.Webhook, error) {
+			gotIn = in
+			return backend.Webhook{ID: "x", URL: in.URL, Active: in.Active}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	_, err := h.createWebhook(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"url":     "https://example.com/hook",
+		"events":  []any{"repo:push"},
+		"active":  false,
+	}))
+	require.NoError(t, err)
+	assert.False(t, gotIn.Active)
+}
+
+func TestCreateWebhook_EmptyEventsRejected(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.createWebhook(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"url":     "https://example.com/hook",
+		"events":  []any{},
+	}))
+	require.NoError(t, err)
+	text := extractText(t, result)
+	assert.Contains(t, text, "events")
+}
+
+// ---- delete_webhook ----
+
+func TestDeleteWebhook_CallsBackendByID(t *testing.T) {
+	t.Parallel()
+	var gotID string
+	fake := &testhelpers.FakeClient{
+		DeleteWebhookFn: func(ns, slug, id string) error {
+			gotID = id
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deleteWebhook(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"id":      "abc-1",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "abc-1", gotID)
+	assertJSONContains(t, result, "deleted", "abc-1")
+}
+
+func TestDeleteWebhook_NotFound_ReturnsTypedError(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		DeleteWebhookFn: func(ns, slug, id string) error {
+			return &backend.DomainError{Kind: backend.ErrNotFound, Message: "webhook not found"}
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deleteWebhook(context.Background(), makeReq(map[string]any{
+		"project": "myworkspace",
+		"slug":    "my-service",
+		"id":      "ghost",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "not_found")
+}

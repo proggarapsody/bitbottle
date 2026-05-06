@@ -541,4 +541,67 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.deletePipelineVariable,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_webhooks",
+			mcplib.WithDescription("List repository webhooks"),
+			optHostname,
+			reqProject,
+			reqSlug,
+		),
+		h.listWebhooks,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("get_webhook",
+			mcplib.WithDescription("Get a single webhook by ID"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("id",
+				mcplib.Description("Webhook ID"),
+				mcplib.Required(),
+			),
+		),
+		h.getWebhook,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("create_webhook",
+			mcplib.WithDescription("Create a repository webhook"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("url",
+				mcplib.Description("Webhook delivery URL"),
+				mcplib.Required(),
+			),
+			mcplib.WithArray("events",
+				mcplib.Description("Event keys the webhook subscribes to"),
+				mcplib.WithStringItems(),
+				mcplib.Required(),
+			),
+			mcplib.WithBoolean("active",
+				mcplib.Description("Whether the webhook is active on creation (defaults to true)"),
+			),
+			mcplib.WithString("secret",
+				mcplib.Description("Shared secret for HMAC signing of delivery payloads (optional)"),
+			),
+		),
+		h.createWebhook,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("delete_webhook",
+			mcplib.WithDescription("Delete a webhook by ID (destructive)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("id",
+				mcplib.Description("Webhook ID to delete"),
+				mcplib.Required(),
+			),
+		),
+		h.deleteWebhook,
+	)
 }
