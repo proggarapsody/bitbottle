@@ -129,10 +129,10 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `webhook list` | ❌ | |
-| `webhook view` | ❌ | |
-| `webhook create` | ❌ | |
-| `webhook delete` | ❌ | |
+| `webhook list` | ✅ | Both backends |
+| `webhook view` | ✅ | Both backends |
+| `webhook create` | ✅ | `--url`, `--events` required; `--secret`, `--active`, `--secret=-` for stdin, `--secret=@PATH` for file |
+| `webhook delete` | ✅ | `--confirm` required when not interactive |
 
 ### Config
 
@@ -195,7 +195,7 @@ Current state of every command area against gh feature parity:
 | Q | **Repo Extras** | `repo fork`, `repo rename`, `repo archive`, `repo set-default` | Both / Cloud | 2 | 🔲 |
 | F | **Commits** | `commit log`, `commit view` | Both | 1 | ✅ |
 | H | **Pipeline Depth** | `pipeline steps`, `pipeline logs`, `pipeline variable *` | Cloud | 1 | ✅ |
-| I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | 🔲 |
+| I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | ✅ |
 | J | **PR Comments** | `pr comment list`, `pr comment add` | Both | 2 | ✅ |
 | K | **Commit Statuses** | `commit status` | Both | 2 | ✅ |
 | T | **Output DX** | pager (`$PAGER`), color output | N/A | DX | 🔲 |

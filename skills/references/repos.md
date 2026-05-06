@@ -85,6 +85,32 @@ to feed a secret value via stdin; never put it on the command line.
 POST. No separate `update` command. Same for `delete`: takes the
 user-friendly KEY, looks up the UUID internally.
 
+## Webhooks (both backends)
+
+```bash
+bitbottle webhook list   PROJ/repo [--limit N]
+bitbottle webhook view   PROJ/repo ID
+bitbottle webhook create PROJ/repo --url URL --events EV1,EV2[,…] [--secret SECRET|-|@PATH] [--active=true|false]
+bitbottle webhook delete PROJ/repo ID [--confirm]            # destructive
+```
+
+`--events` is a comma-separated list. Trim/dedupe is applied. Whitespace-only
+input is rejected with a clear error.
+
+**Event keys are backend-specific.** Cloud uses dotted-style — `repo:push`,
+`pullrequest:created`, `pullrequest:approved`. Server/DC uses
+`repo:refs_changed`, `pr:opened`, `pr:merged`. Passing a Cloud key to a Server
+host (or vice versa) will surface as a backend validation error.
+
+**`--secret`:** the raw string by default. `-` reads from stdin (recommended
+for keeping secrets out of shell history); `@PATH` reads from a file. A
+trailing newline from stdin/file is stripped. Secrets are write-only — neither
+backend ever returns them on read.
+
+**ID shape differs:** Cloud returns UUIDs (with curly-brace internal form
+that `bitbottle` strips); Server returns numeric IDs. Both surface as
+strings in the `id` field of `--json` output.
+
 ## Other
 
 ```bash
@@ -101,5 +127,5 @@ bitbottle completion --shell bash|zsh|fish|powershell
 
 ## Destructive ops
 
-`repo delete`, `branch delete`, `tag delete` follow the canonical
-destructive-op rule in SKILL.md (safety rule 2).
+`repo delete`, `branch delete`, `tag delete`, `webhook delete` follow the
+canonical destructive-op rule in SKILL.md (safety rule 2).

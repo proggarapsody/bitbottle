@@ -21,7 +21,7 @@ not sure about.**
 |---|---|
 | Auth, hosts.yml, env vars, multi-host setup | `references/auth.md` |
 | PR lifecycle (list/view/create/merge/approve/comment/…) | `references/pr.md` |
-| Repos, branches, tags, commits, clone | `references/repos.md` |
+| Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 
 When the user's task spans two areas, load both. Don't load all of
@@ -33,7 +33,7 @@ them speculatively.
    the `BB_TOKEN` env var. Never put a PAT/App Password on the
    command line — it lands in shell history.
 2. **Confirm before destructive ops.** `repo delete`, `branch delete`,
-   `tag delete`, `pr decline`, `pr merge` are not undoable. Before
+   `tag delete`, `webhook delete`, `pr decline`, `pr merge` are not undoable. Before
    running, show the user the exact command, the resolved host and
    `PROJECT/REPO`, the PR ID / branch / tag name, then wait for
    explicit confirmation. Reference files reuse this rule — don't
