@@ -21,6 +21,12 @@ func TestRender_Catalogue(t *testing.T) {
 	cases := []struct {
 		name string
 		code backend.ErrorCode
+		// optional context fields stamped onto the DomainError so codes
+		// whose templates reference {{.ID}} / {{.Resource}} / {{.Feature}}
+		// can be exercised end-to-end.
+		id       string
+		resource string
+		feature  string
 		// substrings that MUST appear on stderr in the order listed
 		want []string
 	}{
@@ -48,14 +54,107 @@ func TestRender_Catalogue(t *testing.T) {
 				"lacks write scope",
 			},
 		},
+		{
+			name:     "repo.not_found",
+			code:     backend.CodeRepoNotFound,
+			id:       "ws/repo",
+			resource: "repository",
+			want: []string{
+				"Repository ws/repo not found on git.example.com",
+				"Check the slug casing",
+			},
+		},
+		{
+			name:     "pr.not_found",
+			code:     backend.CodePRNotFound,
+			id:       "42",
+			resource: "pull-request",
+			want: []string{
+				"Pull request #42 not found on git.example.com",
+				"`bitbottle pr list`",
+			},
+		},
+		{
+			name:     "pr.merge.conflict",
+			code:     backend.CodePRMergeConflict,
+			id:       "42",
+			resource: "pull-request",
+			want: []string{
+				"Pull request #42 cannot be merged",
+				"Resolve conflicts locally",
+			},
+		},
+		{
+			name:     "pr.merge.behind",
+			code:     backend.CodePRMergeBehind,
+			id:       "42",
+			resource: "pull-request",
+			want: []string{
+				"behind its target branch on git.example.com",
+				"Update the source branch",
+			},
+		},
+		{
+			name: "pr.create.duplicate_branch",
+			code: backend.CodePRCreateDuplicateBranch,
+			want: []string{
+				"A pull request for these branches already exists",
+				"close it before creating",
+			},
+		},
+		{
+			name: "pr.reviewer.unknown",
+			code: backend.CodePRReviewerUnknown,
+			want: []string{
+				"One or more reviewers are not members of git.example.com",
+				"Check the slug spelling",
+			},
+		},
+		{
+			name: "branch.protected",
+			code: backend.CodeBranchProtected,
+			want: []string{
+				"Branch is protected on git.example.com",
+				"`bitbottle branch protect list`",
+			},
+		},
+		{
+			name:    "host.unsupported",
+			code:    backend.CodeHostUnsupported,
+			feature: "fork",
+			want: []string{
+				"`fork` is not available on git.example.com",
+				"different Bitbucket flavour",
+			},
+		},
+		{
+			name: "network.tls_unknown_authority",
+			code: backend.CodeNetworkTLSUnknownAuthority,
+			want: []string{
+				"TLS verification failed for git.example.com",
+				"`-k`",
+				"`skip_tls_verify: true`",
+			},
+		},
+		{
+			name: "transport.timeout",
+			code: backend.CodeTransportTimeout,
+			want: []string{
+				"Request to git.example.com timed out",
+				"`--debug`",
+			},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			ios := iostreams.Test()
 			errfmt.Render(ios, &backend.DomainError{
-				Code:    tc.code,
-				Host:    host,
-				Message: "underlying transport detail",
+				Code:     tc.code,
+				Host:     host,
+				ID:       tc.id,
+				Resource: tc.resource,
+				Feature:  tc.feature,
+				Message:  "underlying transport detail",
 			})
 			got := ios.ErrOut.(*bytes.Buffer).String()
 			pos := 0

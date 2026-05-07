@@ -2,8 +2,11 @@ package cloud
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
@@ -75,7 +78,7 @@ func (c *Client) GetPR(ns, slug string, id int) (backend.PullRequest, error) {
 	var w wireCloudPR
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
 	if err := c.getJSON(path, &w); err != nil {
-		return backend.PullRequest{}, err
+		return backend.PullRequest{}, stampPRNotFound(err, id)
 	}
 	return w.toDomain(), nil
 }
@@ -118,7 +121,7 @@ func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.Pu
 	var w wireCloudPR
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests", ns, slug)
 	if err := c.postJSON(path, body, &w); err != nil {
-		return backend.PullRequest{}, err
+		return backend.PullRequest{}, stampPRCreate(err)
 	}
 	return w.toDomain(), nil
 }
@@ -134,7 +137,7 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 	var w wireCloudPR
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/merge", ns, slug, id)
 	if err := c.postJSON(path, body, &w); err != nil {
-		return backend.PullRequest{}, err
+		return backend.PullRequest{}, stampPRMerge(err, id)
 	}
 	return w.toDomain(), nil
 }
@@ -157,7 +160,67 @@ func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 
 func (c *Client) DeleteBranch(ns, slug, branch string) error {
 	path := fmt.Sprintf("/repositories/%s/%s/refs/branches/%s", ns, slug, url.PathEscape(branch))
-	return c.delete(path)
+	return stampBranchProtected(c.delete(path))
+}
+
+// stampPRNotFound stamps a 404-on-PR error with CodePRNotFound + the PR id.
+// Other statuses pass through.
+func stampPRNotFound(err error, id int) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 404 {
+		return err
+	}
+	return backend.StampCode(err, backend.CodePRNotFound, "pull-request", strconv.Itoa(id), "")
+}
+
+// stampPRMerge inspects the server message on a 409 to distinguish
+// "merge conflict" (resolve files locally) from "branch behind" (update
+// from base). Falls back to CodePRMergeConflict when the message shape is
+// ambiguous — that's the more common case on Cloud and the hint is still
+// directionally correct ("retry the merge" reads sensibly either way).
+func stampPRMerge(err error, id int) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 409 {
+		return err
+	}
+	idStr := strconv.Itoa(id)
+	msg := strings.ToLower(de.Message)
+	switch {
+	case strings.Contains(msg, "behind"):
+		return backend.StampCode(err, backend.CodePRMergeBehind, "pull-request", idStr, "")
+	default:
+		return backend.StampCode(err, backend.CodePRMergeConflict, "pull-request", idStr, "")
+	}
+}
+
+// stampPRCreate distinguishes 400 reviewer-shape errors from 409 duplicate-
+// branch conflicts at the create endpoint. Other statuses pass through.
+func stampPRCreate(err error) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) {
+		return err
+	}
+	msg := strings.ToLower(de.Message)
+	switch de.HTTPStatus() {
+	case 409:
+		return backend.StampCode(err, backend.CodePRCreateDuplicateBranch, "", "", "")
+	case 400:
+		if strings.Contains(msg, "reviewer") || strings.Contains(msg, "user with username") {
+			return backend.StampCode(err, backend.CodePRReviewerUnknown, "", "", "")
+		}
+	}
+	return err
+}
+
+// stampBranchProtected promotes a 403 on branch-write endpoints (delete,
+// push) to CodeBranchProtected so the renderer can point users at
+// `branch protect list`. Other 403s remain CodePermWriteRequired-shaped.
+func stampBranchProtected(err error) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 403 {
+		return err
+	}
+	return backend.StampCode(err, backend.CodeBranchProtected, "", "", "")
 }
 
 func (c *Client) GetCurrentUser() (backend.User, error) {

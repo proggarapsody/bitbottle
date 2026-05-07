@@ -204,7 +204,7 @@ Current state of every command area against gh feature parity:
 | N | **Workspace / Projects** | `workspace list`, `project list` | Cloud | 3 | 🔲 |
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | 🔲 |
 | BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
-| EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | 🟡 (foundation + auth cluster shipped; repo / pr / branch / network clusters pending) |
+| EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
 
 ---
 
@@ -788,14 +788,10 @@ type DomainError struct {
 - One PR per cluster of codes (auth, repo, pr, branch, network) — each is a thin error-mapping change with snapshot-style tests.
 - Final PR wires `errfmt.Render` into root and adds golden-file tests.
 
-**Status (2026-05-07)**:
+**Status**:
 
 - ✅ EX1 — foundation + `auth` cluster: `pkg/errfmt/` with code catalogue, `Render` delegated from `cmdutil.ExplainError`, `DomainError.Code` field, `auth.no_token` / `auth.invalid_token` / `perm.write_required` codes, classifier auto-attaches `auth.invalid_token` on 401.
-- 🔲 EX2 — `repo` cluster: `repo.not_found`, `host.unsupported` (rename of existing `ErrUnsupportedOnHost` path).
-- 🔲 EX3 — `pr` cluster: `pr.not_found`, `pr.merge.conflict`, `pr.merge.behind`, `pr.create.duplicate_branch`, `pr.reviewer.unknown`.
-- 🔲 EX4 — `branch` cluster: `branch.protected`.
-- 🔲 EX5 — `network` cluster: `network.tls_unknown_authority`, `transport.timeout`. These are pre-classify codes attached at the httpx layer before HTTPError exists.
-- 🔲 EX6 — MCP error UX: `pkg/cmd/mcp/{handlers,tools,mcp}.go` doesn't call `errfmt.Render`; MCP clients receive raw `err.Error()` strings via the JSON-RPC envelope. Wire a structured variant returning `{title, cause, hint, code}` so AI-agent integrations match CLI UX.
+- ✅ EX2-EX6 — all remaining clusters: `repo.not_found`, `pr.not_found`, `pr.merge.conflict`, `pr.merge.behind`, `pr.create.duplicate_branch`, `pr.reviewer.unknown`, `branch.protected`, `host.unsupported`, `network.tls_unknown_authority`, `transport.timeout`. Transport-layer classification at `httpx.Transport.do()` via `backend.ClassifyTransportError`. MCP envelope carries dotted codes + hints from the catalogue (breaking change to `errorEnvelope.code` shape: was kind-based strings, now matches `backend.ErrorCode`).
 
 **Definition of Done**:
 

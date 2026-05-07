@@ -43,6 +43,28 @@ const (
 	CodeAuthNoToken       ErrorCode = "auth.no_token"
 	CodeAuthInvalidToken  ErrorCode = "auth.invalid_token"
 	CodePermWriteRequired ErrorCode = "perm.write_required"
+
+	// repo cluster — repository-shaped failures
+	CodeRepoNotFound ErrorCode = "repo.not_found"
+
+	// pr cluster — pull-request lifecycle failures
+	CodePRNotFound              ErrorCode = "pr.not_found"
+	CodePRMergeConflict         ErrorCode = "pr.merge.conflict"
+	CodePRMergeBehind           ErrorCode = "pr.merge.behind"
+	CodePRCreateDuplicateBranch ErrorCode = "pr.create.duplicate_branch"
+	CodePRReviewerUnknown       ErrorCode = "pr.reviewer.unknown"
+
+	// branch cluster — branch-protection / write-side failures
+	CodeBranchProtected ErrorCode = "branch.protected"
+
+	// host cluster — feature unavailable on the targeted Bitbucket flavour
+	CodeHostUnsupported ErrorCode = "host.unsupported"
+
+	// network cluster — pre-classify codes attached at the transport
+	// layer before an HTTPError exists. ClassifyTransportError stamps
+	// these.
+	CodeNetworkTLSUnknownAuthority ErrorCode = "network.tls_unknown_authority"
+	CodeTransportTimeout           ErrorCode = "transport.timeout"
 )
 
 // AllCodes lists every published ErrorCode. The errfmt test suite iterates
@@ -57,6 +79,16 @@ var AllCodes = []ErrorCode{
 	CodeAuthNoToken,
 	CodeAuthInvalidToken,
 	CodePermWriteRequired,
+	CodeRepoNotFound,
+	CodePRNotFound,
+	CodePRMergeConflict,
+	CodePRMergeBehind,
+	CodePRCreateDuplicateBranch,
+	CodePRReviewerUnknown,
+	CodeBranchProtected,
+	CodeHostUnsupported,
+	CodeNetworkTLSUnknownAuthority,
+	CodeTransportTimeout,
 }
 
 // DomainError wraps an underlying cause with structured context for renderers
@@ -104,6 +136,56 @@ func (e *DomainError) Unwrap() error { return e.Cause }
 // Unwrap by errors.Is's default walk — intentionally not duplicated here.
 func (e *DomainError) Is(target error) bool {
 	return e.Kind != nil && errors.Is(e.Kind, target)
+}
+
+// HTTPStatus returns the HTTP status code that produced this DomainError, or
+// 0 if the underlying cause is not an *HTTPError. Useful for adapters that
+// need to refine call-site Code stamping based on status (e.g. 404 → not
+// found, 409 → conflict). Walks the unwrap chain via errors.As.
+func (e *DomainError) HTTPStatus() int {
+	if e == nil {
+		return 0
+	}
+	var he *HTTPError
+	if errors.As(e.Cause, &he) {
+		return he.StatusCode
+	}
+	return 0
+}
+
+// StampCode is an adapter convenience: when err is a *DomainError, sets the
+// fields on a copy and returns the copy as an error; otherwise returns err
+// unchanged. This lets call sites annotate post-classification errors with
+// operation-specific codes (e.g. pr.merge.conflict vs the bare ErrConflict
+// kind) without per-call boilerplate.
+//
+// Empty arguments are skipped so a caller can stamp only Code while leaving
+// Resource/ID/Feature alone, or fill in just Resource+ID for a not-found path.
+//
+// The returned error preserves Kind, Host, Cause, and Message — only the
+// specified fields are overwritten.
+func StampCode(err error, code ErrorCode, resource, id, feature string) error {
+	if err == nil {
+		return nil
+	}
+	var de *DomainError
+	if !errors.As(err, &de) {
+		return err
+	}
+	out := *de
+	if code != "" {
+		out.Code = code
+	}
+	if resource != "" {
+		out.Resource = resource
+	}
+	if id != "" {
+		out.ID = id
+	}
+	if feature != "" {
+		out.Feature = feature
+	}
+	return &out
 }
 
 // ClassifyHTTPError translates an HTTPError into a DomainError, picking a
