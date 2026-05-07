@@ -26,6 +26,9 @@ type Client struct {
 	// REST root Bitbucket Server uses for matching the per-repo default-
 	// reviewers conditions during PR creation.
 	defaultReviewersHTTP *httpx.Transport
+	// branchProtectHTTP targets /rest/branch-permissions/2.0, the separate
+	// REST root Bitbucket Server uses for branch-restriction CRUD.
+	branchProtectHTTP *httpx.Transport
 	// host is the scheme+host extracted from baseURL, used to construct WebURLs
 	// for resources (like commits) that the API does not return a link for.
 	host string
@@ -64,6 +67,14 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 		defaultReviewersHTTP: httpx.New(
 			httpClient,
 			host+"/rest/default-reviewers/1.0",
+			auth,
+			decodeErrorMessage,
+			httpx.ContentTypeAlwaysWrite,
+			serverPaginator{},
+		).UseDomainErrors(host),
+		branchProtectHTTP: httpx.New(
+			httpClient,
+			host+"/rest/branch-permissions/2.0",
 			auth,
 			decodeErrorMessage,
 			httpx.ContentTypeAlwaysWrite,

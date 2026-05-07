@@ -88,6 +88,11 @@ type FakeClient struct {
 
 	// Default reviewers (Server-only; satisfies backend.DefaultReviewersResolver when set)
 	DefaultReviewersFn func(ns, slug, fromBranch, toBranch string) ([]backend.User, error)
+
+	// Branch protection (Server-only; satisfies backend.BranchProtector when set)
+	ListBranchProtectionsFn  func(ns, slug string, limit int) ([]backend.BranchProtection, error)
+	CreateBranchProtectionFn func(ns, slug string, in backend.CreateBranchProtectionInput) (backend.BranchProtection, error)
+	DeleteBranchProtectionFn func(ns, slug string, id int) error
 }
 
 // Compile-time interface check.
@@ -563,4 +568,34 @@ func (c *FakeClient) DefaultReviewers(ns, slug, fromBranch, toBranch string) ([]
 		return c.DefaultReviewersFn(ns, slug, fromBranch, toBranch)
 	}
 	return nil, nil
+}
+
+func (c *FakeClient) ListBranchProtections(ns, slug string, limit int) ([]backend.BranchProtection, error) {
+	if c.ListBranchProtectionsFn != nil {
+		return c.ListBranchProtectionsFn(ns, slug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListBranchProtections; set ListBranchProtectionsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateBranchProtection(ns, slug string, in backend.CreateBranchProtectionInput) (backend.BranchProtection, error) {
+	if c.CreateBranchProtectionFn != nil {
+		return c.CreateBranchProtectionFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateBranchProtection; set CreateBranchProtectionFn in your test")
+	}
+	return backend.BranchProtection{}, nil
+}
+
+func (c *FakeClient) DeleteBranchProtection(ns, slug string, id int) error {
+	if c.DeleteBranchProtectionFn != nil {
+		return c.DeleteBranchProtectionFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteBranchProtection; set DeleteBranchProtectionFn in your test")
+	}
+	return nil
 }

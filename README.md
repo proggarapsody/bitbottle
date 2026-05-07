@@ -130,6 +130,24 @@ bitbottle branch create MYPROJ/my-service feature/x --start-at main
 bitbottle branch delete MYPROJ/my-service feature/x
 ```
 
+#### Branch protection _(Bitbucket Server / DC only)_
+
+Branch restrictions on Bitbucket Server / DC. Cloud has a different model
+that isn't wired up yet — invocations against Cloud return a typed
+"unsupported on host" error.
+
+```bash
+bitbottle branch protect list   MYPROJ/my-service
+bitbottle branch protect create MYPROJ/my-service \
+  --type fast-forward-only --branch main \
+  --user alice --group devs
+bitbottle branch protect delete MYPROJ/my-service 42
+```
+
+`--type` accepts `read-only`, `no-deletes`, `fast-forward-only`, or
+`pull-request-only`. Pass exactly one of `--branch NAME` (literal branch)
+or `--pattern GLOB` (e.g. `release/*`).
+
 ### Pipelines _(Cloud only)_
 
 ```bash
