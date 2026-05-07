@@ -17,6 +17,12 @@ type Options struct {
 }
 
 // Repository is the domain representation of a Bitbucket repository.
+//
+// ID is the backend's numeric identifier (Server / Data Center). Cloud
+// uses opaque UUIDs surfaced through other channels; for Cloud repos
+// this field stays zero. ID is exposed so the BBS default-reviewers
+// endpoint (which requires source/target repo IDs as query params) has
+// what it needs without an adapter-internal cache.
 type Repository struct {
 	Slug        string
 	Name        string
@@ -24,6 +30,7 @@ type Repository struct {
 	SCM         string
 	WebURL      string
 	Description string
+	ID          int
 }
 
 // PullRequest is the domain representation of a Bitbucket pull request.
@@ -62,12 +69,20 @@ type ForkRepoInput struct {
 }
 
 // CreatePRInput carries the parameters for creating a pull request.
+//
+// Reviewers are user slugs (Server) or usernames / account IDs (Cloud).
+// Both adapters serialise the same logical list into their backend's wire
+// shape. A nil or empty slice creates a PR with no reviewers — Bitbucket
+// does NOT auto-apply repo "default reviewers" on the create endpoint, so
+// callers that want that behaviour must fetch them via
+// DefaultReviewersResolver and merge the result here.
 type CreatePRInput struct {
 	Title       string
 	Description string
 	Draft       bool
 	FromBranch  string
 	ToBranch    string
+	Reviewers   []string
 }
 
 // MergePRInput carries the parameters for merging a pull request.
