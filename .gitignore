@@ -16,6 +16,10 @@
 *.swp
 /2026-04-24-*.md
 
+# Agent tooling — local-only, defers to docs/workflows/ and AGENTS.md
+.claude/
+.full-review/
+
 # Git worktrees
 .worktrees/
 

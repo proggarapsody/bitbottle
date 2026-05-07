@@ -6,6 +6,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full workflow, code style, and testin
 
 `reference/gh/` contains a shallow clone of [github.com/cli/cli](https://github.com/cli/cli). When in doubt about CLI design patterns (flag naming, config structs, auth flows), check how `gh` does it there first.
 
+## Workflow
+
+End-to-end procedures live in [`docs/workflows/`](docs/workflows/) and are tool-neutral — humans, Codex, Cursor, Aider, and Claude all follow them.
+
+- [`docs/workflows/iteration-cycle.md`](docs/workflows/iteration-cycle.md) — pick a scope → spec → TDD → docs → pre-merge-check → PR → release → close PRD → manual tests. The full loop.
+- [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — the merge gate (sections 0–8). Must pass before any branch lands on `main`.
+
+Tool-specific auto-trigger wrappers (e.g. `.claude/skills/`) defer to these docs and stay local-only — they're not committed.
+
 ## Key rules for AI agents
 
 - **Branch + commits:** `feature/*` / `fix/*` / `docs/*` branch → PR to `main`. Never push directly to `main`. Use Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`).
@@ -29,7 +38,8 @@ internal/           — config, envvars, bbinstance, keyring, etc.
 pkg/cmd/            — Cobra commands (one package per noun)
 pkg/cmd/mcp/        — MCP stdio server (tools + handlers)
 skills/SKILL.md     — Claude skill file for bitbottle (all commands in one file)
-docs/               — manual test guides, design notes
+docs/manual-tests/  — manual test guides
+docs/workflows/     — contributor + agent workflow checklists (pre-merge-check, iteration-cycle)
 packages/mcp-npm/   — npm wrapper (downloads Go binary on postinstall, bundles README)
 ```
 
