@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -60,9 +61,20 @@ func (c *Client) ListRepos(ns string, limit int) ([]backend.Repository, error) {
 func (c *Client) GetRepo(ns, slug string) (backend.Repository, error) {
 	var w wireCloudRepo
 	if err := c.getJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), &w); err != nil {
-		return backend.Repository{}, err
+		return backend.Repository{}, stampRepoNotFound(err, ns, slug)
 	}
 	return w.toDomain(), nil
+}
+
+// stampRepoNotFound annotates a 404-on-repo error with CodeRepoNotFound +
+// Resource/ID. Other statuses pass through so adapter errors keep their
+// generic classification (e.g. 401 → CodeAuthInvalidToken).
+func stampRepoNotFound(err error, ns, slug string) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 404 {
+		return err
+	}
+	return backend.StampCode(err, backend.CodeRepoNotFound, "repository", ns+"/"+slug, "")
 }
 
 type wireCloudCreateRepo struct {

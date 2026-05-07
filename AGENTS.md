@@ -49,6 +49,8 @@ packages/mcp-npm/   — npm wrapper (downloads Go binary on postinstall, bundles
 
 User-facing error rendering (titles + hints) lives in `pkg/errfmt`. Attach a `backend.ErrorCode` at the classification layer (and append it to `backend.AllCodes`); add the matching catalogue entry in `pkg/errfmt/errfmt.go`. Never format prose in `cmd/`.
 
+Adapter call sites stamp call-site-specific codes via `backend.StampCode(err, code, resource, id, feature)` after the generic `ClassifyHTTPError` runs — used for `repo.not_found`, `pr.not_found`, `pr.merge.{conflict,behind}`, `pr.create.duplicate_branch`, `pr.reviewer.unknown`, `branch.protected`. Inspect `de.HTTPStatus()` to decide whether to stamp. Transport-layer errors (TLS, timeout) classify at `httpx.Transport.do()` via `backend.ClassifyTransportError` — no adapter wiring required. The MCP error envelope (`pkg/cmd/mcp/handlers.go`) surfaces the dotted code + hints from `errfmt.HintsFor(de)`.
+
 ## ContentTypePolicy
 
 Injected into `httpx.Transport`:

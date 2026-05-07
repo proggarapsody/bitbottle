@@ -48,6 +48,46 @@ var catalogue = map[backend.ErrorCode]entry{
 		title: "Permission denied on {{.Host}}.",
 		hints: []string{"Your token lacks write scope on this repository. Reissue it with the required permissions."},
 	},
+	backend.CodeRepoNotFound: {
+		title: "Repository {{.ID}} not found on {{.Host}}.",
+		hints: []string{"Check the slug casing. On Bitbucket Server use the project key, not the project name."},
+	},
+	backend.CodePRNotFound: {
+		title: "Pull request #{{.ID}} not found on {{.Host}}.",
+		hints: []string{"It may have been deleted. Run `bitbottle pr list` to see open PRs."},
+	},
+	backend.CodePRMergeConflict: {
+		title: "Pull request #{{.ID}} cannot be merged: conflicts with the target branch on {{.Host}}.",
+		hints: []string{"Resolve conflicts locally and push, then retry the merge."},
+	},
+	backend.CodePRMergeBehind: {
+		title: "Pull request #{{.ID}} is behind its target branch on {{.Host}}.",
+		hints: []string{"Update the source branch from base and push, then retry the merge."},
+	},
+	backend.CodePRCreateDuplicateBranch: {
+		title: "A pull request for these branches already exists on {{.Host}}.",
+		hints: []string{"Run `bitbottle pr list` to find it, or close it before creating a new one."},
+	},
+	backend.CodePRReviewerUnknown: {
+		title: "One or more reviewers are not members of {{.Host}}.",
+		hints: []string{"Check the slug spelling; users must already exist on the host."},
+	},
+	backend.CodeBranchProtected: {
+		title: "Branch is protected on {{.Host}}.",
+		hints: []string{"Ask an admin, or run `bitbottle branch protect list` to inspect the rules."},
+	},
+	backend.CodeHostUnsupported: {
+		title: "`{{.Feature}}` is not available on {{.Host}}.",
+		hints: []string{"This command targets a different Bitbucket flavour. Run `bitbottle config get backend_type` to verify the host."},
+	},
+	backend.CodeNetworkTLSUnknownAuthority: {
+		title: "TLS verification failed for {{.Host}}.",
+		hints: []string{"For self-signed CAs, pass `-k` or set `skip_tls_verify: true` in your host config."},
+	},
+	backend.CodeTransportTimeout: {
+		title: "Request to {{.Host}} timed out.",
+		hints: []string{"Network or VPN may be slow or down. Retry; pass `--debug` for transport details."},
+	},
 }
 
 // Render writes a friendly error explanation to ios.ErrOut.
@@ -127,14 +167,47 @@ func renderByKind(ios *iostreams.IOStreams, de *backend.DomainError) bool {
 	return true
 }
 
-// expand substitutes template placeholders with values from de. Only
-// {{.Host}} is recognised today — extend this function before adding
-// new tokens to catalogue entries. The host is sanitised here because
-// it originates from local config / git remote URLs / -R flag and
-// could carry escape sequences from a hostile .git/config; see
-// sanitise for the threat model.
+// HintsFor returns the catalogue's hint strings for de.Code with
+// template placeholders ({{.Host}}, {{.ID}}, {{.Resource}}, {{.Feature}})
+// expanded against the DomainError. Returns nil when de is nil, when the
+// Code is empty, or when no catalogue entry exists for the code.
+//
+// MCP and other structured-output surfaces use this to populate the
+// "hints" field of their error envelope so clients see the same
+// remediation steps as CLI users without bundling their own catalogue.
+func HintsFor(de *backend.DomainError) []string {
+	if de == nil || de.Code == "" {
+		return nil
+	}
+	e, ok := catalogue[de.Code]
+	if !ok || len(e.hints) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(e.hints))
+	for _, h := range e.hints {
+		out = append(out, expand(h, de))
+	}
+	return out
+}
+
+// expand substitutes template placeholders with values from de.
+// Supported placeholders: {{.Host}}, {{.ID}}, {{.Resource}}, {{.Feature}}.
+// Add new placeholders here before referencing them in catalogue entries.
+//
+// Every substituted value is sanitised because it may originate from
+// untrusted sources: Host comes from local config / git remote URLs /
+// the -R flag (could carry escapes from a hostile .git/config), and
+// ID/Resource/Feature can flow from server response bodies (a hostile
+// or compromised Bitbucket Server could embed CSI / OSC sequences).
+// See sanitise for the threat model (CWE-150 / CWE-117).
 func expand(tmpl string, de *backend.DomainError) string {
-	return strings.ReplaceAll(tmpl, "{{.Host}}", sanitise(de.Host))
+	r := strings.NewReplacer(
+		"{{.Host}}", sanitise(de.Host),
+		"{{.ID}}", sanitise(de.ID),
+		"{{.Resource}}", sanitise(de.Resource),
+		"{{.Feature}}", sanitise(de.Feature),
+	)
+	return r.Replace(tmpl)
 }
 
 // sanitise strips bytes that would let a hostile server or local config

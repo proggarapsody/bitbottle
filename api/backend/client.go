@@ -219,6 +219,7 @@ func AsPipelineClient(c Client, host string) (PipelineClient, error) {
 	if !ok {
 		return nil, &DomainError{
 			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
 			Host:    host,
 			Feature: string(FeaturePipelines),
 			Message: fmt.Sprintf("pipelines are not supported on %s (Bitbucket Cloud only)", host),
@@ -235,6 +236,7 @@ func AsRepoForker(c Client, host string) (RepoForker, error) {
 	if !ok {
 		return nil, &DomainError{
 			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
 			Host:    host,
 			Feature: string(FeatureRepoFork),
 			Message: fmt.Sprintf("repo fork is not supported on %s (Bitbucket Cloud only)", host),
@@ -264,6 +266,7 @@ func AsWorkspaceClient(c Client, host string) (WorkspaceClient, error) {
 	if !ok {
 		return nil, &DomainError{
 			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
 			Host:    host,
 			Feature: string(FeatureWorkspaces),
 			Message: fmt.Sprintf("workspaces are not supported on %s (Bitbucket Cloud only)", host),
@@ -292,6 +295,7 @@ func AsIssueClient(c Client, host string) (IssueClient, error) {
 	if !ok {
 		return nil, &DomainError{
 			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
 			Host:    host,
 			Feature: string(FeatureIssues),
 			Message: fmt.Sprintf("issues are not supported on %s (Bitbucket Cloud only)", host),
@@ -337,6 +341,7 @@ func AsBranchProtector(c Client, host string) (BranchProtector, error) {
 	if !ok {
 		return nil, &DomainError{
 			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
 			Host:    host,
 			Feature: string(FeatureBranchProtect),
 			Message: fmt.Sprintf("branch protection is not supported on %s (Bitbucket Server / Data Center only)", host),
@@ -354,6 +359,7 @@ func AsDefaultReviewersResolver(c Client, host string) (DefaultReviewersResolver
 	if !ok {
 		return nil, &DomainError{
 			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
 			Host:    host,
 			Feature: string(FeatureDefaultReviewers),
 			Message: fmt.Sprintf("default reviewers lookup is not supported on %s (Bitbucket Server / Data Center only)", host),

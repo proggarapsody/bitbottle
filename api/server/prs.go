@@ -2,7 +2,9 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -85,7 +87,7 @@ func (c *Client) GetPR(ns, slug string, id int) (backend.PullRequest, error) {
 	var w wirePR
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.getJSON(path, &w); err != nil {
-		return backend.PullRequest{}, err
+		return backend.PullRequest{}, stampPRNotFound(err, id)
 	}
 	return w.toDomain(), nil
 }
@@ -128,7 +130,7 @@ func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.Pu
 	var w wirePR
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests", ns, slug)
 	if err := c.postJSON(path, body, &w); err != nil {
-		return backend.PullRequest{}, err
+		return backend.PullRequest{}, stampPRCreate(err)
 	}
 	return w.toDomain(), nil
 }
@@ -146,7 +148,7 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 	var current wirePR
 	prPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.getJSON(prPath, &current); err != nil {
-		return backend.PullRequest{}, err
+		return backend.PullRequest{}, stampPRNotFound(err, id)
 	}
 	body := wireMergePRInput{
 		Version:  current.Version,
@@ -155,7 +157,7 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 	}
 	var w wirePR
 	if err := c.postJSON(prPath+"/merge", body, &w); err != nil {
-		return backend.PullRequest{}, err
+		return backend.PullRequest{}, stampPRMerge(err, id)
 	}
 	return w.toDomain(), nil
 }
@@ -176,7 +178,63 @@ func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 
 func (c *Client) DeleteBranch(ns, slug, branch string) error {
 	path := fmt.Sprintf("/projects/%s/repos/%s/branches", ns, slug)
-	return c.delete(path, map[string]string{"name": branch})
+	return stampBranchProtected(c.delete(path, map[string]string{"name": branch}))
+}
+
+// stampPRNotFound stamps a 404-on-PR error with CodePRNotFound + the PR id.
+func stampPRNotFound(err error, id int) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 404 {
+		return err
+	}
+	return backend.StampCode(err, backend.CodePRNotFound, "pull-request", strconv.Itoa(id), "")
+}
+
+// stampPRMerge picks pr.merge.behind vs pr.merge.conflict from the 409
+// server message. Server's wording differs from Cloud's, so the substring
+// list is broader.
+func stampPRMerge(err error, id int) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 409 {
+		return err
+	}
+	idStr := strconv.Itoa(id)
+	msg := strings.ToLower(de.Message)
+	switch {
+	case strings.Contains(msg, "behind") || strings.Contains(msg, "out of date") || strings.Contains(msg, "needs to be updated"):
+		return backend.StampCode(err, backend.CodePRMergeBehind, "pull-request", idStr, "")
+	default:
+		return backend.StampCode(err, backend.CodePRMergeConflict, "pull-request", idStr, "")
+	}
+}
+
+// stampPRCreate distinguishes 400 reviewer-shape errors from 409 duplicate-
+// branch conflicts at the create endpoint.
+func stampPRCreate(err error) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) {
+		return err
+	}
+	msg := strings.ToLower(de.Message)
+	switch de.HTTPStatus() {
+	case 409:
+		return backend.StampCode(err, backend.CodePRCreateDuplicateBranch, "", "", "")
+	case 400:
+		if strings.Contains(msg, "reviewer") || strings.Contains(msg, "user") {
+			return backend.StampCode(err, backend.CodePRReviewerUnknown, "", "", "")
+		}
+	}
+	return err
+}
+
+// stampBranchProtected promotes a 403 on branch-write endpoints to
+// CodeBranchProtected.
+func stampBranchProtected(err error) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 403 {
+		return err
+	}
+	return backend.StampCode(err, backend.CodeBranchProtected, "", "", "")
 }
 
 // GetCurrentUser fetches the authenticated user.

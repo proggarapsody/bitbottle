@@ -122,6 +122,11 @@ func New(doer Doer, baseURL string, auth Auth, decodeErr ErrorDecoder, ctPolicy 
 //  2. Token only → Bearer auth.
 //     Used for OAuth2 access tokens and workspace/repository access tokens.
 //  3. Username only → Basic auth with empty password (rare, kept for compat).
+//
+// Transport-level errors (TLS handshake failure, dial timeout, etc.) are
+// translated via classifyTransport when UseDomainErrors is set, so the cmd
+// layer sees a typed backend.DomainError with a network-cluster ErrorCode
+// instead of a raw *url.Error.
 func (t *Transport) do(req *http.Request) (*http.Response, error) {
 	switch {
 	case t.auth.Username != "" && t.auth.Token != "":
@@ -131,7 +136,25 @@ func (t *Transport) do(req *http.Request) (*http.Response, error) {
 	case t.auth.Username != "":
 		req.SetBasicAuth(t.auth.Username, t.auth.Token)
 	}
-	return t.doer.Do(req)
+	resp, err := t.doer.Do(req)
+	if err != nil {
+		return nil, t.classifyTransport(err)
+	}
+	return resp, nil
+}
+
+// classifyTransport returns a typed *backend.DomainError when err is a
+// recognised transport failure shape (TLS, timeout) AND UseDomainErrors is
+// set on this Transport. Otherwise the original error is returned as-is so
+// callers and back-compat tests see the raw *url.Error.
+func (t *Transport) classifyTransport(err error) error {
+	if t.domainHost == "" {
+		return err
+	}
+	if de := backend.ClassifyTransportError(t.domainHost, err); de != nil {
+		return de
+	}
+	return err
 }
 
 func (t *Transport) GetJSON(path string, v any) error {

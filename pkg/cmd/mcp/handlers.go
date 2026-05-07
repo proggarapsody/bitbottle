@@ -12,6 +12,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/errfmt"
 )
 
 type handlers struct {
@@ -46,25 +47,43 @@ func errResult(msg string) *mcplib.CallToolResult {
 	return mcplib.NewToolResultError(msg)
 }
 
+// errorEnvelope is the structured shape MCP clients receive on tool
+// failures. Fields:
+//
+//   - Code:     dotted backend.ErrorCode token (e.g. "auth.invalid_token",
+//     "repo.not_found"). When the underlying DomainError has no Code,
+//     a kind-based fallback string ("auth", "not_found", "conflict",
+//     "permission", "unsupported_on_host", "transport") is emitted so
+//     clients always get a non-empty signal.
+//   - Host/Feature/Resource/ID: optional context fields stamped by the
+//     adapter at the call site.
+//   - Message:  the human-readable error text (already control-byte
+//     sanitised by errfmt's renderer for CLI; raw here for JSON).
+//   - Hints:    actionable next-step strings sourced from errfmt's
+//     catalogue, with template placeholders expanded against the
+//     DomainError fields. AI-agent integrations surface these to the
+//     user without bundling their own copy of the catalogue.
 type errorEnvelope struct {
-	Code     string `json:"code"`
-	Host     string `json:"host,omitempty"`
-	Feature  string `json:"feature,omitempty"`
-	Resource string `json:"resource,omitempty"`
-	ID       string `json:"id,omitempty"`
-	Message  string `json:"message"`
+	Code     string   `json:"code"`
+	Host     string   `json:"host,omitempty"`
+	Feature  string   `json:"feature,omitempty"`
+	Resource string   `json:"resource,omitempty"`
+	ID       string   `json:"id,omitempty"`
+	Message  string   `json:"message"`
+	Hints    []string `json:"hints,omitempty"`
 }
 
 func errResultErr(err error) *mcplib.CallToolResult {
 	var de *backend.DomainError
 	if errors.As(err, &de) {
 		env := errorEnvelope{
-			Code:     domainErrorCode(de.Kind),
+			Code:     envelopeCode(de),
 			Host:     de.Host,
 			Feature:  de.Feature,
 			Resource: de.Resource,
 			ID:       de.ID,
 			Message:  de.Error(),
+			Hints:    errfmt.HintsFor(de),
 		}
 		if data, mErr := json.Marshal(env); mErr == nil {
 			return mcplib.NewToolResultError(string(data))
@@ -73,19 +92,26 @@ func errResultErr(err error) *mcplib.CallToolResult {
 	return mcplib.NewToolResultError(err.Error())
 }
 
-func domainErrorCode(kind error) string {
+// envelopeCode prefers the dotted ErrorCode (the join key with errfmt's
+// catalogue) and falls back to a kind-based label when Code is unset, so
+// MCP clients always get a structured token. Once every code path stamps
+// a Code, the kind fallback can be retired.
+func envelopeCode(de *backend.DomainError) string {
+	if de.Code != "" {
+		return string(de.Code)
+	}
 	switch {
-	case errors.Is(kind, backend.ErrNotFound):
+	case errors.Is(de.Kind, backend.ErrNotFound):
 		return "not_found"
-	case errors.Is(kind, backend.ErrAuth):
+	case errors.Is(de.Kind, backend.ErrAuth):
 		return "auth"
-	case errors.Is(kind, backend.ErrPermission):
+	case errors.Is(de.Kind, backend.ErrPermission):
 		return "permission"
-	case errors.Is(kind, backend.ErrUnsupportedOnHost):
+	case errors.Is(de.Kind, backend.ErrUnsupportedOnHost):
 		return "unsupported_on_host"
-	case errors.Is(kind, backend.ErrConflict):
+	case errors.Is(de.Kind, backend.ErrConflict):
 		return "conflict"
-	case errors.Is(kind, backend.ErrTransport):
+	case errors.Is(de.Kind, backend.ErrTransport):
 		return "transport"
 	default:
 		return "error"

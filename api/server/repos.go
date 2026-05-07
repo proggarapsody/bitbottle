@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -60,9 +61,20 @@ func (c *Client) ListRepos(_ string, limit int) ([]backend.Repository, error) {
 func (c *Client) GetRepo(ns, slug string) (backend.Repository, error) {
 	var w wireRepository
 	if err := c.getJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), &w); err != nil {
-		return backend.Repository{}, err
+		return backend.Repository{}, stampRepoNotFound(err, ns, slug)
 	}
 	return w.toDomain(), nil
+}
+
+// stampRepoNotFound annotates a 404-on-repo error with CodeRepoNotFound +
+// Resource/ID. Server uses PROJECT/REPO casing where PROJECT is the project
+// key, not name — the catalogue hint mentions this distinction.
+func stampRepoNotFound(err error, ns, slug string) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 404 {
+		return err
+	}
+	return backend.StampCode(err, backend.CodeRepoNotFound, "repository", ns+"/"+slug, "")
 }
 
 type wireCreateRepoInput struct {
