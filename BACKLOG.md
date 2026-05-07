@@ -83,8 +83,18 @@ Current state of every command area against gh feature parity:
 | `pr ready` | ✅ | Promote draft → open |
 | `pr request-review` | ✅ | Add reviewers to an open PR |
 | `pr request-changes` | ✅ | Cloud only |
-| `pr comment list` | ✅ | List general comments |
-| `pr comment add` | ✅ | Add a general comment |
+| `pr comment list` | ✅ | List general comments (no inline) |
+| `pr comment add` | ✅ | Add a general comment (no inline) |
+| `pr comment list --inline` | 🔲 | Inline (file:line) comments — scope **RV** |
+| `pr comment add --inline path:line` | 🔲 | Post inline review comments (Cloud `inline.{path,from,to}`; Server `anchor.{diffType,line,lineType,fileType,fromHash,toHash,path,srcPath}`) — scope **RV** |
+| `pr comment edit / delete` | 🔲 | `PUT/DELETE .../comments/{id}` exists on both — scope **RV** |
+| `pr comment reply / resolve` | 🔲 | Threaded replies + Cloud `resolution` field / Server tasks — scope **RV** |
+| `pr review --approve\|--request-changes\|--comment --body --inline ...` | 🔲 | Compound review in one call (gh parity) — scope **RV** |
+| `pr activity PR_ID` | 🔲 | PR event stream (`/pullrequests/{id}/activity`) — scope **RV** |
+| `pr checks PR_ID` | 🔲 | CI status for PR head commit — scope **GHP** |
+| `pr update-branch PR_ID` | 🔲 | Sync PR head with base (the action our `pr.merge.behind` hint promises) — scope **GHP** |
+| `pr reopen PR_ID` | 🔲 | Reverse `pr decline` — scope **GHP** |
+| `pr status` | 🔲 | Cross-repo "PRs on my plate" (assigned / review-requested / mine) — scope **GHP** |
 
 ### Branch
 
@@ -108,6 +118,7 @@ Current state of every command area against gh feature parity:
 | `pipeline variable list` | ✅ | |
 | `pipeline variable set` | ✅ | Upsert by KEY; `--body=-` reads stdin |
 | `pipeline variable delete` | ✅ | By KEY (UUID lookup is internal) |
+| `pipeline watch UUID` | 🔲 | Poll until terminal state, stream step transitions — scope **GHP** |
 
 ### Commits
 
@@ -116,6 +127,7 @@ Current state of every command area against gh feature parity:
 | `commit log` | ✅ | List commits on a branch |
 | `commit view` | ✅ | View a single commit |
 | `commit status` | ✅ | List build statuses for a commit hash |
+| `commit comment list / add / edit / delete` | 🔲 | Cloud `/commit/{hash}/comments` (CRUD + inline) — scope **RV** |
 
 ### Tags
 
@@ -180,6 +192,56 @@ Current state of every command area against gh feature parity:
 | `issue view` | ✅ | Cloud only |
 | `issue create` | ✅ | Cloud only; `--title`, `--body`, `--kind`, `--priority` |
 | `issue close` | ✅ | Cloud only |
+| `issue edit` | 🔲 | `PUT /issues/{id}` — title/body/kind/priority/state — scope **OF** |
+| `issue reopen` | 🔲 | Reverse of `issue close` (state transition) — scope **OF** |
+| `issue assign` | 🔲 | Set assignee (PUT with `assignee.username`) — scope **OF** |
+| `issue comment list / add / edit / delete` | 🔲 | `/issues/{id}/comments` CRUD — scope **OF** |
+
+### Source / Files at ref _(missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `repo file get PATH --ref REF` | 🔲 | Read file content at any ref. Cloud: `GET /repositories/{ws}/{slug}/src/{commit}/{path}`. Server: `GET /projects/{k}/repos/{s}/raw/{path}?at=REF`. Critical primitive for coding agents that don't clone. — scope **RV** |
+| `repo tree --ref REF [--path P]` | 🔲 | List files at a ref. Cloud: same `/src/` endpoint returns directory metadata when path is a dir. Server: `GET /projects/{k}/repos/{s}/browse/{path}?at=REF`. — scope **RV** |
+
+### Search
+
+| Command | Status | Notes |
+|---|---|---|
+| `bitbottle search code QUERY [--workspace W]` | 🔲 | Cloud `GET /workspaces/{ws}/search/code?search_query=...` — content + path matches. — scope **SR** |
+| `bitbottle search code QUERY` _(Server)_ | 🔲 | Optional. Server has no first-class code-search REST API; defer. |
+
+### Deployments _(Cloud only — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `deployment list` | 🔲 | `GET /repositories/{ws}/{slug}/deployments` — scope **DEP** |
+| `deployment view UUID` | 🔲 | `GET .../deployments/{uuid}` — scope **DEP** |
+| `environment list` | 🔲 | `GET .../environments` — scope **DEP** |
+| `environment create` | 🔲 | `POST .../environments` (body: type/uuid/name) — scope **DEP** |
+| `environment delete UUID` | 🔲 | `DELETE .../environments/{uuid}` — scope **DEP** |
+| `environment variable list / set / delete` | 🔲 | `/deployments_config/environments/{uuid}/variables` (CRUD) — scope **DEP** |
+
+### Code Insights _(Server / DC only — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `code-insights report list / view / set / delete` | 🔲 | `/rest/insights/1.0/projects/{k}/repos/{s}/commits/{hash}/reports/{key}` — PASS/FAIL summary attached to commit/PR — scope **CI** |
+| `code-insights annotation add / list / delete` | 🔲 | Bulk-attach line-level findings to a report — scope **CI** |
+| `code-insights merge-check set / get / delete` | 🔲 | Configure required reports as merge gates (`/rest/insights/latest/.../merge-check/{key}`; partly undocumented) — scope **CI** |
+
+### Context / Orientation _(missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `bitbottle context [--json]` | 🔲 | One-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind. Replaces 3-4 calls for agents. — scope **CTX** |
+| `bitbottle status` | 🔲 | Cross-repo "what's on my plate": review requests, mentions, assigned issues. (gh `status` analogue, workspace-scoped on Cloud.) — scope **GHP** |
+
+### Top-level / Web
+
+| Command | Status | Notes |
+|---|---|---|
+| `bitbottle browse [PATH\|NUMBER]` | 🔲 | Unified web shortcut (commit/PR/issue/path) — scope **GHP** |
 
 ---
 
@@ -205,6 +267,13 @@ Current state of every command area against gh feature parity:
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | ✅ |
 | BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
+| RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🔲 |
+| SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | 🔲 |
+| CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | 🔲 |
+| GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |
+| OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | 🔲 |
+| CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | 🔲 |
+| DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | 🔲 |
 
 ---
 
@@ -802,6 +871,464 @@ type DomainError struct {
 
 ---
 
+### RV — Code-Review Primitives
+
+The strategic prize for coding-agent UX. Today an agent reviewing a PR cannot:
+read a file at the PR head without cloning, list inline review comments,
+post inline review comments at file:line, edit/delete/resolve comments, or
+reconstruct the PR's review history. RV closes all of that in one epic.
+
+**Why**: coding agents (Claude / Codex / Cursor in pair-programming mode) spend
+the majority of their PR-review time in three loops — read the diff + read
+surrounding code, read existing review feedback, post new review feedback.
+Bitbucket Cloud + Server expose all the necessary endpoints; bitbottle wraps
+none of them today.
+
+**New interfaces** (`api/backend/client.go`):
+```go
+type SourceReader interface {
+    GetFileContent(ns, slug, ref, path string) ([]byte, error)
+    ListTree(ns, slug, ref, path string) ([]TreeEntry, error)
+}
+
+type PRInlineCommentClient interface {
+    ListPRComments(ns, slug string, id int) ([]PRComment, error)        // already exists
+    AddPRComment(ns, slug string, id int, in AddPRCommentInput) (PRComment, error)
+    EditPRComment(ns, slug string, id, commentID int, body string) (PRComment, error)
+    DeletePRComment(ns, slug string, id, commentID int) error
+    ReplyPRComment(ns, slug string, id, parentID int, body string) (PRComment, error)
+    ResolvePRComment(ns, slug string, id, commentID int) error          // Cloud `resolution`; Server: task or thread close
+}
+
+type PRReviewer interface {
+    SubmitReview(ns, slug string, id int, in SubmitReviewInput) error
+}
+
+type PRActivityReader interface {
+    GetPRActivity(ns, slug string, id int, limit int) ([]PRActivityEvent, error)
+}
+
+type CommitCommenter interface {
+    ListCommitComments(ns, slug, hash string) ([]Comment, error)
+    AddCommitComment(ns, slug, hash string, in AddCommentInput) (Comment, error)
+    EditCommitComment(ns, slug, hash string, commentID int, body string) (Comment, error)
+    DeleteCommitComment(ns, slug, hash string, commentID int) error
+}
+```
+
+`SourceReader`, `PRInlineCommentClient` (extend the existing PRComment* interfaces),
+`PRReviewer`, `PRActivityReader`, `CommitCommenter` → composite `Client` (both
+backends support all of these).
+
+**New types**:
+```go
+type TreeEntry struct {
+    Path string
+    Type string // "commit_file" / "commit_directory" (Cloud) → mapped to "file"/"dir"
+    Size int64
+    Hash string
+}
+
+// AddPRCommentInput grows an optional Inline field; absent = general comment.
+type AddPRCommentInput struct {
+    Body   string
+    Inline *PRCommentInline // nil = general comment
+    Parent *int             // nil = top-level; set = reply
+}
+
+type PRCommentInline struct {
+    Path      string  // required when Inline != nil
+    Side      string  // "old" or "new" — translates to from/to (Cloud) or fileType FROM/TO (Server)
+    Line      int     // single-line target
+    StartLine int     // for multi-line; 0 = single-line
+    // Server-only — populated internally from PR diff endpoint:
+    fromHash, toHash string
+}
+
+type PRComment struct {
+    ID         int
+    Author     User
+    Body       string
+    CreatedAt  time.Time
+    UpdatedAt  time.Time
+    Inline     *PRCommentInline // nil = general
+    ParentID   int              // 0 = top-level
+    Resolved   bool
+}
+
+type SubmitReviewInput struct {
+    Action string         // "approve" | "request_changes" | "comment"
+    Body   string         // top-level review body
+    Inline []PRCommentInline // optional inline comments to attach atomically
+}
+
+type PRActivityEvent struct {
+    Type      string    // "approval" | "comment" | "update" | "merge" | ...
+    Actor     User
+    CreatedAt time.Time
+    Detail    map[string]any // type-specific payload
+}
+```
+
+**Adapter notes**:
+- **Cloud inline comments**: `inline.{path,from,to,start_from,start_to}`. `from` = old-side line, `to` = new-side line; set the other to nil. Multi-line via `start_*`.
+- **Server inline comments**: requires `anchor.{diffType,line,lineType,fileType,fromHash,toHash,path,srcPath}`. The `fromHash`/`toHash` are obtained from `GET /pull-requests/{id}/diff/{path}` and cached internally so the user only supplies `path:line:body`.
+- **Source/raw**: Cloud `GET /repositories/{ws}/{slug}/src/{ref}/{path}` returns file content for a file-path and JSON tree metadata for a directory-path. Server uses `GET /raw/{path}?at=` for content and `GET /browse/{path}?at=` for tree.
+- **`pr review` is one HTTP call on Cloud** (POST review endpoint with optional inline-comments array) but on Server is multiple calls (post each comment + then approve/decline). Wrap the difference; surface a single CLI verb.
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `repo file get PROJECT/REPO PATH` | 2 | `--ref` (branch / tag / hash) | `--out FILE`, `--hostname` |
+| `repo tree PROJECT/REPO [PATH]` | 1-2 | `--ref` | `--json`, `--jq`, `--hostname` |
+| `pr review PR_ID` | 1 | one of `--approve` / `--request-changes` / `--comment` | `--body`, `--inline path:line:body` (repeatable), `--inline-from-stdin` (JSON array), `--hostname` |
+| `pr comment list PR_ID` | 1 | — | `--inline`, `--json`, `--jq`, `--hostname` |
+| `pr comment add PR_ID` | 1 | `--body` | `--inline path:line` (single), `--side new\|old`, `--parent COMMENT_ID`, `--hostname` |
+| `pr comment edit PR_ID COMMENT_ID` | 2 | `--body` | `--hostname` |
+| `pr comment delete PR_ID COMMENT_ID` | 2 | — | `--hostname` |
+| `pr comment resolve PR_ID COMMENT_ID` | 2 | — | `--hostname` |
+| `pr activity PR_ID` | 1 | — | `--limit`, `--json`, `--jq`, `--hostname` |
+| `commit comment list PROJECT/REPO HASH` | 2 | — | `--json`, `--jq`, `--hostname` |
+| `commit comment add PROJECT/REPO HASH` | 2 | `--body` | `--inline path:line`, `--hostname` |
+| `commit comment edit PROJECT/REPO HASH COMMENT_ID` | 3 | `--body` | `--hostname` |
+| `commit comment delete PROJECT/REPO HASH COMMENT_ID` | 3 | — | `--hostname` |
+
+**MCP tools** (new): `get_file_content`, `list_tree`, `submit_pr_review`,
+`edit_pr_comment`, `delete_pr_comment`, `reply_pr_comment`, `resolve_pr_comment`,
+`get_pr_activity`, `list_commit_comments`, `add_commit_comment`,
+`edit_commit_comment`, `delete_commit_comment`. Existing `add_pr_comment` /
+`list_pr_comments` extend their schemas with `inline` / `parent` parameters.
+
+**Sub-PRs (suggested split)**:
+- **RV1** Source/file primitives (`repo file get` + `repo tree`)
+- **RV2** Inline PR comments — read path (list + filter)
+- **RV3** Inline PR comments — write path (add + edit + delete + reply + resolve)
+- **RV4** `pr review` compound command (orchestrates RV3 + approve/request-changes)
+- **RV5** `pr activity`
+- **RV6** `commit comment *` (CRUD + inline)
+
+---
+
+### SR — Code Search _(Cloud only)_
+
+**Optional interface**:
+```go
+type CodeSearcher interface {
+    SearchCode(workspace, query string, limit int) ([]CodeSearchHit, error)
+}
+```
+Cloud-only optional; surfaces `host.unsupported` on Server (Server has no
+first-class code-search REST API in DC stock; Sourcegraph or a Server plugin
+fills the gap there).
+
+**New types**:
+```go
+type CodeSearchHit struct {
+    Repository      string  // "workspace/slug"
+    Path            string
+    PathMatches     []SearchSegment // segments of the path with match flags
+    ContentMatches  []ContentMatch  // matched lines with surrounding context
+    ContentMatchCount int
+    FileURL         string
+}
+
+type ContentMatch struct {
+    Line     int
+    Segments []SearchSegment // alternating non-match / match runs
+}
+
+type SearchSegment struct {
+    Text  string
+    Match bool
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `bitbottle search code QUERY` | 1 | `--workspace W` (or pinned default) | `--limit`, `--json`, `--jq`, `--hostname` |
+
+**MCP tools**: `search_code`
+
+---
+
+### CTX — Context Primitive
+
+No new backend interface — wraps existing `f.BaseRepo()`, `f.Backend(host)`,
+config + git resolution. Single high-leverage command for agents.
+
+```
+bitbottle context [--json]
+```
+
+Returns: host, project, slug, current branch, default branch, ahead/behind vs
+default, authenticated user (slug + display name), scopes / token kind.
+
+**Why**: today an agent calls `auth status` + `repo view` + `git status` to
+orient. One call replaces three. Especially valuable for MCP — `get_context`
+becomes the standard first call in any agent flow.
+
+**Commands**:
+
+| Command | Args | Optional flags |
+|---|---|---|
+| `bitbottle context` | 0 | `--json`, `--jq`, `--hostname` |
+
+**MCP tools**: `get_context`
+
+---
+
+### GHP — gh-Parity Gaps
+
+Small, mostly-reads, high-frequency UX wins from the gh CLI surface. Each is
+roughly a one-PR change.
+
+| Command | Backends | Notes |
+|---|---|---|
+| `pr checks PR_ID` | Both | Resolve PR head → call `commit status HASH` under the hood. Optional `--watch` polls until terminal state. |
+| `pr update-branch PR_ID` | Both | Sync PR head with base. Cloud: `POST /pullrequests/{id}/update-branch`-style endpoint or merge-target-into-source. Server: equivalent merge action. The verb our `pr.merge.behind` hint already promises. |
+| `pr reopen PR_ID` | Both | Reverse `pr decline`. Cloud + Server both expose state transition back to OPEN. |
+| `pr status` | Both | Cross-repo "what's on my plate". Cloud: `/dashboard/pullrequests` (your-PRs / review-requested). Server: `/inbox/pull-requests`. Workspace-scoped on Cloud. |
+| `bitbottle status` | Both | Combined inbox: review requests + assigned issues + recent activity. Composite of `pr status` + `issue list --assigned-to-me`. |
+| `bitbottle browse [PATH\|NUMBER]` | Both | Top-level web shortcut. Resolves: `123` → PR, `abc1234` → commit, path → `src/branch/path`. |
+| `pipeline watch PROJECT/REPO UUID` | Cloud | Poll until terminal state, optionally stream step transitions. |
+
+**MCP tools**: `pr_checks`, `pr_update_branch`, `pr_reopen`, `pr_status`,
+`status`, `pipeline_watch`. (`browse` is interactive-only — no MCP tool.)
+
+---
+
+### OF — Issues Finish _(Cloud only)_
+
+Closes the gap left after scope **O**. Today users can list/view/create/close
+issues but cannot *edit*, *comment on*, *reopen*, or *assign* them.
+
+**Extend the existing `IssueClient` optional interface**:
+```go
+type IssueClient interface {
+    // existing:
+    ListIssues(ns, slug, status string, limit int) ([]Issue, error)
+    GetIssue(ns, slug string, id int) (Issue, error)
+    CreateIssue(ns, slug string, in CreateIssueInput) (Issue, error)
+    CloseIssue(ns, slug string, id int) error
+    // new:
+    UpdateIssue(ns, slug string, id int, in UpdateIssueInput) (Issue, error)
+    ReopenIssue(ns, slug string, id int) error
+    AssignIssue(ns, slug string, id int, assignee string) error
+
+    ListIssueComments(ns, slug string, id int) ([]Comment, error)
+    AddIssueComment(ns, slug string, id int, body string) (Comment, error)
+    EditIssueComment(ns, slug string, id, commentID int, body string) (Comment, error)
+    DeleteIssueComment(ns, slug string, id, commentID int) error
+}
+```
+
+**New type**:
+```go
+type UpdateIssueInput struct {
+    Title       string // empty = no change
+    Body        string // empty = no change
+    Kind        string // empty = no change ("bug" | "enhancement" | "proposal" | "task")
+    Priority    string // empty = no change ("trivial" | "minor" | "major" | "critical" | "blocker")
+    Assignee    string // empty = no change
+    State       string // empty = no change ("new" | "open" | "resolved" | "on hold" | "invalid" | "duplicate" | "wontfix" | "closed")
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `issue edit ISSUE_ID` | 1 | — | `--title`, `--body`, `--kind`, `--priority`, `--assignee`, `--state`, `--hostname` |
+| `issue reopen ISSUE_ID` | 1 | — | `--hostname` |
+| `issue assign ISSUE_ID USER` | 2 | — | `--hostname` |
+| `issue comment list ISSUE_ID` | 1 | — | `--json`, `--jq`, `--hostname` |
+| `issue comment add ISSUE_ID` | 1 | `--body` | `--hostname` |
+| `issue comment edit ISSUE_ID COMMENT_ID` | 2 | `--body` | `--hostname` |
+| `issue comment delete ISSUE_ID COMMENT_ID` | 2 | — | `--hostname` |
+
+**MCP tools**: `update_issue`, `reopen_issue`, `assign_issue`,
+`list_issue_comments`, `add_issue_comment`, `edit_issue_comment`,
+`delete_issue_comment`.
+
+---
+
+### CI — Code Insights _(Server / DC only)_
+
+Bitbucket Server's first-class concept for posting build / quality / security
+analysis as PR annotations. Different REST namespace
+(`/rest/insights/1.0/...`) — separate transport setup like the
+`branch-permissions/2.0` and `default-reviewers` patterns. Cloud has no
+equivalent — surface `host.unsupported` there.
+
+**New optional interface**:
+```go
+type CodeInsightsClient interface {
+    ListReports(project, slug, hash string) ([]CodeInsightsReport, error)
+    GetReport(project, slug, hash, key string) (CodeInsightsReport, error)
+    SetReport(project, slug, hash, key string, in CodeInsightsReportInput) (CodeInsightsReport, error) // PUT (upsert)
+    DeleteReport(project, slug, hash, key string) error
+
+    ListAnnotations(project, slug, hash, key string) ([]CodeInsightsAnnotation, error)
+    AddAnnotations(project, slug, hash, key string, in []CodeInsightsAnnotationInput) error           // bulk POST
+    DeleteAnnotations(project, slug, hash, key string) error
+
+    // Merge-check (partly undocumented endpoint — flag as experimental in CLI):
+    SetMergeCheck(project, slug, key string, in MergeCheckInput) error
+    GetMergeCheck(project, slug, key string) (MergeCheck, error)
+    DeleteMergeCheck(project, slug, key string) error
+}
+```
+
+**New types**:
+```go
+type CodeInsightsReport struct {
+    Key      string
+    Title    string
+    Details  string
+    Result   string  // PASS | FAIL
+    Reporter string
+    Link     string
+    LogoURL  string
+    Data     []CodeInsightsReportDatum
+}
+
+type CodeInsightsReportDatum struct {
+    Title string
+    Type  string  // BOOLEAN | DATE | DURATION | LINK | NUMBER | PERCENTAGE | TEXT
+    Value any
+}
+
+type CodeInsightsReportInput struct {
+    Title, Details, Reporter, Link, LogoURL string
+    Result string                  // PASS | FAIL
+    Data   []CodeInsightsReportDatum
+}
+
+type CodeInsightsAnnotation struct {
+    ExternalID string
+    Path       string
+    Line       int
+    Severity   string  // LOW | MEDIUM | HIGH
+    Type       string  // VULNERABILITY | CODE_SMELL | BUG
+    Message    string
+    Link       string
+}
+
+type CodeInsightsAnnotationInput = CodeInsightsAnnotation // input shape matches output
+
+type MergeCheckInput struct {
+    ReportKey            string
+    MustPass             bool
+    MinProhibitedSeverity string // LOW | MEDIUM | HIGH | "" (any)
+}
+
+type MergeCheck = MergeCheckInput
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `code-insights report list PROJECT/REPO HASH` | 2 | — | `--json`, `--jq`, `--hostname` |
+| `code-insights report view PROJECT/REPO HASH KEY` | 3 | — | `--json`, `--hostname` |
+| `code-insights report set PROJECT/REPO HASH KEY` | 3 | `--title`, `--result PASS\|FAIL` | `--details`, `--reporter`, `--link`, `--logo-url`, `--data K=V:TYPE` (repeatable), `--hostname` |
+| `code-insights report delete PROJECT/REPO HASH KEY` | 3 | — | `--hostname` |
+| `code-insights annotation list PROJECT/REPO HASH KEY` | 3 | — | `--json`, `--jq`, `--hostname` |
+| `code-insights annotation add PROJECT/REPO HASH KEY` | 3 | `--from-json @PATH\|-` (bulk) OR `--path`, `--line`, `--severity`, `--type`, `--message` for single | `--external-id`, `--link`, `--hostname` |
+| `code-insights annotation delete PROJECT/REPO HASH KEY` | 3 | — | `--hostname` |
+| `code-insights merge-check set PROJECT/REPO KEY` | 2 | `--report-key`, `--must-pass` | `--min-severity LOW\|MEDIUM\|HIGH`, `--hostname` |
+| `code-insights merge-check get PROJECT/REPO KEY` | 2 | — | `--json`, `--hostname` |
+| `code-insights merge-check delete PROJECT/REPO KEY` | 2 | — | `--hostname` |
+
+**MCP tools**: `list_code_insights_reports`, `get_code_insights_report`,
+`set_code_insights_report`, `delete_code_insights_report`,
+`list_code_insights_annotations`, `add_code_insights_annotations`,
+`delete_code_insights_annotations`, `set_merge_check`, `get_merge_check`,
+`delete_merge_check`.
+
+---
+
+### DEP — Deployments _(Cloud only)_
+
+Bitbucket Cloud's deployment-environments primitive plus the per-environment
+variable bag (separate API from repo-level pipeline variables shipped under
+scope **H**). Operational scope, lower priority for coding agents but high
+priority for CI integrations.
+
+**New optional interface**:
+```go
+type DeploymentClient interface {
+    ListDeployments(ns, slug string, limit int) ([]Deployment, error)
+    GetDeployment(ns, slug, uuid string) (Deployment, error)
+
+    ListEnvironments(ns, slug string) ([]Environment, error)
+    CreateEnvironment(ns, slug string, in CreateEnvironmentInput) (Environment, error)
+    DeleteEnvironment(ns, slug, uuid string) error
+
+    ListEnvVariables(ns, slug, envUUID string) ([]EnvVariable, error)
+    SetEnvVariable(ns, slug, envUUID string, in EnvVariableInput) (EnvVariable, error)
+    DeleteEnvVariable(ns, slug, envUUID, varUUID string) error
+}
+```
+
+**New types**:
+```go
+type Deployment struct {
+    UUID        string
+    State       string  // PENDING | IN_PROGRESS | COMPLETED | STOPPED | FAILED
+    Environment Environment
+    Release     struct{ Name string; URL string; CommitHash string }
+}
+
+type Environment struct {
+    UUID string
+    Name string
+    Type string  // Test | Staging | Production
+    Rank int
+}
+
+type CreateEnvironmentInput struct {
+    Name string
+    Type string
+    Rank int
+}
+
+type EnvVariable struct {
+    UUID    string
+    Key     string
+    Value   string  // empty if Secured
+    Secured bool
+}
+
+type EnvVariableInput struct {
+    Key     string
+    Value   string
+    Secured bool
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `deployment list PROJECT/REPO` | 1 | — | `--limit`, `--json`, `--jq`, `--hostname` |
+| `deployment view PROJECT/REPO UUID` | 2 | — | `--json`, `--hostname` |
+| `environment list PROJECT/REPO` | 1 | — | `--json`, `--jq`, `--hostname` |
+| `environment create PROJECT/REPO` | 1 | `--name`, `--type Test\|Staging\|Production` | `--rank`, `--hostname` |
+| `environment delete PROJECT/REPO UUID` | 2 | — | `--confirm`, `--hostname` |
+| `environment variable list PROJECT/REPO ENV-UUID` | 2 | — | `--json`, `--jq`, `--hostname` |
+| `environment variable set PROJECT/REPO ENV-UUID KEY VALUE` | 4 | — | `--secured`, `--hostname` |
+| `environment variable delete PROJECT/REPO ENV-UUID KEY` | 3 | — | `--hostname` |
+
+**MCP tools**: `list_deployments`, `get_deployment`, `list_environments`,
+`create_environment`, `delete_environment`, `list_env_variables`,
+`set_env_variable`, `delete_env_variable`.
+
+---
+
 ## Implementation Order
 
 | Order | Scope | Rationale |
@@ -824,3 +1351,10 @@ type DomainError struct {
 | 16 | **O** Issues | Cloud only; many teams use Jira |
 | 17 | **BP** Branch Protect | Closes the last `branch` gap; Server/DC only |
 | 18 | **EX** Error UX | Cross-cutting; do once and every command benefits |
+| 19 | **RV** Code-Review Primitives | Highest agent leverage; unlocks code-review bots; split into RV1-RV6 sub-PRs |
+| 20 | **SR** Code Search | Cloud-only; agent "find references" primitive; small interface, single endpoint |
+| 21 | **CTX** Context Primitive | One-PR DX win; replaces 3-call orientation with 1; high MCP value |
+| 22 | **GHP** gh-Parity Gaps | Bundle of one-PR wins (`pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch`) |
+| 23 | **OF** Issues Finish | Closes the gap left by scope O; Cloud-only; APIs all exist |
+| 24 | **CI** Code Insights | Server/DC only; separate REST namespace; required for CI-integration story on Server |
+| 25 | **DEP** Deployments | Cloud-only operational scope; lowest priority unless requested |
