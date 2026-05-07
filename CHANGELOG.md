@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.17.0](https://github.com/proggarapsody/bitbottle/compare/v1.16.0...v1.17.0) (2026-05-07)
+
+
+### Features
+
+* scope BP — branch protect (list, create, delete) on Server/DC ([#91](https://github.com/proggarapsody/bitbottle/issues/91)) ([2da93ab](https://github.com/proggarapsody/bitbottle/commit/2da93aba6733972e77814c0d9367e31ec66cdb68))
+* scope N — workspace list, project list (Bitbucket Cloud) ([#86](https://github.com/proggarapsody/bitbottle/issues/86)) ([47cb4be](https://github.com/proggarapsody/bitbottle/commit/47cb4be47c2ef20b31cb2a7ece1cafa6af072700))
+* scope O — issues (list, view, create, close) on Cloud ([#87](https://github.com/proggarapsody/bitbottle/issues/87)) ([0e3e937](https://github.com/proggarapsody/bitbottle/commit/0e3e937be51cce072633294c65fa2323a0a83b41))
+* scope T — colourise state columns + add --no-color global flag ([#85](https://github.com/proggarapsody/bitbottle/issues/85)) ([70d7037](https://github.com/proggarapsody/bitbottle/commit/70d70378dc620c756d8047f0bf7e7530bc0507c6))
+
+
+### Bug Fixes
+
+* apply default reviewers automatically on pr create ([#89](https://github.com/proggarapsody/bitbottle/issues/89)) ([d16bb40](https://github.com/proggarapsody/bitbottle/commit/d16bb40f331390d4833e8dda7f53bdb9f428d1e6))
+
 ## [1.16.0](https://github.com/proggarapsody/bitbottle/compare/v1.15.0...v1.16.0) (2026-05-06)
 
 
