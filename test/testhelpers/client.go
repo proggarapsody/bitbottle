@@ -79,6 +79,12 @@ type FakeClient struct {
 	// Workspace methods (Cloud-only; satisfies backend.WorkspaceClient when set)
 	ListWorkspacesFn func(limit int) ([]backend.Workspace, error)
 	ListProjectsFn   func(workspace string, limit int) ([]backend.Project, error)
+
+	// Issue methods (Cloud-only; satisfies backend.IssueClient when set)
+	ListIssuesFn  func(ns, slug, state string, limit int) ([]backend.Issue, error)
+	GetIssueFn    func(ns, slug string, id int) (backend.Issue, error)
+	CreateIssueFn func(ns, slug string, in backend.CreateIssueInput) (backend.Issue, error)
+	UpdateIssueFn func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error)
 }
 
 // Compile-time interface check.
@@ -500,4 +506,44 @@ func (c *FakeClient) ListProjects(workspace string, limit int) ([]backend.Projec
 		c.T.Fatalf("unexpected call to FakeClient.ListProjects; set ListProjectsFn in your test")
 	}
 	return nil, nil
+}
+
+func (c *FakeClient) ListIssues(ns, slug, state string, limit int) ([]backend.Issue, error) {
+	if c.ListIssuesFn != nil {
+		return c.ListIssuesFn(ns, slug, state, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListIssues; set ListIssuesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetIssue(ns, slug string, id int) (backend.Issue, error) {
+	if c.GetIssueFn != nil {
+		return c.GetIssueFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetIssue; set GetIssueFn in your test")
+	}
+	return backend.Issue{}, nil
+}
+
+func (c *FakeClient) CreateIssue(ns, slug string, in backend.CreateIssueInput) (backend.Issue, error) {
+	if c.CreateIssueFn != nil {
+		return c.CreateIssueFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateIssue; set CreateIssueFn in your test")
+	}
+	return backend.Issue{}, nil
+}
+
+func (c *FakeClient) UpdateIssue(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error) {
+	if c.UpdateIssueFn != nil {
+		return c.UpdateIssueFn(ns, slug, id, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdateIssue; set UpdateIssueFn in your test")
+	}
+	return backend.Issue{}, nil
 }

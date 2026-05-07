@@ -226,6 +226,49 @@ type Project struct {
 	WebURL string
 }
 
+// Issue is a Bitbucket Cloud issue. Issues are a Cloud-only feature gated
+// by per-repository "issue tracker" enablement; the API returns 404 on
+// repositories where the tracker is disabled. We surface that as the
+// adapter's standard ErrNotFound.
+//
+// Assignee is a pointer so the zero value cleanly distinguishes
+// "unassigned" from "assigned to user with empty username". Reporter is
+// always present on Cloud and uses the value type.
+type Issue struct {
+	ID        int
+	Title     string
+	State     string // new, open, on hold, resolved, duplicate, invalid, wontfix, closed
+	Kind      string // bug, enhancement, proposal, task
+	Priority  string // trivial, minor, major, critical, blocker
+	Reporter  User
+	Assignee  *User // nil when unassigned
+	CreatedOn time.Time
+	UpdatedOn time.Time
+	WebURL    string
+	Content   string // raw markdown body
+}
+
+// CreateIssueInput carries the parameters for opening a new issue. Bitbucket
+// Cloud applies sane defaults (kind=bug, priority=major) when fields are
+// empty, so callers can omit everything but Title.
+type CreateIssueInput struct {
+	Title    string
+	Content  string
+	Kind     string
+	Priority string
+}
+
+// UpdateIssueInput carries the parameters for changing an issue. Empty
+// strings mean "no change". `issue close` sets State="closed" and leaves
+// the rest untouched.
+type UpdateIssueInput struct {
+	Title    string
+	Content  string
+	State    string
+	Kind     string
+	Priority string
+}
+
 // CreateWebhookInput carries the parameters for creating a webhook.
 // Secret is write-only — neither backend returns it on read.
 type CreateWebhookInput struct {

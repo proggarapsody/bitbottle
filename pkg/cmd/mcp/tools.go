@@ -657,4 +657,69 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.listProjects,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_issues",
+			mcplib.WithDescription("List issues in a Bitbucket Cloud repository (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("state",
+				mcplib.Description("State filter (open, new, on hold, resolved, duplicate, invalid, wontfix, closed); empty = all"),
+			),
+			optLimit,
+		),
+		h.listIssues,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("get_issue",
+			mcplib.WithDescription("Get a single issue by ID (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithNumber("id",
+				mcplib.Description("Issue ID"),
+				mcplib.Required(),
+			),
+		),
+		h.getIssue,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("create_issue",
+			mcplib.WithDescription("Create a new issue (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithString("title",
+				mcplib.Description("Issue title"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("body",
+				mcplib.Description("Issue body (markdown)"),
+			),
+			mcplib.WithString("kind",
+				mcplib.Description("bug, enhancement, proposal, task"),
+			),
+			mcplib.WithString("priority",
+				mcplib.Description("trivial, minor, major, critical, blocker"),
+			),
+		),
+		h.createIssue,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("close_issue",
+			mcplib.WithDescription("Close an issue by setting its state to \"closed\" (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			mcplib.WithNumber("id",
+				mcplib.Description("Issue ID"),
+				mcplib.Required(),
+			),
+		),
+		h.closeIssue,
+	)
 }
