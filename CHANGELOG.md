@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.18.1](https://github.com/proggarapsody/bitbottle/compare/v1.18.0...v1.18.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* errfmt polish — symmetry, docs, catalogue gate ([#98](https://github.com/proggarapsody/bitbottle/issues/98)) ([efb43c5](https://github.com/proggarapsody/bitbottle/commit/efb43c583a5681a990205c51471f4cbc4e244f61))
+* **security:** sanitise terminal control bytes in error rendering ([#95](https://github.com/proggarapsody/bitbottle/issues/95)) ([043331a](https://github.com/proggarapsody/bitbottle/commit/043331a4844ed11e7e0b11954251072a9a211c6a))
+
 ## [1.18.0](https://github.com/proggarapsody/bitbottle/compare/v1.17.0...v1.18.0) (2026-05-07)
 
 
