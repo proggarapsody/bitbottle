@@ -85,6 +85,9 @@ type FakeClient struct {
 	GetIssueFn    func(ns, slug string, id int) (backend.Issue, error)
 	CreateIssueFn func(ns, slug string, in backend.CreateIssueInput) (backend.Issue, error)
 	UpdateIssueFn func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error)
+
+	// Default reviewers (Server-only; satisfies backend.DefaultReviewersResolver when set)
+	DefaultReviewersFn func(ns, slug, fromBranch, toBranch string) ([]backend.User, error)
 }
 
 // Compile-time interface check.
@@ -546,4 +549,18 @@ func (c *FakeClient) UpdateIssue(ns, slug string, id int, in backend.UpdateIssue
 		c.T.Fatalf("unexpected call to FakeClient.UpdateIssue; set UpdateIssueFn in your test")
 	}
 	return backend.Issue{}, nil
+}
+
+// DefaultReviewers defaults to "no defaults configured" (nil, nil) when the
+// Fn is unset — unlike most FakeClient methods which Fatalf on unset Fn.
+// Rationale: default-reviewers is a passive lookup automatically triggered
+// by `pr create`, not an action a test deliberately exercises. Most pr-create
+// tests don't care about reviewers and shouldn't be forced to set a stub
+// just to silence the auto-fetch path. Tests that DO assert on the lookup
+// (see create_default_reviewers_test.go) wire DefaultReviewersFn explicitly.
+func (c *FakeClient) DefaultReviewers(ns, slug, fromBranch, toBranch string) ([]backend.User, error) {
+	if c.DefaultReviewersFn != nil {
+		return c.DefaultReviewersFn(ns, slug, fromBranch, toBranch)
+	}
+	return nil, nil
 }

@@ -36,6 +36,7 @@ func (w wireRepository) toDomain() backend.Repository {
 		Namespace: w.Project.Key,
 		SCM:       w.ScmID,
 		WebURL:    webURL,
+		ID:        w.ID,
 	}
 }
 

@@ -81,11 +81,12 @@ func (c *Client) GetPR(ns, slug string, id int) (backend.PullRequest, error) {
 }
 
 type wireCloudCreatePR struct {
-	Title       string             `json:"title"`
-	Description string             `json:"description,omitempty"`
-	Draft       bool               `json:"draft,omitempty"`
-	Source      wireCloudBranchRef `json:"source"`
-	Destination wireCloudBranchRef `json:"destination"`
+	Title       string                    `json:"title"`
+	Description string                    `json:"description,omitempty"`
+	Draft       bool                      `json:"draft,omitempty"`
+	Source      wireCloudBranchRef        `json:"source"`
+	Destination wireCloudBranchRef        `json:"destination"`
+	Reviewers   []wireCloudCreateReviewer `json:"reviewers,omitempty"`
 }
 
 type wireCloudBranchRef struct {
@@ -96,6 +97,13 @@ type wireCloudBranchName struct {
 	Name string `json:"name"`
 }
 
+// wireCloudCreateReviewer is Cloud's reviewer shape on PR create. Cloud
+// accepts either `username` or `uuid` — we use `username` since that's
+// what bitbottle's CLI surface (--reviewer) collects.
+type wireCloudCreateReviewer struct {
+	Username string `json:"username,omitempty"`
+}
+
 func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error) {
 	body := wireCloudCreatePR{
 		Title:       in.Title,
@@ -103,6 +111,9 @@ func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.Pu
 		Draft:       in.Draft,
 		Source:      wireCloudBranchRef{Branch: wireCloudBranchName{Name: in.FromBranch}},
 		Destination: wireCloudBranchRef{Branch: wireCloudBranchName{Name: in.ToBranch}},
+	}
+	for _, name := range in.Reviewers {
+		body.Reviewers = append(body.Reviewers, wireCloudCreateReviewer{Username: name})
 	}
 	var w wireCloudPR
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests", ns, slug)

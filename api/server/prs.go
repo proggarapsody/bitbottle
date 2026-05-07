@@ -91,15 +91,25 @@ func (c *Client) GetPR(ns, slug string, id int) (backend.PullRequest, error) {
 }
 
 type wireCreatePRInput struct {
-	Title       string      `json:"title"`
-	Description string      `json:"description,omitempty"`
-	Draft       bool        `json:"draft,omitempty"`
-	FromRef     wireRefBody `json:"fromRef"`
-	ToRef       wireRefBody `json:"toRef"`
+	Title       string                 `json:"title"`
+	Description string                 `json:"description,omitempty"`
+	Draft       bool                   `json:"draft,omitempty"`
+	FromRef     wireRefBody            `json:"fromRef"`
+	ToRef       wireRefBody            `json:"toRef"`
+	Reviewers   []wireCreatePRReviewer `json:"reviewers,omitempty"`
 }
 
 type wireRefBody struct {
 	ID string `json:"id"`
+}
+
+// wireCreatePRReviewer is BBS's nested reviewer shape on PR create. The
+// `name` field is the user slug — same identifier accepted everywhere
+// else in the Server API.
+type wireCreatePRReviewer struct {
+	User struct {
+		Name string `json:"name"`
+	} `json:"user"`
 }
 
 func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error) {
@@ -109,6 +119,11 @@ func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.Pu
 		Draft:       in.Draft,
 		FromRef:     wireRefBody{ID: ensureRefsHeads(in.FromBranch)},
 		ToRef:       wireRefBody{ID: ensureRefsHeads(in.ToBranch)},
+	}
+	for _, slug := range in.Reviewers {
+		var r wireCreatePRReviewer
+		r.User.Name = slug
+		body.Reviewers = append(body.Reviewers, r)
 	}
 	var w wirePR
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests", ns, slug)
