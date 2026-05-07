@@ -29,6 +29,22 @@ var (
 	ErrTransport         = errors.New("transport error")
 )
 
+// ErrorCode is a stable, dotted token identifying a specific user-visible
+// failure mode (e.g. "auth.invalid_token"). Codes are the join key between
+// the API layer (which classifies wire errors) and the errfmt renderer
+// (which looks up titles + hints). Treat them as part of the public API:
+// add new codes freely, never repurpose existing ones.
+type ErrorCode string
+
+// Catalogue of error codes. Group by cluster prefix; keep alphabetical
+// inside each cluster. errfmt has a matching catalogue of titles + hints.
+const (
+	// auth cluster — credentials missing, expired, or insufficient
+	CodeAuthNoToken       ErrorCode = "auth.no_token"
+	CodeAuthInvalidToken  ErrorCode = "auth.invalid_token"
+	CodePermWriteRequired ErrorCode = "perm.write_required"
+)
+
 // DomainError wraps an underlying cause with structured context for renderers
 // (CLI plain-text, MCP structured payload). Kind is one of the package-level
 // sentinels; errors.Is(err, backend.ErrXxx) walks Kind, enabling deterministic
@@ -39,8 +55,10 @@ var (
 //   - Feature:  capability name, populated for ErrUnsupportedOnHost
 //   - Resource: domain kind ("pull-request", "branch", "repository", ...)
 //   - ID:       resource identifier ("42", "feat/x", "ws/repo", ...)
+//   - Code:     dotted ErrorCode token, used by errfmt to look up hints
 type DomainError struct {
 	Kind     error
+	Code     ErrorCode
 	Host     string
 	Feature  string
 	Resource string
@@ -90,6 +108,7 @@ func ClassifyHTTPError(host string, err *HTTPError) *DomainError {
 	switch err.StatusCode {
 	case 401:
 		de.Kind = ErrAuth
+		de.Code = CodeAuthInvalidToken
 	case 403:
 		de.Kind = ErrPermission
 	case 404:
