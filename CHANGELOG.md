@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/proggarapsody/bitbottle/compare/v1.18.1...v1.19.0) (2026-05-07)
+
+
+### Features
+
+* scope EX2-EX6 — error UX clusters (repo, pr, branch, network, MCP) ([#100](https://github.com/proggarapsody/bitbottle/issues/100)) ([c88e643](https://github.com/proggarapsody/bitbottle/commit/c88e6436a998db948e23666a0c1c287d44689bc4))
+
 ## [1.18.1](https://github.com/proggarapsody/bitbottle/compare/v1.18.0...v1.18.1) (2026-05-07)
 
 
