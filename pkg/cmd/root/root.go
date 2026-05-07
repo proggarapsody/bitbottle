@@ -29,9 +29,19 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 		Long:          "bitbottle is a CLI for self-hosted Bitbucket Server/Data Center.",
 		SilenceErrors: true,
 		SilenceUsage:  true,
+		// PersistentPreRunE runs before every subcommand's RunE. It is the
+		// single point that translates global flags into IOStreams state, so
+		// --no-color works on every command without each one re-reading it.
+		// Note: cobra skips this hook when --help short-circuits, so the
+		// applied state is only visible during real command execution.
+		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
+			cmdutil.ApplyNoColorFlag(c, f.IOStreams)
+			return nil
+		},
 	}
 
 	cmd.PersistentFlags().String("hostname", "", "Bitbucket hostname (overrides git remote)")
+	cmdutil.RegisterNoColorFlag(cmd)
 
 	cmd.AddCommand(completion.NewCmdCompletion(f))
 	cmd.AddCommand(auth.NewCmdAuth(f))
