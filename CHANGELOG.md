@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/proggarapsody/bitbottle/compare/v1.19.0...v1.20.0) (2026-05-07)
+
+
+### Features
+
+* **t:** pager opt-in coverage on long-output read-only commands ([#103](https://github.com/proggarapsody/bitbottle/issues/103)) ([e1beb17](https://github.com/proggarapsody/bitbottle/commit/e1beb1766413f2c0bcf5fc275cfef92a816dd9a0))
+
 ## [1.19.0](https://github.com/proggarapsody/bitbottle/compare/v1.18.1...v1.19.0) (2026-05-07)
 
 
