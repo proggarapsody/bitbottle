@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/proggarapsody/bitbottle/compare/v1.17.0...v1.18.0) (2026-05-07)
+
+
+### Features
+
+* scope EX1 — error UX foundation + auth cluster ([#92](https://github.com/proggarapsody/bitbottle/issues/92)) ([d2c92f8](https://github.com/proggarapsody/bitbottle/commit/d2c92f8ceab62e6e053577178de1b928253fe291))
+
 ## [1.17.0](https://github.com/proggarapsody/bitbottle/compare/v1.16.0...v1.17.0) (2026-05-07)
 
 
