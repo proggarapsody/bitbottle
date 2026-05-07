@@ -64,6 +64,15 @@ func (s *IOStreams) ColorEnabled() bool {
 	return s.colorEnabled
 }
 
+// SetColorEnabled overrides the color decision. The constructor seeds
+// colorEnabled from TTY + NO_COLOR; SetColorEnabled lets a higher layer
+// (e.g. a --no-color persistent flag in root) flip it off after construction.
+// Pass true to force-enable color even on non-TTY (rarely useful — most
+// callers only use this to force-disable).
+func (s *IOStreams) SetColorEnabled(v bool) {
+	s.colorEnabled = v
+}
+
 // StartPager spawns $PAGER (default "less -FRX") and wires IOStreams.Out
 // to the pager's stdin. Only activates when stdout is a TTY; no-op otherwise.
 // Callers must defer StopPager() immediately after a successful call.

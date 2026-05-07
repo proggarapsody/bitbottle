@@ -36,3 +36,13 @@ func (s *IOStreams) ColorMagenta(str string) string {
 	}
 	return colorize(color.New(color.FgMagenta), str)
 }
+
+// ColorYellow renders in-progress / pending states. Distinct from green
+// (terminal success) and red (terminal failure) so a glance at the table
+// tells you whether a row is actively running, done, or broken.
+func (s *IOStreams) ColorYellow(str string) string {
+	if !s.colorEnabled {
+		return str
+	}
+	return colorize(color.New(color.FgYellow), str)
+}
