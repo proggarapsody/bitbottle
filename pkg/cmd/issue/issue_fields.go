@@ -9,9 +9,8 @@ import (
 
 // IssueStateColor maps Bitbucket Cloud issue states to colours. Active
 // (open / new) renders green; closed states (resolved / closed) magenta;
-// "won't fix" / "invalid" / "duplicate" red — they're terminal and
-// negative. "on hold" passes through uncoloured (a yellow helper would be
-// the right call but lives in scope T which lands in a separate PR).
+// "won't fix" / "invalid" / "duplicate" red — terminal and negative;
+// "on hold" yellow because it's neither active nor done.
 //
 // Exported so a future `issue view` formatter (or external tooling) can
 // share the mapping. Unknown states pass through uncoloured.
@@ -24,6 +23,8 @@ func IssueStateColor(ios *iostreams.IOStreams) func(string) string {
 			return ios.ColorMagenta(state)
 		case "wontfix", "invalid", "duplicate":
 			return ios.ColorRed(state)
+		case "on hold":
+			return ios.ColorYellow(state)
 		default:
 			return state
 		}

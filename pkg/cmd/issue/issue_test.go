@@ -247,7 +247,7 @@ func TestIssueStateColor_TTY(t *testing.T) {
 		"wontfix":   "\033[31mwontfix\033[0m",
 		"invalid":   "\033[31minvalid\033[0m",
 		"duplicate": "\033[31mduplicate\033[0m",
-		"on hold":   "on hold", // yellow helper lands with scope T
+		"on hold":   "\033[33mon hold\033[0m",
 		// Edge cases
 		"":      "",
 		"OPEN":  "OPEN", // case-sensitive
