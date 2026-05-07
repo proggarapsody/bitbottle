@@ -175,3 +175,109 @@ func TestRender_PreservesNewlineAndTab(t *testing.T) {
 		t.Errorf("expected newline + tab preserved in Cause, got %q", got)
 	}
 }
+
+// TestCatalogue_CoversAllPublishedCodes is the drift gate: every code
+// listed in backend.AllCodes must produce non-empty stderr output via
+// the catalogue path. Adding a new ErrorCode without a matching errfmt
+// entry will fall through to renderByKind → raw err.Error(); this test
+// fails loudly when that happens.
+//
+// Workflow when adding a code:
+//  1. Append it to backend.AllCodes in api/backend/errors.go.
+//  2. Add a catalogue entry in pkg/errfmt/errfmt.go.
+//  3. This test passes.
+func TestCatalogue_CoversAllPublishedCodes(t *testing.T) {
+	if len(backend.AllCodes) == 0 {
+		t.Fatal("backend.AllCodes is empty — catalogue gate cannot run")
+	}
+	for _, code := range backend.AllCodes {
+		t.Run(string(code), func(t *testing.T) {
+			ios := iostreams.Test()
+			errfmt.Render(ios, &backend.DomainError{
+				Code: code,
+				Host: "h.example",
+			})
+			got := ios.ErrOut.(*bytes.Buffer).String()
+			if got == "" {
+				t.Errorf("code %q produced no output — missing errfmt catalogue entry", code)
+			}
+			// Every existing template includes {{.Host}}; if a future code
+			// legitimately omits it, relax this check.
+			if !strings.Contains(got, "h.example") {
+				t.Errorf("code %q did not appear to use the catalogue path: %q", code, got)
+			}
+		})
+	}
+}
+
+// TestRender_KindFallback_BareForms pins the strings produced when a
+// renderByKind arm runs with no contextual fields populated. These are
+// the safety-net lines users see when an adapter classified the error
+// but didn't add Resource/ID/Feature/Host yet — they must remain stable
+// so future refactors don't silently change the user-visible text.
+func TestRender_KindFallback_BareForms(t *testing.T) {
+	cases := []struct {
+		name string
+		err  *backend.DomainError
+		want string
+	}{
+		{
+			name: "permission no host",
+			err:  &backend.DomainError{Kind: backend.ErrPermission},
+			want: "Permission denied. Check your token scopes or re-run `bitbottle auth login`.",
+		},
+		{
+			name: "not-found no resource or id",
+			err:  &backend.DomainError{Kind: backend.ErrNotFound},
+			want: "Resource not found.",
+		},
+		{
+			name: "unsupported no feature",
+			err:  &backend.DomainError{Kind: backend.ErrUnsupportedOnHost},
+			want: "this feature is not available.",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ios := iostreams.Test()
+			errfmt.Render(ios, tc.err)
+			got := ios.ErrOut.(*bytes.Buffer).String()
+			if !strings.Contains(got, tc.want) {
+				t.Errorf("expected %q in output, got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+// TestRender_CodePrecedence pins the resolution order between Code and
+// Kind: when both are set, the catalogue (Code) wins; when Code is set
+// but unknown, the renderer falls back to the Kind path so an in-flight
+// rename or typo doesn't blank out user feedback.
+func TestRender_CodePrecedence(t *testing.T) {
+	t.Run("known code beats kind", func(t *testing.T) {
+		ios := iostreams.Test()
+		errfmt.Render(ios, &backend.DomainError{
+			Code: backend.CodeAuthInvalidToken,
+			Kind: backend.ErrConflict,
+			Host: "h.example",
+		})
+		got := ios.ErrOut.(*bytes.Buffer).String()
+		if !strings.Contains(got, "Authentication failed") {
+			t.Errorf("catalogue path should win, got %q", got)
+		}
+		if strings.Contains(got, "already exists") {
+			t.Errorf("Kind-based conflict line should not appear when Code is recognised, got %q", got)
+		}
+	})
+	t.Run("unknown code falls through to kind", func(t *testing.T) {
+		ios := iostreams.Test()
+		errfmt.Render(ios, &backend.DomainError{
+			Code: backend.ErrorCode("made.up.code"),
+			Kind: backend.ErrConflict,
+		})
+		got := ios.ErrOut.(*bytes.Buffer).String()
+		if !strings.Contains(got, "already exists") {
+			t.Errorf("unknown code should fall through to Kind path, got %q", got)
+		}
+	})
+}

@@ -8,6 +8,10 @@
 // hint phrasing) drift over time, and code-level translations live close
 // to the data they describe. Keeping both in one place stops the cmd layer
 // from duplicating ad-hoc message strings.
+//
+// Callers reach this package via cmdutil.ExplainError (legacy shim that
+// most cmd/* packages still go through) or directly via Render in new
+// code paths.
 package errfmt
 
 import (
@@ -50,10 +54,13 @@ var catalogue = map[backend.ErrorCode]entry{
 //
 // Resolution order:
 //  1. nil → no-op (safe to call from generic shims).
-//  2. DomainError with a code in the catalogue → templated title/cause/hint.
-//  3. DomainError with a recognised Kind but no code → legacy Kind-based
-//     fallback so commands not yet migrated still get a friendly line.
-//  4. anything else → raw error string.
+//  2. DomainError whose Code is present in the catalogue → templated
+//     title/cause/hint output.
+//  3. DomainError whose Code is unset OR not in the catalogue, but whose
+//     Kind matches one of backend.ErrConflict / ErrUnsupportedOnHost /
+//     ErrPermission / ErrNotFound → Kind-based fallback line.
+//  4. anything else (including DomainErrors with no Code and no
+//     recognised Kind, or non-DomainError values) → raw error string.
 //
 // Every server- or config-derived field (Message, Host, Resource, ID,
 // Feature) is passed through sanitise before reaching ios.ErrOut to
@@ -105,26 +112,27 @@ func renderByKind(ios *iostreams.IOStreams, de *backend.DomainError) bool {
 	case errors.Is(de, backend.ErrPermission):
 		if de.Host != "" {
 			fmt.Fprintf(ios.ErrOut, "Permission denied on %s. Check your token scopes or re-run `bitbottle auth login`.\n", sanitise(de.Host))
-			return true
+		} else {
+			fmt.Fprintln(ios.ErrOut, "Permission denied. Check your token scopes or re-run `bitbottle auth login`.")
 		}
-		fmt.Fprintln(ios.ErrOut, "Permission denied. Check your token scopes or re-run `bitbottle auth login`.")
 	case errors.Is(de, backend.ErrNotFound):
 		if de.Resource != "" && de.ID != "" {
 			fmt.Fprintf(ios.ErrOut, "%s %q not found.\n", sanitise(de.Resource), sanitise(de.ID))
-			return true
+		} else {
+			fmt.Fprintln(ios.ErrOut, "Resource not found.")
 		}
-		fmt.Fprintln(ios.ErrOut, "Resource not found.")
 	default:
 		return false
 	}
 	return true
 }
 
-// expand substitutes {{.Host}} with the DomainError host. Kept as a tiny
-// helper so callers can read the template strings literally above. The
-// host is sanitised here because it originates from local config / git
-// remote URLs / -R flag and could carry escape sequences from a hostile
-// .git/config; see sanitise for the threat model.
+// expand substitutes template placeholders with values from de. Only
+// {{.Host}} is recognised today — extend this function before adding
+// new tokens to catalogue entries. The host is sanitised here because
+// it originates from local config / git remote URLs / -R flag and
+// could carry escape sequences from a hostile .git/config; see
+// sanitise for the threat model.
 func expand(tmpl string, de *backend.DomainError) string {
 	return strings.ReplaceAll(tmpl, "{{.Host}}", sanitise(de.Host))
 }

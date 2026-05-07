@@ -47,6 +47,8 @@ packages/mcp-npm/   — npm wrapper (downloads Go binary on postinstall, bundles
 
 `api/backend/errors.go` — `ErrNotFound`, `ErrAuth`, `ErrPermission`, `ErrUnsupportedOnHost`, `ErrConflict`, `ErrTransport`, `DomainError`. Adapters wrap via `httpx.Transport.UseDomainErrors(host)` — keep that wired on any new transport.
 
+User-facing error rendering (titles + hints) lives in `pkg/errfmt`. Attach a `backend.ErrorCode` at the classification layer (and append it to `backend.AllCodes`); add the matching catalogue entry in `pkg/errfmt/errfmt.go`. Never format prose in `cmd/`.
+
 ## ContentTypePolicy
 
 Injected into `httpx.Transport`:
