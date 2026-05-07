@@ -94,3 +94,84 @@ func TestRender_UnknownError_PassesThrough(t *testing.T) {
 		t.Errorf("expected raw error to pass through, got %q", got)
 	}
 }
+
+// TestRender_StripsControlBytes is the regression guard for the terminal
+// escape injection class (CWE-150 / CWE-117). A hostile or compromised
+// Bitbucket Server can return error bodies containing CSI sequences,
+// OSC 8 hyperlinks, OSC 52 clipboard writes, BEL bytes, or bracketed-paste
+// escapes. Every server- or config-derived field that flows into stderr
+// (Message, Host, Resource, ID, Feature) must be stripped of C0/C1
+// control bytes and lone ESC before printing — newline and tab survive
+// because they're load-bearing in legitimate output.
+func TestRender_StripsControlBytes(t *testing.T) {
+	cases := []struct {
+		name string
+		err  *backend.DomainError
+	}{
+		{
+			name: "catalogue path: Message + Host carry escapes",
+			err: &backend.DomainError{
+				Code:    backend.CodeAuthInvalidToken,
+				Host:    "h.example\x1b[31m",
+				Message: "denied\x1b[2J\x07\x1b]8;;evil://x\x07click\x1b]8;;\x07",
+			},
+		},
+		{
+			name: "renderByKind path: Permission with escape in Host",
+			err: &backend.DomainError{
+				Kind: backend.ErrPermission,
+				Host: "h.example\x1b[31mFAKE\x1b[0m",
+			},
+		},
+		{
+			name: "renderByKind path: NotFound with escape in Resource/ID",
+			err: &backend.DomainError{
+				Kind:     backend.ErrNotFound,
+				Resource: "pull-request\x1b[2J",
+				ID:       "42\x07",
+			},
+		},
+		{
+			name: "renderByKind path: UnsupportedOnHost with escape in Feature",
+			err: &backend.DomainError{
+				Kind:    backend.ErrUnsupportedOnHost,
+				Feature: "fork\x1b]52;c;ZWlk\x07",
+				Host:    "h.example",
+			},
+		},
+		{
+			name: "raw passthrough: plain error with escape in message",
+			err: &backend.DomainError{
+				Message: "bare\x1b[31mFAKE\x1b[0m\x07",
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ios := iostreams.Test()
+			errfmt.Render(ios, tc.err)
+			got := ios.ErrOut.(*bytes.Buffer).String()
+			for _, bad := range []string{"\x1b", "\x07", "\x00", "\x9b"} {
+				if strings.Contains(got, bad) {
+					t.Errorf("control byte %q reached stderr: %q", bad, got)
+				}
+			}
+		})
+	}
+}
+
+// TestRender_PreservesNewlineAndTab pins the carve-out: \n and \t are
+// load-bearing (newlines split title/cause/hint lines, tabs sometimes
+// appear in legitimate upstream messages) and must survive the sanitiser.
+func TestRender_PreservesNewlineAndTab(t *testing.T) {
+	ios := iostreams.Test()
+	errfmt.Render(ios, &backend.DomainError{
+		Code:    backend.CodeAuthInvalidToken,
+		Host:    "h.example",
+		Message: "line one\n\tindented detail",
+	})
+	got := ios.ErrOut.(*bytes.Buffer).String()
+	if !strings.Contains(got, "line one\n\tindented detail") {
+		t.Errorf("expected newline + tab preserved in Cause, got %q", got)
+	}
+}

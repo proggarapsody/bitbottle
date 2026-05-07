@@ -54,6 +54,10 @@ var catalogue = map[backend.ErrorCode]entry{
 //  3. DomainError with a recognised Kind but no code → legacy Kind-based
 //     fallback so commands not yet migrated still get a friendly line.
 //  4. anything else → raw error string.
+//
+// Every server- or config-derived field (Message, Host, Resource, ID,
+// Feature) is passed through sanitise before reaching ios.ErrOut to
+// neutralise terminal escape injection (CWE-150 / CWE-117).
 func Render(ios *iostreams.IOStreams, err error) {
 	if err == nil {
 		return
@@ -63,7 +67,7 @@ func Render(ios *iostreams.IOStreams, err error) {
 		if e, ok := catalogue[de.Code]; ok {
 			fmt.Fprintln(ios.ErrOut, expand(e.title, de))
 			if cause := de.Message; cause != "" {
-				fmt.Fprintln(ios.ErrOut, "Cause: "+cause)
+				fmt.Fprintln(ios.ErrOut, "Cause: "+sanitise(cause))
 			}
 			for _, h := range e.hints {
 				fmt.Fprintln(ios.ErrOut, "Hint:  "+expand(h, de))
@@ -74,7 +78,7 @@ func Render(ios *iostreams.IOStreams, err error) {
 			return
 		}
 	}
-	fmt.Fprintln(ios.ErrOut, err)
+	fmt.Fprintln(ios.ErrOut, sanitise(err.Error()))
 }
 
 // renderByKind is the pre-catalogue fallback. It mirrors the old
@@ -91,22 +95,22 @@ func renderByKind(ios *iostreams.IOStreams, de *backend.DomainError) bool {
 	case errors.Is(de, backend.ErrUnsupportedOnHost):
 		feature := "this feature"
 		if de.Feature != "" {
-			feature = de.Feature
+			feature = sanitise(de.Feature)
 		}
 		host := ""
 		if de.Host != "" {
-			host = " on " + de.Host
+			host = " on " + sanitise(de.Host)
 		}
 		fmt.Fprintf(ios.ErrOut, "%s is not available%s.\n", feature, host)
 	case errors.Is(de, backend.ErrPermission):
 		if de.Host != "" {
-			fmt.Fprintf(ios.ErrOut, "Permission denied on %s. Check your token scopes or re-run `bitbottle auth login`.\n", de.Host)
+			fmt.Fprintf(ios.ErrOut, "Permission denied on %s. Check your token scopes or re-run `bitbottle auth login`.\n", sanitise(de.Host))
 			return true
 		}
 		fmt.Fprintln(ios.ErrOut, "Permission denied. Check your token scopes or re-run `bitbottle auth login`.")
 	case errors.Is(de, backend.ErrNotFound):
 		if de.Resource != "" && de.ID != "" {
-			fmt.Fprintf(ios.ErrOut, "%s %q not found.\n", de.Resource, de.ID)
+			fmt.Fprintf(ios.ErrOut, "%s %q not found.\n", sanitise(de.Resource), sanitise(de.ID))
 			return true
 		}
 		fmt.Fprintln(ios.ErrOut, "Resource not found.")
@@ -117,7 +121,39 @@ func renderByKind(ios *iostreams.IOStreams, de *backend.DomainError) bool {
 }
 
 // expand substitutes {{.Host}} with the DomainError host. Kept as a tiny
-// helper so callers can read the template strings literally above.
+// helper so callers can read the template strings literally above. The
+// host is sanitised here because it originates from local config / git
+// remote URLs / -R flag and could carry escape sequences from a hostile
+// .git/config; see sanitise for the threat model.
 func expand(tmpl string, de *backend.DomainError) string {
-	return strings.ReplaceAll(tmpl, "{{.Host}}", de.Host)
+	return strings.ReplaceAll(tmpl, "{{.Host}}", sanitise(de.Host))
+}
+
+// sanitise strips bytes that would let a hostile server or local config
+// inject terminal escape sequences into stderr (CWE-150 / CWE-117).
+// Removed: C0 controls (0x00–0x1F) except \t and \n, the DEL byte (0x7F),
+// and C1 controls (0x80–0x9F). \t and \n survive because they're load-
+// bearing in legitimate output (line splitting, indentation in upstream
+// messages). The lone ESC byte (0x1B) is part of C0 and is therefore
+// removed, which neutralises CSI / OSC 8 / OSC 52 / bracketed-paste
+// sequences in one pass.
+func sanitise(s string) string {
+	if s == "" {
+		return s
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		switch {
+		case r == '\t' || r == '\n':
+			b.WriteRune(r)
+		case r < 0x20 || r == 0x7F:
+			// C0 control + DEL — drop
+		case r >= 0x80 && r <= 0x9F:
+			// C1 control — drop
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
