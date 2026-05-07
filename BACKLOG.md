@@ -203,6 +203,8 @@ Current state of every command area against gh feature parity:
 | V | **API Passthrough** | `api PATH` | Both | 2 | ✅ |
 | N | **Workspace / Projects** | `workspace list`, `project list` | Cloud | 3 | 🔲 |
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | 🔲 |
+| BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | 🔲 |
+| EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | 🔲 |
 
 ---
 
@@ -675,6 +677,126 @@ type IssueClient interface {
 
 ---
 
+### BP — Branch Protect (Server/DC only)
+
+Bitbucket Server/DC exposes branch restrictions via the `branch-permissions/2.0` REST namespace. Cloud has a separate concept (`branch-restrictions`) that is differently shaped — out of scope for this iteration; surface `ErrUnsupportedOnHost` on Cloud.
+
+**New optional interface** (`api/backend/client.go`):
+```go
+type BranchProtector interface {
+    ListBranchProtections(ns, slug string, limit int) ([]BranchProtection, error)
+    CreateBranchProtection(ns, slug string, in CreateBranchProtectionInput) (BranchProtection, error)
+    DeleteBranchProtection(ns, slug string, id int) error
+}
+```
+Optional-interface pattern, with `AsBranchProtector` returning `ErrUnsupportedOnHost` on Cloud.
+
+**New types** (`api/backend/types.go`):
+```go
+type BranchProtection struct {
+    ID         int
+    Type       string   // no-deletes, fast-forward-only, pull-request-only, read-only
+    MatcherID  string   // pattern, branch name, model id, or branch type
+    MatcherKind string  // PATTERN, BRANCH, MODEL_BRANCH, MODEL_CATEGORY
+    Users      []string // exempted user slugs
+    Groups     []string // exempted group slugs
+}
+
+type CreateBranchProtectionInput struct {
+    Type        string
+    MatcherID   string
+    MatcherKind string
+    Users       []string
+    Groups      []string
+}
+```
+
+Uses dedicated transport at `/rest/branch-permissions/2.0` (mirrors the `default-reviewers` pattern).
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `branch protect list PROJECT/REPO` | 1 | — | `--limit`, `--json`, `--jq`, `--hostname` |
+| `branch protect create PROJECT/REPO` | 1 | `--type`, `--pattern` \| `--branch` | `--user` (repeatable), `--group` (repeatable), `--hostname` |
+| `branch protect delete PROJECT/REPO ID` | 2 | — | `--hostname` |
+
+**MCP tools**: `list_branch_protections`, `create_branch_protection`, `delete_branch_protection`
+
+---
+
+### EX — Error UX (centralised, human-readable, actionable)
+
+Today the CLI surfaces backend errors largely as raw `fmt.Errorf` strings — fine for engineers, hostile for everyone else. This scope introduces a single error UX layer so users see the same shape of message regardless of which command hit which API failure, with hints that tell them what to do next.
+
+**Goals**
+
+- Every command exits with a *humanized* error: title line + cause + hint(s).
+- Hints are deterministic and based on a tokenised error code, not heuristic substring matching.
+- Backend adapters classify errors once (HTTP status + endpoint + payload) → typed `DomainError` with a code; the cmd layer prints them.
+- TTY-aware: colour + secondary lines on TTY, single-line on pipes.
+- `--debug` keeps the raw transport error for engineers.
+
+**New types** (`api/backend/errors.go`):
+```go
+type ErrorCode string // e.g. "auth.invalid_token", "pr.merge.conflict", "perm.write_required"
+
+type DomainError struct {
+    Code    ErrorCode
+    Title   string   // short summary
+    Cause   string   // server's message, sanitised
+    Hints   []string // 0..N actionable next steps
+    HTTP    int      // optional, debug only
+    URL     string   // request URL, debug only
+    Wrapped error    // original
+}
+```
+
+**New package** (`pkg/errfmt/`):
+- Catalogue of error codes → templated hints (Markdown-free, plain text).
+- `Render(io *iostreams.IOStreams, err error)` — knows how to format a `DomainError` with TTY colour, fallback for plain `error`.
+- `errfmt.Wrap(err, code, hint...)` — adapters use this to attach a code + hint at the boundary.
+
+**Adapter changes**:
+- `httpx.Transport.UseDomainErrors(host)` already wraps to `ErrAuth` / `ErrPermission` / `ErrNotFound` / `ErrConflict` — extend it to attach error codes (e.g. `auth.invalid_token`, `perm.write_required`, `repo.not_found`, `pr.merge.conflict`).
+- Cloud and Server adapters add operation-specific codes where the generic mapping is too coarse (e.g. `pr.create.duplicate_branch`, `pr.reviewer.unknown`, `branch.protected`).
+
+**Cmd layer changes**:
+- `cmd/root` wraps `cmd.Execute()` and routes any error through `errfmt.Render` before exit.
+- Each command keeps using regular `error` returns — no per-command boilerplate.
+
+**Catalogue (initial)**:
+
+| Code | Trigger | Hint |
+|---|---|---|
+| `auth.no_token` | empty token in config | `bitbottle auth login --hostname HOST` |
+| `auth.invalid_token` | 401 | Token expired or revoked. Run `bitbottle auth refresh`. |
+| `perm.write_required` | 403 on a write op | Your token lacks write scope on this repo. |
+| `repo.not_found` | 404 on repo path | Check `PROJECT/REPO` casing; on Server use the project key, not the project name. |
+| `pr.not_found` | 404 on pr path | The PR may have been deleted; try `bitbottle pr list`. |
+| `pr.merge.conflict` | 409 on merge | Resolve conflicts locally and push, then retry. |
+| `pr.merge.behind` | 409 + "behind" | Update branch from base, then retry (`gh pr update-branch` analogue). |
+| `pr.create.duplicate_branch` | 409 on create | A PR for this source/target already exists. |
+| `pr.reviewer.unknown` | 400 on create with reviewer | One or more `--reviewer` slugs is not a member. |
+| `branch.protected` | 403 on push/delete | This branch is protected; ask an admin or use `branch protect list`. |
+| `host.unsupported` | `ErrUnsupportedOnHost` | This command is not available on Bitbucket Cloud / Server. |
+| `network.tls_unknown_authority` | TLS error | Add `-k` (or `skip_tls_verify: true` in config) for self-signed CAs. |
+| `transport.timeout` | request timeout | Network slow or VPN down. Retry with `--debug` for details. |
+
+**Migration**:
+
+- One PR per cluster of codes (auth, repo, pr, branch, network) — each is a thin error-mapping change with snapshot-style tests.
+- Final PR wires `errfmt.Render` into root and adds golden-file tests.
+
+**Definition of Done**:
+
+- `pkg/errfmt/` with table-driven tests against the full code catalogue.
+- Every existing typed error in `api/backend/errors.go` carries a code.
+- All TTY golden tests for top-level commands updated to assert the new format.
+- README has a "When errors happen" section with example output.
+
+---
+
 ## Implementation Order
 
 | Order | Scope | Rationale |
@@ -695,3 +817,5 @@ type IssueClient interface {
 | 14 | **V** API Passthrough | Raw escape hatch |
 | 15 | **N** Workspace/Projects | Cloud only; lower priority |
 | 16 | **O** Issues | Cloud only; many teams use Jira |
+| 17 | **BP** Branch Protect | Closes the last `branch` gap; Server/DC only |
+| 18 | **EX** Error UX | Cross-cutting; do once and every command benefits |
