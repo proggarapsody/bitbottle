@@ -75,6 +75,10 @@ type FakeClient struct {
 	GetWebhookFn    func(ns, slug, id string) (backend.Webhook, error)
 	CreateWebhookFn func(ns, slug string, in backend.CreateWebhookInput) (backend.Webhook, error)
 	DeleteWebhookFn func(ns, slug, id string) error
+
+	// Workspace methods (Cloud-only; satisfies backend.WorkspaceClient when set)
+	ListWorkspacesFn func(limit int) ([]backend.Workspace, error)
+	ListProjectsFn   func(workspace string, limit int) ([]backend.Project, error)
 }
 
 // Compile-time interface check.
@@ -476,4 +480,24 @@ func (c *FakeClient) DeleteWebhook(ns, slug, id string) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteWebhook; set DeleteWebhookFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) ListWorkspaces(limit int) ([]backend.Workspace, error) {
+	if c.ListWorkspacesFn != nil {
+		return c.ListWorkspacesFn(limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaces; set ListWorkspacesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) ListProjects(workspace string, limit int) ([]backend.Project, error) {
+	if c.ListProjectsFn != nil {
+		return c.ListProjectsFn(workspace, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListProjects; set ListProjectsFn in your test")
+	}
+	return nil, nil
 }

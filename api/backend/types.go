@@ -203,6 +203,29 @@ type Webhook struct {
 	Active bool
 }
 
+// Workspace is a Bitbucket Cloud workspace (the top-level ownership unit
+// containing repositories and projects). Bitbucket Server / Data Center has
+// no analogous concept — projects sit directly under the instance — so
+// Workspace is Cloud-only and surfaced via the WorkspaceClient optional
+// interface.
+type Workspace struct {
+	Slug   string
+	Name   string
+	UUID   string
+	WebURL string
+}
+
+// Project is a Bitbucket Cloud project (a logical group of repositories
+// inside a workspace). The naming clashes with Server/DC's "project" — which
+// is the namespace itself — but Cloud's project sits one level deeper.
+// Listed via WorkspaceClient.ListProjects(workspace).
+type Project struct {
+	Key    string
+	Name   string
+	UUID   string
+	WebURL string
+}
+
 // CreateWebhookInput carries the parameters for creating a webhook.
 // Secret is write-only — neither backend returns it on read.
 type CreateWebhookInput struct {

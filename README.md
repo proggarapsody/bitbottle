@@ -82,6 +82,8 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `webhook` | `list` `view` `create` `delete` |
 | `commit` | `log` `view` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
+| `workspace` | `list` _(Cloud only)_ |
+| `project` | `list WORKSPACE` _(Cloud only)_ |
 | `api` | Raw REST passthrough with pagination, `--jq`, variable expansion |
 | `alias` | Custom command shortcuts |
 | `config` | Editor, pager, git protocol per-host |
@@ -195,6 +197,21 @@ bitbottle repo fork myworkspace/my-service --into otherws --name my-fork
 `repo fork` returns a typed unsupported-capability error on Bitbucket Server /
 Data Center, which has no fork primitive in its REST API. Both `rename` and
 `fork` accept `--json fields` and `--jq expr` for structured output.
+
+### Workspaces & Projects (Cloud only)
+
+```bash
+# Workspaces the authenticated user belongs to
+bitbottle workspace list
+bitbottle workspace list --json slug,name --jq '.[].slug'
+
+# Projects within a workspace
+bitbottle project list myworkspace
+bitbottle project list myworkspace --limit 100
+```
+
+Both commands surface a typed unsupported-capability error against
+Bitbucket Server / Data Center hosts (workspaces are a Cloud concept).
 
 ### Raw API
 
