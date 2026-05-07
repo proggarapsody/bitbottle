@@ -795,6 +795,7 @@ type DomainError struct {
 - 🔲 EX3 — `pr` cluster: `pr.not_found`, `pr.merge.conflict`, `pr.merge.behind`, `pr.create.duplicate_branch`, `pr.reviewer.unknown`.
 - 🔲 EX4 — `branch` cluster: `branch.protected`.
 - 🔲 EX5 — `network` cluster: `network.tls_unknown_authority`, `transport.timeout`. These are pre-classify codes attached at the httpx layer before HTTPError exists.
+- 🔲 EX6 — MCP error UX: `pkg/cmd/mcp/{handlers,tools,mcp}.go` doesn't call `errfmt.Render`; MCP clients receive raw `err.Error()` strings via the JSON-RPC envelope. Wire a structured variant returning `{title, cause, hint, code}` so AI-agent integrations match CLI UX.
 
 **Definition of Done**:
 
