@@ -16,10 +16,12 @@ import (
 	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/project"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/skill"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/workspace"
 )
 
 func NewCmdRoot(f *factory.Factory) *cobra.Command {
@@ -53,6 +55,8 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(webhook.NewCmdWebhook(f))
 	cmd.AddCommand(commit.NewCmdCommit(f))
 	cmd.AddCommand(api.NewCmdAPI(f))
+	cmd.AddCommand(workspace.NewCmdWorkspace(f))
+	cmd.AddCommand(project.NewCmdProject(f))
 	cmd.AddCommand(configcmd.NewCmdConfig(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
 	cmd.AddCommand(skill.NewCmdSkill(f))

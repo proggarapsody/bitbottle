@@ -635,4 +635,26 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.deleteWebhook,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_workspaces",
+			mcplib.WithDescription("List Bitbucket Cloud workspaces the authenticated user belongs to (Cloud only)"),
+			optHostname,
+			optLimit,
+		),
+		h.listWorkspaces,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("list_projects",
+			mcplib.WithDescription("List projects within a Bitbucket Cloud workspace (Cloud only)"),
+			optHostname,
+			mcplib.WithString("workspace",
+				mcplib.Description("Workspace slug"),
+				mcplib.Required(),
+			),
+			optLimit,
+		),
+		h.listProjects,
+	)
 }
