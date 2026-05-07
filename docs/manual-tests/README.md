@@ -78,6 +78,8 @@ is exact.
 
 - [`cloud/auth-lifecycle.md`](cloud/auth-lifecycle.md) — login → status → refresh → token → logout
 - [`cloud/repo-lifecycle.md`](cloud/repo-lifecycle.md) — create → view → clone → delete
+- [`cloud/repo-extras.md`](cloud/repo-extras.md) — `rename` + `fork` (Cloud-only)
+- [`cloud/webhooks.md`](cloud/webhooks.md) — `webhook` list/view/create/delete
 - [`cloud/branch-lifecycle.md`](cloud/branch-lifecycle.md) — create → list → checkout → delete
 - [`cloud/tag-lifecycle.md`](cloud/tag-lifecycle.md) — lightweight + annotated
 - [`cloud/commit-inspection.md`](cloud/commit-inspection.md) — log → view → status
@@ -93,6 +95,8 @@ is exact.
 
 - [`server/auth-lifecycle.md`](server/auth-lifecycle.md) — including `--skip-tls-verify`
 - [`server/repo-lifecycle.md`](server/repo-lifecycle.md)
+- [`server/repo-extras.md`](server/repo-extras.md) — `rename` + `fork`-rejected (Cloud-only)
+- [`server/webhooks.md`](server/webhooks.md) — `webhook` list/view/create/delete
 - [`server/branch-lifecycle.md`](server/branch-lifecycle.md)
 - [`server/tag-lifecycle.md`](server/tag-lifecycle.md)
 - [`server/commit-inspection.md`](server/commit-inspection.md) — uses `build-status/1.0`

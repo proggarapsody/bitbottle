@@ -89,6 +89,15 @@ func (c *Client) DeleteRepo(ns, slug string) error {
 	return c.delete(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), nil)
 }
 
+func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error) {
+	body := map[string]string{"name": newName}
+	var w wireRepository
+	if err := c.putJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), body, &w); err != nil {
+		return backend.Repository{}, err
+	}
+	return w.toDomain(), nil
+}
+
 type wireAppProperties struct {
 	Version     string `json:"version"`
 	BuildNumber string `json:"buildNumber"`

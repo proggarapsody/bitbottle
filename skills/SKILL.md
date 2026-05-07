@@ -5,7 +5,7 @@ description: >
   and Cloud. Load when the user asks about bitbottle commands, auth setup, PRs,
   repos, branches, tags, commits, pipelines, or why a command failed. Load even
   if the user just says "bitbottle", mentions "Bitbucket", or pastes a bitbottle
-  error message. Verified against bitbottle 1.14.3. <!-- x-release-please-version -->
+  error message. Verified against bitbottle 1.16.0. <!-- x-release-please-version -->
 ---
 
 # bitbottle CLI
@@ -32,8 +32,10 @@ them speculatively.
 1. **Never echo tokens.** Pass tokens via stdin (`--with-token`) or
    the `BB_TOKEN` env var. Never put a PAT/App Password on the
    command line — it lands in shell history.
-2. **Confirm before destructive ops.** `repo delete`, `branch delete`,
-   `tag delete`, `webhook delete`, `pr decline`, `pr merge` are not undoable. Before
+2. **Confirm before destructive ops.** `repo delete`, `repo rename`,
+   `branch delete`, `tag delete`, `webhook delete`, `pr decline`,
+   `pr merge` are not undoable. (`repo rename` is included because the
+   slug change breaks existing clones' `origin` URL on Cloud.) Before
    running, show the user the exact command, the resolved host and
    `PROJECT/REPO`, the PR ID / branch / tag name, then wait for
    explicit confirmation. Reference files reuse this rule — don't
@@ -51,7 +53,7 @@ them speculatively.
    bogus value: `bitbottle <cmd> --json X` — the error lists them.
 5. **Check the version on behavior mismatches.** If a command behaves
    differently from this file, run `bitbottle --version`. This skill
-   was last verified against **1.14.3**. <!-- x-release-please-version -->
+   was last verified against **1.16.0**. <!-- x-release-please-version -->
 
 ## Repo targeting (high-frequency)
 

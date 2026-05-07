@@ -1,6 +1,7 @@
 package cloud_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -121,6 +122,82 @@ func TestCloudClient_CreateRepo_SendsIsPrivate(t *testing.T) {
 	_, err := client.CreateRepo("myworkspace", backend.CreateRepoInput{Name: "new-repo", Public: false})
 	require.NoError(t, err)
 	assert.Contains(t, string(gotBody), `"is_private":true`)
+}
+
+func TestCloudClient_RenameRepo_PutsNewName(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	var gotBody map[string]any
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"full_name":"myworkspace/renamed","slug":"renamed","name":"renamed","scm":"git","links":{"html":{"href":"https://bitbucket.org/myworkspace/renamed"}}}`))
+	})
+	repo, err := client.RenameRepo("myworkspace", "my-service", "renamed")
+	require.NoError(t, err)
+	assert.Equal(t, http.MethodPut, gotMethod)
+	assert.Equal(t, "/repositories/myworkspace/my-service", gotPath)
+	assert.Equal(t, "renamed", gotBody["name"])
+	assert.Equal(t, "renamed", repo.Slug)
+	assert.Equal(t, "myworkspace", repo.Namespace)
+	assert.Equal(t, "https://bitbucket.org/myworkspace/renamed", repo.WebURL)
+}
+
+func TestCloudClient_ForkRepo_PostsToForksEndpoint(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	var gotBody map[string]any
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"full_name":"otherws/my-service","slug":"my-service","name":"my-service","scm":"git","links":{"html":{"href":"https://bitbucket.org/otherws/my-service"}}}`))
+	})
+	repo, err := client.ForkRepo("myworkspace", "my-service", backend.ForkRepoInput{Workspace: "otherws"})
+	require.NoError(t, err)
+	assert.Equal(t, http.MethodPost, gotMethod)
+	assert.Equal(t, "/repositories/myworkspace/my-service/forks", gotPath)
+	ws, _ := gotBody["workspace"].(map[string]any)
+	require.NotNil(t, ws, "workspace object expected on fork body")
+	assert.Equal(t, "otherws", ws["slug"])
+	assert.Equal(t, "otherws", repo.Namespace)
+}
+
+func TestCloudClient_ForkRepo_OmitsNameWhenEmpty(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"full_name":"otherws/my-service","slug":"my-service","name":"my-service","scm":"git"}`))
+	})
+	_, err := client.ForkRepo("myworkspace", "my-service", backend.ForkRepoInput{Workspace: "otherws"})
+	require.NoError(t, err)
+	_, hasName := gotBody["name"]
+	assert.False(t, hasName, "name must be omitted from body when empty so Bitbucket reuses the source name")
+}
+
+func TestCloudClient_ForkRepo_SendsNameWhenSet(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"full_name":"otherws/forked","slug":"forked","name":"forked","scm":"git"}`))
+	})
+	_, err := client.ForkRepo("myworkspace", "my-service", backend.ForkRepoInput{Workspace: "otherws", Name: "forked"})
+	require.NoError(t, err)
+	assert.Equal(t, "forked", gotBody["name"])
 }
 
 func TestCloudClient_DeleteRepo_204(t *testing.T) {
