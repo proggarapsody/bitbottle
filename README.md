@@ -302,6 +302,20 @@ bitbottle completion --shell powershell >> $PROFILE
 
 Full list in [`internal/envvars/envvars.go`](internal/envvars/envvars.go).
 
+## Colour & pager
+
+State columns in TTY tables are colourised: `OPEN` / `SUCCESSFUL` /
+active webhooks render green; `MERGED` magenta; `DECLINED` /
+`SUPERSEDED` / `FAILED` / `ERROR` / `STOPPED` / inactive webhooks red;
+`IN_PROGRESS` / `PENDING` yellow. Colour applies to TTY table output
+only — JSON (`--json`) and piped output stay raw.
+
+Disable colour with the global `--no-color` flag or by setting
+`NO_COLOR=1` in the environment. JSON output is never colourised.
+
+Long-output commands (`pr diff`, `commit log`) pipe through `$PAGER`
+when stdout is a TTY (default `less -FRX`). Set `PAGER=cat` to disable.
+
 ---
 
 ## Contributing
