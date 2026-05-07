@@ -9,6 +9,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 func NewCmdRepoView(f *factory.Factory) *cobra.Command {
@@ -21,6 +22,9 @@ func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 		Use:   "view [PROJECT/REPO]",
 		Short: "View a repository",
 		Args:  cobra.ExactArgs(1),
+		// Repository descriptions plus the metadata block can overflow
+		// a terminal page; opt in to $PAGER on a TTY.
+		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ref, err := bbrepo.Parse(args[0])
 			if err != nil {
