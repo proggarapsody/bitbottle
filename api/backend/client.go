@@ -315,6 +315,36 @@ type DefaultReviewersResolver interface {
 // typed-error reporting.
 const FeatureDefaultReviewers Feature = "default-reviewers"
 
+// BranchProtector exposes branch-restriction management on Bitbucket
+// Server / Data Center. The Cloud backend has a different "branch
+// restrictions" shape that's not modelled here — calls against a Cloud
+// client surface ErrUnsupportedOnHost via AsBranchProtector.
+type BranchProtector interface {
+	ListBranchProtections(ns, slug string, limit int) ([]BranchProtection, error)
+	CreateBranchProtection(ns, slug string, in CreateBranchProtectionInput) (BranchProtection, error)
+	DeleteBranchProtection(ns, slug string, id int) error
+}
+
+// FeatureBranchProtect names the branch-protection capability for typed-
+// error reporting.
+const FeatureBranchProtect Feature = "branch-protect"
+
+// AsBranchProtector returns the BranchProtector view of c, or a typed
+// *DomainError (Kind=ErrUnsupportedOnHost) when called against a backend
+// that doesn't model branch protections (currently Cloud).
+func AsBranchProtector(c Client, host string) (BranchProtector, error) {
+	bp, ok := c.(BranchProtector)
+	if !ok {
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Host:    host,
+			Feature: string(FeatureBranchProtect),
+			Message: fmt.Sprintf("branch protection is not supported on %s (Bitbucket Server / Data Center only)", host),
+		}
+	}
+	return bp, nil
+}
+
 // AsDefaultReviewersResolver returns the DefaultReviewersResolver view of c,
 // or a typed *DomainError when the backend doesn't implement it (currently
 // Cloud). Callers use the returned error to decide whether to skip the

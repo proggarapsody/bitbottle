@@ -292,3 +292,39 @@ type CreateWebhookInput struct {
 	Active bool
 	Secret string
 }
+
+// BranchProtection is a single branch-restriction record on Bitbucket
+// Server / Data Center. Cloud has a similar concept under a different,
+// non-trivial wire shape that we don't model yet — BranchProtection is
+// surfaced only via the BranchProtector optional interface.
+//
+// Type values match BBS exactly (lowercased, dash-separated):
+//
+//	read-only           — disallow all writes
+//	no-deletes          — disallow branch deletion
+//	fast-forward-only   — disallow non-fast-forward writes
+//	pull-request-only   — only PR merges may write
+//
+// MatcherKind is the BBS matcher type id ("BRANCH", "PATTERN",
+// "MODEL_BRANCH", "MODEL_CATEGORY") and MatcherID is the corresponding
+// value (a branch name, glob, or model id). Users / Groups list slugs
+// that are exempted from the restriction.
+type BranchProtection struct {
+	ID          int
+	Type        string
+	MatcherID   string
+	MatcherKind string
+	Users       []string
+	Groups      []string
+}
+
+// CreateBranchProtectionInput carries the parameters for adding a
+// branch-restriction. All fields except Type and MatcherID are optional.
+// MatcherKind defaults to "BRANCH" when empty (the most common case).
+type CreateBranchProtectionInput struct {
+	Type        string
+	MatcherID   string
+	MatcherKind string
+	Users       []string
+	Groups      []string
+}

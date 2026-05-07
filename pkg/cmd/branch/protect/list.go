@@ -1,0 +1,65 @@
+package protect
+
+import (
+	"github.com/spf13/cobra"
+
+	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+)
+
+// ListOptions holds parsed flags for `branch protect list`.
+type ListOptions struct {
+	Hostname   string
+	Limit      int
+	JSONFields string
+	JQExpr     string
+
+	// Args[0] = PROJECT/REPO
+	Args []string
+}
+
+// NewCmdList builds the `branch protect list` cobra command.
+func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Command {
+	opts := &ListOptions{Limit: 30}
+	cmd := &cobra.Command{
+		Use:   "list PROJECT/REPO",
+		Short: "List branch restrictions",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Args = args
+			if runF != nil {
+				return runF(opts)
+			}
+			return listRun(f, opts)
+		},
+	}
+	cmd.Flags().IntVar(&opts.Limit, "limit", 30, "Maximum number of restrictions to list")
+	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
+	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
+	return cmd
+}
+
+func listRun(f *factory.Factory, opts *ListOptions) error {
+	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
+	if err != nil {
+		return err
+	}
+	client, err := f.Backend(ref.Host)
+	if err != nil {
+		return err
+	}
+	bp, err := backend.AsBranchProtector(client, ref.Host)
+	if err != nil {
+		return err
+	}
+	got, err := bp.ListBranchProtections(ref.Project, ref.Slug, opts.Limit)
+	if err != nil {
+		return err
+	}
+	p := fields(f, opts.JSONFields, opts.JQExpr)
+	for _, r := range got {
+		p.AddItem(r)
+	}
+	return p.Render()
+}

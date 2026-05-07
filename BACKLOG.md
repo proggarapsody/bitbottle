@@ -94,7 +94,7 @@ Current state of every command area against gh feature parity:
 | `branch delete` | ✅ | |
 | `branch create` | ✅ | |
 | `branch checkout` | ✅ | Thin wrapper: `git fetch origin BRANCH && git checkout BRANCH` |
-| `branch protect` | ❌ | Branch restrictions; Server/DC only |
+| `branch protect` | ✅ | Branch restrictions; Server/DC only (`list`, `create`, `delete`) |
 
 ### Pipeline _(Cloud only)_
 
@@ -203,7 +203,7 @@ Current state of every command area against gh feature parity:
 | V | **API Passthrough** | `api PATH` | Both | 2 | ✅ |
 | N | **Workspace / Projects** | `workspace list`, `project list` | Cloud | 3 | 🔲 |
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | 🔲 |
-| BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | 🔲 |
+| BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | 🔲 |
 
 ---
