@@ -63,3 +63,18 @@ func TestClassifyHTTPError_UnknownStatusHasNoKind(t *testing.T) {
 	assert.Nil(t, got.Kind)
 	assert.NotErrorIs(t, got, backend.ErrNotFound)
 }
+
+// TestClassifyHTTPError_AttachesAuthInvalidTokenCode verifies that 401 not
+// only sets Kind=ErrAuth but also stamps the dotted error code that errfmt
+// uses to look up the user-facing hint.
+//
+// 401 is the one HTTP status with an unambiguous user remedy (re-login),
+// so it is safe to auto-attach the code at the classifier layer. Other
+// statuses (403, 404, 409) require op-specific context to pick the right
+// code and are stamped by the adapters themselves.
+func TestClassifyHTTPError_AttachesAuthInvalidTokenCode(t *testing.T) {
+	t.Parallel()
+	got := backend.ClassifyHTTPError("h.example", &backend.HTTPError{StatusCode: 401, Message: "Unauthorized"})
+	require.NotNil(t, got)
+	assert.Equal(t, backend.CodeAuthInvalidToken, got.Code)
+}
