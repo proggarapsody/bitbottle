@@ -162,24 +162,24 @@ Current state of every command area against gh feature parity:
 | Feature | Status | Notes |
 |---|---|---|
 | `--json` / `--jq` | ✅ | Implemented on all list + view commands |
-| `$PAGER` support | ❌ | `StartPager` is a no-op stub in iostreams |
-| Color output | ❌ | `colorEnabled` set but never used in formatters |
+| `$PAGER` support | ✅ | `IOStreams.StartPager`/`StopPager` + `cmdutil.PagerAnnotation`; opt-in on `commit log`, `commit view`, `pr diff`, `pr view`, `repo view`, `pipeline logs` |
+| Color output | ✅ | State columns colourised in formatters; `--no-color` global flag + `NO_COLOR` env honoured |
 
 ### Workspace / Projects _(Cloud only)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `workspace list` | ❌ | |
-| `project list WORKSPACE` | ❌ | |
+| `workspace list` | ✅ | Cloud only; surfaces `host.unsupported` on Server via `AsWorkspaceClient` |
+| `project list WORKSPACE` | ✅ | Cloud only |
 
 ### Issues _(Cloud only)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `issue list` | ❌ | |
-| `issue view` | ❌ | |
-| `issue create` | ❌ | |
-| `issue close` | ❌ | |
+| `issue list` | ✅ | Cloud only; `--state`, `--limit`, `--json`, `--jq` |
+| `issue view` | ✅ | Cloud only |
+| `issue create` | ✅ | Cloud only; `--title`, `--body`, `--kind`, `--priority` |
+| `issue close` | ✅ | Cloud only |
 
 ---
 
@@ -198,11 +198,11 @@ Current state of every command area against gh feature parity:
 | I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | ✅ |
 | J | **PR Comments** | `pr comment list`, `pr comment add` | Both | 2 | ✅ |
 | K | **Commit Statuses** | `commit status` | Both | 2 | ✅ |
-| T | **Output DX** | pager (`$PAGER`), color output | N/A | DX | 🔲 |
+| T | **Output DX** | pager (`$PAGER`), color output | N/A | DX | ✅ |
 | U | **Config** | `config list`, `config get`, `config set` | N/A | 2 | ✅ |
 | V | **API Passthrough** | `api PATH` | Both | 2 | ✅ |
-| N | **Workspace / Projects** | `workspace list`, `project list` | Cloud | 3 | 🔲 |
-| O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | 🔲 |
+| N | **Workspace / Projects** | `workspace list`, `project list` | Cloud | 3 | ✅ |
+| O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | ✅ |
 | BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
 

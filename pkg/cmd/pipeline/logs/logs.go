@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // Options holds parsed flags for `pipeline logs`.
@@ -25,6 +26,9 @@ func NewCmdLogs(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Use:   "logs PROJECT/REPO PIPELINE-UUID STEP-UUID",
 		Short: "Stream a pipeline step's log to stdout",
 		Args:  cobra.ExactArgs(3),
+		// Build logs are routinely thousands of lines; route through
+		// $PAGER on a TTY so users get scroll/search affordances.
+		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {

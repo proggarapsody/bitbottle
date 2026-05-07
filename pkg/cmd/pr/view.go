@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 func NewCmdPRView(f *factory.Factory) *cobra.Command {
@@ -17,6 +18,10 @@ func NewCmdPRView(f *factory.Factory) *cobra.Command {
 		Use:   "view PR_ID",
 		Short: "View a pull request",
 		Args:  cobra.ExactArgs(1),
+		// Long PR descriptions plus reviewer/build-status sections often
+		// exceed a terminal page; route through $PAGER on a TTY. The
+		// annotation handler at the root wires StartPager/StopPager.
+		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ref, prID, client, err := resolvePRTarget(f, args, "")
 			if err != nil {
