@@ -1,31 +1,30 @@
-# bitbottle — manual test cases
+# bitbottle — manual smoke tests
 
-Curated end-to-end scenarios for verifying `bitbottle` against real Bitbucket
-instances. Each scenario is a coherent user flow (log in → do something → clean
-up), not a per-command checklist.
+A small set of end-to-end smoke scenarios for verifying `bitbottle` against
+real Bitbucket instances before a release. Per-command coverage is the job
+of automated tests (`go test ./... -race`); this directory exists for the
+flows that automated tests cannot exercise — anything touching real auth,
+real HTTP, or real git remotes.
 
-These are **manual** tests by design. Run them before a release, or after
-touching a backend-specific code path. They are documentation; there is no
-runner.
+These are **manual** tests by design. There is no runner. Run all three
+before cutting a release, or after touching a backend-specific code path.
 
-## Layout
+## Scenarios
 
-```
-docs/manual-tests/
-├── README.md            # this file
-├── shared/              # flows identical on both backends — run once per backend
-├── cloud/               # Bitbucket Cloud (bitbucket.org) only
-└── server/              # Bitbucket Server / Data Center only
-```
+- [`cloud/pr-happy-path.md`](cloud/pr-happy-path.md) — full PR lifecycle
+  against Bitbucket Cloud (login → repo → branch → PR → squash-merge →
+  cleanup). Exercises the largest surface in one flow.
+- [`server/pr-happy-path.md`](server/pr-happy-path.md) — same flow against
+  Bitbucket Server / Data Center.
+- [`shared/multi-host.md`](shared/multi-host.md) — both backends configured
+  simultaneously, verifies host routing and `--hostname` selection.
 
-A scenario is duplicated across `cloud/` and `server/` only when the **failure
-modes differ** under the hood (e.g. PR comments, commit build status, API path
-shapes). Otherwise it lives in `shared/` and the prereqs say "run once per
-backend".
+If a scope changes a flow not covered by these three smokes (e.g. a new
+top-level command group, a new backend-specific failure mode), add a fresh
+scenario file rather than expanding one of these. Keep each scenario
+coherent (login → action → cleanup), not exhaustive.
 
 ## Prerequisites
-
-Set these before running anything.
 
 | Variable                    | Example                          | Notes                                  |
 |-----------------------------|----------------------------------|----------------------------------------|
@@ -37,8 +36,8 @@ Set these before running anything.
 | `BB_TEST_SERVER_TOKEN`      | (PAT)                            | Scopes: PROJECT_READ + PROJECT_WRITE   |
 | `BB_TEST_SERVER_SKIP_TLS`   | `true` or `false`                | Self-signed cert?                      |
 
-Provision the two scratch repos by hand once. They will accumulate branches,
-tags, and PRs over time — each scenario has a Cleanup section, but expect drift.
+Provision the two scratch repos by hand once. They will accumulate state
+over time — each scenario has a Cleanup section, but expect drift.
 
 Build a fresh CLI before testing:
 
@@ -48,9 +47,9 @@ export PATH="$PWD/dist:$PATH"
 bitbottle --version
 ```
 
-## Scenario template
+## Scenario file shape
 
-Every scenario file follows this shape:
+Each scenario follows:
 
 1. **Title** — `# Scenario: …`
 2. **Backend** — Cloud / Server-DC / both
@@ -63,46 +62,3 @@ Every scenario file follows this shape:
 Volatile values (hashes, timestamps, PR numbers, UUIDs) are masked as `…` or
 `<placeholder>`. Stable structure (column headers, exit codes, error wording)
 is exact.
-
-## Index
-
-### Shared (run once per backend)
-
-- [`shared/output-modes.md`](shared/output-modes.md) — TTY vs pipe, `--json`, `--jq`, `--web`
-- [`shared/config-and-alias.md`](shared/config-and-alias.md) — `config`, `alias`
-- [`shared/completion.md`](shared/completion.md) — `completion bash|zsh|fish|powershell`
-- [`shared/mcp-serve-smoke.md`](shared/mcp-serve-smoke.md) — `mcp serve` handshake
-- [`shared/multi-host.md`](shared/multi-host.md) — Cloud + Server/DC both logged in
-
-### Cloud only
-
-- [`cloud/auth-lifecycle.md`](cloud/auth-lifecycle.md) — login → status → refresh → token → logout
-- [`cloud/repo-lifecycle.md`](cloud/repo-lifecycle.md) — create → view → clone → delete
-- [`cloud/repo-extras.md`](cloud/repo-extras.md) — `rename` + `fork` (Cloud-only)
-- [`cloud/webhooks.md`](cloud/webhooks.md) — `webhook` list/view/create/delete
-- [`cloud/branch-lifecycle.md`](cloud/branch-lifecycle.md) — create → list → checkout → delete
-- [`cloud/tag-lifecycle.md`](cloud/tag-lifecycle.md) — lightweight + annotated
-- [`cloud/commit-inspection.md`](cloud/commit-inspection.md) — log → view → status
-- [`cloud/pr-happy-path.md`](cloud/pr-happy-path.md) — full PR lifecycle, squash-merge
-- [`cloud/pr-decline.md`](cloud/pr-decline.md)
-- [`cloud/pr-checkout.md`](cloud/pr-checkout.md) — check out someone else's PR
-- [`cloud/pr-comments.md`](cloud/pr-comments.md) — `pr comment add` / `list`
-- [`cloud/pr-request-changes.md`](cloud/pr-request-changes.md) — `pr request-changes` (Cloud only)
-- [`cloud/pipelines.md`](cloud/pipelines.md) — run → list → view
-- [`cloud/api-passthrough.md`](cloud/api-passthrough.md) — `api`, `--paginate`, `--jq`, `-F`
-
-### Server / DC only
-
-- [`server/auth-lifecycle.md`](server/auth-lifecycle.md) — including `--skip-tls-verify`
-- [`server/repo-lifecycle.md`](server/repo-lifecycle.md)
-- [`server/repo-extras.md`](server/repo-extras.md) — `rename` + `fork`-rejected (Cloud-only)
-- [`server/webhooks.md`](server/webhooks.md) — `webhook` list/view/create/delete
-- [`server/branch-lifecycle.md`](server/branch-lifecycle.md)
-- [`server/tag-lifecycle.md`](server/tag-lifecycle.md)
-- [`server/commit-inspection.md`](server/commit-inspection.md) — uses `build-status/1.0`
-- [`server/pr-happy-path.md`](server/pr-happy-path.md)
-- [`server/pr-decline.md`](server/pr-decline.md)
-- [`server/pr-checkout.md`](server/pr-checkout.md)
-- [`server/pr-comments.md`](server/pr-comments.md) — uses `activities` feed
-- [`server/pipelines-rejected.md`](server/pipelines-rejected.md) — negative test
-- [`server/api-passthrough.md`](server/api-passthrough.md) — `rest/api/1.0/...` paths

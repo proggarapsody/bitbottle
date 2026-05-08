@@ -8,9 +8,3 @@ fi
 
 echo "pre-commit: running golangci-lint..."
 golangci-lint run ./...
-
-# Doc-graph: when any *.md file is staged, run the drift check (WARN only — does not block)
-if git diff --cached --name-only | grep -qE '(^docs/|\.md$)'; then
-  echo "pre-commit: running doc-graph (WARN only)..." >&2
-  make doc-graph || true
-fi

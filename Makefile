@@ -1,4 +1,4 @@
-.PHONY: build test lint clean setup doc-graph
+.PHONY: build test lint clean setup
 
 BIN := bitbottle
 GO  := go
@@ -17,6 +17,3 @@ clean:
 
 setup:
 	git config core.hooksPath .githooks
-
-doc-graph:
-	@./scripts/doc-graph.sh

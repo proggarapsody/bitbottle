@@ -87,9 +87,10 @@ Match against the changed-file list from §0. Multiple rules can fire.
 
 | If diff touches… | Verify also updated | Severity |
 |---|---|---|
-| `pkg/cmd/<group>/<new-file>.go` (new command) | `pkg/cmd/<group>/<group>.go` registers it; **both** `api/cloud/` and `api/server/` have the operation; `pkg/cmd/mcp/` has a matching tool if it's a Bitbucket op | BLOCKER |
+| `pkg/cmd/<group>/<new-file>.go` (new command) | `pkg/cmd/<group>/<group>.go` registers it (or self-registers via `pkg/cmdregistry`); **both** `api/cloud/` and `api/server/` have the operation; `pkg/cmd/mcp/` has a matching tool if it's a Bitbucket op | BLOCKER |
 | New command in `pkg/cmd/<group>/` | `skills/SKILL.md` extended with the new command | BLOCKER |
-| New / changed flag in `pkg/cmd/**` | `skills/references/{auth,pr,repos,api}.md` reflects it; `docs/manual-tests/<command>.md` exists or is updated | BLOCKER |
+| New / changed flag in `pkg/cmd/**` | `skills/references/{auth,pr,repos,api}.md` reflects it (the curated overview — exhaustive flag detail stays in `bitbottle <cmd> --help`) | BLOCKER |
+| User-visible flow change not covered by an existing manual smoke | `docs/manual-tests/` — extend the relevant smoke (`cloud/pr-happy-path.md`, `server/pr-happy-path.md`, `shared/multi-host.md`) or add a fresh scenario file | WARN |
 | User-visible UX change (output format, new subcommand) | `README.md` | BLOCKER |
 | Branch strategy / commit / release / setup change | `CONTRIBUTING.md`, `AGENTS.md` | BLOCKER |
 | New invariant or pattern (transport policy, paging helper, etc.) | `AGENTS.md` "Key rules for AI agents" | WARN |
@@ -97,7 +98,6 @@ Match against the changed-file list from §0. Multiple rules can fire.
 | Auth, hosts.yml, or token handling | `skills/references/auth.md` | BLOCKER |
 | `api/backend/{client,types,errors}.go` changed | `docs/agent-primer.md` still accurate (architecture vocabulary, invariants, exemplar-file table) | BLOCKER |
 | `docs/workflows/iteration-cycle.md` changed | `AGENTS.md` and `.claude/skills/iteration-cycle/SKILL.md` (per-user, gitignored — flag as WARN; contributor's responsibility) still reference correct section numbers | WARN |
-| New file under `skills/references/` | Added to the doc-sync table's reference-file list (this table) | BLOCKER |
 
 If `skills/references/*.md` was edited, also check `skills/SKILL.md`'s
 router table still points at the right file.
