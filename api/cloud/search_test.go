@@ -195,3 +195,21 @@ func TestCloudClient_SearchCode_LimitClampsTotalItems(t *testing.T) {
 // replace substitutes the test-server URL into the canned "next" link.
 // Aliased to strings.ReplaceAll so the fixture stays declarative.
 func replace(s, old, new string) string { return strings.ReplaceAll(s, old, new) }
+
+// A workspace slug with a literal "/" must be percent-encoded into the URL
+// path so a hostile or buggy caller can't pivot to a different endpoint.
+// Mirrors the url.PathEscape pattern used in tag.go / prs.go.
+func TestCloudClient_SearchCode_WorkspaceIsPathEscaped(t *testing.T) {
+	t.Parallel()
+	var gotEscapedPath string
+	client, _ := newCloudSearchServer(t, func(w http.ResponseWriter, r *http.Request) {
+		// EscapedPath preserves %2F; r.URL.Path would silently decode it.
+		gotEscapedPath = r.URL.EscapedPath()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	})
+	_, err := client.SearchCode("acme/path", "TODO", 0)
+	require.NoError(t, err)
+	assert.Equal(t, "/workspaces/acme%2Fpath/search/code", gotEscapedPath,
+		"workspace must be url.PathEscape'd so '/' does not split the path")
+}

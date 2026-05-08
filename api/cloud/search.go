@@ -103,7 +103,7 @@ func (c *Client) SearchCode(workspace, query string, limit int) ([]backend.CodeS
 	if limit > 0 {
 		q.Set("pagelen", fmt.Sprintf("%d", limit))
 	}
-	path := fmt.Sprintf("/workspaces/%s/search/code?%s", workspace, q.Encode())
+	path := fmt.Sprintf("/workspaces/%s/search/code?%s", url.PathEscape(workspace), q.Encode())
 
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.CodeSearchHit, error) {
 		var page cloudPagedResponse[wireCloudCodeSearchHit]
