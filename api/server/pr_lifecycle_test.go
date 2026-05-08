@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -110,6 +111,33 @@ func TestServerClient_ReopenPR_PropagatesError(t *testing.T) {
 	})
 	err := client.ReopenPR("MYPROJ", "my-service", 999)
 	require.Error(t, err)
+}
+
+// TestServerClient_ReopenPR_Conflict_Returns409 verifies that a 409 from the
+// /reopen endpoint (e.g. PR already open or merged-not-declined) surfaces as
+// a typed *backend.DomainError with Kind=ErrConflict, and that the server's
+// cause string is preserved into Message so renderers can show it.
+func TestServerClient_ReopenPR_Conflict_Returns409(t *testing.T) {
+	t.Parallel()
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		// First call (GET) returns the PR; second call (POST /reopen) 409s.
+		if r.Method == http.MethodPost {
+			w.WriteHeader(http.StatusConflict)
+			_, _ = io.WriteString(w, `{"errors":[{"message":"Pull request is not declined"}]}`)
+			return
+		}
+		body, _ := os.ReadFile("testdata/pr_get.json")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	})
+	err := client.ReopenPR("MYPROJ", "my-service", 42)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, backend.ErrConflict)
+	var de *backend.DomainError
+	require.True(t, errors.As(err, &de), "expected *backend.DomainError")
+	assert.Equal(t, backend.ErrConflict, de.Kind)
+	assert.Contains(t, de.Message, "Pull request is not declined",
+		"server cause string must be preserved into Message")
 }
 
 func TestServerClient_UnapprovePR_DeletesApproveEndpoint(t *testing.T) {
