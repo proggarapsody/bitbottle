@@ -39,6 +39,64 @@ func TestCloudClient_ListPRComments(t *testing.T) {
 	assert.False(t, cmts[0].CreatedAt.IsZero())
 }
 
+func TestCloudClient_ListPRComments_InlineSingleLineNewSide(t *testing.T) {
+	t.Parallel()
+	const body = `{"values":[{"id":7,"content":{"raw":"nit"},"user":{"nickname":"alice","display_name":"Alice"},"created_on":"2026-04-24T10:00:00Z","inline":{"path":"main.go","to":42}}]}`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	cmts, err := client.ListPRComments("myws", "my-svc", 42)
+	require.NoError(t, err)
+	require.Len(t, cmts, 1)
+	require.NotNil(t, cmts[0].Inline)
+	assert.Equal(t, "main.go", cmts[0].Inline.Path)
+	assert.Equal(t, "new", cmts[0].Inline.Side)
+	assert.Equal(t, 42, cmts[0].Inline.Line)
+	assert.Equal(t, 0, cmts[0].Inline.StartLine)
+}
+
+func TestCloudClient_ListPRComments_InlineOldSideMultiLine(t *testing.T) {
+	t.Parallel()
+	const body = `{"values":[{"id":8,"content":{"raw":"range nit"},"user":{"nickname":"alice"},"created_on":"2026-04-24T10:00:00Z","inline":{"path":"main.go","from":10,"start_from":7}}]}`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	cmts, err := client.ListPRComments("myws", "my-svc", 42)
+	require.NoError(t, err)
+	require.Len(t, cmts, 1)
+	require.NotNil(t, cmts[0].Inline)
+	assert.Equal(t, "old", cmts[0].Inline.Side)
+	assert.Equal(t, 10, cmts[0].Inline.Line)
+	assert.Equal(t, 7, cmts[0].Inline.StartLine)
+}
+
+func TestCloudClient_ListPRComments_ParentResolutionUpdatedAt(t *testing.T) {
+	t.Parallel()
+	const body = `{"values":[{"id":9,"content":{"raw":"reply"},"user":{"nickname":"bob"},"created_on":"2026-04-24T10:00:00Z","updated_on":"2026-04-24T11:30:00Z","parent":{"id":7},"resolution":{"type":"resolved"}}]}`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	cmts, err := client.ListPRComments("myws", "my-svc", 42)
+	require.NoError(t, err)
+	require.Len(t, cmts, 1)
+	assert.Equal(t, 7, cmts[0].ParentID)
+	assert.True(t, cmts[0].Resolved)
+	assert.False(t, cmts[0].UpdatedAt.IsZero())
+	assert.Nil(t, cmts[0].Inline)
+}
+
 func TestCloudClient_AddPRComment(t *testing.T) {
 	t.Parallel()
 	var gotPath, gotMethod string

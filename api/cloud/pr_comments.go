@@ -18,7 +18,53 @@ type wireCloudPRComment struct {
 		DisplayName string `json:"display_name"`
 		Nickname    string `json:"nickname"`
 	} `json:"user"`
-	CreatedOn time.Time `json:"created_on"`
+	CreatedOn  time.Time            `json:"created_on"`
+	UpdatedOn  time.Time            `json:"updated_on"`
+	Inline     *wireCloudInline     `json:"inline,omitempty"`
+	Parent     *wireCloudParentRef  `json:"parent,omitempty"`
+	Resolution *wireCloudResolution `json:"resolution,omitempty"`
+}
+
+type wireCloudInline struct {
+	Path      string `json:"path"`
+	From      *int   `json:"from,omitempty"`
+	To        *int   `json:"to,omitempty"`
+	StartFrom *int   `json:"start_from,omitempty"`
+	StartTo   *int   `json:"start_to,omitempty"`
+}
+
+type wireCloudParentRef struct {
+	ID int `json:"id"`
+}
+
+type wireCloudResolution struct {
+	Type string `json:"type"`
+}
+
+// cloudInlineToDomain maps Bitbucket Cloud's inline payload to the domain type.
+// Returns nil if the inline anchor has no usable line number.
+func cloudInlineToDomain(in *wireCloudInline) *backend.PRCommentInline {
+	if in == nil {
+		return nil
+	}
+	out := &backend.PRCommentInline{Path: in.Path}
+	switch {
+	case in.To != nil:
+		out.Side = "new"
+		out.Line = *in.To
+		if in.StartTo != nil {
+			out.StartLine = *in.StartTo
+		}
+	case in.From != nil:
+		out.Side = "old"
+		out.Line = *in.From
+		if in.StartFrom != nil {
+			out.StartLine = *in.StartFrom
+		}
+	default:
+		return nil
+	}
+	return out
 }
 
 func (w wireCloudPRComment) toDomain() backend.PRComment {
@@ -26,7 +72,7 @@ func (w wireCloudPRComment) toDomain() backend.PRComment {
 	if slug == "" {
 		slug = w.User.AccountID
 	}
-	return backend.PRComment{
+	c := backend.PRComment{
 		ID: w.ID,
 		Author: backend.User{
 			Slug:        slug,
@@ -34,7 +80,16 @@ func (w wireCloudPRComment) toDomain() backend.PRComment {
 		},
 		Text:      w.Content.Raw,
 		CreatedAt: w.CreatedOn,
+		UpdatedAt: w.UpdatedOn,
+		Inline:    cloudInlineToDomain(w.Inline),
 	}
+	if w.Parent != nil {
+		c.ParentID = w.Parent.ID
+	}
+	if w.Resolution != nil && w.Resolution.Type != "" {
+		c.Resolved = true
+	}
+	return c
 }
 
 func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
