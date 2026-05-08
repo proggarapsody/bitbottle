@@ -39,7 +39,11 @@ func NewCmdContext(f *factory.Factory) *cobra.Command {
 			"are empty; ahead / behind are omitted from the JSON output (and\n" +
 			"shown as 'unknown' in the table) so callers do not misread them\n" +
 			"as 'in sync'. Host, user, and backend still resolve via the\n" +
-			"configured (or --hostname) host.",
+			"configured (or --hostname) host.\n\n" +
+			"Examples:\n" +
+			"  bitbottle context\n" +
+			"  bitbottle context --json\n" +
+			"  bitbottle context --jq .user.slug",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, err := Build(f, hostname)
