@@ -64,8 +64,10 @@ type FakeClient struct {
 	GetCommitFn   func(ns, slug, hash string) (backend.Commit, error)
 
 	// PR comment methods
-	ListPRCommentsFn func(ns, slug string, id int) ([]backend.PRComment, error)
-	AddPRCommentFn   func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error)
+	ListPRCommentsFn  func(ns, slug string, id int) ([]backend.PRComment, error)
+	AddPRCommentFn    func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error)
+	EditPRCommentFn   func(ns, slug string, id, commentID int, body string) (backend.PRComment, error)
+	DeletePRCommentFn func(ns, slug string, id, commentID int) error
 
 	// Commit status methods
 	ListCommitStatusesFn func(ns, slug, hash string) ([]backend.CommitStatus, error)
@@ -451,6 +453,26 @@ func (c *FakeClient) AddPRComment(ns, slug string, id int, in backend.AddPRComme
 		c.T.Fatalf("unexpected call to FakeClient.AddPRComment; set AddPRCommentFn in your test")
 	}
 	return backend.PRComment{}, nil
+}
+
+func (c *FakeClient) EditPRComment(ns, slug string, id, commentID int, body string) (backend.PRComment, error) {
+	if c.EditPRCommentFn != nil {
+		return c.EditPRCommentFn(ns, slug, id, commentID, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.EditPRComment; set EditPRCommentFn in your test")
+	}
+	return backend.PRComment{}, nil
+}
+
+func (c *FakeClient) DeletePRComment(ns, slug string, id, commentID int) error {
+	if c.DeletePRCommentFn != nil {
+		return c.DeletePRCommentFn(ns, slug, id, commentID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeletePRComment; set DeletePRCommentFn in your test")
+	}
+	return nil
 }
 
 func (c *FakeClient) ListCommitStatuses(ns, slug, hash string) ([]backend.CommitStatus, error) {

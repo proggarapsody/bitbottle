@@ -112,11 +112,79 @@ type wireCloudAddPRComment struct {
 	Content struct {
 		Raw string `json:"raw"`
 	} `json:"content"`
+	Inline *wireCloudInline    `json:"inline,omitempty"`
+	Parent *wireCloudParentRef `json:"parent,omitempty"`
+}
+
+// inlineDomainToCloud maps the domain inline anchor onto Cloud's wire shape.
+// Side="new" populates `to` (and `start_to` for multi-line); Side="old"
+// populates `from` (and `start_from`).
+func inlineDomainToCloud(in *backend.PRCommentInline) *wireCloudInline {
+	if in == nil {
+		return nil
+	}
+	out := &wireCloudInline{Path: in.Path}
+	line := in.Line
+	switch in.Side {
+	case "old":
+		out.From = &line
+		if in.StartLine != 0 && in.StartLine != in.Line {
+			start := in.StartLine
+			out.StartFrom = &start
+		}
+	default: // "new" or unset
+		out.To = &line
+		if in.StartLine != 0 && in.StartLine != in.Line {
+			start := in.StartLine
+			out.StartTo = &start
+		}
+	}
+	return out
+}
+
+// EditPRComment updates the body of an existing comment on a pull request.
+// Cloud accepts the same `{ "content": { "raw": ... } }` shape on PUT as on
+// the original POST, returning the refreshed comment.
+func (c *Client) EditPRComment(ns, slug string, id, commentID int, body string) (backend.PRComment, error) {
+	in := wireCloudAddPRComment{}
+	in.Content.Raw = body
+	var w wireCloudPRComment
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/%d", ns, slug, id, commentID)
+	if err := c.putJSON(path, in, &w); err != nil {
+		return backend.PRComment{}, err
+	}
+	return w.toDomain(), nil
+}
+
+// DeletePRComment removes a comment from a pull request. Cloud returns 204
+// No Content on success and 404 when the comment is unknown or already gone.
+func (c *Client) DeletePRComment(ns, slug string, id, commentID int) error {
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/%d", ns, slug, id, commentID)
+	return c.delete(path)
+}
+
+// ResolvePRComment marks a Cloud PR comment as resolved by writing
+// `resolution.type=resolved` to the comment endpoint via PUT. Cloud has no
+// dedicated resolve verb in the public REST surface; the resolution field
+// of an existing comment is the documented mechanism. Server has no
+// equivalent concept on regular comments and returns ErrUnsupportedOnHost
+// via AsPRCommentResolver.
+func (c *Client) ResolvePRComment(ns, slug string, id, commentID int) error {
+	body := map[string]any{
+		"resolution": map[string]string{"type": "resolved"},
+	}
+	var w wireCloudPRComment
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/%d", ns, slug, id, commentID)
+	return c.putJSON(path, body, &w)
 }
 
 func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
 	body := wireCloudAddPRComment{}
 	body.Content.Raw = in.Text
+	body.Inline = inlineDomainToCloud(in.Inline)
+	if in.Parent != nil {
+		body.Parent = &wireCloudParentRef{ID: *in.Parent}
+	}
 
 	var w wireCloudPRComment
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments", ns, slug, id)

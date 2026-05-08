@@ -97,6 +97,150 @@ func TestCloudClient_ListPRComments_ParentResolutionUpdatedAt(t *testing.T) {
 	assert.Nil(t, cmts[0].Inline)
 }
 
+func TestCloudClient_AddPRComment_InlineNewSide(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":7,"content":{"raw":"nit"},"user":{"nickname":"alice"},"created_on":"2026-04-24T12:00:00Z","inline":{"path":"main.go","to":42}}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	_, err := client.AddPRComment("myws", "my-svc", 42, backend.AddPRCommentInput{
+		Text:   "nit",
+		Inline: &backend.PRCommentInline{Path: "main.go", Side: "new", Line: 42},
+	})
+	require.NoError(t, err)
+
+	inline, ok := gotBody["inline"].(map[string]any)
+	require.True(t, ok, "expected inline object in request body, got %#v", gotBody)
+	assert.Equal(t, "main.go", inline["path"])
+	assert.EqualValues(t, 42, inline["to"])
+	_, hasFrom := inline["from"]
+	assert.False(t, hasFrom, "old-side fields should be absent on a new-side comment")
+}
+
+func TestCloudClient_AddPRComment_InlineOldSideMultiLine(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":8,"content":{"raw":"range"},"user":{"nickname":"alice"},"created_on":"2026-04-24T12:00:00Z"}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	_, err := client.AddPRComment("myws", "my-svc", 42, backend.AddPRCommentInput{
+		Text:   "range",
+		Inline: &backend.PRCommentInline{Path: "main.go", Side: "old", Line: 20, StartLine: 15},
+	})
+	require.NoError(t, err)
+
+	inline := gotBody["inline"].(map[string]any)
+	assert.Equal(t, "main.go", inline["path"])
+	assert.EqualValues(t, 20, inline["from"])
+	assert.EqualValues(t, 15, inline["start_from"])
+	_, hasTo := inline["to"]
+	assert.False(t, hasTo)
+}
+
+func TestCloudClient_EditPRComment(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotMethod string
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotMethod = r.Method
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":99,"content":{"raw":"updated body"},"user":{"nickname":"alice"},"created_on":"2026-04-24T12:00:00Z","updated_on":"2026-04-24T13:00:00Z"}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	got, err := client.EditPRComment("myws", "my-svc", 42, 99, "updated body")
+	require.NoError(t, err)
+
+	assert.Equal(t, http.MethodPut, gotMethod)
+	assert.Equal(t, "/repositories/myws/my-svc/pullrequests/42/comments/99", gotPath)
+	content := gotBody["content"].(map[string]any)
+	assert.Equal(t, "updated body", content["raw"])
+	assert.Equal(t, "updated body", got.Text)
+}
+
+func TestCloudClient_DeletePRComment(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotMethod string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotMethod = r.Method
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	require.NoError(t, client.DeletePRComment("myws", "my-svc", 42, 99))
+
+	assert.Equal(t, http.MethodDelete, gotMethod)
+	assert.Equal(t, "/repositories/myws/my-svc/pullrequests/42/comments/99", gotPath)
+}
+
+func TestCloudClient_ResolvePRComment(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotMethod string
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotMethod = r.Method
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":99,"content":{"raw":"x"},"user":{"nickname":"alice"},"created_on":"2026-04-24T12:00:00Z","resolution":{"type":"resolved"}}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	require.NoError(t, client.ResolvePRComment("myws", "my-svc", 42, 99))
+
+	// Cloud requires a write — verb is PUT or PATCH; assert one of those plus the resolved body.
+	assert.Contains(t, []string{http.MethodPut, http.MethodPatch, http.MethodPost}, gotMethod)
+	assert.Equal(t, "/repositories/myws/my-svc/pullrequests/42/comments/99", gotPath)
+	resolution, ok := gotBody["resolution"].(map[string]any)
+	require.True(t, ok, "expected resolution object in body, got %#v", gotBody)
+	assert.Equal(t, "resolved", resolution["type"])
+}
+
+func TestCloudClient_AddPRComment_Reply(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":11,"content":{"raw":"agreed"},"user":{"nickname":"bob"},"created_on":"2026-04-24T12:00:00Z","parent":{"id":7}}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	parent := 7
+	_, err := client.AddPRComment("myws", "my-svc", 42, backend.AddPRCommentInput{
+		Text:   "agreed",
+		Parent: &parent,
+	})
+	require.NoError(t, err)
+
+	parentObj := gotBody["parent"].(map[string]any)
+	assert.EqualValues(t, 7, parentObj["id"])
+	_, hasInline := gotBody["inline"]
+	assert.False(t, hasInline)
+}
+
 func TestCloudClient_AddPRComment(t *testing.T) {
 	t.Parallel()
 	var gotPath, gotMethod string

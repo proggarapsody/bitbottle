@@ -82,6 +82,47 @@ type PRCommentAdder interface {
 	AddPRComment(ns, slug string, id int, in AddPRCommentInput) (PRComment, error)
 }
 
+// PRCommentEditor updates the body of an existing comment on a pull request.
+type PRCommentEditor interface {
+	EditPRComment(ns, slug string, id, commentID int, body string) (PRComment, error)
+}
+
+// PRCommentDeleter removes a comment from a pull request.
+type PRCommentDeleter interface {
+	DeletePRComment(ns, slug string, id, commentID int) error
+}
+
+// PRCommentResolver marks a PR comment as resolved. Implemented only by
+// Bitbucket Cloud (whose comments carry a native `resolution` field).
+// Bitbucket Server has no equivalent concept on regular comments — the
+// closest analogue lives on tasks, which is a separate feature scope —
+// so callers route through AsPRCommentResolver and surface the constraint
+// as a typed ErrUnsupportedOnHost.
+type PRCommentResolver interface {
+	ResolvePRComment(ns, slug string, id, commentID int) error
+}
+
+// FeaturePRCommentResolve names the inline-comment resolution capability
+// for typed-error reporting via AsPRCommentResolver.
+const FeaturePRCommentResolve Feature = "pr-comment-resolve"
+
+// AsPRCommentResolver returns the PRCommentResolver view of c, or a typed
+// *DomainError (Kind=ErrUnsupportedOnHost) when the backend at host has no
+// resolution primitive (currently Bitbucket Server / Data Center).
+func AsPRCommentResolver(c Client, host string) (PRCommentResolver, error) {
+	r, ok := c.(PRCommentResolver)
+	if !ok {
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
+			Host:    host,
+			Feature: string(FeaturePRCommentResolve),
+			Message: fmt.Sprintf("pr comment resolve is not supported on %s (Bitbucket Cloud only)", host),
+		}
+	}
+	return r, nil
+}
+
 // FeaturePRReopen names the PR-reopen capability for typed-error reporting.
 // Bitbucket Cloud has no reopen primitive (BCLOUD-23807), so callers gate
 // the feature behind AsPRReopener.

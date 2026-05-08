@@ -214,8 +214,13 @@ type PRCommentInline struct {
 }
 
 // AddPRCommentInput carries the parameters for adding a comment to a PR.
+// Inline is non-nil for inline (file:line) review comments and nil for
+// general PR comments. Parent is non-nil to post a reply nested under an
+// existing comment thread.
 type AddPRCommentInput struct {
-	Text string
+	Text   string
+	Inline *PRCommentInline
+	Parent *int
 }
 
 // CommitStatus is a build / CI status reported against a commit hash.

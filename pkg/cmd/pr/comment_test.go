@@ -167,6 +167,180 @@ func TestPRCommentAdd_PassesBodyToAPI(t *testing.T) {
 	assert.Contains(t, out.String(), "Added comment #7")
 }
 
+func TestPRCommentAdd_InlineFlagBuildsAnchor(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.AddPRCommentInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AddPRCommentFn: func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
+			gotIn = in
+			return backend.PRComment{ID: 7}, nil
+		},
+	}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentAdd(f)
+	cmd.SetArgs([]string{"42", "--body", "nit", "--inline", "main.go:88"})
+	require.NoError(t, cmd.Execute())
+
+	require.NotNil(t, gotIn.Inline, "Inline must be populated when --inline is set")
+	assert.Equal(t, "main.go", gotIn.Inline.Path)
+	assert.Equal(t, "new", gotIn.Inline.Side)
+	assert.Equal(t, 88, gotIn.Inline.Line)
+}
+
+func TestPRCommentAdd_InlineSideOldFlag(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.AddPRCommentInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AddPRCommentFn: func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
+			gotIn = in
+			return backend.PRComment{ID: 8}, nil
+		},
+	}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentAdd(f)
+	cmd.SetArgs([]string{"42", "--body", "x", "--inline", "main.go:5", "--side", "old"})
+	require.NoError(t, cmd.Execute())
+
+	require.NotNil(t, gotIn.Inline)
+	assert.Equal(t, "old", gotIn.Inline.Side)
+}
+
+func TestPRCommentAdd_ParentFlagBuildsReply(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.AddPRCommentInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AddPRCommentFn: func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
+			gotIn = in
+			return backend.PRComment{ID: 9}, nil
+		},
+	}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentAdd(f)
+	cmd.SetArgs([]string{"42", "--body", "agreed", "--parent", "7"})
+	require.NoError(t, cmd.Execute())
+
+	require.NotNil(t, gotIn.Parent)
+	assert.Equal(t, 7, *gotIn.Parent)
+	assert.Nil(t, gotIn.Inline, "reply without --inline must not set the anchor")
+}
+
+func TestPRCommentAdd_BadInlineSpecRejectedBeforeAPICall(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t} // unset AddPRCommentFn → fatal if reached
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentAdd(f)
+	cmd.SetArgs([]string{"42", "--body", "x", "--inline", "no-colon"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--inline")
+}
+
+func TestPRCommentEdit_RequiresBody(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentEdit(f)
+	cmd.SetArgs([]string{"42", "99"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--body")
+}
+
+func TestPRCommentEdit_PassesBodyToAPI(t *testing.T) {
+	t.Parallel()
+	var gotID, gotComment int
+	var gotBody string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		EditPRCommentFn: func(ns, slug string, id, commentID int, body string) (backend.PRComment, error) {
+			gotID, gotComment, gotBody = id, commentID, body
+			return backend.PRComment{ID: commentID, Text: body}, nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentEdit(f)
+	cmd.SetArgs([]string{"42", "99", "--body", "updated"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, 42, gotID)
+	assert.Equal(t, 99, gotComment)
+	assert.Equal(t, "updated", gotBody)
+	assert.Contains(t, out.String(), "Updated comment #99")
+}
+
+func TestPRCommentDelete_CallsAPI(t *testing.T) {
+	t.Parallel()
+	var gotID, gotComment int
+	fake := &testhelpers.FakeClient{
+		T: t,
+		DeletePRCommentFn: func(ns, slug string, id, commentID int) error {
+			gotID, gotComment = id, commentID
+			return nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentDelete(f)
+	cmd.SetArgs([]string{"42", "99"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, 42, gotID)
+	assert.Equal(t, 99, gotComment)
+	assert.Contains(t, out.String(), "Deleted comment #99")
+}
+
+// fakeResolverClient embeds FakeClient + implements PRCommentResolver.
+type fakeResolverClient struct {
+	*testhelpers.FakeClient
+	ResolvePRCommentFn func(ns, slug string, id, commentID int) error
+}
+
+func (f *fakeResolverClient) ResolvePRComment(ns, slug string, id, commentID int) error {
+	if f.ResolvePRCommentFn != nil {
+		return f.ResolvePRCommentFn(ns, slug, id, commentID)
+	}
+	if f.T != nil {
+		f.T.Fatalf("unexpected call to fakeResolverClient.ResolvePRComment")
+	}
+	return nil
+}
+
+var _ backend.PRCommentResolver = (*fakeResolverClient)(nil)
+
+func TestPRCommentResolve_CallsAPIOnCloud(t *testing.T) {
+	t.Parallel()
+	var gotID, gotComment int
+	fake := &fakeResolverClient{
+		FakeClient: &testhelpers.FakeClient{T: t},
+		ResolvePRCommentFn: func(ns, slug string, id, commentID int) error {
+			gotID, gotComment = id, commentID
+			return nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentResolve(f)
+	cmd.SetArgs([]string{"42", "99"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, 42, gotID)
+	assert.Equal(t, 99, gotComment)
+	assert.Contains(t, out.String(), "Resolved comment #99")
+}
+
+func TestPRCommentResolve_UnsupportedOnServer(t *testing.T) {
+	t.Parallel()
+	// Plain FakeClient does NOT implement PRCommentResolver.
+	fake := &testhelpers.FakeClient{T: t}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentResolve(f)
+	cmd.SetArgs([]string{"42", "99"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not supported")
+}
+
 func TestPRCommentAdd_PropagatesAPIError(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{

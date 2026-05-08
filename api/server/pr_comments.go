@@ -114,15 +114,116 @@ func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, e
 }
 
 type wireServerAddPRComment struct {
-	Text string `json:"text"`
+	Text   string                   `json:"text"`
+	Anchor *wireServerCommentAnchor `json:"anchor,omitempty"`
+	Parent *wireServerParentRef     `json:"parent,omitempty"`
+}
+
+type wireServerParentRef struct {
+	ID int `json:"id"`
+}
+
+// wireServerDiffEnvelope is the JSON shape returned by
+// GET /pull-requests/{id}/diff/{path}. Only fromHash/toHash are needed
+// for inline-comment construction; the full hunk payload is ignored.
+type wireServerDiffEnvelope struct {
+	FromHash string `json:"fromHash"`
+	ToHash   string `json:"toHash"`
+}
+
+// fetchPRDiffHashes returns the (fromHash, toHash) for the given path on a
+// pull request. Server requires both on every inline-comment anchor; the
+// JSON-flavoured /diff/{path} endpoint surfaces them at the envelope root.
+func (c *Client) fetchPRDiffHashes(ns, slug string, id int, filePath string) (string, string, error) {
+	var env wireServerDiffEnvelope
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/diff/%s", ns, slug, id, filePath)
+	if err := c.getJSON(path, &env); err != nil {
+		return "", "", err
+	}
+	return env.FromHash, env.ToHash, nil
 }
 
 func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
 	body := wireServerAddPRComment{Text: in.Text}
+
+	if in.Inline != nil {
+		if in.Inline.StartLine != 0 && in.Inline.StartLine != in.Inline.Line {
+			return backend.PRComment{}, fmt.Errorf("multi-line inline comments are not supported on Bitbucket Server / Data Center; use a single-line --inline path:line")
+		}
+		fromHash, toHash, err := c.fetchPRDiffHashes(ns, slug, id, in.Inline.Path)
+		if err != nil {
+			return backend.PRComment{}, err
+		}
+		fileType := "TO"
+		lineType := "ADDED"
+		if in.Inline.Side == "old" {
+			fileType = "FROM"
+			lineType = "REMOVED"
+		}
+		body.Anchor = &wireServerCommentAnchor{
+			Path:     in.Inline.Path,
+			Line:     in.Inline.Line,
+			LineType: lineType,
+			FileType: fileType,
+			FromHash: fromHash,
+			ToHash:   toHash,
+			SrcPath:  in.Inline.Path,
+		}
+	}
+	if in.Parent != nil {
+		body.Parent = &wireServerParentRef{ID: *in.Parent}
+	}
+
 	var w wireServerPRComment
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments", ns, slug, id)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.PRComment{}, err
 	}
 	return w.toDomain(), nil
+}
+
+// wireServerEditPRComment carries the body for PUT .../comments/{id}.
+// Server requires the current `version` to be echoed back; a stale
+// version yields HTTP 409.
+type wireServerEditPRComment struct {
+	Text    string `json:"text"`
+	Version int    `json:"version"`
+}
+
+// fetchCommentVersion looks up the current version of a comment so the
+// caller can pass it to a subsequent edit/delete. Server's optimistic
+// locking demands an exact match; we fetch fresh on each write rather
+// than maintain a cross-call cache.
+func (c *Client) fetchCommentVersion(ns, slug string, id, commentID int) (int, error) {
+	var v struct {
+		Version int `json:"version"`
+	}
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d", ns, slug, id, commentID)
+	if err := c.getJSON(path, &v); err != nil {
+		return 0, err
+	}
+	return v.Version, nil
+}
+
+func (c *Client) EditPRComment(ns, slug string, id, commentID int, body string) (backend.PRComment, error) {
+	version, err := c.fetchCommentVersion(ns, slug, id, commentID)
+	if err != nil {
+		return backend.PRComment{}, err
+	}
+	in := wireServerEditPRComment{Text: body, Version: version}
+	var w wireServerPRComment
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d?version=%d", ns, slug, id, commentID, version)
+	if err := c.putJSON(path, in, &w); err != nil {
+		return backend.PRComment{}, err
+	}
+	return w.toDomain(), nil
+}
+
+func (c *Client) DeletePRComment(ns, slug string, id, commentID int) error {
+	version, err := c.fetchCommentVersion(ns, slug, id, commentID)
+	if err != nil {
+		return err
+	}
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d?version=%d", ns, slug, id, commentID, version)
+	return c.delete(path, nil)
 }

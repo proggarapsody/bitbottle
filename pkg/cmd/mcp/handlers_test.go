@@ -2019,6 +2019,186 @@ func TestSearchCode_ServerBackend_EmitsUnsupportedEnvelope(t *testing.T) {
 	assert.Equal(t, "code-search", env.Feature)
 }
 
+// ---- pr-comment writes (RV3) ----
+
+// resolverFakeClient embeds FakeClient and implements PRCommentResolver
+// (Cloud-only optional capability). Used for resolve_pr_comment success
+// tests; absence of this wrapper makes the FakeClient look Server-like.
+type resolverFakeClient struct {
+	*testhelpers.FakeClient
+	ResolvePRCommentFn func(ns, slug string, id, commentID int) error
+}
+
+func (r *resolverFakeClient) ResolvePRComment(ns, slug string, id, commentID int) error {
+	if r.ResolvePRCommentFn != nil {
+		return r.ResolvePRCommentFn(ns, slug, id, commentID)
+	}
+	return nil
+}
+
+var _ backend.PRCommentResolver = (*resolverFakeClient)(nil)
+
+func TestAddPRComment_InlineParametersBuildAnchor(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.AddPRCommentInput
+	fake := &testhelpers.FakeClient{
+		AddPRCommentFn: func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
+			gotIn = in
+			return backend.PRComment{ID: 7}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.addPRComment(context.Background(), makeReq(map[string]any{
+		"project":     "MYPROJ",
+		"slug":        "my-repo",
+		"id":          float64(42),
+		"body":        "nit",
+		"inline_path": "main.go",
+		"inline_line": float64(88),
+		"inline_side": "old",
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	require.NotNil(t, gotIn.Inline, "Inline must be populated")
+	assert.Equal(t, "main.go", gotIn.Inline.Path)
+	assert.Equal(t, "old", gotIn.Inline.Side)
+	assert.Equal(t, 88, gotIn.Inline.Line)
+}
+
+func TestAddPRComment_InlinePathRequiresLine(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t} // unset AddPRCommentFn → fatal if reached
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.addPRComment(context.Background(), makeReq(map[string]any{
+		"project":     "MYPROJ",
+		"slug":        "my-repo",
+		"id":          float64(42),
+		"body":        "x",
+		"inline_path": "main.go",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "inline_line")
+}
+
+func TestAddPRComment_ParentIDBuildsReply(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.AddPRCommentInput
+	fake := &testhelpers.FakeClient{
+		AddPRCommentFn: func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
+			gotIn = in
+			return backend.PRComment{ID: 9}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.addPRComment(context.Background(), makeReq(map[string]any{
+		"project":   "MYPROJ",
+		"slug":      "my-repo",
+		"id":        float64(42),
+		"body":      "agreed",
+		"parent_id": float64(7),
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	require.NotNil(t, gotIn.Parent)
+	assert.Equal(t, 7, *gotIn.Parent)
+}
+
+func TestEditPRComment_PassesBody(t *testing.T) {
+	t.Parallel()
+	var gotID, gotComment int
+	var gotBody string
+	fake := &testhelpers.FakeClient{
+		EditPRCommentFn: func(ns, slug string, id, commentID int, body string) (backend.PRComment, error) {
+			gotID, gotComment, gotBody = id, commentID, body
+			return backend.PRComment{ID: commentID, Text: body}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.editPRComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"id":         float64(42),
+		"comment_id": float64(99),
+		"body":       "updated",
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	assert.Equal(t, 42, gotID)
+	assert.Equal(t, 99, gotComment)
+	assert.Equal(t, "updated", gotBody)
+}
+
+func TestDeletePRComment_CallsBackend(t *testing.T) {
+	t.Parallel()
+	var gotID, gotComment int
+	fake := &testhelpers.FakeClient{
+		DeletePRCommentFn: func(ns, slug string, id, commentID int) error {
+			gotID, gotComment = id, commentID
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deletePRComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"id":         float64(42),
+		"comment_id": float64(99),
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	assert.Equal(t, 42, gotID)
+	assert.Equal(t, 99, gotComment)
+}
+
+func TestResolvePRComment_CallsBackendOnCloud(t *testing.T) {
+	t.Parallel()
+	var gotID, gotComment int
+	fake := &resolverFakeClient{
+		FakeClient: &testhelpers.FakeClient{T: t},
+		ResolvePRCommentFn: func(ns, slug string, id, commentID int) error {
+			gotID, gotComment = id, commentID
+			return nil
+		},
+	}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	factorytest.UseBackend(f, fake)
+	h := newHandlers(f)
+
+	result, err := h.resolvePRComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"id":         float64(42),
+		"comment_id": float64(99),
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	assert.Equal(t, 42, gotID)
+	assert.Equal(t, 99, gotComment)
+}
+
+func TestResolvePRComment_ServerEmitsUnsupportedEnvelope(t *testing.T) {
+	t.Parallel()
+	// Plain FakeClient does NOT implement PRCommentResolver — Server-like.
+	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{T: t})
+	result, err := h.resolvePRComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"id":         float64(42),
+		"comment_id": float64(99),
+	}))
+	require.NoError(t, err)
+	require.True(t, result.IsError)
+	text, ok := result.Content[0].(mcplib.TextContent)
+	require.True(t, ok)
+	var env struct {
+		Code    string `json:"code"`
+		Feature string `json:"feature"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text.Text), &env))
+	assert.Equal(t, string(backend.CodeHostUnsupported), env.Code)
+	assert.Equal(t, string(backend.FeaturePRCommentResolve), env.Feature)
+}
+
 // ---- list_pr_comments ----
 
 func TestListPRComments_ReturnsAllByDefault(t *testing.T) {
