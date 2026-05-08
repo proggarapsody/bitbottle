@@ -202,6 +202,26 @@ func (t *Transport) fetchBodyAt(fullURL string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
+// GetBytes GETs path and returns the raw response body. No Accept header
+// is set so the backend serves the resource's native Content-Type — used
+// for binary file content from the source/raw endpoints, where forcing
+// Accept: text/plain corrupts non-text files.
+func (t *Transport) GetBytes(path string) ([]byte, error) {
+	req, err := t.newRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := t.do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, t.apiError(resp)
+	}
+	return io.ReadAll(resp.Body)
+}
+
 // GetText GETs path and returns the raw body string.
 // Sends Accept: text/plain so Bitbucket Server returns a unified diff
 // rather than its JSON structured-diff format.

@@ -26,6 +26,26 @@ type RepoRenamer interface {
 	RenameRepo(ns, slug, newName string) (Repository, error)
 }
 
+// SourceReader reads file content and directory listings at a ref. Both
+// backends implement it (Cloud via /src/{ref}/{path}, Server via
+// /raw/{path}?at={ref} and /browse/{path}?at={ref}).
+//
+// GetFileContent returns the raw bytes of a file at ref. When path resolves
+// to a directory the backend returns a 404 (Server) or directory listing
+// (Cloud) — adapters normalise both to ErrNotFound so the cmd layer can
+// suggest ListTree.
+//
+// ListTree returns immediate children of path at ref. path "" lists the
+// repository root. Each entry has Type "file" or "dir" — backends with
+// richer type vocabularies (Server's "FILE"/"DIRECTORY"/"SUBMODULE",
+// Cloud's "commit_file"/"commit_directory") are normalised at the adapter
+// boundary. Submodules are surfaced as Type "dir" so the renderer treats
+// them as recursable; the Hash field carries the submodule pointer.
+type SourceReader interface {
+	GetFileContent(ns, slug, ref, path string) ([]byte, error)
+	ListTree(ns, slug, ref, path string) ([]TreeEntry, error)
+}
+
 // RepoForker is implemented only by Bitbucket Cloud clients — Bitbucket
 // Server / Data Center has no fork primitive in its REST API. Access via
 // AsRepoForker so the Cloud-only constraint surfaces as a typed

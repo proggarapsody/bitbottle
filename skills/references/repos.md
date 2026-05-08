@@ -14,6 +14,8 @@ bitbottle repo clone  PROJ/repo [PATH]
 bitbottle repo set-default HOST/PROJ/repo       # writes .git/config in cwd
 bitbottle repo rename PROJ/repo NEW-NAME [--confirm]   # both backends; slug derives from name on Cloud — destructive
 bitbottle repo fork   WS/repo --into TARGET-WS [--name NAME]   # Cloud only
+bitbottle repo file get PROJ/repo PATH --ref REF [--out FILE]  # read file content at a ref
+bitbottle repo tree PROJ/repo [PATH] --ref REF [--json fields] # list directory at a ref
 ```
 
 `repo rename` and `repo fork` accept `--json fields` and `--jq expr` for
@@ -27,6 +29,13 @@ private. `--private=true` is the explicit form.
 `repo fork` is Cloud-only — Bitbucket Server / Data Center has no fork
 primitive in its REST API and the command returns a typed
 unsupported-capability error on Server hosts.
+
+`repo file get` writes raw bytes to stdout (use `--out FILE` for binary).
+`repo tree` normalises `type` to `file` or `dir` across both backends —
+submodules surface as `dir` with the submodule pointer in `hash` so
+agents can recurse uniformly. PATH defaults to the repo root. Both
+commands require `--ref` (branch / tag / commit hash) and accept
+`--hostname`. MCP equivalents: `get_file_content` and `list_tree`.
 
 ## Branches
 
