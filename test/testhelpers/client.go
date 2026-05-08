@@ -106,6 +106,18 @@ type FakeClient struct {
 	// Source primitives (both backends; satisfies backend.SourceReader when set)
 	GetFileContentFn func(ns, slug, ref, path string) ([]byte, error)
 	ListTreeFn       func(ns, slug, ref, path string) ([]backend.TreeEntry, error)
+
+	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
+	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
+	GetReportFn         func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
+	SetReportFn         func(project, slug, hash, key string, in backend.CodeInsightsReportInput) (backend.CodeInsightsReport, error)
+	DeleteReportFn      func(project, slug, hash, key string) error
+	ListAnnotationsFn   func(project, slug, hash, key string) ([]backend.CodeInsightsAnnotation, error)
+	AddAnnotationsFn    func(project, slug, hash, key string, in []backend.CodeInsightsAnnotationInput) error
+	DeleteAnnotationsFn func(project, slug, hash, key string) error
+	SetMergeCheckFn     func(project, slug, key string, in backend.MergeCheckInput) error
+	GetMergeCheckFn     func(project, slug, key string) (backend.MergeCheck, error)
+	DeleteMergeCheckFn  func(project, slug, key string) error
 }
 
 // Compile-time interface check.
@@ -701,4 +713,106 @@ func (c *FakeClient) ListTree(ns, slug, ref, path string) ([]backend.TreeEntry, 
 		c.T.Fatalf("unexpected call to FakeClient.ListTree; set ListTreeFn in your test")
 	}
 	return nil, nil
+}
+
+// ── CodeInsightsClient ───────────────────────────────────────────────────────
+
+func (c *FakeClient) ListReports(project, slug, hash string) ([]backend.CodeInsightsReport, error) {
+	if c.ListReportsFn != nil {
+		return c.ListReportsFn(project, slug, hash)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListReports; set ListReportsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetReport(project, slug, hash, key string) (backend.CodeInsightsReport, error) {
+	if c.GetReportFn != nil {
+		return c.GetReportFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetReport; set GetReportFn in your test")
+	}
+	return backend.CodeInsightsReport{}, nil
+}
+
+func (c *FakeClient) SetReport(project, slug, hash, key string, in backend.CodeInsightsReportInput) (backend.CodeInsightsReport, error) {
+	if c.SetReportFn != nil {
+		return c.SetReportFn(project, slug, hash, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetReport; set SetReportFn in your test")
+	}
+	return backend.CodeInsightsReport{}, nil
+}
+
+func (c *FakeClient) DeleteReport(project, slug, hash, key string) error {
+	if c.DeleteReportFn != nil {
+		return c.DeleteReportFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteReport; set DeleteReportFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListAnnotations(project, slug, hash, key string) ([]backend.CodeInsightsAnnotation, error) {
+	if c.ListAnnotationsFn != nil {
+		return c.ListAnnotationsFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListAnnotations; set ListAnnotationsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddAnnotations(project, slug, hash, key string, in []backend.CodeInsightsAnnotationInput) error {
+	if c.AddAnnotationsFn != nil {
+		return c.AddAnnotationsFn(project, slug, hash, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddAnnotations; set AddAnnotationsFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) DeleteAnnotations(project, slug, hash, key string) error {
+	if c.DeleteAnnotationsFn != nil {
+		return c.DeleteAnnotationsFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteAnnotations; set DeleteAnnotationsFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) SetMergeCheck(project, slug, key string, in backend.MergeCheckInput) error {
+	if c.SetMergeCheckFn != nil {
+		return c.SetMergeCheckFn(project, slug, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetMergeCheck; set SetMergeCheckFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) GetMergeCheck(project, slug, key string) (backend.MergeCheck, error) {
+	if c.GetMergeCheckFn != nil {
+		return c.GetMergeCheckFn(project, slug, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetMergeCheck; set GetMergeCheckFn in your test")
+	}
+	return backend.MergeCheck{}, nil
+}
+
+func (c *FakeClient) DeleteMergeCheck(project, slug, key string) error {
+	if c.DeleteMergeCheckFn != nil {
+		return c.DeleteMergeCheckFn(project, slug, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteMergeCheck; set DeleteMergeCheckFn in your test")
+	}
+	return nil
 }

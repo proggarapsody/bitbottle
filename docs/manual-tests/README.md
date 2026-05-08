@@ -25,6 +25,9 @@ before cutting a release, or after touching a backend-specific code path.
   smoke for `repo file get` and `repo tree` (both backends; verifies
   binary-safety, type normalisation, and `--ref` accepts branches /
   tags / hashes).
+- [`server/code-insights.md`](server/code-insights.md) — end-to-end smoke
+  for `code-insights report`, `annotation`, and `merge-check` (experimental)
+  subcommands against Bitbucket Server / Data Center.
 
 If a scope changes a flow not covered by these three smokes (e.g. a new
 top-level command group, a new backend-specific failure mode), add a fresh
