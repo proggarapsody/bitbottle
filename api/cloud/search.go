@@ -4,10 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
+
+// cloudSearchPagelenMax mirrors Bitbucket Cloud's hard ceiling on the
+// `pagelen` query parameter: requests above 100 fail with HTTP 400. The
+// caller's --limit is a total-items cap (paging.Collect), not a page size,
+// so we clamp the wire value while letting paging keep collecting.
+const cloudSearchPagelenMax = 100
 
 // wireCloudSearchSegment mirrors Cloud's `{text, match}` segment object.
 // `match` is omitted on non-matched segments — the bool zero value is the
@@ -101,7 +108,13 @@ func (c *Client) SearchCode(workspace, query string, limit int) ([]backend.CodeS
 	q := url.Values{}
 	q.Set("search_query", query)
 	if limit > 0 {
-		q.Set("pagelen", fmt.Sprintf("%d", limit))
+		// Clamp to Cloud's max — paging.Collect still enforces the total
+		// items cap across pages.
+		pagelen := limit
+		if pagelen > cloudSearchPagelenMax {
+			pagelen = cloudSearchPagelenMax
+		}
+		q.Set("pagelen", strconv.Itoa(pagelen))
 	}
 	path := fmt.Sprintf("/workspaces/%s/search/code?%s", url.PathEscape(workspace), q.Encode())
 

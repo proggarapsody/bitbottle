@@ -3,6 +3,7 @@ package cloud_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -212,4 +213,22 @@ func TestCloudClient_SearchCode_WorkspaceIsPathEscaped(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "/workspaces/acme%2Fpath/search/code", gotEscapedPath,
 		"workspace must be url.PathEscape'd so '/' does not split the path")
+}
+
+// Cloud rejects pagelen > 100 with HTTP 400. --limit is a total-items cap
+// (paging.Collect), not page size, so the wire pagelen must be clamped.
+func TestCloudClient_SearchCode_PagelenClampedToCloudMax(t *testing.T) {
+	t.Parallel()
+	var gotPagelen string
+	client, _ := newCloudSearchServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPagelen = r.URL.Query().Get("pagelen")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	})
+	_, err := client.SearchCode("acme", "TODO", 250)
+	require.NoError(t, err)
+	require.NotEmpty(t, gotPagelen, "pagelen must still be sent when limit > 0")
+	n, perr := strconv.Atoi(gotPagelen)
+	require.NoError(t, perr)
+	assert.LessOrEqual(t, n, 100, "pagelen must be clamped to Cloud's max of 100")
 }
