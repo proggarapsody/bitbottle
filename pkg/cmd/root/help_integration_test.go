@@ -51,3 +51,25 @@ func TestRootHelp_RepoView_ShowsArgumentsSection(t *testing.T) {
 	assert.Contains(t, out.String(), "ARGUMENTS",
 		"repo view --help should include an ARGUMENTS section")
 }
+
+// TestRootHelp_Context_IsRegistered verifies that `bitbottle context --help`
+// is reachable through the root command — the regression that would catch a
+// missing AddCommand call when wiring CTX into root.
+func TestRootHelp_Context_IsRegistered(t *testing.T) {
+	t.Parallel()
+
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	cmd := root.NewCmdRoot(f)
+
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"context", "--help"})
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	assert.Contains(t, got, "bitbottle context",
+		"`bitbottle context --help` should print the context command's help")
+	assert.Contains(t, got, "default branch",
+		"context help should describe the orientation shape")
+}
