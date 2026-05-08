@@ -36,13 +36,13 @@ func (c *Client) ReopenPR(ns, slug string, id int) error {
 	var current wirePR
 	prPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.getJSON(prPath, &current); err != nil {
-		return err
+		return stampPRNotFound(err, id)
 	}
 	body := struct {
 		Version int `json:"version"`
 	}{Version: current.Version}
 	var result struct{}
-	return c.postJSON(prPath+"/reopen", body, &result)
+	return stampPRNotFound(c.postJSON(prPath+"/reopen", body, &result), id)
 }
 
 // UnapprovePR removes the authenticated user's approval from a pull request.

@@ -111,6 +111,14 @@ func TestServerClient_ReopenPR_PropagatesError(t *testing.T) {
 	})
 	err := client.ReopenPR("MYPROJ", "my-service", 999)
 	require.Error(t, err)
+	// 404 must surface as the typed pr.not_found code so errfmt renders
+	// the PR-specific envelope rather than a generic "not_found".
+	assert.ErrorIs(t, err, backend.ErrNotFound)
+	var de *backend.DomainError
+	require.True(t, errors.As(err, &de))
+	assert.Equal(t, backend.CodePRNotFound, de.Code,
+		"ReopenPR 404 must be stamped with pr.not_found")
+	assert.Equal(t, "999", de.ID)
 }
 
 // TestServerClient_ReopenPR_Conflict_Returns409 verifies that a 409 from the
