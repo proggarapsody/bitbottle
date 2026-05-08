@@ -29,6 +29,9 @@ type Client struct {
 	// branchProtectHTTP targets /rest/branch-permissions/2.0, the separate
 	// REST root Bitbucket Server uses for branch-restriction CRUD.
 	branchProtectHTTP *httpx.Transport
+	// codeInsightsHTTP targets /rest/insights/1.0, the separate REST root
+	// Bitbucket Server uses for Code Insights reports and annotations.
+	codeInsightsHTTP *httpx.Transport
 	// host is the scheme+host extracted from baseURL, used to construct WebURLs
 	// for resources (like commits) that the API does not return a link for.
 	host string
@@ -75,6 +78,14 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 		branchProtectHTTP: httpx.New(
 			httpClient,
 			host+"/rest/branch-permissions/2.0",
+			auth,
+			decodeErrorMessage,
+			httpx.ContentTypeAlwaysWrite,
+			serverPaginator{},
+		).UseDomainErrors(host),
+		codeInsightsHTTP: httpx.New(
+			httpClient,
+			host+"/rest/insights/1.0",
 			auth,
 			decodeErrorMessage,
 			httpx.ContentTypeAlwaysWrite,
