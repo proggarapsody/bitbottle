@@ -10,6 +10,12 @@ type IssueClient interface {
 	GetIssue(ns, slug string, id int) (Issue, error)
 	CreateIssue(ns, slug string, in CreateIssueInput) (Issue, error)
 	UpdateIssue(ns, slug string, id int, in UpdateIssueInput) (Issue, error)
+	ReopenIssue(ns, slug string, id int) error
+	AssignIssue(ns, slug string, id int, assignee string) error
+	ListIssueComments(ns, slug string, id int) ([]IssueComment, error)
+	AddIssueComment(ns, slug string, id int, body string) (IssueComment, error)
+	EditIssueComment(ns, slug string, id, commentID int, body string) (IssueComment, error)
+	DeleteIssueComment(ns, slug string, id, commentID int) error
 }
 
 // FeatureIssues names the issues capability for typed-error reporting.

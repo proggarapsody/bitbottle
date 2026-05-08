@@ -84,7 +84,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `workspace` | `list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
-| `issue` | `list` `view` `create` `close` _(Cloud only)_ |
+| `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
 | `search` | `code QUERY` _(Cloud only)_ |
 | `api` | Raw REST passthrough with pagination, `--jq`, variable expansion |
 | `alias` | Custom command shortcuts |

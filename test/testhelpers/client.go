@@ -81,10 +81,16 @@ type FakeClient struct {
 	ListProjectsFn   func(workspace string, limit int) ([]backend.Project, error)
 
 	// Issue methods (Cloud-only; satisfies backend.IssueClient when set)
-	ListIssuesFn  func(ns, slug, state string, limit int) ([]backend.Issue, error)
-	GetIssueFn    func(ns, slug string, id int) (backend.Issue, error)
-	CreateIssueFn func(ns, slug string, in backend.CreateIssueInput) (backend.Issue, error)
-	UpdateIssueFn func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error)
+	ListIssuesFn         func(ns, slug, state string, limit int) ([]backend.Issue, error)
+	GetIssueFn           func(ns, slug string, id int) (backend.Issue, error)
+	CreateIssueFn        func(ns, slug string, in backend.CreateIssueInput) (backend.Issue, error)
+	UpdateIssueFn        func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error)
+	ReopenIssueFn        func(ns, slug string, id int) error
+	AssignIssueFn        func(ns, slug string, id int, assignee string) error
+	ListIssueCommentsFn  func(ns, slug string, id int) ([]backend.IssueComment, error)
+	AddIssueCommentFn    func(ns, slug string, id int, body string) (backend.IssueComment, error)
+	EditIssueCommentFn   func(ns, slug string, id, commentID int, body string) (backend.IssueComment, error)
+	DeleteIssueCommentFn func(ns, slug string, id, commentID int) error
 
 	// Default reviewers (Server-only; satisfies backend.DefaultReviewersResolver when set)
 	DefaultReviewersFn func(ns, slug, fromBranch, toBranch string) ([]backend.User, error)
@@ -573,6 +579,66 @@ func (c *FakeClient) UpdateIssue(ns, slug string, id int, in backend.UpdateIssue
 		c.T.Fatalf("unexpected call to FakeClient.UpdateIssue; set UpdateIssueFn in your test")
 	}
 	return backend.Issue{}, nil
+}
+
+func (c *FakeClient) ReopenIssue(ns, slug string, id int) error {
+	if c.ReopenIssueFn != nil {
+		return c.ReopenIssueFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ReopenIssue; set ReopenIssueFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) AssignIssue(ns, slug string, id int, assignee string) error {
+	if c.AssignIssueFn != nil {
+		return c.AssignIssueFn(ns, slug, id, assignee)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AssignIssue; set AssignIssueFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListIssueComments(ns, slug string, id int) ([]backend.IssueComment, error) {
+	if c.ListIssueCommentsFn != nil {
+		return c.ListIssueCommentsFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListIssueComments; set ListIssueCommentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddIssueComment(ns, slug string, id int, body string) (backend.IssueComment, error) {
+	if c.AddIssueCommentFn != nil {
+		return c.AddIssueCommentFn(ns, slug, id, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddIssueComment; set AddIssueCommentFn in your test")
+	}
+	return backend.IssueComment{}, nil
+}
+
+func (c *FakeClient) EditIssueComment(ns, slug string, id, commentID int, body string) (backend.IssueComment, error) {
+	if c.EditIssueCommentFn != nil {
+		return c.EditIssueCommentFn(ns, slug, id, commentID, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.EditIssueComment; set EditIssueCommentFn in your test")
+	}
+	return backend.IssueComment{}, nil
+}
+
+func (c *FakeClient) DeleteIssueComment(ns, slug string, id, commentID int) error {
+	if c.DeleteIssueCommentFn != nil {
+		return c.DeleteIssueCommentFn(ns, slug, id, commentID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteIssueComment; set DeleteIssueCommentFn in your test")
+	}
+	return nil
 }
 
 // DefaultReviewers defaults to "no defaults configured" (nil, nil) when the

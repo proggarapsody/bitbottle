@@ -14,6 +14,9 @@ before cutting a release, or after touching a backend-specific code path.
 - [`cloud/pr-happy-path.md`](cloud/pr-happy-path.md) — full PR lifecycle
   against Bitbucket Cloud (login → repo → branch → PR → squash-merge →
   cleanup). Exercises the largest surface in one flow.
+- [`cloud/issue-lifecycle.md`](cloud/issue-lifecycle.md) — full issue lifecycle
+  against Bitbucket Cloud (create → view → edit → assign → comment CRUD →
+  close → reopen). Cloud only; also verifies Server returns host.unsupported.
 - [`server/pr-happy-path.md`](server/pr-happy-path.md) — same flow against
   Bitbucket Server / Data Center.
 - [`shared/multi-host.md`](shared/multi-host.md) — both backends configured
