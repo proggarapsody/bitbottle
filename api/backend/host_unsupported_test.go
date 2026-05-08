@@ -42,6 +42,11 @@ func TestAsBranchProtector_StampsHostUnsupportedCode(t *testing.T) {
 	requireUnsupportedHostCode(t, err, string(backend.FeatureBranchProtect))
 }
 
+func TestAsCodeSearcher_StampsHostUnsupportedCode(t *testing.T) {
+	_, err := backend.AsCodeSearcher(emptyClient{}, "h.example")
+	requireUnsupportedHostCode(t, err, string(backend.FeatureCodeSearch))
+}
+
 func TestAsDefaultReviewersResolver_StampsHostUnsupportedCode(t *testing.T) {
 	_, err := backend.AsDefaultReviewersResolver(emptyClient{}, "h.example")
 	requireUnsupportedHostCode(t, err, string(backend.FeatureDefaultReviewers))

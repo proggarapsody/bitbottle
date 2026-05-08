@@ -786,4 +786,21 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.deleteBranchProtection,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("search_code",
+			mcplib.WithDescription("Search code across a Bitbucket Cloud workspace (Cloud only). Bitbucket's query language is passed through verbatim — operators like 'path:', 'lang:', and exact-phrase quoting work as documented."),
+			optHostname,
+			mcplib.WithString("workspace",
+				mcplib.Description("Workspace slug to scope the search to"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("query",
+				mcplib.Description("Bitbucket Cloud code-search query string"),
+				mcplib.Required(),
+			),
+			optLimit,
+		),
+		h.searchCode,
+	)
 }

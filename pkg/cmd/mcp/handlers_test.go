@@ -1892,3 +1892,88 @@ func TestForkRepo_RequiresInto(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "into")
 }
+
+// ---- search_code ----
+
+// noSearchClient embeds a backend.Client without satisfying CodeSearcher,
+// so AsCodeSearcher's type-assertion fails the way it would for a Server
+// backend. Used to verify the host.unsupported envelope path.
+type noSearchClient struct {
+	backend.Client
+}
+
+func TestSearchCode_PassesQueryAndWorkspace(t *testing.T) {
+	t.Parallel()
+	var gotWS, gotQuery string
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		SearchCodeFn: func(ws, q string, limit int) ([]backend.CodeSearchHit, error) {
+			gotWS, gotQuery, gotLimit = ws, q, limit
+			return []backend.CodeSearchHit{
+				{Repository: "acme/widgets", Path: "src/README.md", ContentMatchCount: 2},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.searchCode(context.Background(), makeReq(map[string]any{
+		"workspace": "acme",
+		"query":     "TODO",
+		"limit":     float64(50),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "acme", gotWS)
+	assert.Equal(t, "TODO", gotQuery)
+	assert.Equal(t, 50, gotLimit)
+	assertJSONContains(t, result, "acme/widgets", "")
+	assertJSONContains(t, result, "src/README.md", "")
+}
+
+func TestSearchCode_RequiresWorkspaceAndQuery(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{})
+
+	// Missing query.
+	result, err := h.searchCode(context.Background(), makeReq(map[string]any{
+		"workspace": "acme",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "query")
+
+	// Missing workspace.
+	result, err = h.searchCode(context.Background(), makeReq(map[string]any{
+		"query": "TODO",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "workspace")
+}
+
+// TestSearchCode_ServerBackend_EmitsUnsupportedEnvelope verifies that an
+// MCP client calling search_code against a Server/DC host receives the
+// structured host.unsupported envelope rather than a raw text error.
+func TestSearchCode_ServerBackend_EmitsUnsupportedEnvelope(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	factorytest.UseBackend(f, noSearchClient{Client: &testhelpers.FakeClient{T: t}})
+	h := newHandlers(f)
+
+	result, err := h.searchCode(context.Background(), makeReq(map[string]any{
+		"workspace": "acme",
+		"query":     "TODO",
+	}))
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.True(t, result.IsError)
+	require.Len(t, result.Content, 1)
+	text, ok := result.Content[0].(mcplib.TextContent)
+	require.True(t, ok)
+
+	var env struct {
+		Code    string `json:"code"`
+		Feature string `json:"feature"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text.Text), &env))
+	// AsCodeSearcher stamps the dotted Code so MCP clients get the catalogue
+	// join key, not the kind-based fallback.
+	assert.Equal(t, string(backend.CodeHostUnsupported), env.Code)
+	assert.Equal(t, "code-search", env.Feature)
+}
