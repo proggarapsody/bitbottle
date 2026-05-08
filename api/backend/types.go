@@ -295,13 +295,28 @@ type CreateIssueInput struct {
 
 // UpdateIssueInput carries the parameters for changing an issue. Empty
 // strings mean "no change". `issue close` sets State="closed" and leaves
-// the rest untouched.
+// the rest untouched. Assignee is the Bitbucket Cloud username to assign to;
+// set to the special sentinel AssigneeNone to explicitly clear the assignee.
 type UpdateIssueInput struct {
 	Title    string
 	Content  string
 	State    string
 	Kind     string
 	Priority string
+	Assignee string // "" = no change; AssigneeNone = clear
+}
+
+// AssigneeNone is a sentinel value for UpdateIssueInput.Assignee that
+// signals "unassign" (set assignee to null on the wire).
+const AssigneeNone = "__none__"
+
+// IssueComment is a comment on a Bitbucket Cloud issue.
+type IssueComment struct {
+	ID        int
+	Author    User
+	Content   string
+	CreatedOn time.Time
+	UpdatedOn time.Time
 }
 
 // CreateWebhookInput carries the parameters for creating a webhook.

@@ -23,6 +23,7 @@ not sure about.**
 | PR lifecycle (list/view/create/merge/approve/comment/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
+| Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.
@@ -109,6 +110,42 @@ When you see one of these messages, you know the fix:
   passwords need the **Atlassian email**, not the username.
 - *Server/DC auth fails* → missing `--username`, or `--git-protocol
   ssh` was used with an HTTPS-only PAT.
+
+## Issues (Cloud only)
+
+Issues are gated behind the issue tracker being enabled on the repo. All
+commands accept `[PROJECT/REPO]` as an optional first arg; if omitted the
+repo is inferred from the current checkout.
+
+```bash
+# List / view
+bitbottle issue list [PROJECT/REPO] [--state open|new|on-hold|…|all] [--limit N] [--json fields] [--jq expr]
+bitbottle issue view [PROJECT/REPO] ID [--json fields] [--jq expr]
+
+# Create / close / reopen
+bitbottle issue create [PROJECT/REPO] --title "T" [--body "B"] [--kind bug|enhancement|proposal|task] [--priority trivial|minor|major|critical|blocker]
+bitbottle issue close  [PROJECT/REPO] ID
+bitbottle issue reopen [PROJECT/REPO] ID
+
+# Edit (all flags optional; supply only what you want to change)
+bitbottle issue edit [PROJECT/REPO] ID [--title "T"] [--body "B"] [--kind …] [--priority …] [--assignee USER] [--state …]
+
+# Assign
+bitbottle issue assign [PROJECT/REPO] ID USER
+
+# Comments
+bitbottle issue comment list   [PROJECT/REPO] ISSUE_ID [--json fields] [--jq expr]
+bitbottle issue comment add    [PROJECT/REPO] ISSUE_ID --body "text"
+bitbottle issue comment edit   [PROJECT/REPO] ISSUE_ID COMMENT_ID --body "new text"
+bitbottle issue comment delete [PROJECT/REPO] ISSUE_ID COMMENT_ID
+```
+
+Valid states: `new`, `open`, `resolved`, `on hold`, `invalid`, `duplicate`, `wontfix`, `closed`.
+Use `--state on-hold` on the CLI (the hyphen is normalized; the API uses a space).
+
+MCP tools: `list_issues`, `get_issue`, `create_issue`, `close_issue`,
+`update_issue`, `reopen_issue`, `assign_issue`, `list_issue_comments`,
+`add_issue_comment`, `edit_issue_comment`, `delete_issue_comment`.
 
 ## Install / version
 

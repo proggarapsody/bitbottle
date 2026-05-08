@@ -141,12 +141,21 @@ func (c *Client) CreateIssue(ns, slug string, in backend.CreateIssueInput) (back
 }
 
 // updateIssueBody — same all-pointer rationale as the create body.
+// Assignee uses a pointer-to-struct so we can send null to clear the assignee.
 type updateIssueBody struct {
-	Title    string            `json:"title,omitempty"`
-	State    string            `json:"state,omitempty"`
-	Kind     string            `json:"kind,omitempty"`
-	Priority string            `json:"priority,omitempty"`
-	Content  *issueContentBody `json:"content,omitempty"`
+	Title    string             `json:"title,omitempty"`
+	State    string             `json:"state,omitempty"`
+	Kind     string             `json:"kind,omitempty"`
+	Priority string             `json:"priority,omitempty"`
+	Content  *issueContentBody  `json:"content,omitempty"`
+	Assignee *issueAssigneeBody `json:"assignee,omitempty"`
+}
+
+// issueAssigneeBody is the wire shape for setting/clearing the assignee.
+// When Username is empty and the pointer is non-nil, Cloud interprets
+// the object as "unassign" — we only use it when explicitly requested.
+type issueAssigneeBody struct {
+	Username string `json:"username,omitempty"`
 }
 
 func (c *Client) UpdateIssue(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error) {
@@ -159,10 +168,102 @@ func (c *Client) UpdateIssue(ns, slug string, id int, in backend.UpdateIssueInpu
 	if in.Content != "" {
 		body.Content = &issueContentBody{Raw: in.Content}
 	}
+	if in.Assignee != "" {
+		if in.Assignee == backend.AssigneeNone {
+			body.Assignee = &issueAssigneeBody{} // empty object = unassign
+		} else {
+			body.Assignee = &issueAssigneeBody{Username: in.Assignee}
+		}
+	}
 	var w wireCloudIssue
 	path := fmt.Sprintf("/repositories/%s/%s/issues/%d", ns, slug, id)
 	if err := c.putJSON(path, body, &w); err != nil {
 		return backend.Issue{}, err
 	}
 	return w.toDomain(), nil
+}
+
+// ReopenIssue transitions an issue back to the "open" state.
+func (c *Client) ReopenIssue(ns, slug string, id int) error {
+	_, err := c.UpdateIssue(ns, slug, id, backend.UpdateIssueInput{State: "open"})
+	return err
+}
+
+// AssignIssue sets the assignee on an issue by username.
+func (c *Client) AssignIssue(ns, slug string, id int, assignee string) error {
+	_, err := c.UpdateIssue(ns, slug, id, backend.UpdateIssueInput{Assignee: assignee})
+	return err
+}
+
+// wireCloudIssueComment is the Bitbucket Cloud wire shape for an issue comment.
+type wireCloudIssueComment struct {
+	ID      int            `json:"id"`
+	Author  *wireCloudUser `json:"author"`
+	Content struct {
+		Raw string `json:"raw"`
+	} `json:"content"`
+	CreatedOn string `json:"created_on"`
+	UpdatedOn string `json:"updated_on"`
+}
+
+func (w wireCloudIssueComment) toDomain() backend.IssueComment {
+	c := backend.IssueComment{
+		ID:      w.ID,
+		Content: w.Content.Raw,
+	}
+	if w.Author != nil {
+		c.Author = w.Author.toDomain()
+	}
+	if t, err := time.Parse(time.RFC3339, w.CreatedOn); err == nil {
+		c.CreatedOn = t
+	}
+	if t, err := time.Parse(time.RFC3339, w.UpdatedOn); err == nil {
+		c.UpdatedOn = t
+	}
+	return c
+}
+
+// issueCommentBody is the request body for creating/editing an issue comment.
+type issueCommentBody struct {
+	Content issueContentBody `json:"content"`
+}
+
+func (c *Client) ListIssueComments(ns, slug string, id int) ([]backend.IssueComment, error) {
+	path := fmt.Sprintf("/repositories/%s/%s/issues/%d/comments", ns, slug, id)
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.IssueComment, error) {
+		var page cloudPagedResponse[wireCloudIssueComment]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.IssueComment, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, w.toDomain())
+		}
+		return out, nil
+	}, 0)
+}
+
+func (c *Client) AddIssueComment(ns, slug string, id int, body string) (backend.IssueComment, error) {
+	reqBody := issueCommentBody{Content: issueContentBody{Raw: body}}
+	var w wireCloudIssueComment
+	path := fmt.Sprintf("/repositories/%s/%s/issues/%d/comments", ns, slug, id)
+	if err := c.postJSON(path, reqBody, &w); err != nil {
+		return backend.IssueComment{}, err
+	}
+	return w.toDomain(), nil
+}
+
+func (c *Client) EditIssueComment(ns, slug string, id, commentID int, body string) (backend.IssueComment, error) {
+	reqBody := issueCommentBody{Content: issueContentBody{Raw: body}}
+	var w wireCloudIssueComment
+	path := fmt.Sprintf("/repositories/%s/%s/issues/%d/comments/%d", ns, slug, id, commentID)
+	if err := c.putJSON(path, reqBody, &w); err != nil {
+		return backend.IssueComment{}, err
+	}
+	return w.toDomain(), nil
+}
+
+func (c *Client) DeleteIssueComment(ns, slug string, id, commentID int) error {
+	path := fmt.Sprintf("/repositories/%s/%s/issues/%d/comments/%d", ns, slug, id, commentID)
+	return c.delete(path)
 }

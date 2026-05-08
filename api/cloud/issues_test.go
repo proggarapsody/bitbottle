@@ -219,3 +219,170 @@ func TestCloudClient_UpdateIssue_PathAndStateBody(t *testing.T) {
 	_, hasTitle := sent["title"]
 	assert.False(t, hasTitle, "empty fields must omitempty")
 }
+
+func TestCloudClient_UpdateIssue_AssigneeField(t *testing.T) {
+	t.Parallel()
+	var gotBody []byte
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(issueGetJSON))
+	})
+	_, err := client.UpdateIssue("acme", "repo", 42, backend.UpdateIssueInput{Assignee: "bob"})
+	require.NoError(t, err)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	assignee, ok := sent["assignee"].(map[string]any)
+	require.True(t, ok, "assignee must be a JSON object")
+	assert.Equal(t, "bob", assignee["username"])
+}
+
+func TestCloudClient_UpdateIssue_AssigneeNoneClears(t *testing.T) {
+	t.Parallel()
+	var gotBody []byte
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(issueGetJSON))
+	})
+	_, err := client.UpdateIssue("acme", "repo", 42, backend.UpdateIssueInput{Assignee: backend.AssigneeNone})
+	require.NoError(t, err)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	assignee, ok := sent["assignee"].(map[string]any)
+	require.True(t, ok, "assignee must be a JSON object even when clearing")
+	_, hasUsername := assignee["username"]
+	assert.False(t, hasUsername, "clearing assignee must omit username from object")
+}
+
+func TestCloudClient_ReopenIssue_SendsOpenState(t *testing.T) {
+	t.Parallel()
+	var gotBody []byte
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(issueGetJSON))
+	})
+	err := client.ReopenIssue("acme", "repo", 42)
+	require.NoError(t, err)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	assert.Equal(t, "open", sent["state"])
+}
+
+func TestCloudClient_AssignIssue_SendsAssignee(t *testing.T) {
+	t.Parallel()
+	var gotBody []byte
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(issueGetJSON))
+	})
+	err := client.AssignIssue("acme", "repo", 42, "charlie")
+	require.NoError(t, err)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	assignee, ok := sent["assignee"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "charlie", assignee["username"])
+}
+
+const issueCommentJSON = `{
+  "id": 101,
+  "author": {"username": "alice", "display_name": "Alice"},
+  "content": {"raw": "Looks good"},
+  "created_on": "2026-03-01T09:00:00.000000+00:00",
+  "updated_on": "2026-03-01T09:00:00.000000+00:00"
+}`
+
+const issueCommentsPageJSON = `{
+  "values": [
+    {"id":101,"author":{"username":"alice","display_name":"Alice"},"content":{"raw":"First"},"created_on":"2026-03-01T09:00:00.000000+00:00","updated_on":"2026-03-01T09:00:00.000000+00:00"},
+    {"id":102,"author":{"username":"bob","display_name":"Bob"},"content":{"raw":"Second"},"created_on":"2026-03-02T09:00:00.000000+00:00","updated_on":"2026-03-02T09:00:00.000000+00:00"}
+  ]
+}`
+
+func TestCloudClient_ListIssueComments_PathAndDecode(t *testing.T) {
+	t.Parallel()
+	var gotPath string
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(issueCommentsPageJSON))
+	})
+	got, err := client.ListIssueComments("acme", "repo", 7)
+	require.NoError(t, err)
+	assert.Equal(t, "/repositories/acme/repo/issues/7/comments", gotPath)
+	require.Len(t, got, 2)
+	assert.Equal(t, 101, got[0].ID)
+	assert.Equal(t, "First", got[0].Content)
+	assert.Equal(t, "alice", got[0].Author.Slug)
+}
+
+func TestCloudClient_AddIssueComment_PathAndBody(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	var gotBody []byte
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(issueCommentJSON))
+	})
+	got, err := client.AddIssueComment("acme", "repo", 7, "Looks good")
+	require.NoError(t, err)
+	assert.Equal(t, "POST", gotMethod)
+	assert.Equal(t, "/repositories/acme/repo/issues/7/comments", gotPath)
+	assert.Equal(t, 101, got.ID)
+	assert.Equal(t, "Looks good", got.Content)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	content, ok := sent["content"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "Looks good", content["raw"])
+}
+
+func TestCloudClient_EditIssueComment_PathAndBody(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	var gotBody []byte
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(issueCommentJSON))
+	})
+	got, err := client.EditIssueComment("acme", "repo", 7, 101, "Updated body")
+	require.NoError(t, err)
+	assert.Equal(t, "PUT", gotMethod)
+	assert.Equal(t, "/repositories/acme/repo/issues/7/comments/101", gotPath)
+	assert.Equal(t, 101, got.ID)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	content, ok := sent["content"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "Updated body", content["raw"])
+}
+
+func TestCloudClient_DeleteIssueComment_Path(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	client, _ := newCloudIssueServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusNoContent)
+	})
+	err := client.DeleteIssueComment("acme", "repo", 7, 101)
+	require.NoError(t, err)
+	assert.Equal(t, "DELETE", gotMethod)
+	assert.Equal(t, "/repositories/acme/repo/issues/7/comments/101", gotPath)
+}
