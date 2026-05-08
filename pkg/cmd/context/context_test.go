@@ -199,6 +199,36 @@ func TestContext_OutsideRepo_StillResolvesHostAndUser(t *testing.T) {
 	assert.Equal(t, "alice", user["slug"])
 }
 
+func TestContext_OutsideRepo_Table_PrintsAdvisory(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{Slug: "alice", DisplayName: "Alice"}, nil
+		},
+	}
+	// Outside-a-repo human-readable table: humans cannot tell whether the
+	// repo fields are empty by design or because of a bug. Emit a one-line
+	// advisory so they can recover with -R/--hostname.
+	f, out, _ := newCtxFactory(t, ctxConfigServer, fake, nil, bbrepo.RepoRef{})
+
+	cmd := contextcmd.NewCmdContext(f)
+	cmd.SetArgs(nil)
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	assert.Contains(t, got, "Host:")
+	assert.Contains(t, got, "git.example.com")
+	assert.Contains(t, got, "Backend:")
+	assert.Contains(t, got, "User:")
+	assert.Contains(t, got, "alice")
+	// The advisory must mention the recovery flags so the human knows
+	// what to type next.
+	assert.Contains(t, got, "outside a git repo")
+	assert.Contains(t, got, "--hostname")
+	assert.Contains(t, got, "-R")
+}
+
 // ---- backend type detection ----
 
 func TestContext_CloudHost_BackendIsCloud(t *testing.T) {

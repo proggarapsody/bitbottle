@@ -199,6 +199,11 @@ func renderTable(f *factory.Factory, ctx backend.Context) error {
 	if ctx.Project != "" || ctx.Slug != "" {
 		fmt.Fprintf(w, "Project:        %s\n", ctx.Project)
 		fmt.Fprintf(w, "Slug:           %s\n", ctx.Slug)
+	} else {
+		// Without an advisory, humans cannot tell whether the repo-scoped
+		// fields are empty by design or because of a bug. Emit a single
+		// line that names the recovery flags.
+		fmt.Fprintln(w, "Repo:           (outside a git repo; pass --hostname/-R for repo-scoped fields)")
 	}
 	if ctx.Branch != "" {
 		fmt.Fprintf(w, "Branch:         %s\n", ctx.Branch)
