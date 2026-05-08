@@ -26,13 +26,23 @@ func (c *Client) DeclinePR(ns, slug string, id int) error {
 	return c.postJSON(path, nil, &result)
 }
 
-// ReopenPR reverses a decline, returning the PR to OPEN. Bitbucket Server
-// exposes a dedicated /reopen endpoint; the request is fire-and-forget like
-// /decline.
+// ReopenPR reverses a decline, returning the PR to OPEN.
+//
+// Bitbucket Server uses optimistic concurrency on its PR lifecycle endpoints:
+// the POST body must include the current PR version (from GET), otherwise the
+// server returns HTTP 409 "Pull request was updated…" against any non-zero-
+// version declined PR. Mirrors MergePR's GET-then-POST(version) pattern.
 func (c *Client) ReopenPR(ns, slug string, id int) error {
+	var current wirePR
+	prPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
+	if err := c.getJSON(prPath, &current); err != nil {
+		return err
+	}
+	body := struct {
+		Version int `json:"version"`
+	}{Version: current.Version}
 	var result struct{}
-	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/reopen", ns, slug, id)
-	return c.postJSON(path, nil, &result)
+	return c.postJSON(prPath+"/reopen", body, &result)
 }
 
 // UnapprovePR removes the authenticated user's approval from a pull request.

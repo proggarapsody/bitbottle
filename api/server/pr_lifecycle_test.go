@@ -61,17 +61,45 @@ func TestServerClient_DeclinePR_IssuesCorrectPath(t *testing.T) {
 
 func TestServerClient_ReopenPR_IssuesCorrectPath(t *testing.T) {
 	t.Parallel()
-	var gotPath, gotMethod string
+	var paths, methods []string
 	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
-		gotPath = r.URL.Path
-		gotMethod = r.Method
+		paths = append(paths, r.URL.Path)
+		methods = append(methods, r.Method)
+		body, _ := os.ReadFile("testdata/pr_get.json")
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{}`)
+		_, _ = w.Write(body)
 	})
 	err := client.ReopenPR("MYPROJ", "my-service", 42)
 	require.NoError(t, err)
-	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/reopen", gotPath)
-	assert.Equal(t, http.MethodPost, gotMethod)
+	// First call GETs the PR (to read its current version), second call POSTs
+	// to .../reopen.
+	require.Len(t, paths, 2)
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42", paths[0])
+	assert.Equal(t, http.MethodGet, methods[0])
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/reopen", paths[1])
+	assert.Equal(t, http.MethodPost, methods[1])
+}
+
+// TestServerClient_ReopenPR_SendsCurrentVersion verifies that ReopenPR fetches
+// the PR first and threads its version into the reopen request body — the
+// field Bitbucket Server's optimistic-concurrency layer requires to avoid
+// HTTP 409 "out-of-date information" against any non-zero-version PR.
+func TestServerClient_ReopenPR_SendsCurrentVersion(t *testing.T) {
+	t.Parallel()
+	var reopenBody []byte
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			reopenBody, _ = io.ReadAll(r.Body)
+		}
+		body, _ := os.ReadFile("testdata/pr_get.json")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	})
+	err := client.ReopenPR("MYPROJ", "my-service", 42)
+	require.NoError(t, err)
+	// pr_get.json has "version":3; the reopen body must echo it back so the
+	// server's optimistic-concurrency check passes.
+	assert.Contains(t, string(reopenBody), `"version":3`)
 }
 
 func TestServerClient_ReopenPR_PropagatesError(t *testing.T) {
