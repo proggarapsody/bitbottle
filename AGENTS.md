@@ -23,6 +23,7 @@ Tool-specific auto-trigger wrappers (e.g. `.claude/skills/`) defer to these docs
 - **Output:** always via `f.IOStreams`, never `os.Stdout`/`fmt.Println`.
 - **Tests:** use `factory.NewTestFactory` — no real filesystem, keyring, or network.
 - **New command:** `pkg/cmd/<group>/<action>.go` → register in `<group>.go` → implement in both `api/cloud` and `api/server` → add MCP tool in `pkg/cmd/mcp/` if it maps to a Bitbucket operation.
+- **Self-registration:** new commands self-register via `pkg/cmdregistry`. New MCP tools self-register from per-domain files in `pkg/cmd/mcp/`. Capability interfaces live in `api/backend/client_<feature>.go`.
 - **Libraries:** prefer well-known, widely-adopted libraries over hand-rolled solutions. Pick the most popular/maintained option (e.g. `fatih/color` for ANSI color). Hand-roll only when dependency footprint outweighs value.
 - **No build artifacts:** `/dist/` is gitignored. Never `git add dist/` or commit binaries. CI rejects tracked files in `dist/` or files > 1 MB.
 - **Squash-merge gotcha:** GitHub's squash uses the PR title as the commit subject. Title PRs with `feat:`/`fix:` so release-please picks them up — otherwise a follow-up `feat:` commit is needed to trigger the release.
