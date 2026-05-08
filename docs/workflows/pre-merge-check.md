@@ -9,6 +9,13 @@ This doc is the single source of truth for pre-merge gates. Tooling
 wrappers (Claude skill at `.claude/skills/pre-merge-check/`, GitHub
 checks, etc.) defer to it.
 
+> **Cross-document reference convention.** References from this doc to
+> other docs use anchor names ("the pre-merge gate", "the doc-sync
+> table", "the parallel-mode section") rather than section numbers.
+> Internal references within the same doc may use section numbers.
+> This prevents a renumbering in one doc from silently breaking links
+> in another.
+
 ---
 
 ## 0. Scope first
