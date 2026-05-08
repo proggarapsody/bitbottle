@@ -372,3 +372,36 @@ type ContextUser struct {
 	Slug        string `json:"slug"`
 	DisplayName string `json:"display_name"`
 }
+
+// CodeSearchHit is one result row from Bitbucket Cloud's workspace-scoped
+// code search. The hit may match on the file path (PathMatches non-empty),
+// on file content (ContentMatches non-empty), or both. Renderers use the
+// SearchSegment.Match flag to bold the matched runs.
+//
+// Repository is "workspace/slug" — the Cloud "full_name" form, kept verbatim
+// so JSON consumers can split it themselves and the table renderer needs no
+// extra column.
+type CodeSearchHit struct {
+	Repository        string
+	Path              string
+	PathMatches       []SearchSegment
+	ContentMatches    []ContentMatch
+	ContentMatchCount int
+	FileURL           string
+}
+
+// ContentMatch is a single matched line within a file: the 1-based line
+// number plus a sequence of segments. Cloud groups consecutive matched
+// lines into "content_matches" objects each with a "lines" array; bitbottle
+// flattens those to a single ContentMatch slice in arrival order.
+type ContentMatch struct {
+	Line     int
+	Segments []SearchSegment
+}
+
+// SearchSegment is one run of text in a path or content match. Match=true
+// marks the substring that triggered the hit so renderers can highlight it.
+type SearchSegment struct {
+	Text  string
+	Match bool
+}

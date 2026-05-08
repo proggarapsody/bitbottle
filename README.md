@@ -85,6 +85,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `workspace` | `list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
 | `issue` | `list` `view` `create` `close` _(Cloud only)_ |
+| `search` | `code QUERY` _(Cloud only)_ |
 | `api` | Raw REST passthrough with pagination, `--jq`, variable expansion |
 | `alias` | Custom command shortcuts |
 | `config` | Editor, pager, git protocol per-host |
@@ -232,6 +233,28 @@ bitbottle project list myworkspace --limit 100
 
 Both commands surface a typed unsupported-capability error against
 Bitbucket Server / Data Center hosts (workspaces are a Cloud concept).
+
+### Search _(Cloud only)_
+
+```bash
+# Search across the workspace inferred from the current checkout's pinned default
+bitbottle search code 'TODO'
+
+# Explicit workspace, custom limit
+bitbottle search code 'foo bar' --workspace myws --limit 50
+
+# Path-restricted query, JSON for scripting
+bitbottle search code 'path:README' --workspace myws --json path,repository
+bitbottle search code 'TODO' --workspace myws --json path --jq '.[].path'
+```
+
+Bitbucket Cloud's query language (`path:`, `lang:`, `repo:`, exact-phrase
+quoting, etc.) is passed through verbatim — bitbottle does not translate
+operators. The matched-segment shape (`pathMatches`, `contentMatches`)
+is preserved on the JSON side so renderers can highlight the matched
+runs. Bitbucket Server / Data Center has no first-class code-search
+REST endpoint; invocations against a Server host return the typed
+`host.unsupported` error.
 
 ### Raw API
 
