@@ -10,6 +10,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full workflow, code style, and testin
 
 End-to-end procedures live in [`docs/workflows/`](docs/workflows/) and are tool-neutral — humans, Codex, Cursor, Aider, and Claude all follow them.
 
+- [`docs/agent-primer.md`](docs/agent-primer.md) — required architectural reading for any subagent implementing a new scope.
 - [`docs/workflows/iteration-cycle.md`](docs/workflows/iteration-cycle.md) — pick a scope → spec → TDD → docs → pre-merge-check → PR → release → close PRD → manual tests. The full loop.
 - [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — the merge gate (sections 0–8). Must pass before any branch lands on `main`.
 
