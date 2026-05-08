@@ -19,6 +19,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/project"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
+	searchcmd "github.com/proggarapsody/bitbottle/pkg/cmd/search"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/skill"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook"
@@ -61,6 +62,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(project.NewCmdProject(f))
 	cmd.AddCommand(configcmd.NewCmdConfig(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
+	cmd.AddCommand(searchcmd.NewCmdSearch(f))
 	cmd.AddCommand(skill.NewCmdSkill(f))
 
 	cmd.AddCommand(alias.NewCmdAlias(f, builtinNames(cmd)))

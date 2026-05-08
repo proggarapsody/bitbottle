@@ -208,7 +208,7 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `bitbottle search code QUERY [--workspace W]` | 🔲 | Cloud `GET /workspaces/{ws}/search/code?search_query=...` — content + path matches. — scope **SR** |
+| `bitbottle search code QUERY [--workspace W]` | ✅ | Cloud `GET /workspaces/{ws}/search/code?search_query=...` — content + path matches. — scope **SR** |
 | `bitbottle search code QUERY` _(Server)_ | 🔲 | Optional. Server has no first-class code-search REST API; defer. |
 
 ### Deployments _(Cloud only — missing)_
@@ -268,7 +268,7 @@ Current state of every command area against gh feature parity:
 | BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
 | RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🔲 |
-| SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | 🔲 |
+| SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | ✅ |
 | CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | 🔲 |
 | GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |
 | OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | 🔲 |
