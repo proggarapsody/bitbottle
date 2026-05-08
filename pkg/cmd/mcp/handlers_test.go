@@ -1801,6 +1801,47 @@ func TestForkRepo_RequiresInto(t *testing.T) {
 	assertErrorResult(t, result, "into")
 }
 
+// ---- get_context ----
+
+func TestGetContext_OutsideRepo_ReturnsHostUserBackend(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{Slug: "alice", DisplayName: "Alice"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getContext(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+
+	text := extractText(t, result)
+	var got map[string]any
+	require.NoError(t, json.Unmarshal([]byte(text), &got))
+	assert.Equal(t, "git.example.com", got["host"])
+	assert.Equal(t, "server", got["backend"])
+	assert.Equal(t, "", got["project"])
+	assert.Equal(t, "", got["slug"])
+	user, ok := got["user"].(map[string]any)
+	require.True(t, ok, "user should be a JSON object")
+	assert.Equal(t, "alice", user["slug"])
+	assert.Equal(t, "Alice", user["display_name"])
+}
+
+func TestGetContext_BackendError_ReturnsErrorResult(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{}, errors.New("401 unauthorized")
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getContext(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "401 unauthorized")
+}
+
 // ---- search_code ----
 
 // noSearchClient embeds a backend.Client without satisfying CodeSearcher,

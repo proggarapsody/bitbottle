@@ -245,6 +245,14 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 	)
 
 	s.AddTool(
+		mcplib.NewTool("get_context",
+			mcplib.WithDescription("Return host, project, slug, branch, default branch, ahead/behind, authenticated user, and backend type in one call. Outside a git repo project/slug/branch/default_branch/ahead/behind are empty."),
+			optHostname,
+		),
+		h.getContext,
+	)
+
+	s.AddTool(
 		mcplib.NewTool("list_branches",
 			mcplib.WithDescription("List branches for a repository"),
 			optHostname,

@@ -177,7 +177,15 @@ func (p *Printer[T]) resolveFields() ([]Field[T], error) {
 func (p *Printer[T]) itemToMap(item T, fields []Field[T]) map[string]any {
 	m := make(map[string]any, len(fields))
 	for _, f := range fields {
-		m[f.Name] = f.Extract(item)
+		v := f.Extract(item)
+		// Honour an "unknown" / "not applicable" signal from the field by
+		// omitting the key entirely when Extract returns nil — mirroring
+		// the omitempty pointer convention on the underlying struct so
+		// callers cannot misread null-as-zero.
+		if v == nil {
+			continue
+		}
+		m[f.Name] = v
 	}
 	return m
 }
