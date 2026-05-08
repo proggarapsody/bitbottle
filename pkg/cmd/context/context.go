@@ -143,8 +143,9 @@ func backendKind(f *factory.Factory, host string) string {
 }
 
 // currentBranch wraps `git rev-parse --abbrev-ref HEAD`. Returns an error
-// (and an empty string) when the runner fails, e.g. detached HEAD or not
-// a git repository.
+// (and an empty string) when the runner fails. Detached HEAD or an empty
+// HEAD ref returns ("", nil) so the caller leaves Branch unset without
+// constructing a synthetic error nobody reads.
 func currentBranch(runner interface {
 	Run(args ...string) (string, string, error)
 }) (string, error) {
@@ -154,7 +155,7 @@ func currentBranch(runner interface {
 	}
 	br := strings.TrimSpace(out)
 	if br == "" || br == "HEAD" {
-		return "", fmt.Errorf("detached or empty HEAD")
+		return "", nil
 	}
 	return br, nil
 }
