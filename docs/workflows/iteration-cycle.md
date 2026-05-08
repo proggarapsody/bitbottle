@@ -302,6 +302,11 @@ mentioned here behaves identically.
 - Scopes where one's design depends on another's outcome.
 - Cross-cutting work (`EX`, `T`) — those touch every command and must
   serialize.
+- **Ambiguous phrasing.** If the author says "all these scopes in one
+  iteration", "ship these *N* scopes together", or similar wording that
+  doesn't clearly demand parallelism, default to **serial** and ask for
+  explicit confirmation before launching parallel agents. Parallel mode
+  burns ~5–10× the tokens of a serial cycle; misfires are expensive.
 
 ### Section 1 delta — Pick *N* scopes
 
