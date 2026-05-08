@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.21.0](https://github.com/proggarapsody/bitbottle/compare/v1.20.0...v1.21.0) (2026-05-08)
+
+
+### Features
+
+* add bitbottle context one-call orientation primitive ([#110](https://github.com/proggarapsody/bitbottle/issues/110)) ([3b376ea](https://github.com/proggarapsody/bitbottle/commit/3b376ea7311a6cca2674ca99c2aa15551813660a))
+* add bitbottle search code (Cloud only) ([#111](https://github.com/proggarapsody/bitbottle/issues/111)) ([2a761d9](https://github.com/proggarapsody/bitbottle/commit/2a761d9a5e92057a173696e7827addceafdc12b6))
+* **pr:** add reopen command (Server/DC only) ([#112](https://github.com/proggarapsody/bitbottle/issues/112)) ([c7a669e](https://github.com/proggarapsody/bitbottle/commit/c7a669ebcd7957fd608a6066d7da3341af0f01aa))
+
 ## [1.20.0](https://github.com/proggarapsody/bitbottle/compare/v1.19.0...v1.20.0) (2026-05-07)
 
 
