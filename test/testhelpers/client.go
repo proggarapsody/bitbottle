@@ -93,6 +93,9 @@ type FakeClient struct {
 	ListBranchProtectionsFn  func(ns, slug string, limit int) ([]backend.BranchProtection, error)
 	CreateBranchProtectionFn func(ns, slug string, in backend.CreateBranchProtectionInput) (backend.BranchProtection, error)
 	DeleteBranchProtectionFn func(ns, slug string, id int) error
+
+	// Code search (Cloud-only; satisfies backend.CodeSearcher when set)
+	SearchCodeFn func(workspace, query string, limit int) ([]backend.CodeSearchHit, error)
 }
 
 // Compile-time interface check.
@@ -598,4 +601,14 @@ func (c *FakeClient) DeleteBranchProtection(ns, slug string, id int) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteBranchProtection; set DeleteBranchProtectionFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) SearchCode(workspace, query string, limit int) ([]backend.CodeSearchHit, error) {
+	if c.SearchCodeFn != nil {
+		return c.SearchCodeFn(workspace, query, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SearchCode; set SearchCodeFn in your test")
+	}
+	return nil, nil
 }
