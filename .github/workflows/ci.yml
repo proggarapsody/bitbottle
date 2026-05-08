@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded runs when a PR is force-pushed or amended. Only the
+# tip of any given ref needs to be green; intermediate runs are wasted
+# minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test
@@ -22,6 +29,8 @@ jobs:
           cache: true
 
       - name: Run tests
+        # `go test ./... -race` compiles every package transitively, so a
+        # separate `go build ./cmd/bitbottle` job would be pure redundancy.
         run: go test ./... -race -count=1
 
   lint:
@@ -40,17 +49,3 @@ jobs:
         with:
           version: v2.11.4
           args: --timeout=5m
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Build
-        run: go build ./cmd/bitbottle
