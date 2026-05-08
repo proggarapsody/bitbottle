@@ -328,3 +328,42 @@ type CreateBranchProtectionInput struct {
 	Users       []string
 	Groups      []string
 }
+
+// Context is the one-call orientation primitive returned by `bitbottle
+// context` and the MCP `get_context` tool. It collapses three previously
+// independent calls (auth status / repo view / git status) into a single
+// structured response so AI agents can orient themselves in one round-trip.
+//
+// Zero-valued Project / Slug / Branch / DefaultBranch / Ahead / Behind
+// indicate "outside a git repo" — the rest of the shape (Host, User,
+// Backend) still resolves through config + the backend's current-user
+// endpoint.
+//
+// Backend is the literal "cloud" or "server" string matching the
+// bbinstance backend-type vocabulary, so consumers can branch on
+// host shape without re-deriving it.
+//
+// User is a Context-local shape with JSON tags so the public contract
+// emits {"slug": ..., "display_name": ...} without bleeding tags onto
+// backend.User (which is reused across many wire surfaces and would
+// regress existing JSON outputs if tagged here).
+type Context struct {
+	Host          string      `json:"host"`
+	Project       string      `json:"project"`
+	Slug          string      `json:"slug"`
+	Branch        string      `json:"branch"`
+	DefaultBranch string      `json:"default_branch"`
+	Ahead         int         `json:"ahead"`
+	Behind        int         `json:"behind"`
+	User          ContextUser `json:"user"`
+	Backend       string      `json:"backend"`
+}
+
+// ContextUser is the user shape carried inside Context. It mirrors User but
+// stamps explicit JSON tags so the documented contract is stable
+// (`{"slug": ..., "display_name": ...}`) regardless of how backend.User
+// is later reshaped.
+type ContextUser struct {
+	Slug        string `json:"slug"`
+	DisplayName string `json:"display_name"`
+}
