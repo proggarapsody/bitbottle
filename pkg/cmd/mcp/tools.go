@@ -400,6 +400,17 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 	)
 
 	s.AddTool(
+		mcplib.NewTool("reopen_pr",
+			mcplib.WithDescription("Reopen a previously declined pull request (Bitbucket Server / DC only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+		),
+		h.reopenPR,
+	)
+
+	s.AddTool(
 		mcplib.NewTool("unapprove_pr",
 			mcplib.WithDescription("Remove approval from a pull request"),
 			optHostname,

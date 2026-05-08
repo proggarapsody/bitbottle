@@ -33,6 +33,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRCheckout(f))
 	cmd.AddCommand(NewCmdPREdit(f))
 	cmd.AddCommand(NewCmdPRDecline(f))
+	cmd.AddCommand(NewCmdPRReopen(f))
 	cmd.AddCommand(NewCmdPRUnapprove(f))
 	cmd.AddCommand(NewCmdPRReady(f))
 	cmd.AddCommand(NewCmdPRRequestReview(f))

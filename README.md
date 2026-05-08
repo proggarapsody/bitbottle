@@ -75,7 +75,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | Group | Commands |
 |---|---|
 | `auth` | `login` `logout` `status` `token` `refresh` |
-| `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `ready` `request-review` `comment` |
+| `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `request-review` `comment` |
 | `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ |
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
@@ -118,6 +118,10 @@ bitbottle pr merge 42 --squash --delete-branch
 
 # Add reviewers
 bitbottle pr request-review 42 --reviewer alice --reviewer bob
+
+# Decline / reopen (reopen is Bitbucket Server / DC only)
+bitbottle pr decline 42
+bitbottle pr reopen  42
 ```
 
 ### Repos & Branches
