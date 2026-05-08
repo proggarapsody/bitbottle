@@ -334,10 +334,15 @@ type CreateBranchProtectionInput struct {
 // independent calls (auth status / repo view / git status) into a single
 // structured response so AI agents can orient themselves in one round-trip.
 //
-// Zero-valued Project / Slug / Branch / DefaultBranch / Ahead / Behind
-// indicate "outside a git repo" — the rest of the shape (Host, User,
-// Backend) still resolves through config + the backend's current-user
-// endpoint.
+// Zero-valued Project / Slug / Branch / DefaultBranch indicate "outside a
+// git repo" — the rest of the shape (Host, User, Backend) still resolves
+// through config + the backend's current-user endpoint.
+//
+// Ahead and Behind are *int with omitempty so that "unknown" (git failed,
+// no upstream, base ref missing, outside a repo) is encoded as the keys
+// being absent from JSON — never as 0/0, which would lie to agents that
+// would otherwise conclude "in sync". Both pointers are populated as a
+// pair: either both non-nil, or both nil.
 //
 // Backend is the literal "cloud" or "server" string matching the
 // bbinstance backend-type vocabulary, so consumers can branch on
@@ -353,8 +358,8 @@ type Context struct {
 	Slug          string      `json:"slug"`
 	Branch        string      `json:"branch"`
 	DefaultBranch string      `json:"default_branch"`
-	Ahead         int         `json:"ahead"`
-	Behind        int         `json:"behind"`
+	Ahead         *int        `json:"ahead,omitempty"`
+	Behind        *int        `json:"behind,omitempty"`
 	User          ContextUser `json:"user"`
 	Backend       string      `json:"backend"`
 }

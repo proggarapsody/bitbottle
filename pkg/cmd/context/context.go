@@ -36,8 +36,10 @@ func NewCmdContext(f *factory.Factory) *cobra.Command {
 			"project, slug, current branch, default branch, ahead/behind vs\n" +
 			"the default branch, authenticated user, and backend type.\n\n" +
 			"Outside a git repository project / slug / branch / default_branch\n" +
-			"and ahead / behind are empty / zero, but host, user, and backend\n" +
-			"still resolve via the configured (or --hostname) host.",
+			"are empty; ahead / behind are omitted from the JSON output (and\n" +
+			"shown as 'unknown' in the table) so callers do not misread them\n" +
+			"as 'in sync'. Host, user, and backend still resolve via the\n" +
+			"configured (or --hostname) host.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, err := Build(f, hostname)
@@ -118,9 +120,12 @@ func Build(f *factory.Factory, hostname string) (backend.Context, error) {
 		ctx.DefaultBranch = def
 	}
 	if ctx.DefaultBranch != "" && ctx.Branch != "" {
-		ahead, behind, _ := aheadBehind(g, ctx.DefaultBranch)
-		ctx.Ahead = ahead
-		ctx.Behind = behind
+		if ahead, behind, ok := aheadBehind(g, ctx.DefaultBranch); ok {
+			ctx.Ahead = &ahead
+			ctx.Behind = &behind
+		}
+		// On error / unknowable cases leave both nil so JSON omits the keys
+		// and the TTY can render "(unknown — run 'git fetch')".
 	}
 
 	return ctx, nil
@@ -163,33 +168,30 @@ func currentBranch(runner interface {
 // aheadBehind computes ahead/behind counts of HEAD vs base using
 // `git rev-list --left-right --count base...HEAD`. Output shape is
 // "<behind>\t<ahead>" — left is base-ahead-of-HEAD (i.e. behind), right
-// is HEAD-ahead-of-base. We return (ahead, behind) for the caller's
-// natural reading order.
-//
-// Any failure (no upstream, base ref missing, not a git repo) returns
-// zeros and a nil error so the caller can degrade gracefully — outside
-// a repository or pre-fetch, ahead/behind is genuinely "unknown" and
-// the documented shape uses 0 to mean exactly that.
+// is HEAD-ahead-of-base. The third return is ok=true only when both
+// counts were parsed successfully; ok=false means "unknown" (no
+// upstream, base ref missing, not a git repo, malformed output) and
+// the caller MUST NOT report 0/0 — that would lie about being in sync.
 func aheadBehind(runner interface {
 	Run(args ...string) (string, string, error)
-}, base string) (ahead, behind int, err error) {
+}, base string) (ahead, behind int, ok bool) {
 	if base == "" {
-		return 0, 0, nil
+		return 0, 0, false
 	}
 	out, _, runErr := runner.Run("rev-list", "--left-right", "--count", base+"...HEAD")
 	if runErr != nil {
-		return 0, 0, nil
+		return 0, 0, false
 	}
 	parts := strings.Fields(strings.TrimSpace(out))
 	if len(parts) != 2 {
-		return 0, 0, nil
+		return 0, 0, false
 	}
 	left, lerr := strconv.Atoi(parts[0])
 	right, rerr := strconv.Atoi(parts[1])
 	if lerr != nil || rerr != nil {
-		return 0, 0, nil
+		return 0, 0, false
 	}
-	return right, left, nil
+	return right, left, true
 }
 
 func renderTable(f *factory.Factory, ctx backend.Context) error {
@@ -212,7 +214,14 @@ func renderTable(f *factory.Factory, ctx backend.Context) error {
 		fmt.Fprintf(w, "Default branch: %s\n", ctx.DefaultBranch)
 	}
 	if ctx.Branch != "" && ctx.DefaultBranch != "" {
-		fmt.Fprintf(w, "Ahead/Behind:   %d / %d\n", ctx.Ahead, ctx.Behind)
+		if ctx.Ahead != nil && ctx.Behind != nil {
+			fmt.Fprintf(w, "Ahead/Behind:   %d / %d\n", *ctx.Ahead, *ctx.Behind)
+		} else {
+			// Distinguish "unknown" from "0 / 0". Agents and humans alike
+			// must not read silence-as-zero when git could not compute the
+			// counts (no upstream / base unfetched / ambiguous ref).
+			fmt.Fprintln(w, "Ahead/Behind:   (unknown — run 'git fetch')")
+		}
 	}
 	fmt.Fprintf(w, "User:           %s (%s)\n", ctx.User.Slug, ctx.User.DisplayName)
 	return nil
@@ -225,8 +234,21 @@ func contextFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printe
 	p.AddField(format.Field[backend.Context]{Name: "slug", Header: "SLUG", Extract: func(c backend.Context) any { return c.Slug }})
 	p.AddField(format.Field[backend.Context]{Name: "branch", Header: "BRANCH", Extract: func(c backend.Context) any { return c.Branch }})
 	p.AddField(format.Field[backend.Context]{Name: "default_branch", Header: "DEFAULT", Extract: func(c backend.Context) any { return c.DefaultBranch }})
-	p.AddField(format.Field[backend.Context]{Name: "ahead", Header: "AHEAD", Extract: func(c backend.Context) any { return c.Ahead }})
-	p.AddField(format.Field[backend.Context]{Name: "behind", Header: "BEHIND", Extract: func(c backend.Context) any { return c.Behind }})
+	p.AddField(format.Field[backend.Context]{Name: "ahead", Header: "AHEAD", Extract: func(c backend.Context) any {
+		// Return untyped nil (not a typed *int) so the printer's omit-nil
+		// rule fires — keeping ahead absent when unknown rather than
+		// emitting JSON null or 0.
+		if c.Ahead == nil {
+			return nil
+		}
+		return *c.Ahead
+	}})
+	p.AddField(format.Field[backend.Context]{Name: "behind", Header: "BEHIND", Extract: func(c backend.Context) any {
+		if c.Behind == nil {
+			return nil
+		}
+		return *c.Behind
+	}})
 	p.AddField(format.Field[backend.Context]{Name: "user", Header: "USER", Extract: func(c backend.Context) any {
 		// gojq cannot traverse struct values; emit a map so `--jq .user.slug`
 		// works the same as it would on the json.Marshal output.

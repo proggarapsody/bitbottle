@@ -191,12 +191,90 @@ func TestContext_OutsideRepo_StillResolvesHostAndUser(t *testing.T) {
 	assert.Equal(t, "", got["slug"])
 	assert.Equal(t, "", got["branch"])
 	assert.Equal(t, "", got["default_branch"])
-	assert.EqualValues(t, 0, got["ahead"])
-	assert.EqualValues(t, 0, got["behind"])
 	assert.Equal(t, "server", got["backend"])
+	// ahead/behind are unknowable outside a repo and must not be reported
+	// as the literal numeric value 0 — that would lie to agents reading the
+	// JSON who would conclude "in sync" when the truth is "unknown". The
+	// pointer-with-omitempty contract means the keys are absent.
+	_, hasAhead := got["ahead"]
+	_, hasBehind := got["behind"]
+	assert.False(t, hasAhead, "ahead must be omitted outside a repo")
+	assert.False(t, hasBehind, "behind must be omitted outside a repo")
 	user, ok := got["user"].(map[string]any)
 	require.True(t, ok, "user should still resolve outside a repo")
 	assert.Equal(t, "alice", user["slug"])
+}
+
+func TestContext_InRepo_AheadBehindGitFailure_OmitsFromJSON(t *testing.T) {
+	t.Parallel()
+	// When `git rev-list --left-right --count base...HEAD` fails (e.g. base
+	// not yet fetched), the ahead/behind values are genuinely unknown — they
+	// must NOT be reported as 0/0 because agents reading the JSON would
+	// conclude "in sync". The keys must be omitted via omitempty pointers.
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListBranchesFn: func(_, _ string, _ int) ([]backend.Branch, error) {
+			return []backend.Branch{{Name: "main", IsDefault: true}}, nil
+		},
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{Slug: "alice", DisplayName: "Alice"}, nil
+		},
+	}
+	runner := testhelpers.NewFakeRunner(
+		// rev-parse --abbrev-ref HEAD → returns the branch.
+		testhelpers.RunResponse{Stdout: "feat/x"},
+		// rev-list --left-right --count → fails (e.g. unknown ref).
+		testhelpers.RunResponse{Err: errors.New("fatal: ambiguous argument 'main...HEAD'")},
+	)
+	f, out, _ := newCtxFactory(t, ctxConfigServer, fake, runner, bbrepo.RepoRef{
+		Host: "git.example.com", Project: "PROJ", Slug: "repo",
+	})
+
+	cmd := contextcmd.NewCmdContext(f)
+	cmd.SetArgs([]string{"--json", "host,project,slug,branch,default_branch,ahead,behind,user,backend"})
+	require.NoError(t, cmd.Execute())
+
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(out.Bytes(), &got))
+	_, hasAhead := got["ahead"]
+	_, hasBehind := got["behind"]
+	assert.False(t, hasAhead, "ahead must be omitted when git fails")
+	assert.False(t, hasBehind, "behind must be omitted when git fails")
+}
+
+func TestContext_InRepo_AheadBehindGitFailure_TableSaysUnknown(t *testing.T) {
+	t.Parallel()
+	// Mirror the JSON-omission test: in TTY output the user must see an
+	// explicit "unknown" advisory — not "0 / 0" — so they know to run git
+	// fetch and retry rather than acting as if HEAD were synchronised.
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListBranchesFn: func(_, _ string, _ int) ([]backend.Branch, error) {
+			return []backend.Branch{{Name: "main", IsDefault: true}}, nil
+		},
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{Slug: "alice", DisplayName: "Alice"}, nil
+		},
+	}
+	runner := testhelpers.NewFakeRunner(
+		testhelpers.RunResponse{Stdout: "feat/x"},
+		testhelpers.RunResponse{Err: errors.New("fatal: ambiguous argument 'main...HEAD'")},
+	)
+	f, out, _ := newCtxFactory(t, ctxConfigServer, fake, runner, bbrepo.RepoRef{
+		Host: "git.example.com", Project: "PROJ", Slug: "repo",
+	})
+
+	cmd := contextcmd.NewCmdContext(f)
+	cmd.SetArgs(nil)
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	assert.Contains(t, got, "Ahead/Behind:")
+	assert.Contains(t, got, "unknown")
+	assert.Contains(t, got, "git fetch")
+	// Importantly the literal "0 / 0" must NOT appear — that is the lie we
+	// are explicitly avoiding.
+	assert.NotContains(t, got, "0 / 0")
 }
 
 func TestContext_OutsideRepo_Table_PrintsAdvisory(t *testing.T) {

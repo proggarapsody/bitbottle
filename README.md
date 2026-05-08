@@ -265,9 +265,12 @@ bitbottle context --json host,project,slug,branch,default_branch,ahead,behind,us
 bitbottle context --json user --jq '.user.slug'
 ```
 
-Outside a git repo `project`, `slug`, `branch`, `default_branch`,
-`ahead`, and `behind` are empty / zero; `host`, `user`, and `backend`
-still resolve via the configured (or `--hostname`) host.
+Outside a git repo `project`, `slug`, `branch`, and `default_branch`
+are empty; `ahead` and `behind` are omitted from the JSON output
+entirely (and rendered as `(unknown — run 'git fetch')` in the human
+table). They are also omitted whenever `git rev-list` cannot compute
+the counts — `0 / 0` would falsely read as "in sync". `host`, `user`,
+and `backend` still resolve via the configured (or `--hostname`) host.
 
 ### Outside a git repo
 
