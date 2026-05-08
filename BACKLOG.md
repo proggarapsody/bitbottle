@@ -201,8 +201,8 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `repo file get PATH --ref REF` | 🔲 | Read file content at any ref. Cloud: `GET /repositories/{ws}/{slug}/src/{commit}/{path}`. Server: `GET /projects/{k}/repos/{s}/raw/{path}?at=REF`. Critical primitive for coding agents that don't clone. — scope **RV** |
-| `repo tree --ref REF [--path P]` | 🔲 | List files at a ref. Cloud: same `/src/` endpoint returns directory metadata when path is a dir. Server: `GET /projects/{k}/repos/{s}/browse/{path}?at=REF`. — scope **RV** |
+| `repo file get PATH --ref REF` | ✅ | Read file content at any ref. Cloud: `GET /repositories/{ws}/{slug}/src/{commit}/{path}`. Server: `GET /projects/{k}/repos/{s}/raw/{path}?at=REF`. Binary-safe; `--out FILE` for download. (RV1 of scope **RV**.) |
+| `repo tree --ref REF [--path P]` | ✅ | List files at a ref. Cloud: same `/src/` endpoint returns directory metadata when path is a dir. Server: `GET /projects/{k}/repos/{s}/browse/{path}?at=REF`. Type normalised to `file`/`dir` across both backends. (RV1 of scope **RV**.) |
 
 ### Search
 
@@ -267,7 +267,7 @@ Current state of every command area against gh feature parity:
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | ✅ |
 | BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
-| RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🔲 |
+| RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🟡 RV1 ✅; RV2-RV6 🔲 |
 | SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | ✅ |
 | CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | ✅ |
 | GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |

@@ -76,7 +76,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 |---|---|
 | `auth` | `login` `logout` `status` `token` `refresh` |
 | `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `request-review` `comment` |
-| `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ |
+| `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` |
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
@@ -222,6 +222,33 @@ bitbottle repo fork myworkspace/my-service --into otherws --name my-fork
 `repo fork` returns a typed unsupported-capability error on Bitbucket Server /
 Data Center, which has no fork primitive in its REST API. Both `rename` and
 `fork` accept `--json fields` and `--jq expr` for structured output.
+
+### Reading source at a ref
+
+Read file content and directory listings at any ref (branch, tag, commit
+hash) without cloning. Both backends; the bytes round-trip cleanly so
+binary files survive `--out`.
+
+```bash
+# Read a file at a ref — straight to stdout
+bitbottle repo file get MYPROJ/my-service README.md --ref main
+
+# Pin a tag and write to disk (binary-safe)
+bitbottle repo file get MYPROJ/my-service logo.png --ref v1.2.0 --out logo.png
+
+# List a directory at a ref. PATH defaults to the repo root.
+bitbottle repo tree MYPROJ/my-service --ref main
+bitbottle repo tree MYPROJ/my-service cmd --ref main
+
+# Structured output for scripts and agents
+bitbottle repo tree MYPROJ/my-service --ref main --json path,type,size
+bitbottle repo tree MYPROJ/my-service --ref main --jq '.[]|select(.type=="dir").path'
+```
+
+`type` is normalised to `file` or `dir` across both backends. Submodules
+surface as `dir` (with the submodule pointer in `hash`) so renderers can
+recurse uniformly without a special case. The MCP equivalents are
+`get_file_content` and `list_tree`.
 
 ### Workspaces & Projects (Cloud only)
 

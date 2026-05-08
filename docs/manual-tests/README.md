@@ -18,6 +18,10 @@ before cutting a release, or after touching a backend-specific code path.
   Bitbucket Server / Data Center.
 - [`shared/multi-host.md`](shared/multi-host.md) — both backends configured
   simultaneously, verifies host routing and `--hostname` selection.
+- [`shared/source-primitives.md`](shared/source-primitives.md) — read-only
+  smoke for `repo file get` and `repo tree` (both backends; verifies
+  binary-safety, type normalisation, and `--ref` accepts branches /
+  tags / hashes).
 
 If a scope changes a flow not covered by these three smokes (e.g. a new
 top-level command group, a new backend-specific failure mode), add a fresh
