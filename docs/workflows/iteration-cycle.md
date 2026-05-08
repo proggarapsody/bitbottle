@@ -40,10 +40,34 @@ the same sections.
 3. `git rev-parse --abbrev-ref HEAD` is `main`.
 4. `git pull --ff-only` succeeds. If not, surface the divergence and
    stop.
-5. Read `BACKLOG.md` headings so the rest of the loop has accurate
+5. **Inventory the workspace** — surface everything that could bite
+   later in one halt, not trickle-discovered mid-iteration:
+
+   ```bash
+   # Open PRs the author owns — any blocker for the planned scopes?
+   gh pr list --author @me --state open \
+     --json number,title,headRefName,isDraft,updatedAt
+
+   # Local branches whose remote is gone or that have drifted from main
+   git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads/ \
+     | grep -E '\[gone\]|\[behind' || true
+
+   # Untracked paths the author may not have noticed
+   git status --porcelain | awk '/^\?\?/{print $2}'
+   ```
+
+   If any of these are non-empty, surface them as a single inventory
+   and ask the author what to keep / stash / commit / close —
+   **before** picking the scope. For parallel mode specifically: cross-
+   check that no candidate scope's expected files overlap with files
+   touched in any open PR (`gh pr diff <N> --name-only`). A surprise
+   PR-#133 or stale branch holding a registry file is far cheaper to
+   address up front than during a rolling rebase.
+6. Read `BACKLOG.md` headings so the rest of the loop has accurate
    context.
 
-**Exit**: clean tree on `main`, up to date with `origin/main`.
+**Exit**: clean tree on `main`, up to date with `origin/main`, workspace
+inventory acknowledged.
 
 ## Section 1 — Pick the scope
 

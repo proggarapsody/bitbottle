@@ -71,15 +71,33 @@ as the commit subject. Release-please only bumps on `feat:` / `fix:` /
 
 ## 4. Lint & tests — BLOCKER
 
+If a PR exists and has been pushed, **trust the CI run** — don't re-run
+locally:
+
+```bash
+gh pr view --json statusCheckRollup \
+  -q '[.statusCheckRollup[]|{name,conclusion}]'
+```
+
+Every check must be `SUCCESS`. If any is `FAILURE` / `IN_PROGRESS`,
+surface the failing check name and log URL; don't try to fix locally
+without first reading the CI failure.
+
+Re-running `make lint && make test -race` against a SHA whose CI is
+already green is the third run for the same code (TDD → CI → here) and
+adds ~5 minutes for no signal.
+
+**Local fallback** — only when there is no PR yet (e.g. running the gate
+before `git push`):
+
 ```bash
 make lint    # golangci-lint
 make test    # go test ./... -race
 ```
 
 Both must exit 0. Surface offending file:line for lint, exact test name
-for failures — don't paraphrase.
-
-`go vet ./...` is part of `make test`; no separate run needed.
+for failures — don't paraphrase. `go vet ./...` is part of `make test`;
+no separate run needed.
 
 ## 5. Doc sync (conditional) — BLOCKER on required docs
 
