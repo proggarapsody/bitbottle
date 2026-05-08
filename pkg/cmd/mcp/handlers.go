@@ -11,7 +11,6 @@ import (
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	contextcmd "github.com/proggarapsody/bitbottle/pkg/cmd/context"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/errfmt"
 )
@@ -499,20 +498,6 @@ func (h *handlers) getCurrentUser(_ context.Context, req mcplib.CallToolRequest)
 		return errResultErr(err), nil
 	}
 	return jsonResult(user)
-}
-
-// getContext is the MCP analogue of the `bitbottle context` CLI command. It
-// returns one structured snapshot — host, project, slug, branch, default
-// branch, ahead/behind counts, authenticated user, backend type — so AI
-// agents can orient themselves at the start of a flow with a single tool
-// call instead of three (list_hosts / get_repo / get_current_user + git).
-func (h *handlers) getContext(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	hostname := req.GetString("hostname", "")
-	ctx, err := contextcmd.Build(h.f, hostname)
-	if err != nil {
-		return errResultErr(err), nil
-	}
-	return jsonResult(ctx)
 }
 
 func (h *handlers) listBranches(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
