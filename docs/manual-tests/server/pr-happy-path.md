@@ -91,6 +91,28 @@ bitbottle pr approve "$PR_ID"
 On Server/DC self-approval is permitted by default — exit `0`. If the
 project disallows it: non-zero with a clear message.
 
+### 8.5. `pr comment list` exposes the new inline-aware surface
+
+Server activities flatten nested reply trees with `parentId` set; inline
+anchors come from `commentAnchor` (FROM = old side, TO = new side).
+`resolved` is always `false` on Server (Bitbucket Server's resolution
+lives on tasks; out of scope until RV3).
+
+```bash
+bitbottle pr comment add  "$PR_ID" --body "QA: testing pr comment list"
+bitbottle pr comment list "$PR_ID"
+bitbottle pr comment list "$PR_ID" --inline
+bitbottle pr comment list "$PR_ID" \
+  --json id,parentId,resolved,updatedAt,inline | jq 'length >= 1'
+```
+
+Each command exits `0`. The last `jq` prints `true`. To exercise the
+inline + reply paths, post an inline comment and a threaded reply via
+the Bitbucket Server UI on `MANUAL_TEST.txt:1` and rerun the list
+command — the LOCATION column should show `MANUAL_TEST.txt:1` on the
+top-level comment, and the reply row should show its `parentId` set to
+the top-level ID via `--json`.
+
 ### 9. `pr ready`
 
 ```bash

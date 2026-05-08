@@ -185,12 +185,32 @@ type Commit struct {
 	WebURL    string
 }
 
-// PRComment is the domain representation of a general comment on a pull request.
+// PRComment is the domain representation of a comment on a pull request.
+// Inline is non-nil for inline (file:line) review comments and nil for
+// general PR comments. ParentID is 0 for top-level comments and the parent
+// comment's ID for replies. Resolved reflects backend-native resolution
+// state (Cloud `resolution`); on Server it is always false because the
+// equivalent concept lives on tasks (RV3 scope).
 type PRComment struct {
 	ID        int
 	Author    User
 	Text      string
 	CreatedAt time.Time
+	UpdatedAt time.Time
+	Inline    *PRCommentInline
+	ParentID  int
+	Resolved  bool
+}
+
+// PRCommentInline anchors a PR comment to a file and line range in the diff.
+// Side is "old" (LHS / from-side) or "new" (RHS / to-side). StartLine is 0
+// for single-line comments and set to the first line of the range for
+// multi-line comments; Line is the last (or only) line.
+type PRCommentInline struct {
+	Path      string
+	Side      string // "old" | "new"
+	Line      int
+	StartLine int // 0 = single-line
 }
 
 // AddPRCommentInput carries the parameters for adding a comment to a PR.

@@ -469,11 +469,14 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 
 	s.AddTool(
 		mcplib.NewTool("list_pr_comments",
-			mcplib.WithDescription("List general (top-level) comments on a pull request"),
+			mcplib.WithDescription("List comments on a pull request, including inline (file:line) review comments and replies"),
 			optHostname,
 			reqProject,
 			reqSlug,
 			reqID,
+			mcplib.WithBoolean("inline_only",
+				mcplib.Description("Only return inline (file:line) review comments (default: false)"),
+			),
 		),
 		h.listPRComments,
 	)

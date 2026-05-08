@@ -16,9 +16,15 @@ bitbottle pr decline   42
 bitbottle pr ready     42                       # draft → ready
 bitbottle pr request-review  42 --reviewer alice [--reviewer bob]
 bitbottle pr request-changes 42                 # Cloud only
-bitbottle pr comment list 42
+bitbottle pr comment list 42 [--inline]              # --inline filters to file:line review comments
 bitbottle pr comment add  42 --body "x"
 ```
+
+The `pr comment list` output includes inline review comments (file:line
+anchored) alongside general comments. Use `--inline` to filter to only
+inline comments, or `--json inline,parentId,resolved,updatedAt` to read
+thread structure and resolution state. On Server/DC `resolved` is always
+`false` (resolution lives on tasks; out of scope until RV3).
 
 ## Flag reality check
 

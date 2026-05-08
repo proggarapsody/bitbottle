@@ -2018,3 +2018,51 @@ func TestSearchCode_ServerBackend_EmitsUnsupportedEnvelope(t *testing.T) {
 	assert.Equal(t, string(backend.CodeHostUnsupported), env.Code)
 	assert.Equal(t, "code-search", env.Feature)
 }
+
+// ---- list_pr_comments ----
+
+func TestListPRComments_ReturnsAllByDefault(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListPRCommentsFn: func(ns, slug string, id int) ([]backend.PRComment, error) {
+			return []backend.PRComment{
+				{ID: 1, Text: "general"},
+				{ID: 2, Text: "inline", Inline: &backend.PRCommentInline{Path: "main.go", Side: "new", Line: 7}},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listPRComments(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(42),
+	}))
+	require.NoError(t, err)
+	text := extractText(t, result)
+	assert.Contains(t, text, "general")
+	assert.Contains(t, text, "inline")
+}
+
+func TestListPRComments_InlineOnlyFiltersToInline(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListPRCommentsFn: func(ns, slug string, id int) ([]backend.PRComment, error) {
+			return []backend.PRComment{
+				{ID: 1, Text: "general"},
+				{ID: 2, Text: "inline", Inline: &backend.PRCommentInline{Path: "main.go", Side: "new", Line: 7}},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listPRComments(context.Background(), makeReq(map[string]any{
+		"project":     "MYPROJ",
+		"slug":        "my-repo",
+		"id":          float64(42),
+		"inline_only": true,
+	}))
+	require.NoError(t, err)
+	text := extractText(t, result)
+	assert.NotContains(t, text, "general", "general comment should be filtered out by inline_only")
+	assert.Contains(t, text, "inline")
+	assert.Contains(t, text, "main.go")
+}

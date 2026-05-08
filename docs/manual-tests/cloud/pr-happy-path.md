@@ -111,6 +111,31 @@ Either exit `0` (approval recorded), or non-zero with stderr explaining
 self-approval is not permitted. Either is acceptable for this test; the
 critical bit is the error wording is clear.
 
+### 8.5. `pr comment list` exposes the new inline-aware surface
+
+```bash
+# Post a top-level comment so there's something to list.
+bitbottle pr comment add "$PR_ID" --body "QA: testing pr comment list"
+
+# Default list — the new LOCATION column appears only when an inline
+# comment is present, so on a fresh PR with no inline reviews the
+# columns remain ID/AUTHOR/CREATED/TEXT.
+bitbottle pr comment list "$PR_ID"
+
+# --inline filter on a PR with no inline comments yields an empty list.
+bitbottle pr comment list "$PR_ID" --inline
+
+# Verify the new JSON fields parse end-to-end.
+bitbottle pr comment list "$PR_ID" \
+  --json id,parentId,resolved,updatedAt,inline | jq 'length >= 1'
+```
+
+Each command exits `0`. The last `jq` prints `true`. To exercise the
+inline path itself today, post an inline comment via the Bitbucket UI
+on `MANUAL_TEST.txt:1` and rerun `pr comment list "$PR_ID" --inline` —
+the LOCATION column should show `MANUAL_TEST.txt:1` (CLI-side inline
+posting lands in RV3).
+
 ### 9. `pr ready` promotes draft → open
 
 ```bash

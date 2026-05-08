@@ -122,6 +122,11 @@ bitbottle pr request-review 42 --reviewer alice --reviewer bob
 # Decline / reopen (reopen is Bitbucket Server / DC only)
 bitbottle pr decline 42
 bitbottle pr reopen  42
+
+# Read review comments — general + inline (file:line) anchors and replies
+bitbottle pr comment list 42                            # all comments; LOCATION column shows path:line for inline
+bitbottle pr comment list 42 --inline                   # only inline review comments
+bitbottle pr comment list 42 --json id,inline,parentId,resolved,updatedAt
 ```
 
 ### Repos & Branches

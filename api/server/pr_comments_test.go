@@ -38,6 +38,68 @@ func TestServerClient_ListPRComments(t *testing.T) {
 	assert.Equal(t, 2, cmts[1].ID)
 }
 
+func TestServerClient_ListPRComments_InlineAnchor(t *testing.T) {
+	t.Parallel()
+	const body = `{"values":[{"action":"COMMENTED","commentAnchor":{"path":"src/foo.go","line":42,"lineType":"ADDED","fileType":"TO","fromHash":"aaa","toHash":"bbb"},"comment":{"id":11,"text":"nit","author":{"slug":"alice","displayName":"Alice"},"createdDate":1714000000000,"updatedDate":1714003600000}}],"isLastPage":true,"size":1}`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	cmts, err := client.ListPRComments("MYPROJ", "my-svc", 42)
+	require.NoError(t, err)
+	require.Len(t, cmts, 1)
+	require.NotNil(t, cmts[0].Inline)
+	assert.Equal(t, "src/foo.go", cmts[0].Inline.Path)
+	assert.Equal(t, "new", cmts[0].Inline.Side)
+	assert.Equal(t, 42, cmts[0].Inline.Line)
+	assert.False(t, cmts[0].UpdatedAt.IsZero())
+}
+
+func TestServerClient_ListPRComments_FlattensNestedReplies(t *testing.T) {
+	t.Parallel()
+	// Top-level comment 11 has reply 12, which has nested reply 13.
+	const body = `{"values":[{"action":"COMMENTED","comment":{"id":11,"text":"top","author":{"slug":"alice"},"createdDate":1714000000000,"comments":[{"id":12,"text":"reply","author":{"slug":"bob"},"createdDate":1714000100000,"comments":[{"id":13,"text":"reply-to-reply","author":{"slug":"alice"},"createdDate":1714000200000}]}]}}],"isLastPage":true,"size":1}`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	cmts, err := client.ListPRComments("MYPROJ", "my-svc", 42)
+	require.NoError(t, err)
+	require.Len(t, cmts, 3)
+	assert.Equal(t, 11, cmts[0].ID)
+	assert.Equal(t, 0, cmts[0].ParentID)
+	assert.Equal(t, 12, cmts[1].ID)
+	assert.Equal(t, 11, cmts[1].ParentID)
+	assert.Equal(t, 13, cmts[2].ID)
+	assert.Equal(t, 12, cmts[2].ParentID)
+}
+
+func TestServerClient_ListPRComments_InlineAnchorOnTopOnlyNotReplies(t *testing.T) {
+	t.Parallel()
+	const body = `{"values":[{"action":"COMMENTED","commentAnchor":{"path":"src/foo.go","line":7,"fileType":"FROM"},"comment":{"id":21,"text":"q","author":{"slug":"alice"},"createdDate":1714000000000,"comments":[{"id":22,"text":"a","author":{"slug":"bob"},"createdDate":1714000100000}]}}],"isLastPage":true,"size":1}`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	cmts, err := client.ListPRComments("MYPROJ", "my-svc", 42)
+	require.NoError(t, err)
+	require.Len(t, cmts, 2)
+	require.NotNil(t, cmts[0].Inline)
+	assert.Equal(t, "old", cmts[0].Inline.Side) // FROM → old
+	assert.Equal(t, 7, cmts[0].Inline.Line)
+	assert.Nil(t, cmts[1].Inline, "replies do not carry the inline anchor")
+	assert.Equal(t, 21, cmts[1].ParentID)
+}
+
 func TestServerClient_AddPRComment(t *testing.T) {
 	t.Parallel()
 	var gotPath, gotMethod string

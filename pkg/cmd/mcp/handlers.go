@@ -981,6 +981,15 @@ func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest)
 	if err != nil {
 		return errResultErr(err), nil
 	}
+	if req.GetBool("inline_only", false) {
+		filtered := make([]backend.PRComment, 0, len(cmts))
+		for _, c := range cmts {
+			if c.Inline != nil {
+				filtered = append(filtered, c)
+			}
+		}
+		cmts = filtered
+	}
 	return jsonResult(cmts)
 }
 
