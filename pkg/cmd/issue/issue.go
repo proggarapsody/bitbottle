@@ -24,5 +24,9 @@ the current directory.`,
 	cmd.AddCommand(NewCmdIssueView(f))
 	cmd.AddCommand(NewCmdIssueCreate(f))
 	cmd.AddCommand(NewCmdIssueClose(f))
+	cmd.AddCommand(NewCmdIssueEdit(f))
+	cmd.AddCommand(NewCmdIssueReopen(f))
+	cmd.AddCommand(NewCmdIssueAssign(f))
+	cmd.AddCommand(NewCmdIssueComment(f))
 	return cmd
 }
