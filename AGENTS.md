@@ -43,6 +43,7 @@ skills/SKILL.md     — Claude skill file for bitbottle (all commands in one fil
 docs/manual-tests/  — manual test guides
 docs/workflows/     — contributor + agent workflow checklists (pre-merge-check, iteration-cycle)
 packages/mcp-npm/   — npm wrapper (downloads Go binary on postinstall, bundles README)
+conductor/          — project-context scaffolding from the Conductor plugin (product, tech stack, workflow, styleguides) — read for orientation, not authoritative for code rules
 ```
 
 ## Release pipeline (automated)
