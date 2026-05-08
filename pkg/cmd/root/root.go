@@ -3,8 +3,6 @@ package root
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
-
 	"github.com/proggarapsody/bitbottle/pkg/cmd/alias"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/api"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
@@ -12,7 +10,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
 	configcmd "github.com/proggarapsody/bitbottle/pkg/cmd/config"
-	contextcmd "github.com/proggarapsody/bitbottle/pkg/cmd/context"
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/context" // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/issue"
 	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
@@ -25,6 +23,8 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/workspace"
+	"github.com/proggarapsody/bitbottle/pkg/cmdregistry"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 func NewCmdRoot(f *factory.Factory) *cobra.Command {
@@ -62,10 +62,15 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(workspace.NewCmdWorkspace(f))
 	cmd.AddCommand(project.NewCmdProject(f))
 	cmd.AddCommand(configcmd.NewCmdConfig(f))
-	cmd.AddCommand(contextcmd.NewCmdContext(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
 	cmd.AddCommand(searchcmd.NewCmdSearch(f))
 	cmd.AddCommand(skill.NewCmdSkill(f))
+
+	// Self-registered commands (legacy fixed list above; new commands use
+	// cmdregistry instead of editing this file).
+	for _, sub := range cmdregistry.All(f) {
+		cmd.AddCommand(sub)
+	}
 
 	cmd.AddCommand(alias.NewCmdAlias(f, builtinNames(cmd)))
 

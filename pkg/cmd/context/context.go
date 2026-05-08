@@ -18,7 +18,12 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdregistry"
 )
+
+func init() {
+	cmdregistry.Register(NewCmdContext)
+}
 
 // NewCmdContext builds the cobra command. The command has no subcommands and
 // takes no positional arguments — the entire shape is resolved from config,
