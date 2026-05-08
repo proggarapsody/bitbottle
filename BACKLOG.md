@@ -93,7 +93,7 @@ Current state of every command area against gh feature parity:
 | `pr activity PR_ID` | 🔲 | PR event stream (`/pullrequests/{id}/activity`) — scope **RV** |
 | `pr checks PR_ID` | 🔲 | CI status for PR head commit — scope **GHP** |
 | `pr update-branch PR_ID` | 🔲 | Sync PR head with base (the action our `pr.merge.behind` hint promises) — scope **GHP** |
-| `pr reopen PR_ID` | 🔲 | Reverse `pr decline` — scope **GHP** |
+| `pr reopen PR_ID` | ✅ | Reverse `pr decline` (Bitbucket Server / DC only — Cloud has no reopen primitive, BCLOUD-23807) |
 | `pr status` | 🔲 | Cross-repo "PRs on my plate" (assigned / review-requested / mine) — scope **GHP** |
 
 ### Branch

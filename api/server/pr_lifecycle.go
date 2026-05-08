@@ -26,6 +26,15 @@ func (c *Client) DeclinePR(ns, slug string, id int) error {
 	return c.postJSON(path, nil, &result)
 }
 
+// ReopenPR reverses a decline, returning the PR to OPEN. Bitbucket Server
+// exposes a dedicated /reopen endpoint; the request is fire-and-forget like
+// /decline.
+func (c *Client) ReopenPR(ns, slug string, id int) error {
+	var result struct{}
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/reopen", ns, slug, id)
+	return c.postJSON(path, nil, &result)
+}
+
 // UnapprovePR removes the authenticated user's approval from a pull request.
 // Mirrors the approve endpoint: DELETE .../approve (not DELETE .../participants/~,
 // which requires an actual user slug and is rejected by Bitbucket Server).

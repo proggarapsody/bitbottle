@@ -59,6 +59,31 @@ func TestServerClient_DeclinePR_IssuesCorrectPath(t *testing.T) {
 	assert.Equal(t, http.MethodPost, gotMethod)
 }
 
+func TestServerClient_ReopenPR_IssuesCorrectPath(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotMethod string
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotMethod = r.Method
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{}`)
+	})
+	err := client.ReopenPR("MYPROJ", "my-service", 42)
+	require.NoError(t, err)
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/reopen", gotPath)
+	assert.Equal(t, http.MethodPost, gotMethod)
+}
+
+func TestServerClient_ReopenPR_PropagatesError(t *testing.T) {
+	t.Parallel()
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = io.WriteString(w, `{"errors":[{"message":"PR not found"}]}`)
+	})
+	err := client.ReopenPR("MYPROJ", "my-service", 999)
+	require.Error(t, err)
+}
+
 func TestServerClient_UnapprovePR_DeletesApproveEndpoint(t *testing.T) {
 	t.Parallel()
 	var gotPath, gotMethod string

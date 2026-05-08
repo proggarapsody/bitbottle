@@ -87,6 +87,15 @@ type PRDecliner interface {
 	DeclinePR(ns, slug string, id int) error
 }
 
+// PRReopener reverses a decline. Implemented only by Bitbucket Server / Data
+// Center (POST /pull-requests/{id}/reopen). Bitbucket Cloud has no reopen
+// primitive — declined PRs are terminal there (BCLOUD-23807) — so callers
+// route through AsPRReopener so the Cloud-only constraint surfaces as a
+// typed ErrUnsupportedOnHost rather than a panic.
+type PRReopener interface {
+	ReopenPR(ns, slug string, id int) error
+}
+
 type PRUnapprover interface {
 	UnapprovePR(ns, slug string, id int) error
 }
@@ -332,6 +341,28 @@ type BranchProtector interface {
 // FeatureBranchProtect names the branch-protection capability for typed-
 // error reporting.
 const FeatureBranchProtect Feature = "branch-protect"
+
+// FeaturePRReopen names the PR-reopen capability for typed-error reporting.
+// Bitbucket Cloud has no reopen primitive (BCLOUD-23807), so callers gate
+// the feature behind AsPRReopener.
+const FeaturePRReopen Feature = "pr-reopen"
+
+// AsPRReopener returns the PRReopener view of c, or a typed *DomainError
+// (Kind=ErrUnsupportedOnHost) when the backend at host has no reopen
+// primitive (currently Bitbucket Cloud).
+func AsPRReopener(c Client, host string) (PRReopener, error) {
+	r, ok := c.(PRReopener)
+	if !ok {
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
+			Host:    host,
+			Feature: string(FeaturePRReopen),
+			Message: fmt.Sprintf("pr reopen is not supported on %s (Bitbucket Server / Data Center only)", host),
+		}
+	}
+	return r, nil
+}
 
 // AsBranchProtector returns the BranchProtector view of c, or a typed
 // *DomainError (Kind=ErrUnsupportedOnHost) when called against a backend

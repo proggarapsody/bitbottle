@@ -759,6 +759,35 @@ func (h *handlers) declinePR(_ context.Context, req mcplib.CallToolRequest) (*mc
 	return mcplib.NewToolResultText("{}"), nil
 }
 
+func (h *handlers) reopenPR(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	reopener, err := backend.AsPRReopener(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := reopener.ReopenPR(project, slug, id); err != nil {
+		return errResultErr(err), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
+}
+
 func (h *handlers) unapprovePR(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")

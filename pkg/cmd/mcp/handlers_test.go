@@ -1144,6 +1144,98 @@ func TestDeclinePR_ZeroId_ReturnsError(t *testing.T) {
 	assertErrorResult(t, result, "id")
 }
 
+// ---- reopen_pr ----
+
+// fakeReopener embeds FakeClient and additionally implements
+// backend.PRReopener. PRReopener is not part of the composite Client (it's
+// gated by AsPRReopener) so the bare FakeClient cannot satisfy it.
+type fakeReopener struct {
+	*testhelpers.FakeClient
+	ReopenPRFn func(ns, slug string, id int) error
+}
+
+func (f *fakeReopener) ReopenPR(ns, slug string, id int) error {
+	if f.ReopenPRFn != nil {
+		return f.ReopenPRFn(ns, slug, id)
+	}
+	if f.T != nil {
+		f.T.Fatalf("unexpected call to fakeReopener.ReopenPR")
+	}
+	return nil
+}
+
+var _ backend.PRReopener = (*fakeReopener)(nil)
+
+func newHandlersWithReopener(t *testing.T, fake *fakeReopener) *handlers {
+	t.Helper()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	factorytest.UseBackend(f, fake)
+	return newHandlers(f)
+}
+
+func TestReopenPR_CallsClientAndReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &fakeReopener{
+		FakeClient: &testhelpers.FakeClient{T: t},
+		ReopenPRFn: func(ns, slug string, id int) error {
+			gotID = id
+			return nil
+		},
+	}
+	h := newHandlersWithReopener(t, fake)
+	result, err := h.reopenPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assertJSONContains(t, result, "{}", "")
+}
+
+func TestReopenPR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithReopener(t, &fakeReopener{FakeClient: &testhelpers.FakeClient{T: t}})
+	result, err := h.reopenPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+func TestReopenPR_UnsupportedOnCloud_EmitsHostUnsupported(t *testing.T) {
+	t.Parallel()
+	// Plain FakeClient does NOT implement PRReopener — simulates Cloud.
+	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{T: t})
+	result, err := h.reopenPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "host.unsupported")
+}
+
+func TestReopenPR_NotFound_PropagatesError(t *testing.T) {
+	t.Parallel()
+	fake := &fakeReopener{
+		FakeClient: &testhelpers.FakeClient{T: t},
+		ReopenPRFn: func(ns, slug string, id int) error {
+			return errors.New("404 not found")
+		},
+	}
+	h := newHandlersWithReopener(t, fake)
+	result, err := h.reopenPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(999),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "404")
+}
+
 // ---- unapprove_pr ----
 
 func TestUnapprovePR_CallsClientAndReturnsEmpty(t *testing.T) {
