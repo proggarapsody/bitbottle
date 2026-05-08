@@ -398,6 +398,10 @@ when stdout is a TTY (default `less -FRX`). Set `PAGER=cat` to disable.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Run `go test ./...` before sending a PR.
 
+```bash
+make doc-graph  # report doc cross-reference drift (orphans, broken links, stale section refs)
+```
+
 ## License
 
 [MIT](LICENSE)
