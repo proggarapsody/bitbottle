@@ -8,6 +8,13 @@ repo. Tooling wrappers (Claude skill at
 Human contributors and any agent (Codex, Cursor, Aider, Claude) follow
 the same sections.
 
+> **Cross-document reference convention.** References from this doc to
+> other docs use anchor names ("the pre-merge gate", "the doc-sync
+> table", "the parallel-mode section") rather than section numbers.
+> Internal references within the same doc may use section numbers.
+> This prevents a renumbering in one doc from silently breaking links
+> in another.
+
 ## Design
 
 - **Composition over a monolith.** Each phase has one job and a clear
@@ -153,10 +160,10 @@ same branch.
 **Goal**: catch the squash-merge gotcha and the seven other classes of
 issues before they touch `main`.
 
-Run `docs/workflows/pre-merge-check.md` end-to-end. Sections 0–8 cover
-branch hygiene, Conventional Commits, no build artifacts in `dist/`,
-`make lint` + `go test`, doc sync, release-please boundaries, and a
-secret scan.
+Run `docs/workflows/pre-merge-check.md` end-to-end (branch hygiene,
+Conventional Commits, no build artifacts in `dist/`, `make lint` +
+`go test`, the doc-sync table, release-please boundaries, and the
+secret scan).
 
 Do **not** proceed past this section if any check fails. Fix the
 underlying issue and re-run; never bypass.
