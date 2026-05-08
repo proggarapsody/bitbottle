@@ -12,6 +12,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
 	configcmd "github.com/proggarapsody/bitbottle/pkg/cmd/config"
+	contextcmd "github.com/proggarapsody/bitbottle/pkg/cmd/context"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/issue"
 	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
@@ -61,6 +62,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(workspace.NewCmdWorkspace(f))
 	cmd.AddCommand(project.NewCmdProject(f))
 	cmd.AddCommand(configcmd.NewCmdConfig(f))
+	cmd.AddCommand(contextcmd.NewCmdContext(f))
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
 	cmd.AddCommand(searchcmd.NewCmdSearch(f))
 	cmd.AddCommand(skill.NewCmdSkill(f))
