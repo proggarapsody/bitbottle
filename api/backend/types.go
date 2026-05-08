@@ -373,6 +373,23 @@ type ContextUser struct {
 	DisplayName string `json:"display_name"`
 }
 
+// TreeEntry is a single child of a directory listing under a ref. Type is
+// the normalised "file" or "dir" — adapters fold their backend-specific
+// vocabularies (Cloud "commit_file"/"commit_directory", Server
+// "FILE"/"DIRECTORY"/"SUBMODULE") to one of these two values. Submodules
+// surface as "dir" with the submodule pointer in Hash so renderers treat
+// them as recursable.
+//
+// Path is the full repo-relative path (including the parent prefix), so a
+// renderer doesn't need to know what path was requested to display the
+// listing. Size is 0 for directories.
+type TreeEntry struct {
+	Path string
+	Type string
+	Size int64
+	Hash string
+}
+
 // CodeSearchHit is one result row from Bitbucket Cloud's workspace-scoped
 // code search. The hit may match on the file path (PathMatches non-empty),
 // on file content (ContentMatches non-empty), or both. Renderers use the

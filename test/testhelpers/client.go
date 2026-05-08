@@ -96,6 +96,10 @@ type FakeClient struct {
 
 	// Code search (Cloud-only; satisfies backend.CodeSearcher when set)
 	SearchCodeFn func(workspace, query string, limit int) ([]backend.CodeSearchHit, error)
+
+	// Source primitives (both backends; satisfies backend.SourceReader when set)
+	GetFileContentFn func(ns, slug, ref, path string) ([]byte, error)
+	ListTreeFn       func(ns, slug, ref, path string) ([]backend.TreeEntry, error)
 }
 
 // Compile-time interface check.
@@ -609,6 +613,26 @@ func (c *FakeClient) SearchCode(workspace, query string, limit int) ([]backend.C
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.SearchCode; set SearchCodeFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetFileContent(ns, slug, ref, path string) ([]byte, error) {
+	if c.GetFileContentFn != nil {
+		return c.GetFileContentFn(ns, slug, ref, path)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetFileContent; set GetFileContentFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) ListTree(ns, slug, ref, path string) ([]backend.TreeEntry, error) {
+	if c.ListTreeFn != nil {
+		return c.ListTreeFn(ns, slug, ref, path)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListTree; set ListTreeFn in your test")
 	}
 	return nil, nil
 }
