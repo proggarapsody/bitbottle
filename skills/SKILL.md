@@ -78,6 +78,7 @@ command in that checkout runs without `-R`.
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only commands | `pipeline *`, `pr request-changes` | — |
+| Server-only commands | — | `branch protect *`, `code-insights *` |
 
 Custom-hostname Cloud Data Center? Force routing in `hosts.yml`:
 `backend_type: cloud` (or `server`). See `references/auth.md`.
@@ -109,6 +110,36 @@ When you see one of these messages, you know the fix:
   passwords need the **Atlassian email**, not the username.
 - *Server/DC auth fails* → missing `--username`, or `--git-protocol
   ssh` was used with an HTTPS-only PAT.
+- *`code-insights` returns "unsupported on host"* → Code Insights is a
+  Bitbucket Server / Data Center feature only. Cloud hosts always return
+  this error. Confirm the host is Server/DC with `bitbottle context`.
+- *`merge-check` commands return unexpected errors* → The merge-check API
+  is partly undocumented; these commands are experimental. Verify the
+  report key matches an existing Code Insights report on the same repo.
+
+## Code Insights quick-reference _(Server / DC only)_
+
+```bash
+# Upsert a report on a commit
+bitbottle code-insights report set PROJ/REPO HASH KEY \
+  --title "Tool" --result PASS --report-type SECURITY
+
+# Bulk-add annotations (JSON array with path/line/severity/type/message)
+bitbottle code-insights annotation add PROJ/REPO HASH KEY \
+  --from-json @findings.json
+
+# Single annotation
+bitbottle code-insights annotation add PROJ/REPO HASH KEY \
+  --path src/main.go --line 42 --severity HIGH --type BUG \
+  --message "null ptr"
+
+# Merge check (experimental)
+bitbottle code-insights merge-check set PROJ/REPO CHECK_KEY \
+  --report-key REPORT_KEY --must-pass --min-severity MEDIUM
+```
+
+All subcommands support `--hostname` and `--json / --jq` where applicable.
+Merge-check verbs are marked experimental (partly undocumented API).
 
 ## Install / version
 

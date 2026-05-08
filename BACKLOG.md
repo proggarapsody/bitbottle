@@ -222,13 +222,13 @@ Current state of every command area against gh feature parity:
 | `environment delete UUID` | 🔲 | `DELETE .../environments/{uuid}` — scope **DEP** |
 | `environment variable list / set / delete` | 🔲 | `/deployments_config/environments/{uuid}/variables` (CRUD) — scope **DEP** |
 
-### Code Insights _(Server / DC only — missing)_
+### Code Insights _(Server / DC only)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `code-insights report list / view / set / delete` | 🔲 | `/rest/insights/1.0/projects/{k}/repos/{s}/commits/{hash}/reports/{key}` — PASS/FAIL summary attached to commit/PR — scope **CI** |
-| `code-insights annotation add / list / delete` | 🔲 | Bulk-attach line-level findings to a report — scope **CI** |
-| `code-insights merge-check set / get / delete` | 🔲 | Configure required reports as merge gates (`/rest/insights/latest/.../merge-check/{key}`; partly undocumented) — scope **CI** |
+| `code-insights report list / view / set / delete` | ✅ | `/rest/insights/1.0/projects/{k}/repos/{s}/commits/{hash}/reports/{key}` — PASS/FAIL summary attached to commit/PR — scope **CI** |
+| `code-insights annotation add / list / delete` | ✅ | Bulk-attach line-level findings to a report — scope **CI** |
+| `code-insights merge-check set / get / delete` | ✅ | Configure required reports as merge gates (`/rest/insights/latest/.../merge-check/{key}`; partly undocumented; marked experimental) — scope **CI** |
 
 ### Context / Orientation _(missing)_
 
@@ -272,7 +272,7 @@ Current state of every command area against gh feature parity:
 | CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | ✅ |
 | GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |
 | OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | 🔲 |
-| CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | 🔲 |
+| CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | ✅ |
 | DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | 🔲 |
 
 ---
