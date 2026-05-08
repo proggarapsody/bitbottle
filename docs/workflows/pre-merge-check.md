@@ -81,12 +81,16 @@ Match against the changed-file list from §0. Multiple rules can fire.
 | If diff touches… | Verify also updated | Severity |
 |---|---|---|
 | `pkg/cmd/<group>/<new-file>.go` (new command) | `pkg/cmd/<group>/<group>.go` registers it; **both** `api/cloud/` and `api/server/` have the operation; `pkg/cmd/mcp/` has a matching tool if it's a Bitbucket op | BLOCKER |
+| New command in `pkg/cmd/<group>/` | `skills/SKILL.md` extended with the new command | BLOCKER |
 | New / changed flag in `pkg/cmd/**` | `skills/references/{auth,pr,repos,api}.md` reflects it; `docs/manual-tests/<command>.md` exists or is updated | BLOCKER |
 | User-visible UX change (output format, new subcommand) | `README.md` | BLOCKER |
 | Branch strategy / commit / release / setup change | `CONTRIBUTING.md`, `AGENTS.md` | BLOCKER |
 | New invariant or pattern (transport policy, paging helper, etc.) | `AGENTS.md` "Key rules for AI agents" | WARN |
-| Backlog item is now done | `BACKLOG.md` (mark complete / remove) | WARN |
+| Backlog item is now done | `BACKLOG.md` (mark complete / remove) | BLOCKER |
 | Auth, hosts.yml, or token handling | `skills/references/auth.md` | BLOCKER |
+| `api/backend/{client,types,errors}.go` changed | `docs/agent-primer.md` still accurate (architecture vocabulary, invariants, exemplar-file table) | BLOCKER |
+| `docs/workflows/iteration-cycle.md` changed | `AGENTS.md` and `.claude/skills/iteration-cycle/SKILL.md` (per-user, gitignored — flag as WARN; contributor's responsibility) still reference correct section numbers | WARN |
+| New file under `skills/references/` | Added to the doc-sync table's reference-file list (this table) | BLOCKER |
 
 If `skills/references/*.md` was edited, also check `skills/SKILL.md`'s
 router table still points at the right file.
