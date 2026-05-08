@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.22.0](https://github.com/proggarapsody/bitbottle/compare/v1.21.0...v1.22.0) (2026-05-08)
+
+
+### Features
+
+* **rv1:** repo file get + repo tree (SourceReader primitives) ([#127](https://github.com/proggarapsody/bitbottle/issues/127)) ([676220e](https://github.com/proggarapsody/bitbottle/commit/676220e05613a7540b8d4c6d4239b5f659b33054)), closes [#126](https://github.com/proggarapsody/bitbottle/issues/126)
+* **rv2:** surface inline PR review comments on pr comment list ([#130](https://github.com/proggarapsody/bitbottle/issues/130)) ([cdcb7a5](https://github.com/proggarapsody/bitbottle/commit/cdcb7a59e1561061f806592171d5072394e1e046))
+
 ## [1.21.0](https://github.com/proggarapsody/bitbottle/compare/v1.20.0...v1.21.0) (2026-05-08)
 
 
