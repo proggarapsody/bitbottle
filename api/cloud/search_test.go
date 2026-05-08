@@ -1,6 +1,7 @@
 package cloud_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -141,7 +142,7 @@ func TestCloudClient_SearchCode_DecodesAndFlattensLines(t *testing.T) {
 		}
 		// Substitute %s with the test server URL so the absolute "next"
 		// link points back to ourselves.
-		body := []byte(replace(codeSearchPage1, "%s", srv.URL))
+		body := []byte(strings.ReplaceAll(codeSearchPage1, "%s", srv.URL))
 		_, _ = w.Write(body)
 	})
 	srv.Config.Handler = mux
@@ -182,7 +183,7 @@ func TestCloudClient_SearchCode_LimitClampsTotalItems(t *testing.T) {
 			_, _ = w.Write([]byte(codeSearchPage2))
 			return
 		}
-		_, _ = w.Write([]byte(replace(codeSearchPage1, "%s", srv.URL)))
+		_, _ = w.Write([]byte(strings.ReplaceAll(codeSearchPage1, "%s", srv.URL)))
 	})
 	srv.Config.Handler = mux
 
@@ -192,10 +193,6 @@ func TestCloudClient_SearchCode_LimitClampsTotalItems(t *testing.T) {
 	require.Len(t, got, 1, "limit must cap total items even when more pages exist")
 	assert.Equal(t, "src/README.md", got[0].Path)
 }
-
-// replace substitutes the test-server URL into the canned "next" link.
-// Aliased to strings.ReplaceAll so the fixture stays declarative.
-func replace(s, old, new string) string { return strings.ReplaceAll(s, old, new) }
 
 // A workspace slug with a literal "/" must be percent-encoded into the URL
 // path so a hostile or buggy caller can't pivot to a different endpoint.
@@ -231,4 +228,34 @@ func TestCloudClient_SearchCode_PagelenClampedToCloudMax(t *testing.T) {
 	n, perr := strconv.Atoi(gotPagelen)
 	require.NoError(t, perr)
 	assert.LessOrEqual(t, n, 100, "pagelen must be clamped to Cloud's max of 100")
+}
+
+// JSON shape parity: when a hit has zero content_matches, the
+// ContentMatches field must serialise as `[]`, not `null`. PathMatches
+// already does the right thing because it's preallocated.
+func TestCloudClient_SearchCode_EmptyContentMatchesSerialisesAsArray(t *testing.T) {
+	t.Parallel()
+	const onlyPath = `{
+	  "values": [
+	    {
+	      "type": "code_search_result",
+	      "content_match_count": 0,
+	      "path_matches": [{"text": "x"}],
+	      "content_matches": [],
+	      "file": {"path": "x", "commit": {"repository": {"full_name": "a/b"}}, "links": {"self": {"href": "u"}}}
+	    }
+	  ]
+	}`
+	client, _ := newCloudSearchServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(onlyPath))
+	})
+	got, err := client.SearchCode("acme", "TODO", 0)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	blob, err := json.Marshal(got[0])
+	require.NoError(t, err)
+	assert.Contains(t, string(blob), `"ContentMatches":[]`,
+		"empty ContentMatches must marshal as [] for parity with PathMatches")
+	assert.NotContains(t, string(blob), `"ContentMatches":null`)
 }

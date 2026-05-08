@@ -78,7 +78,9 @@ func (w wireCloudCodeSearchHit) toDomain() backend.CodeSearchHit {
 		pm = append(pm, s.toDomain())
 	}
 	// Flatten content_matches[].lines[] — see wireCloudContentLine doc.
-	var cm []backend.ContentMatch
+	// Preallocated to a non-nil zero-length slice so JSON marshalling emits
+	// `[]` instead of `null`, matching pm above.
+	cm := make([]backend.ContentMatch, 0)
 	for _, group := range w.ContentMatches {
 		for _, ln := range group.Lines {
 			cm = append(cm, ln.toDomain())
