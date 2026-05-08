@@ -234,7 +234,7 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `bitbottle context [--json]` | 🔲 | One-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind. Replaces 3-4 calls for agents. — scope **CTX** |
+| `bitbottle context [--json]` | ✅ | One-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind. Replaces 3-4 calls for agents. — scope **CTX** |
 | `bitbottle status` | 🔲 | Cross-repo "what's on my plate": review requests, mentions, assigned issues. (gh `status` analogue, workspace-scoped on Cloud.) — scope **GHP** |
 
 ### Top-level / Web
@@ -269,7 +269,7 @@ Current state of every command area against gh feature parity:
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
 | RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🔲 |
 | SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | 🔲 |
-| CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | 🔲 |
+| CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | ✅ |
 | GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |
 | OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | 🔲 |
 | CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | 🔲 |

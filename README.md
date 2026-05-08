@@ -90,6 +90,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `config` | Editor, pager, git protocol per-host |
 | `completion` | `bash` `zsh` `fish` `powershell` |
 | `mcp` | MCP stdio server for AI assistants |
+| `context` | One-call orientation: host, repo, branch, default branch, ahead/behind, user, backend |
 
 All listing commands support `--json fields`, `--jq expr`, `--limit N`, `--hostname HOST`. TTY output is aligned and coloured; piped output is plain tab-separated for scripting.
 
@@ -241,6 +242,32 @@ bitbottle api --paginate --jq '.[].full_name' '2.0/repositories/{workspace}'
 bitbottle api -X POST -F 'title=hotfix' -F 'source.branch.name=hotfix/x' \
   '2.0/repositories/{workspace}/{repo_slug}/pullrequests'
 ```
+
+### Context (one-call orientation)
+
+`bitbottle context` collapses three previously independent calls
+(`auth status`, `repo view`, `git status`) into a single structured
+snapshot of where you are. Especially useful for AI agents that drive
+bitbottle through MCP — `get_context` is the standard first call.
+
+```bash
+bitbottle context
+# Host:           git.example.com
+# Backend:        server
+# Project:        PROJ
+# Slug:           repo
+# Branch:         feat/ctx
+# Default branch: main
+# Ahead/Behind:   2 / 0
+# User:           alice (Alice Smith)
+
+bitbottle context --json host,project,slug,branch,default_branch,ahead,behind,user,backend
+bitbottle context --json user --jq '.user.slug'
+```
+
+Outside a git repo `project`, `slug`, `branch`, `default_branch`,
+`ahead`, and `behind` are empty / zero; `host`, `user`, and `backend`
+still resolve via the configured (or `--hostname`) host.
 
 ### Outside a git repo
 
