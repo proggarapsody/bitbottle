@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://github.com/proggarapsody/bitbottle/compare/v1.23.0...v1.24.0) (2026-05-09)
+
+
+### Features
+
+* **rv3:** inline PR comment write path (add inline / edit / delete / resolve) ([#132](https://github.com/proggarapsody/bitbottle/issues/132)) ([3d15050](https://github.com/proggarapsody/bitbottle/commit/3d150500a57b5bc1367433743fd2f1fb946bc3a6)), closes [#131](https://github.com/proggarapsody/bitbottle/issues/131)
+
 ## [1.23.0](https://github.com/proggarapsody/bitbottle/compare/v1.22.0...v1.23.0) (2026-05-08)
 
 
