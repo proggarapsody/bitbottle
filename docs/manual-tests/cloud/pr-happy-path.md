@@ -130,11 +130,44 @@ bitbottle pr comment list "$PR_ID" \
   --json id,parentId,resolved,updatedAt,inline | jq 'length >= 1'
 ```
 
-Each command exits `0`. The last `jq` prints `true`. To exercise the
-inline path itself today, post an inline comment via the Bitbucket UI
-on `MANUAL_TEST.txt:1` and rerun `pr comment list "$PR_ID" --inline` —
-the LOCATION column should show `MANUAL_TEST.txt:1` (CLI-side inline
-posting lands in RV3).
+Each command exits `0`. The last `jq` prints `true`.
+
+### 8.6. `pr comment add --inline` posts an anchored review comment
+
+```bash
+bitbottle pr comment add "$PR_ID" \
+  --inline MANUAL_TEST.txt:1 \
+  --body "QA: inline new-side"
+INLINE_ID=$(bitbottle pr comment list "$PR_ID" --inline --json id,inline,text \
+  | jq '.[] | select(.text=="QA: inline new-side") | .id')
+
+# Multi-line range (Cloud only)
+bitbottle pr comment add "$PR_ID" \
+  --inline MANUAL_TEST.txt:1-3 \
+  --body "QA: inline range"
+
+# Reply nested under the first inline comment
+bitbottle pr comment add "$PR_ID" --parent "$INLINE_ID" --body "QA: reply"
+```
+
+Exit `0` on each. `pr comment list "$PR_ID" --inline` now shows the new
+inline comment with the LOCATION column populated as
+`MANUAL_TEST.txt:1`. Verify in the Bitbucket UI that the comment appears
+anchored at the right line, and the reply nests under it.
+
+### 8.7. `pr comment edit / delete / resolve`
+
+```bash
+bitbottle pr comment edit    "$PR_ID" "$INLINE_ID" --body "QA: edited"
+bitbottle pr comment list    "$PR_ID" --json id,text | jq '.[] | select(.id=='"$INLINE_ID"').text'
+bitbottle pr comment resolve "$PR_ID" "$INLINE_ID"
+bitbottle pr comment list    "$PR_ID" --json id,resolved | jq '.[] | select(.id=='"$INLINE_ID"').resolved'
+bitbottle pr comment delete  "$PR_ID" "$INLINE_ID"
+```
+
+The `text` jq prints `"QA: edited"`. The `resolved` jq prints `true`.
+The `delete` exits `0` and the comment disappears from subsequent
+`pr comment list` output.
 
 ### 9. `pr ready` promotes draft → open
 

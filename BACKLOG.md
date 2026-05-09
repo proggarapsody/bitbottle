@@ -86,9 +86,9 @@ Current state of every command area against gh feature parity:
 | `pr comment list` | ✅ | List comments; surfaces inline (file:line) anchors, replies (`parentId`), `updatedAt`, `resolved` |
 | `pr comment add` | ✅ | Add a general comment (inline writes — RV3) |
 | `pr comment list --inline` | ✅ | Filter to only inline (file:line) review comments — RV2 of scope **RV** |
-| `pr comment add --inline path:line` | 🔲 | Post inline review comments (Cloud `inline.{path,from,to}`; Server `anchor.{diffType,line,lineType,fileType,fromHash,toHash,path,srcPath}`) — scope **RV** |
-| `pr comment edit / delete` | 🔲 | `PUT/DELETE .../comments/{id}` exists on both — scope **RV** |
-| `pr comment reply / resolve` | 🔲 | Threaded replies + Cloud `resolution` field / Server tasks — scope **RV** |
+| `pr comment add --inline path:line` | ✅ | Post inline review comments. Cloud uses `inline.{path,from,to,start_*}`; Server fetches `fromHash`/`toHash` from `/pull-requests/{id}/diff/{path}` and posts `anchor.{...}`. Multi-line ranges Cloud-only. — RV3 of scope **RV** |
+| `pr comment edit / delete` | ✅ | `PUT/DELETE .../comments/{id}`. Server fetches comment `version` on demand for optimistic-locking. — RV3 of scope **RV** |
+| `pr comment reply / resolve` | ✅ | Reply via `--parent COMMENT_ID` on `pr comment add`. `pr comment resolve` writes Cloud's `resolution.type=resolved`; Server returns typed `host.unsupported` (resolution lives on tasks, separate scope). — RV3 of scope **RV** |
 | `pr review --approve\|--request-changes\|--comment --body --inline ...` | 🔲 | Compound review in one call (gh parity) — scope **RV** |
 | `pr activity PR_ID` | 🔲 | PR event stream (`/pullrequests/{id}/activity`) — scope **RV** |
 | `pr checks PR_ID` | 🔲 | CI status for PR head commit — scope **GHP** |
@@ -267,7 +267,7 @@ Current state of every command area against gh feature parity:
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | ✅ |
 | BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
-| RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🟡 RV1+RV2 ✅; RV3-RV6 🔲 |
+| RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🟡 RV1+RV2+RV3 ✅; RV4-RV6 🔲 |
 | SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | ✅ |
 | CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | ✅ |
 | GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |

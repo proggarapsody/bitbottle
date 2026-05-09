@@ -52,6 +52,11 @@ func TestAsDefaultReviewersResolver_StampsHostUnsupportedCode(t *testing.T) {
 	requireUnsupportedHostCode(t, err, string(backend.FeatureDefaultReviewers))
 }
 
+func TestAsPRCommentResolver_StampsHostUnsupportedCode(t *testing.T) {
+	_, err := backend.AsPRCommentResolver(emptyClient{}, "h.example")
+	requireUnsupportedHostCode(t, err, string(backend.FeaturePRCommentResolve))
+}
+
 func TestAsCodeInsightsClient_StampsHostUnsupportedCode(t *testing.T) {
 	_, err := backend.AsCodeInsightsClient(emptyClient{}, "h.example")
 	requireUnsupportedHostCode(t, err, string(backend.FeatureCodeInsights))

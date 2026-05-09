@@ -2,6 +2,7 @@ package pr
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,10 +15,13 @@ import (
 func NewCmdPRComment(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "comment",
-		Short: "List or add general PR comments",
+		Short: "List, add, edit, delete, or resolve PR comments (inline + general)",
 	}
 	cmd.AddCommand(NewCmdPRCommentList(f))
 	cmd.AddCommand(NewCmdPRCommentAdd(f))
+	cmd.AddCommand(NewCmdPRCommentEdit(f))
+	cmd.AddCommand(NewCmdPRCommentDelete(f))
+	cmd.AddCommand(NewCmdPRCommentResolve(f))
 	return cmd
 }
 
@@ -87,21 +91,45 @@ func formatInlineLocation(in *backend.PRCommentInline) string {
 }
 
 func NewCmdPRCommentAdd(f *factory.Factory) *cobra.Command {
-	var body, hostname string
+	var body, hostname, inlineSpec, side string
+	var parent int
 
 	cmd := &cobra.Command{
 		Use:   "add PR_ID",
-		Short: "Add a general comment to a pull request",
-		Args:  cobra.ExactArgs(1),
+		Short: "Add a comment to a pull request (general, inline, or reply)",
+		Long: `Add a comment to a pull request.
+
+By default the comment is a general (top-level) comment. Use --inline
+path:line (or path:start-end) to anchor the comment to a file and line in
+the PR diff. Use --parent COMMENT_ID to post a reply nested under an
+existing thread.
+
+Multi-line ranges (path:start-end) are supported on Bitbucket Cloud only;
+Bitbucket Server / Data Center anchors are single-line.`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if body == "" {
 				return fmt.Errorf("--body is required")
+			}
+			in := backend.AddPRCommentInput{Text: body}
+			if inlineSpec != "" {
+				inline, err := parseInlineSpec(inlineSpec, side)
+				if err != nil {
+					return err
+				}
+				in.Inline = inline
+			} else if side != "" {
+				return fmt.Errorf("--side requires --inline")
+			}
+			if parent != 0 {
+				p := parent
+				in.Parent = &p
 			}
 			ref, prID, client, err := resolvePRTarget(f, args, hostname)
 			if err != nil {
 				return err
 			}
-			c, err := client.AddPRComment(ref.Project, ref.Slug, prID, backend.AddPRCommentInput{Text: body})
+			c, err := client.AddPRComment(ref.Project, ref.Slug, prID, in)
 			if err != nil {
 				return err
 			}
@@ -110,6 +138,102 @@ func NewCmdPRCommentAdd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&body, "body", "", "Comment body (required)")
+	cmd.Flags().StringVar(&inlineSpec, "inline", "", "Anchor as inline review comment at path:line (or path:start-end)")
+	cmd.Flags().StringVar(&side, "side", "", "Diff side for --inline: \"new\" (default) or \"old\"")
+	cmd.Flags().IntVar(&parent, "parent", 0, "Reply nested under an existing comment by its ID")
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
+	return cmd
+}
+
+// NewCmdPRCommentEdit updates the body of an existing comment.
+func NewCmdPRCommentEdit(f *factory.Factory) *cobra.Command {
+	var body, hostname string
+
+	cmd := &cobra.Command{
+		Use:   "edit PR_ID COMMENT_ID",
+		Short: "Update the body of an existing comment on a pull request",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if body == "" {
+				return fmt.Errorf("--body is required")
+			}
+			commentID, err := strconv.Atoi(args[1])
+			if err != nil || commentID <= 0 {
+				return fmt.Errorf("invalid COMMENT_ID %q: must be a positive integer", args[1])
+			}
+			ref, prID, client, err := resolvePRTarget(f, args[:1], hostname)
+			if err != nil {
+				return err
+			}
+			if _, err := client.EditPRComment(ref.Project, ref.Slug, prID, commentID, body); err != nil {
+				return err
+			}
+			fmt.Fprintf(f.IOStreams.Out, "Updated comment #%d on pull request #%d\n", commentID, prID)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&body, "body", "", "New comment body (required)")
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
+	return cmd
+}
+
+// NewCmdPRCommentDelete removes an existing comment.
+func NewCmdPRCommentDelete(f *factory.Factory) *cobra.Command {
+	var hostname string
+
+	cmd := &cobra.Command{
+		Use:   "delete PR_ID COMMENT_ID",
+		Short: "Delete an existing comment from a pull request",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			commentID, err := strconv.Atoi(args[1])
+			if err != nil || commentID <= 0 {
+				return fmt.Errorf("invalid COMMENT_ID %q: must be a positive integer", args[1])
+			}
+			ref, prID, client, err := resolvePRTarget(f, args[:1], hostname)
+			if err != nil {
+				return err
+			}
+			if err := client.DeletePRComment(ref.Project, ref.Slug, prID, commentID); err != nil {
+				return err
+			}
+			fmt.Fprintf(f.IOStreams.Out, "Deleted comment #%d on pull request #%d\n", commentID, prID)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
+	return cmd
+}
+
+// NewCmdPRCommentResolve marks a comment as resolved (Cloud only — Server
+// surfaces a typed host.unsupported via AsPRCommentResolver).
+func NewCmdPRCommentResolve(f *factory.Factory) *cobra.Command {
+	var hostname string
+
+	cmd := &cobra.Command{
+		Use:   "resolve PR_ID COMMENT_ID",
+		Short: "Mark a pull-request comment thread as resolved (Bitbucket Cloud only)",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			commentID, err := strconv.Atoi(args[1])
+			if err != nil || commentID <= 0 {
+				return fmt.Errorf("invalid COMMENT_ID %q: must be a positive integer", args[1])
+			}
+			ref, prID, client, err := resolvePRTarget(f, args[:1], hostname)
+			if err != nil {
+				return err
+			}
+			resolver, err := backend.AsPRCommentResolver(client, ref.Host)
+			if err != nil {
+				return err
+			}
+			if err := resolver.ResolvePRComment(ref.Project, ref.Slug, prID, commentID); err != nil {
+				return err
+			}
+			fmt.Fprintf(f.IOStreams.Out, "Resolved comment #%d on pull request #%d\n", commentID, prID)
+			return nil
+		},
+	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }

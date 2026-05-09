@@ -127,6 +127,18 @@ bitbottle pr reopen  42
 bitbottle pr comment list 42                            # all comments; LOCATION column shows path:line for inline
 bitbottle pr comment list 42 --inline                   # only inline review comments
 bitbottle pr comment list 42 --json id,inline,parentId,resolved,updatedAt
+
+# Write review comments — general, inline, replies
+bitbottle pr comment add 42 --body "LGTM!"                              # general comment
+bitbottle pr comment add 42 --inline pkg/foo.go:88 --body "rename?"      # inline (new side, single line)
+bitbottle pr comment add 42 --inline pkg/foo.go:10-15 --body "..."      # multi-line range (Cloud only)
+bitbottle pr comment add 42 --inline pkg/foo.go:7 --side old --body ".." # comment on the old / removed side
+bitbottle pr comment add 42 --parent 1234 --body "agreed"                # reply to an existing thread
+
+# Edit / delete / resolve a comment
+bitbottle pr comment edit   42 1234 --body "updated"
+bitbottle pr comment delete 42 1234
+bitbottle pr comment resolve 42 1234                                     # Bitbucket Cloud only
 ```
 
 ### Repos & Branches

@@ -18,13 +18,27 @@ bitbottle pr request-review  42 --reviewer alice [--reviewer bob]
 bitbottle pr request-changes 42                 # Cloud only
 bitbottle pr comment list 42 [--inline]              # --inline filters to file:line review comments
 bitbottle pr comment add  42 --body "x"
+bitbottle pr comment add  42 --body "nit" --inline pkg/foo.go:88 [--side new|old]
+bitbottle pr comment add  42 --body "agreed" --parent 1234     # reply to thread
+bitbottle pr comment edit 42 1234 --body "..."
+bitbottle pr comment delete 42 1234
+bitbottle pr comment resolve 42 1234                          # Cloud only
 ```
 
 The `pr comment list` output includes inline review comments (file:line
 anchored) alongside general comments. Use `--inline` to filter to only
 inline comments, or `--json inline,parentId,resolved,updatedAt` to read
 thread structure and resolution state. On Server/DC `resolved` is always
-`false` (resolution lives on tasks; out of scope until RV3).
+`false` (resolution lives on tasks; out of scope).
+
+`pr comment add --inline` accepts `path:line` or `path:start-end` (multi-
+line ranges are Cloud-only — Server/DC anchors are single-line and the
+command rejects ranges with a typed error). `--side` defaults to `new`;
+pass `--side old` to comment on the removed/old side of the diff.
+
+`pr comment resolve` is Cloud-only — Server/DC returns a typed
+`host.unsupported` because resolution lives on tasks, not regular
+comments.
 
 ## Flag reality check
 

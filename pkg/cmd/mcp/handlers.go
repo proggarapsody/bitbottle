@@ -1015,11 +1015,127 @@ func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	c, err := client.AddPRComment(project, slug, id, backend.AddPRCommentInput{Text: body})
+	in := backend.AddPRCommentInput{Text: body}
+	if inlinePath := req.GetString("inline_path", ""); inlinePath != "" {
+		line := req.GetInt("inline_line", 0)
+		if line <= 0 {
+			return errResult("inline_path requires inline_line (positive integer)"), nil
+		}
+		side := req.GetString("inline_side", "new")
+		if side != "new" && side != "old" {
+			return errResult(`inline_side must be "new" or "old"`), nil
+		}
+		inline := &backend.PRCommentInline{Path: inlinePath, Side: side, Line: line}
+		if startLine := req.GetInt("inline_start_line", 0); startLine != 0 {
+			if startLine > line {
+				return errResult("inline_start_line must be <= inline_line"), nil
+			}
+			inline.StartLine = startLine
+		}
+		in.Inline = inline
+	}
+	if parent := req.GetInt("parent_id", 0); parent > 0 {
+		p := parent
+		in.Parent = &p
+	}
+	c, err := client.AddPRComment(project, slug, id, in)
 	if err != nil {
 		return errResultErr(err), nil
 	}
 	return jsonResult(c)
+}
+
+func (h *handlers) editPRComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	commentID := req.GetInt("comment_id", 0)
+	if commentID == 0 {
+		return errResult("missing required parameter: comment_id"), nil
+	}
+	body, err := requireString(req, "body")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	c, err := client.EditPRComment(project, slug, id, commentID, body)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(c)
+}
+
+func (h *handlers) deletePRComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	commentID := req.GetInt("comment_id", 0)
+	if commentID == 0 {
+		return errResult("missing required parameter: comment_id"), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := client.DeletePRComment(project, slug, id, commentID); err != nil {
+		return errResultErr(err), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
+}
+
+func (h *handlers) resolvePRComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	commentID := req.GetInt("comment_id", 0)
+	if commentID == 0 {
+		return errResult("missing required parameter: comment_id"), nil
+	}
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	resolver, err := backend.AsPRCommentResolver(client, hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := resolver.ResolvePRComment(project, slug, id, commentID); err != nil {
+		return errResultErr(err), nil
+	}
+	return mcplib.NewToolResultText("{}"), nil
 }
 
 func (h *handlers) listCommitStatuses(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {

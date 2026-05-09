@@ -10,3 +10,8 @@ var _ backend.Client = (*cloud.Client)(nil)
 
 // Compile-time assertion: cloud.Client satisfies backend.PRChangesRequester.
 var _ backend.PRChangesRequester = (*cloud.Client)(nil)
+
+// Compile-time assertion: cloud.Client satisfies backend.PRCommentResolver.
+// Cloud-only optional capability — Server falls through AsPRCommentResolver
+// to a typed host.unsupported.
+var _ backend.PRCommentResolver = (*cloud.Client)(nil)

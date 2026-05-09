@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -98,6 +99,153 @@ func TestServerClient_ListPRComments_InlineAnchorOnTopOnlyNotReplies(t *testing.
 	assert.Equal(t, 7, cmts[0].Inline.Line)
 	assert.Nil(t, cmts[1].Inline, "replies do not carry the inline anchor")
 	assert.Equal(t, 21, cmts[1].ParentID)
+}
+
+// inlineDiffStub returns a Server diff endpoint stub that yields the given
+// (fromHash,toHash) for any path query. The response shape mirrors the
+// JSON-flavoured /diff endpoint (fields: fromHash, toHash, diffs[]).
+func inlineDiffStub(fromHash, toHash string) string {
+	return `{"fromHash":"` + fromHash + `","toHash":"` + toHash + `","diffs":[]}`
+}
+
+func TestServerClient_AddPRComment_InlineLooksUpHashesAndPostsAnchor(t *testing.T) {
+	t.Parallel()
+	var gotCommentBody map[string]any
+	var gotDiffPath string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/diff/"):
+			gotDiffPath = r.URL.Path
+			_, _ = w.Write([]byte(inlineDiffStub("aaa111", "bbb222")))
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/comments"):
+			body, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(body, &gotCommentBody)
+			_, _ = w.Write([]byte(`{"id":501,"text":"nit","author":{"slug":"alice"},"createdDate":1714000200000}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	_, err := client.AddPRComment("MYPROJ", "my-svc", 42, backend.AddPRCommentInput{
+		Text:   "nit",
+		Inline: &backend.PRCommentInline{Path: "src/foo.go", Side: "new", Line: 88},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "/rest/api/1.0/projects/MYPROJ/repos/my-svc/pull-requests/42/diff/src/foo.go", gotDiffPath)
+
+	anchor, ok := gotCommentBody["anchor"].(map[string]any)
+	require.True(t, ok, "expected anchor object in body, got %#v", gotCommentBody)
+	assert.Equal(t, "src/foo.go", anchor["path"])
+	assert.EqualValues(t, 88, anchor["line"])
+	assert.Equal(t, "TO", anchor["fileType"]) // new-side
+	assert.Equal(t, "aaa111", anchor["fromHash"])
+	assert.Equal(t, "bbb222", anchor["toHash"])
+}
+
+func TestServerClient_AddPRComment_InlineMultiLineUnsupported(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("HTTP must not be called when input is invalid; got %s %s", r.Method, r.URL.Path)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	_, err := client.AddPRComment("MYPROJ", "my-svc", 42, backend.AddPRCommentInput{
+		Text:   "range",
+		Inline: &backend.PRCommentInline{Path: "src/foo.go", Side: "new", Line: 20, StartLine: 15},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "multi-line")
+}
+
+func TestServerClient_AddPRComment_Reply(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":600,"text":"reply","author":{"slug":"bob"},"createdDate":1714000300000}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	parent := 7
+	_, err := client.AddPRComment("MYPROJ", "my-svc", 42, backend.AddPRCommentInput{
+		Text:   "reply",
+		Parent: &parent,
+	})
+	require.NoError(t, err)
+	parentObj, ok := gotBody["parent"].(map[string]any)
+	require.True(t, ok, "expected parent object, got %#v", gotBody)
+	assert.EqualValues(t, 7, parentObj["id"])
+	_, hasAnchor := gotBody["anchor"]
+	assert.False(t, hasAnchor, "reply must not carry an inline anchor")
+}
+
+func TestServerClient_EditPRComment_FetchesVersionThenPuts(t *testing.T) {
+	t.Parallel()
+	var gotPaths []string
+	var gotPutQuery string
+	var gotPutBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPaths = append(gotPaths, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case http.MethodGet:
+			_, _ = w.Write([]byte(`{"id":99,"version":3,"text":"old"}`))
+		case http.MethodPut:
+			gotPutQuery = r.URL.RawQuery
+			body, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(body, &gotPutBody)
+			_, _ = w.Write([]byte(`{"id":99,"version":4,"text":"new","author":{"slug":"alice"},"createdDate":1714000400000,"updatedDate":1714000500000}`))
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	got, err := client.EditPRComment("MYPROJ", "my-svc", 42, 99, "new")
+	require.NoError(t, err)
+
+	require.Len(t, gotPaths, 2, "expected GET-then-PUT, got %v", gotPaths)
+	assert.Equal(t, "GET /rest/api/1.0/projects/MYPROJ/repos/my-svc/pull-requests/42/comments/99", gotPaths[0])
+	assert.Equal(t, "PUT /rest/api/1.0/projects/MYPROJ/repos/my-svc/pull-requests/42/comments/99", gotPaths[1])
+	assert.Equal(t, "version=3", gotPutQuery)
+	assert.Equal(t, "new", gotPutBody["text"])
+	assert.EqualValues(t, 3, gotPutBody["version"])
+	assert.Equal(t, "new", got.Text)
+}
+
+func TestServerClient_DeletePRComment_FetchesVersionThenDeletes(t *testing.T) {
+	t.Parallel()
+	var gotPaths []string
+	var gotDeleteQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPaths = append(gotPaths, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case http.MethodGet:
+			_, _ = w.Write([]byte(`{"id":99,"version":5,"text":"x"}`))
+		case http.MethodDelete:
+			gotDeleteQuery = r.URL.RawQuery
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	require.NoError(t, client.DeletePRComment("MYPROJ", "my-svc", 42, 99))
+	require.Len(t, gotPaths, 2)
+	assert.Equal(t, "GET /rest/api/1.0/projects/MYPROJ/repos/my-svc/pull-requests/42/comments/99", gotPaths[0])
+	assert.Equal(t, "DELETE /rest/api/1.0/projects/MYPROJ/repos/my-svc/pull-requests/42/comments/99", gotPaths[1])
+	assert.Equal(t, "version=5", gotDeleteQuery)
 }
 
 func TestServerClient_AddPRComment(t *testing.T) {

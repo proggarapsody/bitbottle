@@ -481,9 +481,14 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		h.listPRComments,
 	)
 
+	reqCommentID := mcplib.WithNumber("comment_id",
+		mcplib.Description("Comment ID"),
+		mcplib.Required(),
+	)
+
 	s.AddTool(
 		mcplib.NewTool("add_pr_comment",
-			mcplib.WithDescription("Add a general comment to a pull request"),
+			mcplib.WithDescription("Add a comment to a pull request. Optionally anchor to a file:line as an inline review comment, or reply nested under an existing comment."),
 			optHostname,
 			reqProject,
 			reqSlug,
@@ -492,8 +497,63 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 				mcplib.Description("Comment body"),
 				mcplib.Required(),
 			),
+			mcplib.WithString("inline_path",
+				mcplib.Description("File path in the PR diff to anchor an inline comment to (omit for general comment)"),
+			),
+			mcplib.WithNumber("inline_line",
+				mcplib.Description("Line number in the diff (required when inline_path is set)"),
+			),
+			mcplib.WithNumber("inline_start_line",
+				mcplib.Description("First line of a multi-line range (Cloud only); leave 0 for single-line"),
+			),
+			mcplib.WithString("inline_side",
+				mcplib.Description(`Diff side for the inline anchor: "new" (default) or "old"`),
+			),
+			mcplib.WithNumber("parent_id",
+				mcplib.Description("ID of the comment to reply under (omit for a top-level comment)"),
+			),
 		),
 		h.addPRComment,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("edit_pr_comment",
+			mcplib.WithDescription("Update the body of an existing comment on a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+			reqCommentID,
+			mcplib.WithString("body",
+				mcplib.Description("New comment body"),
+				mcplib.Required(),
+			),
+		),
+		h.editPRComment,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("delete_pr_comment",
+			mcplib.WithDescription("Delete an existing comment from a pull request"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+			reqCommentID,
+		),
+		h.deletePRComment,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("resolve_pr_comment",
+			mcplib.WithDescription("Mark a pull-request comment thread as resolved (Bitbucket Cloud only; Server returns host.unsupported)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+			reqCommentID,
+		),
+		h.resolvePRComment,
 	)
 
 	s.AddTool(

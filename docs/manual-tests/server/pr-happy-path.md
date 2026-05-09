@@ -106,12 +106,51 @@ bitbottle pr comment list "$PR_ID" \
   --json id,parentId,resolved,updatedAt,inline | jq 'length >= 1'
 ```
 
-Each command exits `0`. The last `jq` prints `true`. To exercise the
-inline + reply paths, post an inline comment and a threaded reply via
-the Bitbucket Server UI on `MANUAL_TEST.txt:1` and rerun the list
-command — the LOCATION column should show `MANUAL_TEST.txt:1` on the
-top-level comment, and the reply row should show its `parentId` set to
-the top-level ID via `--json`.
+Each command exits `0`. The last `jq` prints `true`.
+
+### 8.6. `pr comment add --inline` posts an anchored review comment
+
+Server requires `fromHash`/`toHash` from the PR diff envelope. The CLI
+fetches them transparently — the user only supplies `path:line`.
+
+```bash
+bitbottle pr comment add "$PR_ID" \
+  --inline MANUAL_TEST.txt:1 \
+  --body "QA: inline new-side"
+INLINE_ID=$(bitbottle pr comment list "$PR_ID" --inline --json id,inline,text \
+  | jq '.[] | select(.text=="QA: inline new-side") | .id')
+
+# Multi-line on Server is rejected with a typed error — verify wording.
+bitbottle pr comment add "$PR_ID" \
+  --inline MANUAL_TEST.txt:1-3 \
+  --body "QA: should fail" || echo "rejected (expected)"
+
+# Reply nested under the first inline comment
+bitbottle pr comment add "$PR_ID" --parent "$INLINE_ID" --body "QA: reply"
+```
+
+The first command exits `0` and the new inline comment shows up under
+`pr comment list --inline`. The multi-line attempt prints
+"rejected (expected)" and a "multi-line inline comments are not
+supported on Bitbucket Server / Data Center" message on stderr. The
+reply appears under the inline thread in the Bitbucket Server UI.
+
+### 8.7. `pr comment edit / delete` (Server)
+
+```bash
+bitbottle pr comment edit   "$PR_ID" "$INLINE_ID" --body "QA: edited"
+bitbottle pr comment list   "$PR_ID" --json id,text | jq '.[] | select(.id=='"$INLINE_ID"').text'
+bitbottle pr comment delete "$PR_ID" "$INLINE_ID"
+
+# Resolve is unavailable on Server — verify the typed error.
+bitbottle pr comment resolve "$PR_ID" "$INLINE_ID" 2>&1 \
+  | grep -i "not supported"
+```
+
+The `text` jq prints `"QA: edited"`. `delete` exits `0`. The `resolve`
+attempt non-zero and the grep matches — Server returns the typed
+`host.unsupported` error because comment resolution lives on tasks, not
+regular comments.
 
 ### 9. `pr ready`
 
