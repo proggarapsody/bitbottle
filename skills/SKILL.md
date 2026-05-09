@@ -5,7 +5,7 @@ description: >
   and Cloud. Load when the user asks about bitbottle commands, auth setup, PRs,
   repos, branches, tags, commits, pipelines, or why a command failed. Load even
   if the user just says "bitbottle", mentions "Bitbucket", or pastes a bitbottle
-  error message. Verified against bitbottle 1.22.0. <!-- x-release-please-version -->
+  error message. Verified against bitbottle 1.23.0. <!-- x-release-please-version -->
 ---
 
 # bitbottle CLI
@@ -23,6 +23,7 @@ not sure about.**
 | PR lifecycle (list/view/create/merge/approve/comment/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
+| Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.
@@ -53,7 +54,7 @@ them speculatively.
    bogus value: `bitbottle <cmd> --json X` — the error lists them.
 5. **Check the version on behavior mismatches.** If a command behaves
    differently from this file, run `bitbottle --version`. This skill
-   was last verified against **1.22.0**. <!-- x-release-please-version -->
+   was last verified against **1.23.0**. <!-- x-release-please-version -->
 
 ## Repo targeting (high-frequency)
 
@@ -78,6 +79,7 @@ command in that checkout runs without `-R`.
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only commands | `pipeline *`, `pr request-changes` | — |
+| Server-only commands | — | `branch protect *`, `code-insights *` |
 
 Custom-hostname Cloud Data Center? Force routing in `hosts.yml`:
 `backend_type: cloud` (or `server`). See `references/auth.md`.
@@ -109,6 +111,72 @@ When you see one of these messages, you know the fix:
   passwords need the **Atlassian email**, not the username.
 - *Server/DC auth fails* → missing `--username`, or `--git-protocol
   ssh` was used with an HTTPS-only PAT.
+- *`code-insights` returns "unsupported on host"* → Code Insights is a
+  Bitbucket Server / Data Center feature only. Cloud hosts always return
+  this error. Confirm the host is Server/DC with `bitbottle context`.
+- *`merge-check` commands return unexpected errors* → The merge-check API
+  is partly undocumented; these commands are experimental. Verify the
+  report key matches an existing Code Insights report on the same repo.
+
+## Code Insights quick-reference _(Server / DC only)_
+
+```bash
+# Upsert a report on a commit
+bitbottle code-insights report set PROJ/REPO HASH KEY \
+  --title "Tool" --result PASS --report-type SECURITY
+
+# Bulk-add annotations (JSON array with path/line/severity/type/message)
+bitbottle code-insights annotation add PROJ/REPO HASH KEY \
+  --from-json @findings.json
+
+# Single annotation
+bitbottle code-insights annotation add PROJ/REPO HASH KEY \
+  --path src/main.go --line 42 --severity HIGH --type BUG \
+  --message "null ptr"
+
+# Merge check (experimental)
+bitbottle code-insights merge-check set PROJ/REPO CHECK_KEY \
+  --report-key REPORT_KEY --must-pass --min-severity MEDIUM
+```
+
+All subcommands support `--hostname` and `--json / --jq` where applicable.
+Merge-check verbs are marked experimental (partly undocumented API).
+
+## Issues (Cloud only)
+
+Issues are gated behind the issue tracker being enabled on the repo. All
+commands accept `[PROJECT/REPO]` as an optional first arg; if omitted the
+repo is inferred from the current checkout.
+
+```bash
+# List / view
+bitbottle issue list [PROJECT/REPO] [--state open|new|on-hold|…|all] [--limit N] [--json fields] [--jq expr]
+bitbottle issue view [PROJECT/REPO] ID [--json fields] [--jq expr]
+
+# Create / close / reopen
+bitbottle issue create [PROJECT/REPO] --title "T" [--body "B"] [--kind bug|enhancement|proposal|task] [--priority trivial|minor|major|critical|blocker]
+bitbottle issue close  [PROJECT/REPO] ID
+bitbottle issue reopen [PROJECT/REPO] ID
+
+# Edit (all flags optional; supply only what you want to change)
+bitbottle issue edit [PROJECT/REPO] ID [--title "T"] [--body "B"] [--kind …] [--priority …] [--assignee USER] [--state …]
+
+# Assign
+bitbottle issue assign [PROJECT/REPO] ID USER
+
+# Comments
+bitbottle issue comment list   [PROJECT/REPO] ISSUE_ID [--json fields] [--jq expr]
+bitbottle issue comment add    [PROJECT/REPO] ISSUE_ID --body "text"
+bitbottle issue comment edit   [PROJECT/REPO] ISSUE_ID COMMENT_ID --body "new text"
+bitbottle issue comment delete [PROJECT/REPO] ISSUE_ID COMMENT_ID
+```
+
+Valid states: `new`, `open`, `resolved`, `on hold`, `invalid`, `duplicate`, `wontfix`, `closed`.
+Use `--state on-hold` on the CLI (the hyphen is normalized; the API uses a space).
+
+MCP tools: `list_issues`, `get_issue`, `create_issue`, `close_issue`,
+`update_issue`, `reopen_issue`, `assign_issue`, `list_issue_comments`,
+`add_issue_comment`, `edit_issue_comment`, `delete_issue_comment`.
 
 ## Install / version
 

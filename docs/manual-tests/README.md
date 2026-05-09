@@ -14,6 +14,9 @@ before cutting a release, or after touching a backend-specific code path.
 - [`cloud/pr-happy-path.md`](cloud/pr-happy-path.md) — full PR lifecycle
   against Bitbucket Cloud (login → repo → branch → PR → squash-merge →
   cleanup). Exercises the largest surface in one flow.
+- [`cloud/issue-lifecycle.md`](cloud/issue-lifecycle.md) — full issue lifecycle
+  against Bitbucket Cloud (create → view → edit → assign → comment CRUD →
+  close → reopen). Cloud only; also verifies Server returns host.unsupported.
 - [`server/pr-happy-path.md`](server/pr-happy-path.md) — same flow against
   Bitbucket Server / Data Center.
 - [`shared/multi-host.md`](shared/multi-host.md) — both backends configured
@@ -22,6 +25,9 @@ before cutting a release, or after touching a backend-specific code path.
   smoke for `repo file get` and `repo tree` (both backends; verifies
   binary-safety, type normalisation, and `--ref` accepts branches /
   tags / hashes).
+- [`server/code-insights.md`](server/code-insights.md) — end-to-end smoke
+  for `code-insights report`, `annotation`, and `merge-check` (experimental)
+  subcommands against Bitbucket Server / Data Center.
 
 If a scope changes a flow not covered by these three smokes (e.g. a new
 top-level command group, a new backend-specific failure mode), add a fresh

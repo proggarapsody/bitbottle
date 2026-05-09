@@ -797,6 +797,126 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 		h.closeIssue,
 	)
 
+	reqIssueID := mcplib.WithNumber("id",
+		mcplib.Description("Issue ID"),
+		mcplib.Required(),
+	)
+
+	s.AddTool(
+		mcplib.NewTool("update_issue",
+			mcplib.WithDescription("Update an issue's title, body, kind, priority, assignee, or state (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqIssueID,
+			mcplib.WithString("title",
+				mcplib.Description("New issue title"),
+			),
+			mcplib.WithString("body",
+				mcplib.Description("New issue body (markdown)"),
+			),
+			mcplib.WithString("kind",
+				mcplib.Description("bug, enhancement, proposal, task"),
+			),
+			mcplib.WithString("priority",
+				mcplib.Description("trivial, minor, major, critical, blocker"),
+			),
+			mcplib.WithString("assignee",
+				mcplib.Description("Assignee username; use \"__none__\" to clear the assignee"),
+			),
+			mcplib.WithString("state",
+				mcplib.Description("new, open, resolved, on hold, invalid, duplicate, wontfix, closed"),
+			),
+		),
+		h.updateIssue,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("reopen_issue",
+			mcplib.WithDescription("Reopen a closed issue (sets state to \"open\"; Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqIssueID,
+		),
+		h.reopenIssue,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("assign_issue",
+			mcplib.WithDescription("Assign an issue to a user by username (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqIssueID,
+			mcplib.WithString("assignee",
+				mcplib.Description("Bitbucket Cloud username to assign to"),
+				mcplib.Required(),
+			),
+		),
+		h.assignIssue,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("list_issue_comments",
+			mcplib.WithDescription("List comments on an issue (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqIssueID,
+		),
+		h.listIssueComments,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("add_issue_comment",
+			mcplib.WithDescription("Add a comment to an issue (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqIssueID,
+			mcplib.WithString("body",
+				mcplib.Description("Comment body (markdown)"),
+				mcplib.Required(),
+			),
+		),
+		h.addIssueComment,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("edit_issue_comment",
+			mcplib.WithDescription("Edit a comment on an issue (Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqIssueID,
+			mcplib.WithNumber("comment_id",
+				mcplib.Description("Comment ID"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("body",
+				mcplib.Description("New comment body (markdown)"),
+				mcplib.Required(),
+			),
+		),
+		h.editIssueComment,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("delete_issue_comment",
+			mcplib.WithDescription("Delete a comment from an issue (destructive; Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqIssueID,
+			mcplib.WithNumber("comment_id",
+				mcplib.Description("Comment ID to delete"),
+				mcplib.Required(),
+			),
+		),
+		h.deleteIssueComment,
+	)
+
 	s.AddTool(
 		mcplib.NewTool("list_branch_protections",
 			mcplib.WithDescription("List branch restrictions for a repository (Bitbucket Server / DC only)"),

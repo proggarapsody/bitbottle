@@ -84,7 +84,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `workspace` | `list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
-| `issue` | `list` `view` `create` `close` _(Cloud only)_ |
+| `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
 | `search` | `code QUERY` _(Cloud only)_ |
 | `api` | Raw REST passthrough with pagination, `--jq`, variable expansion |
 | `alias` | Custom command shortcuts |
@@ -303,6 +303,70 @@ is preserved on the JSON side so renderers can highlight the matched
 runs. Bitbucket Server / Data Center has no first-class code-search
 REST endpoint; invocations against a Server host return the typed
 `host.unsupported` error.
+
+### Code Insights _(Bitbucket Server / DC only)_
+
+Post build / quality / security analysis results as structured annotations
+on commits. Requires Bitbucket Server / Data Center.
+
+```bash
+# Create or update a report (upsert by key)
+bitbottle --hostname git.example.com code-insights report set \
+  MYPROJ/my-service abc123def456 my-scanner \
+  --title "Security Scan" --result PASS \
+  --report-type SECURITY --reporter "semgrep"
+
+# List all reports for a commit
+bitbottle --hostname git.example.com code-insights report list \
+  MYPROJ/my-service abc123def456
+
+# View a single report as JSON
+bitbottle --hostname git.example.com code-insights report view \
+  MYPROJ/my-service abc123def456 my-scanner \
+  --json key,title,result,details
+
+# Bulk-add annotations from a JSON file
+bitbottle --hostname git.example.com code-insights annotation add \
+  MYPROJ/my-service abc123def456 my-scanner \
+  --from-json @findings.json
+
+# Single annotation
+bitbottle --hostname git.example.com code-insights annotation add \
+  MYPROJ/my-service abc123def456 my-scanner \
+  --path src/main.go --line 42 --severity HIGH --type BUG \
+  --message "Potential null dereference"
+
+# List annotations for a report
+bitbottle --hostname git.example.com code-insights annotation list \
+  MYPROJ/my-service abc123def456 my-scanner --json path,severity,message
+
+# Delete a report and all its annotations
+bitbottle --hostname git.example.com code-insights report delete \
+  MYPROJ/my-service abc123def456 my-scanner
+```
+
+#### Merge checks (experimental)
+
+Configure a Code Insights report as a required gate for PR merges. The
+underlying API is partly undocumented — commands are marked experimental.
+
+```bash
+# Require the "my-scanner" report to pass before merging
+bitbottle --hostname git.example.com code-insights merge-check set \
+  MYPROJ/my-service required-scan \
+  --report-key my-scanner --must-pass --min-severity MEDIUM
+
+# Inspect the current merge-check configuration
+bitbottle --hostname git.example.com code-insights merge-check get \
+  MYPROJ/my-service required-scan
+
+# Remove the merge check
+bitbottle --hostname git.example.com code-insights merge-check delete \
+  MYPROJ/my-service required-scan
+```
+
+Invoking any `code-insights` command against a Bitbucket Cloud host returns
+the typed `host.unsupported` error.
 
 ### Raw API
 

@@ -1,0 +1,100 @@
+package annotation
+
+import (
+	"github.com/spf13/cobra"
+
+	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+)
+
+// ListOptions holds parsed flags for `code-insights annotation list`.
+type ListOptions struct {
+	Hostname   string
+	JSONFields string
+	JQExpr     string
+	// Args[0]=PROJECT/REPO  Args[1]=HASH  Args[2]=KEY
+	Args []string
+}
+
+// NewCmdList builds the `code-insights annotation list` cobra command.
+func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Command {
+	opts := &ListOptions{}
+	cmd := &cobra.Command{
+		Use:   "list PROJECT/REPO HASH KEY",
+		Short: "List Code Insights annotations for a report",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Args = args
+			if runF != nil {
+				return runF(opts)
+			}
+			return listRun(f, opts)
+		},
+	}
+	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
+	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
+	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
+	return cmd
+}
+
+func annotationFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.CodeInsightsAnnotation] {
+	p := format.New[backend.CodeInsightsAnnotation](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
+		Name: "path", Header: "PATH",
+		Extract: func(a backend.CodeInsightsAnnotation) any { return a.Path },
+	})
+	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
+		Name: "line", Header: "LINE",
+		Extract: func(a backend.CodeInsightsAnnotation) any { return a.Line },
+	})
+	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
+		Name: "severity", Header: "SEVERITY",
+		Extract: func(a backend.CodeInsightsAnnotation) any { return a.Severity },
+	})
+	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
+		Name: "type", Header: "TYPE",
+		Extract: func(a backend.CodeInsightsAnnotation) any { return a.Type },
+	})
+	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
+		Name: "message", Header: "MESSAGE",
+		Extract: func(a backend.CodeInsightsAnnotation) any { return a.Message },
+	})
+	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
+		Name: "external_id", Header: "EXTERNAL_ID",
+		JSONOnly: true,
+		Extract:  func(a backend.CodeInsightsAnnotation) any { return a.ExternalID },
+	})
+	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
+		Name: "link", Header: "LINK",
+		JSONOnly: true,
+		Extract:  func(a backend.CodeInsightsAnnotation) any { return a.Link },
+	})
+	return p
+}
+
+func listRun(f *factory.Factory, opts *ListOptions) error {
+	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	if err != nil {
+		return err
+	}
+	hash := opts.Args[1]
+	key := opts.Args[2]
+	client, err := f.Backend(ref.Host)
+	if err != nil {
+		return err
+	}
+	ci, err := backend.AsCodeInsightsClient(client, ref.Host)
+	if err != nil {
+		return err
+	}
+	anns, err := ci.ListAnnotations(ref.Project, ref.Slug, hash, key)
+	if err != nil {
+		return err
+	}
+	p := annotationFields(f, opts.JSONFields, opts.JQExpr)
+	for _, a := range anns {
+		p.AddItem(a)
+	}
+	return p.Render()
+}

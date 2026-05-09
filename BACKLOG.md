@@ -192,10 +192,10 @@ Current state of every command area against gh feature parity:
 | `issue view` | ✅ | Cloud only |
 | `issue create` | ✅ | Cloud only; `--title`, `--body`, `--kind`, `--priority` |
 | `issue close` | ✅ | Cloud only |
-| `issue edit` | 🔲 | `PUT /issues/{id}` — title/body/kind/priority/state — scope **OF** |
-| `issue reopen` | 🔲 | Reverse of `issue close` (state transition) — scope **OF** |
-| `issue assign` | 🔲 | Set assignee (PUT with `assignee.username`) — scope **OF** |
-| `issue comment list / add / edit / delete` | 🔲 | `/issues/{id}/comments` CRUD — scope **OF** |
+| `issue edit` | ✅ | `PUT /issues/{id}` — `--title`, `--body`, `--kind`, `--priority`, `--state`, `--assignee` |
+| `issue reopen` | ✅ | Reverse of `issue close` (state transition back to open) |
+| `issue assign` | ✅ | Set assignee (`--assignee` or positional USER arg) |
+| `issue comment list / add / edit / delete` | ✅ | `/issues/{id}/comments` CRUD with `--json`/`--jq` on list |
 
 ### Source / Files at ref _(missing)_
 
@@ -222,13 +222,13 @@ Current state of every command area against gh feature parity:
 | `environment delete UUID` | 🔲 | `DELETE .../environments/{uuid}` — scope **DEP** |
 | `environment variable list / set / delete` | 🔲 | `/deployments_config/environments/{uuid}/variables` (CRUD) — scope **DEP** |
 
-### Code Insights _(Server / DC only — missing)_
+### Code Insights _(Server / DC only)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `code-insights report list / view / set / delete` | 🔲 | `/rest/insights/1.0/projects/{k}/repos/{s}/commits/{hash}/reports/{key}` — PASS/FAIL summary attached to commit/PR — scope **CI** |
-| `code-insights annotation add / list / delete` | 🔲 | Bulk-attach line-level findings to a report — scope **CI** |
-| `code-insights merge-check set / get / delete` | 🔲 | Configure required reports as merge gates (`/rest/insights/latest/.../merge-check/{key}`; partly undocumented) — scope **CI** |
+| `code-insights report list / view / set / delete` | ✅ | `/rest/insights/1.0/projects/{k}/repos/{s}/commits/{hash}/reports/{key}` — PASS/FAIL summary attached to commit/PR — scope **CI** |
+| `code-insights annotation add / list / delete` | ✅ | Bulk-attach line-level findings to a report — scope **CI** |
+| `code-insights merge-check set / get / delete` | ✅ | Configure required reports as merge gates (`/rest/insights/latest/.../merge-check/{key}`; partly undocumented; marked experimental) — scope **CI** |
 
 ### Context / Orientation _(missing)_
 
@@ -271,8 +271,8 @@ Current state of every command area against gh feature parity:
 | SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | ✅ |
 | CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | ✅ |
 | GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |
-| OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | 🔲 |
-| CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | 🔲 |
+| OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | ✅ |
+| CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | ✅ |
 | DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | 🔲 |
 
 ---
@@ -1100,10 +1100,13 @@ roughly a one-PR change.
 
 ---
 
-### OF — Issues Finish _(Cloud only)_
+### OF — Issues Finish _(Cloud only)_ ✅ DONE
 
 Closes the gap left after scope **O**. Today users can list/view/create/close
 issues but cannot *edit*, *comment on*, *reopen*, or *assign* them.
+
+> **Implemented in `feat/of-issues-finish`**. All commands, MCP tools, and
+> unit tests shipped. See `docs/manual-tests/cloud/issue-lifecycle.md`.
 
 **Extend the existing `IssueClient` optional interface**:
 ```go

@@ -83,10 +83,16 @@ type FakeClient struct {
 	ListProjectsFn   func(workspace string, limit int) ([]backend.Project, error)
 
 	// Issue methods (Cloud-only; satisfies backend.IssueClient when set)
-	ListIssuesFn  func(ns, slug, state string, limit int) ([]backend.Issue, error)
-	GetIssueFn    func(ns, slug string, id int) (backend.Issue, error)
-	CreateIssueFn func(ns, slug string, in backend.CreateIssueInput) (backend.Issue, error)
-	UpdateIssueFn func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error)
+	ListIssuesFn         func(ns, slug, state string, limit int) ([]backend.Issue, error)
+	GetIssueFn           func(ns, slug string, id int) (backend.Issue, error)
+	CreateIssueFn        func(ns, slug string, in backend.CreateIssueInput) (backend.Issue, error)
+	UpdateIssueFn        func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error)
+	ReopenIssueFn        func(ns, slug string, id int) error
+	AssignIssueFn        func(ns, slug string, id int, assignee string) error
+	ListIssueCommentsFn  func(ns, slug string, id int) ([]backend.IssueComment, error)
+	AddIssueCommentFn    func(ns, slug string, id int, body string) (backend.IssueComment, error)
+	EditIssueCommentFn   func(ns, slug string, id, commentID int, body string) (backend.IssueComment, error)
+	DeleteIssueCommentFn func(ns, slug string, id, commentID int) error
 
 	// Default reviewers (Server-only; satisfies backend.DefaultReviewersResolver when set)
 	DefaultReviewersFn func(ns, slug, fromBranch, toBranch string) ([]backend.User, error)
@@ -102,6 +108,18 @@ type FakeClient struct {
 	// Source primitives (both backends; satisfies backend.SourceReader when set)
 	GetFileContentFn func(ns, slug, ref, path string) ([]byte, error)
 	ListTreeFn       func(ns, slug, ref, path string) ([]backend.TreeEntry, error)
+
+	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
+	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
+	GetReportFn         func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
+	SetReportFn         func(project, slug, hash, key string, in backend.CodeInsightsReportInput) (backend.CodeInsightsReport, error)
+	DeleteReportFn      func(project, slug, hash, key string) error
+	ListAnnotationsFn   func(project, slug, hash, key string) ([]backend.CodeInsightsAnnotation, error)
+	AddAnnotationsFn    func(project, slug, hash, key string, in []backend.CodeInsightsAnnotationInput) error
+	DeleteAnnotationsFn func(project, slug, hash, key string) error
+	SetMergeCheckFn     func(project, slug, key string, in backend.MergeCheckInput) error
+	GetMergeCheckFn     func(project, slug, key string) (backend.MergeCheck, error)
+	DeleteMergeCheckFn  func(project, slug, key string) error
 }
 
 // Compile-time interface check.
@@ -585,6 +603,66 @@ func (c *FakeClient) UpdateIssue(ns, slug string, id int, in backend.UpdateIssue
 	return backend.Issue{}, nil
 }
 
+func (c *FakeClient) ReopenIssue(ns, slug string, id int) error {
+	if c.ReopenIssueFn != nil {
+		return c.ReopenIssueFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ReopenIssue; set ReopenIssueFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) AssignIssue(ns, slug string, id int, assignee string) error {
+	if c.AssignIssueFn != nil {
+		return c.AssignIssueFn(ns, slug, id, assignee)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AssignIssue; set AssignIssueFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListIssueComments(ns, slug string, id int) ([]backend.IssueComment, error) {
+	if c.ListIssueCommentsFn != nil {
+		return c.ListIssueCommentsFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListIssueComments; set ListIssueCommentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddIssueComment(ns, slug string, id int, body string) (backend.IssueComment, error) {
+	if c.AddIssueCommentFn != nil {
+		return c.AddIssueCommentFn(ns, slug, id, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddIssueComment; set AddIssueCommentFn in your test")
+	}
+	return backend.IssueComment{}, nil
+}
+
+func (c *FakeClient) EditIssueComment(ns, slug string, id, commentID int, body string) (backend.IssueComment, error) {
+	if c.EditIssueCommentFn != nil {
+		return c.EditIssueCommentFn(ns, slug, id, commentID, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.EditIssueComment; set EditIssueCommentFn in your test")
+	}
+	return backend.IssueComment{}, nil
+}
+
+func (c *FakeClient) DeleteIssueComment(ns, slug string, id, commentID int) error {
+	if c.DeleteIssueCommentFn != nil {
+		return c.DeleteIssueCommentFn(ns, slug, id, commentID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteIssueComment; set DeleteIssueCommentFn in your test")
+	}
+	return nil
+}
+
 // DefaultReviewers defaults to "no defaults configured" (nil, nil) when the
 // Fn is unset — unlike most FakeClient methods which Fatalf on unset Fn.
 // Rationale: default-reviewers is a passive lookup automatically triggered
@@ -657,4 +735,106 @@ func (c *FakeClient) ListTree(ns, slug, ref, path string) ([]backend.TreeEntry, 
 		c.T.Fatalf("unexpected call to FakeClient.ListTree; set ListTreeFn in your test")
 	}
 	return nil, nil
+}
+
+// ── CodeInsightsClient ───────────────────────────────────────────────────────
+
+func (c *FakeClient) ListReports(project, slug, hash string) ([]backend.CodeInsightsReport, error) {
+	if c.ListReportsFn != nil {
+		return c.ListReportsFn(project, slug, hash)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListReports; set ListReportsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetReport(project, slug, hash, key string) (backend.CodeInsightsReport, error) {
+	if c.GetReportFn != nil {
+		return c.GetReportFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetReport; set GetReportFn in your test")
+	}
+	return backend.CodeInsightsReport{}, nil
+}
+
+func (c *FakeClient) SetReport(project, slug, hash, key string, in backend.CodeInsightsReportInput) (backend.CodeInsightsReport, error) {
+	if c.SetReportFn != nil {
+		return c.SetReportFn(project, slug, hash, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetReport; set SetReportFn in your test")
+	}
+	return backend.CodeInsightsReport{}, nil
+}
+
+func (c *FakeClient) DeleteReport(project, slug, hash, key string) error {
+	if c.DeleteReportFn != nil {
+		return c.DeleteReportFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteReport; set DeleteReportFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListAnnotations(project, slug, hash, key string) ([]backend.CodeInsightsAnnotation, error) {
+	if c.ListAnnotationsFn != nil {
+		return c.ListAnnotationsFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListAnnotations; set ListAnnotationsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddAnnotations(project, slug, hash, key string, in []backend.CodeInsightsAnnotationInput) error {
+	if c.AddAnnotationsFn != nil {
+		return c.AddAnnotationsFn(project, slug, hash, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddAnnotations; set AddAnnotationsFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) DeleteAnnotations(project, slug, hash, key string) error {
+	if c.DeleteAnnotationsFn != nil {
+		return c.DeleteAnnotationsFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteAnnotations; set DeleteAnnotationsFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) SetMergeCheck(project, slug, key string, in backend.MergeCheckInput) error {
+	if c.SetMergeCheckFn != nil {
+		return c.SetMergeCheckFn(project, slug, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetMergeCheck; set SetMergeCheckFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) GetMergeCheck(project, slug, key string) (backend.MergeCheck, error) {
+	if c.GetMergeCheckFn != nil {
+		return c.GetMergeCheckFn(project, slug, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetMergeCheck; set GetMergeCheckFn in your test")
+	}
+	return backend.MergeCheck{}, nil
+}
+
+func (c *FakeClient) DeleteMergeCheck(project, slug, key string) error {
+	if c.DeleteMergeCheckFn != nil {
+		return c.DeleteMergeCheckFn(project, slug, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteMergeCheck; set DeleteMergeCheckFn in your test")
+	}
+	return nil
 }

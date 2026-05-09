@@ -2246,3 +2246,297 @@ func TestListPRComments_InlineOnlyFiltersToInline(t *testing.T) {
 	assert.Contains(t, text, "inline")
 	assert.Contains(t, text, "main.go")
 }
+
+// ---- update_issue ----
+
+func TestUpdateIssue_PassesAllFields(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	var gotInput backend.UpdateIssueInput
+	fake := &testhelpers.FakeClient{
+		UpdateIssueFn: func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error) {
+			gotID = id
+			gotInput = in
+			return backend.Issue{ID: id, Title: in.Title, State: in.State}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.updateIssue(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-repo",
+		"id":       float64(7),
+		"title":    "New title",
+		"body":     "New body",
+		"kind":     "bug",
+		"priority": "major",
+		"assignee": "bob",
+		"state":    "open",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assert.Equal(t, "New title", gotInput.Title)
+	assert.Equal(t, "New body", gotInput.Content)
+	assert.Equal(t, "bug", gotInput.Kind)
+	assert.Equal(t, "major", gotInput.Priority)
+	assert.Equal(t, "bob", gotInput.Assignee)
+	assert.Equal(t, "open", gotInput.State)
+	assertJSONContains(t, result, "New title", "")
+}
+
+func TestUpdateIssue_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.updateIssue(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+// ---- reopen_issue ----
+
+func TestReopenIssue_CallsClientWithID(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		ReopenIssueFn: func(ns, slug string, id int) error {
+			gotID = id
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.reopenIssue(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(5),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 5, gotID)
+	assertJSONContains(t, result, "open", "")
+}
+
+func TestReopenIssue_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.reopenIssue(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+// ---- assign_issue ----
+
+func TestAssignIssue_CallsClientWithAssignee(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	var gotAssignee string
+	fake := &testhelpers.FakeClient{
+		AssignIssueFn: func(ns, slug string, id int, assignee string) error {
+			gotID = id
+			gotAssignee = assignee
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.assignIssue(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-repo",
+		"id":       float64(3),
+		"assignee": "charlie",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 3, gotID)
+	assert.Equal(t, "charlie", gotAssignee)
+	assertJSONContains(t, result, "charlie", "")
+}
+
+func TestAssignIssue_RequiresAssignee(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{})
+	result, err := h.assignIssue(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(3),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "assignee")
+}
+
+// ---- list_issue_comments ----
+
+func TestListIssueComments_ReturnsComments(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListIssueCommentsFn: func(ns, slug string, id int) ([]backend.IssueComment, error) {
+			return []backend.IssueComment{
+				{ID: 101, Author: backend.User{Slug: "alice"}, Content: "First"},
+				{ID: 102, Author: backend.User{Slug: "bob"}, Content: "Second"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listIssueComments(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "First", "")
+	assertJSONContains(t, result, "Second", "")
+}
+
+func TestListIssueComments_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listIssueComments(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+// ---- add_issue_comment ----
+
+func TestAddIssueComment_PassesBody(t *testing.T) {
+	t.Parallel()
+	var gotBody string
+	fake := &testhelpers.FakeClient{
+		AddIssueCommentFn: func(ns, slug string, id int, body string) (backend.IssueComment, error) {
+			gotBody = body
+			return backend.IssueComment{ID: 200, Content: body}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.addIssueComment(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"body":    "Great issue!",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "Great issue!", gotBody)
+	assertJSONContains(t, result, "Great issue!", "")
+}
+
+func TestAddIssueComment_RequiresBody(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{})
+	result, err := h.addIssueComment(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "body")
+}
+
+// ---- edit_issue_comment ----
+
+func TestEditIssueComment_PassesIDs(t *testing.T) {
+	t.Parallel()
+	var gotIssueID, gotCommentID int
+	var gotBody string
+	fake := &testhelpers.FakeClient{
+		EditIssueCommentFn: func(ns, slug string, id, commentID int, body string) (backend.IssueComment, error) {
+			gotIssueID = id
+			gotCommentID = commentID
+			gotBody = body
+			return backend.IssueComment{ID: commentID, Content: body}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.editIssueComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"id":         float64(7),
+		"comment_id": float64(101),
+		"body":       "Updated text",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotIssueID)
+	assert.Equal(t, 101, gotCommentID)
+	assert.Equal(t, "Updated text", gotBody)
+	assertJSONContains(t, result, "Updated text", "")
+}
+
+func TestEditIssueComment_ZeroCommentId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.editIssueComment(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "comment_id")
+}
+
+// ---- delete_issue_comment ----
+
+func TestDeleteIssueComment_ReturnsDeleted(t *testing.T) {
+	t.Parallel()
+	var gotCommentID int
+	fake := &testhelpers.FakeClient{
+		DeleteIssueCommentFn: func(ns, slug string, id, commentID int) error {
+			gotCommentID = commentID
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deleteIssueComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"id":         float64(7),
+		"comment_id": float64(101),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 101, gotCommentID)
+	assertJSONContains(t, result, "deleted", "")
+}
+
+func TestDeleteIssueComment_ZeroCommentId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.deleteIssueComment(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "comment_id")
+}
+
+// noIssueClient embeds backend.Client without satisfying IssueClient so every
+// issue MCP handler returns host.unsupported via AsIssueClient.
+type noIssueClient struct {
+	backend.Client
+}
+
+func TestUpdateIssue_ServerBackend_EmitsUnsupportedEnvelope(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	factorytest.UseBackend(f, noIssueClient{Client: &testhelpers.FakeClient{T: t}})
+	h := newHandlers(f)
+
+	result, err := h.updateIssue(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	require.True(t, result.IsError)
+	text, ok := result.Content[0].(mcplib.TextContent)
+	require.True(t, ok)
+
+	var env struct {
+		Code    string `json:"code"`
+		Feature string `json:"feature"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text.Text), &env))
+	assert.Equal(t, string(backend.CodeHostUnsupported), env.Code)
+	assert.Equal(t, "issues", env.Feature)
+}

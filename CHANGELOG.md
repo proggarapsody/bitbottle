@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.23.0](https://github.com/proggarapsody/bitbottle/compare/v1.22.0...v1.23.0) (2026-05-08)
+
+
+### Features
+
+* **code-insights:** reports, annotations, and merge-check for Bitbucket Server/DC ([#137](https://github.com/proggarapsody/bitbottle/issues/137)) ([babf073](https://github.com/proggarapsody/bitbottle/commit/babf073e7ed0b7747d2e9c70afd969ff8e8f8494))
+* **issue:** finish issue lifecycle (edit/reopen/assign + comments) ([#136](https://github.com/proggarapsody/bitbottle/issues/136)) ([61c4d11](https://github.com/proggarapsody/bitbottle/commit/61c4d11c211154e808ee49e50b597f24126d8ef5))
+
 ## [1.22.0](https://github.com/proggarapsody/bitbottle/compare/v1.21.0...v1.22.0) (2026-05-08)
 
 

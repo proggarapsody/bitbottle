@@ -7,6 +7,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/api"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/codeinsights"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
 	configcmd "github.com/proggarapsody/bitbottle/pkg/cmd/config"
@@ -53,6 +54,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(repo.NewCmdRepo(f))
 	cmd.AddCommand(pr.NewCmdPR(f))
 	cmd.AddCommand(branch.NewCmdBranch(f))
+	cmd.AddCommand(codeinsights.NewCmdCodeInsights(f))
 	cmd.AddCommand(pipeline.NewCmdPipeline(f))
 	cmd.AddCommand(tag.NewCmdTag(f))
 	cmd.AddCommand(webhook.NewCmdWebhook(f))

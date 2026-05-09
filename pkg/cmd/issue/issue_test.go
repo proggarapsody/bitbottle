@@ -234,6 +234,231 @@ func TestClose_RejectsNonNumericID(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid issue ID")
 }
 
+// ---- edit ----
+
+func TestEdit_PassesAllFields(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	var gotInput backend.UpdateIssueInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		UpdateIssueFn: func(ns, slug string, id int, in backend.UpdateIssueInput) (backend.Issue, error) {
+			gotID = id
+			gotInput = in
+			return backend.Issue{ID: id, Title: in.Title, Reporter: backend.User{Slug: "a"}}, nil
+		},
+	}
+	f, out, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueEdit(f)
+	cmd.SetArgs([]string{
+		"acme/repo", "7",
+		"--title", "New title",
+		"--body", "New body",
+		"--kind", "enhancement",
+		"--priority", "minor",
+		"--assignee", "bob",
+		"--state", "open",
+	})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, 7, gotID)
+	assert.Equal(t, "New title", gotInput.Title)
+	assert.Equal(t, "New body", gotInput.Content)
+	assert.Equal(t, "enhancement", gotInput.Kind)
+	assert.Equal(t, "minor", gotInput.Priority)
+	assert.Equal(t, "bob", gotInput.Assignee)
+	assert.Equal(t, "open", gotInput.State)
+	assert.Contains(t, out.String(), "Updated issue #7")
+}
+
+func TestEdit_RejectsNonNumericID(t *testing.T) {
+	t.Parallel()
+	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t})
+	cmd := issue.NewCmdIssueEdit(f)
+	cmd.SetArgs([]string{"acme/repo", "abc"})
+	require.Error(t, cmd.Execute())
+}
+
+// ---- reopen ----
+
+func TestReopen_SendsOpenState(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ReopenIssueFn: func(ns, slug string, id int) error {
+			gotID = id
+			return nil
+		},
+	}
+	f, out, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueReopen(f)
+	cmd.SetArgs([]string{"acme/repo", "5"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, 5, gotID)
+	assert.Contains(t, out.String(), "Reopened issue #5")
+}
+
+func TestReopen_RejectsNonNumericID(t *testing.T) {
+	t.Parallel()
+	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t})
+	cmd := issue.NewCmdIssueReopen(f)
+	cmd.SetArgs([]string{"acme/repo", "xyz"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid issue ID")
+}
+
+// ---- assign ----
+
+func TestAssign_PassesAssignee(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	var gotAssignee string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AssignIssueFn: func(ns, slug string, id int, assignee string) error {
+			gotID = id
+			gotAssignee = assignee
+			return nil
+		},
+	}
+	f, out, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueAssign(f)
+	cmd.SetArgs([]string{"acme/repo", "3", "charlie"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, 3, gotID)
+	assert.Equal(t, "charlie", gotAssignee)
+	assert.Contains(t, out.String(), "Assigned issue #3 to charlie")
+}
+
+func TestAssign_WithExplicitRepo(t *testing.T) {
+	t.Parallel()
+	var gotAssignee string
+	var gotNS, gotSlug string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AssignIssueFn: func(ns, slug string, id int, assignee string) error {
+			gotNS = ns
+			gotSlug = slug
+			gotAssignee = assignee
+			return nil
+		},
+	}
+	f, _, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueAssign(f)
+	cmd.SetArgs([]string{"otherws/otherrepo", "10", "diana"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, "diana", gotAssignee)
+	assert.Equal(t, "otherws", gotNS)
+	assert.Equal(t, "otherrepo", gotSlug)
+}
+
+// ---- comment list ----
+
+func TestCommentList_PrintsComments(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListIssueCommentsFn: func(ns, slug string, id int) ([]backend.IssueComment, error) {
+			return []backend.IssueComment{
+				{ID: 101, Author: backend.User{Slug: "alice"}, Content: "First comment"},
+				{ID: 102, Author: backend.User{Slug: "bob"}, Content: "Second comment"},
+			}, nil
+		},
+	}
+	f, out, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueCommentList(f)
+	cmd.SetArgs([]string{"acme/repo", "7"})
+	require.NoError(t, cmd.Execute())
+	got := out.String()
+	assert.Contains(t, got, "101")
+	assert.Contains(t, got, "First comment")
+	assert.Contains(t, got, "102")
+}
+
+// ---- comment add ----
+
+func TestCommentAdd_RequiresBody(t *testing.T) {
+	t.Parallel()
+	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t})
+	cmd := issue.NewCmdIssueCommentAdd(f)
+	cmd.SetArgs([]string{"acme/repo", "7"})
+	require.Error(t, cmd.Execute())
+}
+
+func TestCommentAdd_PassesBody(t *testing.T) {
+	t.Parallel()
+	var gotBody string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AddIssueCommentFn: func(ns, slug string, id int, body string) (backend.IssueComment, error) {
+			gotBody = body
+			return backend.IssueComment{ID: 200, Content: body}, nil
+		},
+	}
+	f, out, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueCommentAdd(f)
+	cmd.SetArgs([]string{"acme/repo", "7", "--body", "Great issue!"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, "Great issue!", gotBody)
+	assert.Contains(t, out.String(), "Added comment #200")
+}
+
+// ---- comment edit ----
+
+func TestCommentEdit_RequiresBody(t *testing.T) {
+	t.Parallel()
+	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t})
+	cmd := issue.NewCmdIssueCommentEdit(f)
+	cmd.SetArgs([]string{"acme/repo", "7", "101"})
+	require.Error(t, cmd.Execute())
+}
+
+func TestCommentEdit_PassesIDs(t *testing.T) {
+	t.Parallel()
+	var gotIssueID, gotCommentID int
+	var gotBody string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		EditIssueCommentFn: func(ns, slug string, id, commentID int, body string) (backend.IssueComment, error) {
+			gotIssueID = id
+			gotCommentID = commentID
+			gotBody = body
+			return backend.IssueComment{ID: commentID, Content: body}, nil
+		},
+	}
+	f, out, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueCommentEdit(f)
+	cmd.SetArgs([]string{"acme/repo", "7", "101", "--body", "Updated text"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, 7, gotIssueID)
+	assert.Equal(t, 101, gotCommentID)
+	assert.Equal(t, "Updated text", gotBody)
+	assert.Contains(t, out.String(), "Updated comment #101")
+}
+
+// ---- comment delete ----
+
+func TestCommentDelete_PassesIDs(t *testing.T) {
+	t.Parallel()
+	var gotIssueID, gotCommentID int
+	fake := &testhelpers.FakeClient{
+		T: t,
+		DeleteIssueCommentFn: func(ns, slug string, id, commentID int) error {
+			gotIssueID = id
+			gotCommentID = commentID
+			return nil
+		},
+	}
+	f, out, _ := newFactory(t, fake)
+	cmd := issue.NewCmdIssueCommentDelete(f)
+	cmd.SetArgs([]string{"acme/repo", "7", "101"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, 7, gotIssueID)
+	assert.Equal(t, 101, gotCommentID)
+	assert.Contains(t, out.String(), "Deleted comment #101")
+}
+
 // ---- formatter / colour ----
 
 func TestIssueStateColor_TTY(t *testing.T) {
