@@ -1,0 +1,83 @@
+{
+  "status": "complete",
+  "project_type": "brownfield",
+  "current_section": "styleguides",
+  "current_question": 2,
+  "completed_sections": [
+    "product",
+    "guidelines",
+    "tech_stack",
+    "workflow",
+    "styleguides"
+  ],
+  "answers": {
+    "product.name": "bitbottle",
+    "product.description": "A CLI tool that brings `gh`-style ergonomics — noun-verb commands, consistent flags, TTY-aware output — to both Bitbucket Cloud and Server/DC.",
+    "product.problem": "Bitbucket users have no first-class CLI — `gh` exists for GitHub, `glab` for GitLab, but Atlassian ships only the web UI and a handful of unmaintained third-party tools.",
+    "product.users": [
+      "AI coding agents (Claude Code, Cursor, Codex) — primary; need structured --json output and an MCP server to operate on Bitbucket.",
+      "Developers using Bitbucket day-to-day — want PRs, repos, pipelines, branches from the terminal instead of the web UI."
+    ],
+    "product.goals": [
+      "Feature parity with gh — every applicable gh command has a bitbottle equivalent against Bitbucket.",
+      "One UX, two backends — same commands and flags work against Cloud and Server/DC; differences only where the API truly differs.",
+      "First-class agent surface — every command supports --json / --jq, plus an MCP server bundling the same operations.",
+      "Predictable errors — typed domain errors with dotted codes and actionable hints."
+    ],
+    "guidelines.voice": "CLI output: concise and direct (gh-style, short imperatives, minimal prose). README/contributor docs: approachable but professional. Error messages: direct + actionable (title + hint format).",
+    "guidelines.principles": [
+      "gh philosophy throughout — noun-verb commands, consistent flags, TTY-aware output, thin commands (parse → backend → format).",
+      "Interface segregation — each capability is its own interface; composite Client embeds only what both backends implement; Cloud-only ops via optional-interface pattern.",
+      "Layered architecture (per-scope contract) — api/backend/ types + interfaces → api/cloud/ + api/server/ adapters → pkg/cmd/ commands → pkg/cmd/mcp/ MCP tools, in that order.",
+      "Prefer well-known libraries — adopt the most popular/maintained option; hand-roll only when dependency footprint outweighs value.",
+      "One MCP per Bitbucket op — every command that maps to a Bitbucket REST call gets a matching MCP tool, so agents can use the same surface."
+    ],
+    "tech_stack.languages": [
+      "Go 1.25.0 — primary; all CLI, API adapters, and MCP server code.",
+      "Python 3 — tooling scripts (skills/scripts/sync_help.py) for syncing --help text into the skill router.",
+      "JavaScript (Node) — npm install shim (packages/mcp-npm/install.js) that downloads the Go binary on postinstall."
+    ],
+    "tech_stack.frontend": "None — CLI only. Terminal output only, via f.IOStreams + fatih/color.",
+    "tech_stack.backend": {
+      "kind": "No backend framework in the server-side sense — bitbottle is a CLI, not a server. The 'backend' is the Bitbucket REST APIs we call into.",
+      "client_libraries": {
+        "cli_scaffolding": "spf13/cobra — command tree, flag parsing, completion",
+        "http": "net/http + api/internal/httpx/ — custom transport with ContentTypePolicy, retry, domain-error classification",
+        "mcp_server": "mark3labs/mcp-go — MCP stdio server (pkg/cmd/mcp/)",
+        "jq_filter": "itchyny/gojq — pure-Go jq, powers --jq",
+        "credentials": "zalando/go-keyring — OS keychain integration",
+        "color": "fatih/color — ANSI color output, TTY-aware"
+      }
+    },
+    "tech_stack.database": "None / Stateless — bitbottle holds no domain data of its own; all state lives in Bitbucket. Local artifacts are just: auth tokens in OS keychain (zalando/go-keyring), hosts config in ~/.config/bitbottle/hosts.yml, and per-repo defaults in .git/config (bitbottle.host / project / slug).",
+    "tech_stack.infrastructure": {
+      "pipeline": "GitHub Actions (CI: lint/test/build) + release-please (version bumping, CHANGELOG, release PRs) + GoReleaser (cross-platform binaries).",
+      "distribution_channels": [
+        "GitHub Releases — pre-built binaries: linux/macos/windows × amd64/arm64.",
+        "Docker images — ghcr.io/proggarapsody/bitbottle.",
+        "npm — @proggarapsody/bitbottle (postinstall script downloads the matching binary).",
+        "go install github.com/proggarapsody/bitbottle/cmd/bitbottle@latest — source build via Go toolchain."
+      ]
+    },
+    "workflow.tdd": "Strict (red → green → refactor) by default — applies to ~99% of work. Bypass is allowed only for early prototypes or spikes where testing infrastructure does not yet exist, and must be a deliberate decision documented in the track's spec — never a default.",
+    "workflow.commits": "Conventional Commits on every commit (feat/fix/docs/chore/refactor/test/perf/build/ci/style/revert). PRs are squash-merged so each PR contributes exactly one commit to main. The PR title becomes the squash subject and must itself be a Conventional Commit — release-please only bumps versions on feat:/fix:/feat!: subjects.",
+    "workflow.review": "Review required on every PR. For a solo-maintainer project, this means: (1) the maintainer's own self-review pass over the full diff before merging, and (2) an automated code-reviewer agent (e.g. code-reviewer / superpowers:requesting-code-review) run on every PR. Pre-merge-check (docs/workflows/pre-merge-check.md) is the BLOCKER gate that runs alongside the human/agent review.",
+    "workflow.verification": "Manual verification required only at track completion (matches existing model). Per-commit: make lint + go test ./... -race (automated). Per-PR: pre-merge-check (semi-automated, docs/workflows/pre-merge-check.md, BLOCKER). Per-release: docs/manual-tests/ scenarios run against real Bitbucket Cloud and Server/DC instances before tagging.",
+    "styleguides.languages": ["Go", "Python", "JavaScript"],
+    "styleguides.strategy": "Use existing configs as the source of truth. Go style guide cites .golangci.yml and AGENTS.md 'Key rules' rather than duplicating them. Python and JavaScript guides are generated fresh because no existing configs exist for those languages."
+  },
+  "files_created": [
+    "conductor/index.md",
+    "conductor/product.md",
+    "conductor/product-guidelines.md",
+    "conductor/tech-stack.md",
+    "conductor/workflow.md",
+    "conductor/tracks.md",
+    "conductor/code_styleguides/go.md",
+    "conductor/code_styleguides/python.md",
+    "conductor/code_styleguides/javascript.md"
+  ],
+  "started_at": "2026-05-08T00:00:00Z",
+  "last_updated": "2026-05-08T00:00:00Z",
+  "completed_at": "2026-05-08T00:00:00Z"
+}
