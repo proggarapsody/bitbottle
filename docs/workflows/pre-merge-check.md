@@ -120,7 +120,26 @@ Match against the changed-file list from §0. Multiple rules can fire.
 If `skills/references/*.md` was edited, also check `skills/SKILL.md`'s
 router table still points at the right file.
 
-## 6. Release-please boundaries — BLOCKER
+## 6. Design-judge — BLOCKER on principle violations
+
+For PRs that introduce new commands, interfaces, packages, transports, MCP
+tools, or error sites, sanity-check against the two principle docs:
+
+- [`docs/TASTE.md`](../TASTE.md) — UX (gh philosophy, standard flags,
+  TTY-aware output, error format), agentic skill experience, MCP tool shape.
+- [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md) — SOLID, layered structure,
+  composite + optional interfaces, deep modules, design decisions, gh
+  references.
+
+For each new surface, either cite an exemplar file from the codebase
+demonstrating the principle is followed, or cite a violation with file:line
+and the principle violated. No vague "feels off" — every finding must point
+at code.
+
+Skip when the diff touches only docs, CI config, dependencies, or
+`BACKLOG.md`.
+
+## 7. Release-please boundaries — BLOCKER
 
 Release-please owns these. **Never hand-edit on a feature branch:**
 
@@ -132,7 +151,7 @@ Release-please owns these. **Never hand-edit on a feature branch:**
 If the diff touches any of these, BLOCKER unless the branch *is* a
 release-please branch (named `release-please--*`).
 
-## 7. Secret leak scan — BLOCKER on any hit
+## 8. Secret leak scan — BLOCKER on any hit
 
 ```bash
 git diff origin/main...HEAD -- . ':(exclude)reference/' \
@@ -145,7 +164,7 @@ emails that belong only in local config — they must never land in
 commits. (For this repo: the maintainer's Bitbucket Server host /
 username should not appear in any tracked file.)
 
-## 8. Final report
+## 9. Final report
 
 ```
 ## Pre-merge check: <branch> → main
