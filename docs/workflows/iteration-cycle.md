@@ -88,12 +88,45 @@ inventory acknowledged.
 3. **Nothing emerges?** Run a stress-test interview against the rough
    ideas (the `grill-me` skill on Claude Code does this; on other
    agents, drive a similar Q&A loop) until one scope crystallises.
+4. **Bundle check** — if the chosen scope's estimated diff is **<30 files**
+   AND the next 🔲 row in `BACKLOG.md` is also **<30 files** AND the two
+   are deeply disjoint, propose a **two-scope bundle** with a combined
+   cap of **<60 files of meaningful (non-refactor) change**. Author
+   confirms before proceeding.
 
-**Exit**: one scope chosen, with explicit author confirmation.
+   **Estimation cheatsheet** (use BACKLOG scope-detail rows):
+
+   | BACKLOG element | Predicted file count |
+   |---|---|
+   | 1 new interface in `api/backend/client_*.go` | 1 |
+   | Cloud impl + tests | 2 (skip if Server-only) |
+   | Server impl + tests | 2 (skip if Cloud-only) |
+   | N new commands in `pkg/cmd/<group>/` | 2N (impl + `_test.go`) |
+   | MCP tools (additive in existing files) | 0 new (3 updated) |
+   | Doc updates (README, BACKLOG, SKILL.md, manual-tests) | 3–4 updated |
+   | New transport for new REST namespace | +2 |
+
+   **Disjointness check (all must hold for a bundle to fire)**:
+   - Different command surfaces (no shared `pkg/cmd/<group>/` tree).
+   - No shared interface (neither extends the other's `client_*.go`).
+   - No shared exemplar files referenced in implementation.
+   - No competing manual-test scenarios.
+   - Backend symmetry: both Cloud-only, both Server-only, OR both
+     touch both backends.
+
+   **Bundle anti-patterns** (BLOCKER — fall back to serial):
+   - Both scopes extend the same interface.
+   - Both scopes touch the same command tree at the same level.
+   - One scope's design depends on the other's outcome (sequential, not
+     parallel).
+
+**Exit**: one scope (or one validated two-scope bundle) chosen, with
+explicit author confirmation.
 
 **Anti-patterns**
-- Picking multiple scopes in one iteration. One scope = one PR = one
-  release.
+- Picking multiple unrelated scopes ad-hoc. Bundling is allowed **only**
+  through the bundle-check rules above; everything else is one scope =
+  one PR = one release.
 - Inventing a scope without checking the backlog first.
 
 ## Section 2 — Write the PRD
@@ -119,12 +152,24 @@ embedded in the PRD.
 
 ## Section 3 — Implement (TDD)
 
-**Goal**: green tests + green lint on a feature branch.
+**Goal**: green tests + green lint on a feature branch, in an isolated
+worktree.
 
-**Branching**
-- `git checkout -b feat/<short-slug>` (or `fix/...` / `docs/...` per
-  `AGENTS.md`). Never work on `main`.
-- One scope = one branch = one PR. No drive-by refactors.
+**Worktree (always — even for a single scope)**
+- `git worktree add -b feat/<short-slug> ../bitbottle-worktrees/<slug> main`
+  (or `fix/...` / `docs/...` / `chore/...` per `AGENTS.md`). All
+  implementation, commits, and pushes happen **inside the worktree**.
+  The main checkout stays clean — agents and humans alike never edit
+  `main` directly.
+- Removed in §10 (Compact). The `superpowers:using-git-worktrees` skill
+  formalises the pattern; the `Task` tool also accepts
+  `isolation: "worktree"` so spawned subagents get auto-cleaned worktrees
+  without manual setup.
+- One scope = one worktree = one branch = one PR. No drive-by refactors.
+- For a bundled two-scope iteration (per §1 bundle check): one worktree,
+  branch named for the combined slug — e.g. `feat/pr-reopen-and-checks`.
+- For parallel mode (§11): N worktrees, one per scope, all created from
+  the current `main`.
 
 **Discipline**
 - Red → green → refactor. Write a failing test first, make it pass with
@@ -285,21 +330,37 @@ changes must be intentional, not auto-generated.
 **Exit**: any new user-facing flow has a scenario covering it; `git
 status` is clean.
 
-## Section 10 — Compact the working session
+## Section 10 — Cleanup + compact the working session
 
-**Goal**: drop transient context now that the iteration is durable in
-`main`, the release, the closed PRD, and updated docs.
+**Goal**: remove the worktree and drop transient context now that the
+iteration is durable in `main`, the release, the closed PRD, and
+updated docs.
 
-If the iteration ran inside a long agent session (Claude Code, Cursor,
-etc.), use the agent's compact / clear command (`/compact` on Claude
-Code) so the next iteration starts with clean context. Everything
-important survives in: the merged PR, the release notes, `BACKLOG.md`,
-and `docs/manual-tests/`. Anything that wouldn't survive a compact
-either belongs in those durable places or didn't matter.
+**Actions**
+1. **Remove the worktree** (and any peers from a parallel batch):
 
-For a plain shell session, just close the buffer.
+   ```bash
+   git worktree remove ../bitbottle-worktrees/<slug>
+   ```
 
-**Exit**: session compacted; ready for the next iteration.
+   The squash-merged commits are already on `main`; the local stale
+   branch can be left for a periodic sweep, or deleted if you trust the
+   merge (`git branch -d feat/<slug>` will refuse if the branch isn't
+   reachable from `main`, which is normal for squash-merge — `-D` works
+   only if Safety Net allows it).
+
+2. **Compact** — if the iteration ran inside a long agent session
+   (Claude Code, Cursor, etc.), use the agent's compact / clear command
+   (`/compact` on Claude Code) so the next iteration starts with clean
+   context. Everything important survives in: the merged PR, the
+   release notes, `BACKLOG.md`, and `docs/manual-tests/`. Anything that
+   wouldn't survive a compact either belongs in those durable places or
+   didn't matter.
+
+   For a plain shell session, just close the buffer.
+
+**Exit**: worktree removed, session compacted; ready for the next
+iteration.
 
 ## Section 11 — Parallel mode (multi-scope iteration)
 
@@ -356,7 +417,11 @@ treat anything other than union as a finding.
 Create the *N* PRDs back-to-back, each as its own GitHub issue. Capture
 all *N* issue numbers up front; each subagent references its own.
 
-### Section 3 delta — One worktree per scope
+### Section 3 delta — N worktrees, one per scope
+
+§3 already requires a worktree for any scope (since this doc was
+revised — see §3 "Worktree (always)"). Parallel mode just runs N of
+them simultaneously:
 
 ```bash
 git worktree add -b feat/<slug-1> ../bitbottle-worktrees/<slug-1> main
@@ -366,7 +431,9 @@ git worktree add -b feat/<slug-3> ../bitbottle-worktrees/<slug-3> main
 
 Each implementer subagent works only inside its assigned worktree.
 File ownership is enforced structurally: a subagent that edits another
-worktree's tree is misbehaving.
+worktree's tree is misbehaving. The `Task` tool's
+`isolation: "worktree"` parameter automates this for orchestrator-driven
+dispatch; Conductor's "track" model applies it natively per track.
 
 #### Subagent token discipline (REQUIRED for parallel mode)
 
