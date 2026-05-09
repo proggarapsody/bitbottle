@@ -13,6 +13,12 @@ Read before designing any new command, interface, package, transport, MCP tool, 
 - [`docs/TASTE.md`](docs/TASTE.md) — UX (gh philosophy, standard flags, TTY-aware output, error format), agentic skill experience, MCP tool shape.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — SOLID, layered structure, composite + optional interfaces, deep modules, design decisions, gh references.
 
+## Automation
+
+The autonomous iteration loop spec — for designing or troubleshooting `/auto-iter`-driven runs.
+
+- [`docs/auto-iter/quickref.md`](docs/auto-iter/quickref.md) — declarative reference: model tier per phase, halt routing, cycle/metrics log schemas, anti-patterns, cadence guidance. Read this when changing how `/auto-iter` makes decisions.
+
 ## Workflow
 
 End-to-end procedures live in [`docs/workflows/`](docs/workflows/) and are tool-neutral — humans, Codex, Cursor, Aider, and Claude all follow them.
