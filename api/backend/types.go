@@ -35,15 +35,23 @@ type Repository struct {
 
 // PullRequest is the domain representation of a Bitbucket pull request.
 type PullRequest struct {
-	ID          int
-	Title       string
-	Description string
-	State       string
-	Draft       bool
-	Author      User
-	FromBranch  string
-	ToBranch    string
-	WebURL      string
+	ID             int
+	Title          string
+	Description    string
+	State          string
+	Draft          bool
+	Author         User
+	FromBranch     string
+	ToBranch       string
+	WebURL         string
+	HeadCommitHash string
+}
+
+// MyPREntry is a cross-repo PR summary for the status dashboard.
+type MyPREntry struct {
+	PullRequest        // embed — carries ID, Title, State, Author, WebURL, HeadCommitHash
+	Repo        string // "PROJECT/REPO" (Server) or "workspace/slug" (Cloud)
+	Role        string // "AUTHOR" | "REVIEWER"
 }
 
 // User is the domain representation of a Bitbucket user.

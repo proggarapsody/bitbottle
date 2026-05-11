@@ -21,11 +21,15 @@ type wireCloudPR struct {
 	Author      struct {
 		DisplayName string `json:"display_name"`
 		AccountID   string `json:"account_id"`
+		Nickname    string `json:"nickname"`
 	} `json:"author"`
 	Source struct {
 		Branch struct {
 			Name string `json:"name"`
 		} `json:"branch"`
+		Commit struct {
+			Hash string `json:"hash"`
+		} `json:"commit"`
 	} `json:"source"`
 	Destination struct {
 		Branch struct {
@@ -53,9 +57,10 @@ func (w wireCloudPR) toDomain() backend.PullRequest {
 			Slug:        w.Author.AccountID,
 			DisplayName: w.Author.DisplayName,
 		},
-		FromBranch: w.Source.Branch.Name,
-		ToBranch:   w.Destination.Branch.Name,
-		WebURL:     w.Links.HTML.Href,
+		FromBranch:     w.Source.Branch.Name,
+		ToBranch:       w.Destination.Branch.Name,
+		WebURL:         w.Links.HTML.Href,
+		HeadCommitHash: w.Source.Commit.Hash,
 	}
 }
 

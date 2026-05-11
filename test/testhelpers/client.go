@@ -104,6 +104,10 @@ type FakeClient struct {
 	EditIssueCommentFn   func(ns, slug string, id, commentID int, body string) (backend.IssueComment, error)
 	DeleteIssueCommentFn func(ns, slug string, id, commentID int) error
 
+	// GHP methods
+	UpdatePRBranchFn func(ns, slug string, prID int) error
+	ListMyPRsFn      func(ns, slug string) ([]backend.MyPREntry, error)
+
 	// Default reviewers (Server-only; satisfies backend.DefaultReviewersResolver when set)
 	DefaultReviewersFn func(ns, slug, fromBranch, toBranch string) ([]backend.User, error)
 
@@ -731,6 +735,26 @@ func (c *FakeClient) DeleteIssueComment(ns, slug string, id, commentID int) erro
 		c.T.Fatalf("unexpected call to FakeClient.DeleteIssueComment; set DeleteIssueCommentFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) UpdatePRBranch(ns, slug string, prID int) error {
+	if c.UpdatePRBranchFn != nil {
+		return c.UpdatePRBranchFn(ns, slug, prID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdatePRBranch; set UpdatePRBranchFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListMyPRs(ns, slug string) ([]backend.MyPREntry, error) {
+	if c.ListMyPRsFn != nil {
+		return c.ListMyPRsFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListMyPRs; set ListMyPRsFn in your test")
+	}
+	return nil, nil
 }
 
 // DefaultReviewers defaults to "no defaults configured" (nil, nil) when the

@@ -119,6 +119,26 @@ When you see one of these messages, you know the fix:
   is partly undocumented; these commands are experimental. Verify the
   report key matches an existing Code Insights report on the same repo.
 
+## Dashboard and navigation quick-reference
+
+```bash
+# Show your open PRs (author + reviewer) across a repo
+bitbottle status [PROJECT/REPO]
+# same view scoped to the pr subcommand
+bitbottle pr status [PROJECT/REPO]
+
+# Open a Bitbucket page in the browser
+bitbottle browse [PROJECT/REPO]                  # repo home
+bitbottle browse [PROJECT/REPO] 42               # pull request #42
+bitbottle browse [PROJECT/REPO] abc1234def       # commit (7-40 hex chars)
+bitbottle browse [PROJECT/REPO] src/main.go      # file in current branch
+
+# Watch a Cloud pipeline until it completes (exits 0) or fails (exits 1)
+bitbottle pipeline watch PROJECT/REPO UUID [--interval 5]
+```
+
+MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`.
+
 ## PR review quick-reference
 
 `pr review` bundles a body + inline comments + an action into one call:
