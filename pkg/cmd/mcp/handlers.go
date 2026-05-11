@@ -1933,3 +1933,151 @@ func (h *handlers) searchCode(_ context.Context, req mcplib.CallToolRequest) (*m
 	}
 	return jsonResult(hits)
 }
+
+func (h *handlers) listCommitComments(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	hash, err := requireString(req, "hash")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	cmts, err := client.ListCommitComments(project, slug, hash)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	type row struct {
+		ID        int    `json:"id"`
+		Author    string `json:"author"`
+		Body      string `json:"body"`
+		CreatedAt string `json:"createdAt"`
+	}
+	out := make([]row, 0, len(cmts))
+	for _, c := range cmts {
+		author := c.Author.Slug
+		if author == "" {
+			author = c.Author.DisplayName
+		}
+		out = append(out, row{
+			ID:        c.ID,
+			Author:    author,
+			Body:      c.Body,
+			CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		})
+	}
+	return jsonResult(out)
+}
+
+func (h *handlers) addCommitComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	hash, err := requireString(req, "hash")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	body, err := requireString(req, "body")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	c, err := client.AddCommitComment(project, slug, hash, backend.AddCommitCommentInput{Body: body})
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	author := c.Author.Slug
+	if author == "" {
+		author = c.Author.DisplayName
+	}
+	return jsonResult(map[string]any{"id": c.ID, "author": author, "body": c.Body})
+}
+
+func (h *handlers) editCommitComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	hash, err := requireString(req, "hash")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	commentID := req.GetInt("comment_id", 0)
+	if commentID == 0 {
+		return errResult("missing required parameter: comment_id"), nil
+	}
+	body, err := requireString(req, "body")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	c, err := client.EditCommitComment(project, slug, hash, commentID, body)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]any{"id": c.ID})
+}
+
+func (h *handlers) deleteCommitComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	hash, err := requireString(req, "hash")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	commentID := req.GetInt("comment_id", 0)
+	if commentID == 0 {
+		return errResult("missing required parameter: comment_id"), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	if err := client.DeleteCommitComment(project, slug, hash, commentID); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]any{"deleted": true})
+}

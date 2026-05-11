@@ -2682,3 +2682,168 @@ func TestSubmitPRReview_BackendErrorPropagates(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "403")
 }
+
+// ---- list_commit_comments ----
+
+func TestListCommitComments_ReturnsList(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListCommitCommentsFn: func(ns, slug, hash string) ([]backend.CommitComment, error) {
+			return []backend.CommitComment{
+				{ID: 1, Author: backend.User{Slug: "alice"}, Body: "Looks good"},
+				{ID: 2, Author: backend.User{Slug: "bob"}, Body: "Minor nit"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listCommitComments(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"hash":    "deadbeef",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "alice", "Looks good")
+}
+
+func TestListCommitComments_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listCommitComments(context.Background(), makeReq(map[string]any{
+		"slug": "my-repo",
+		"hash": "deadbeef",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestListCommitComments_BackendError_ReturnsError(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListCommitCommentsFn: func(ns, slug, hash string) ([]backend.CommitComment, error) {
+			return nil, errors.New("connection refused")
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listCommitComments(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"hash":    "deadbeef",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "connection refused")
+}
+
+// ---- add_commit_comment ----
+
+func TestAddCommitComment_CreatesComment(t *testing.T) {
+	t.Parallel()
+	var gotHash, gotBody string
+	fake := &testhelpers.FakeClient{
+		AddCommitCommentFn: func(ns, slug, hash string, in backend.AddCommitCommentInput) (backend.CommitComment, error) {
+			gotHash = hash
+			gotBody = in.Body
+			return backend.CommitComment{ID: 99, Author: backend.User{Slug: "alice"}, Body: in.Body}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.addCommitComment(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"hash":    "abc123",
+		"body":    "hello comment",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "abc123", gotHash)
+	assert.Equal(t, "hello comment", gotBody)
+	assertJSONContains(t, result, "99", "hello comment")
+}
+
+func TestAddCommitComment_MissingBody_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.addCommitComment(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"hash":    "abc123",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "body")
+}
+
+// ---- edit_commit_comment ----
+
+func TestEditCommitComment_UpdatesComment(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		EditCommitCommentFn: func(ns, slug, hash string, commentID int, body string) (backend.CommitComment, error) {
+			gotID = commentID
+			return backend.CommitComment{ID: commentID}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.editCommitComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"hash":       "abc123",
+		"comment_id": float64(42),
+		"body":       "updated body",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 42, gotID)
+	assertJSONContains(t, result, "42", "")
+}
+
+func TestEditCommitComment_MissingCommentID_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.editCommitComment(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"hash":    "abc123",
+		"body":    "updated body",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "comment_id")
+}
+
+// ---- delete_commit_comment ----
+
+func TestDeleteCommitComment_DeletesComment(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		DeleteCommitCommentFn: func(ns, slug, hash string, commentID int) error {
+			gotID = commentID
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deleteCommitComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"hash":       "abc123",
+		"comment_id": float64(77),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 77, gotID)
+	assertJSONContains(t, result, "deleted", "true")
+}
+
+func TestDeleteCommitComment_BackendError_ReturnsError(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		DeleteCommitCommentFn: func(ns, slug, hash string, commentID int) error {
+			return errors.New("not found")
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.deleteCommitComment(context.Background(), makeReq(map[string]any{
+		"project":    "MYPROJ",
+		"slug":       "my-repo",
+		"hash":       "abc123",
+		"comment_id": float64(99),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "not found")
+}
