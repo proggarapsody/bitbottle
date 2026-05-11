@@ -20,7 +20,7 @@ not sure about.**
 | Task | Open |
 |---|---|
 | Auth, hosts.yml, env vars, multi-host setup | `references/auth.md` |
-| PR lifecycle (list/view/create/merge/approve/comment/…) | `references/pr.md` |
+| PR lifecycle (list/view/create/merge/approve/comment/activity/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
