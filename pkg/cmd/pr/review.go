@@ -32,7 +32,7 @@ func NewCmdPRReview(f *factory.Factory) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "review PR_ID",
-		Short: "Submit a compound review (approve / request-changes / comment) with optional body and inline comments",
+		Short: "Submit a compound review on a pull request",
 		Long: `Submit a compound review on a pull request — the gh-parity verb that
 bundles a review action with an optional top-level body and zero or more
 inline comments in a single call.
