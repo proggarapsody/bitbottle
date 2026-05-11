@@ -573,6 +573,20 @@ type MergeCheck struct {
 // MergeCheckInput is an alias of MergeCheck used on the write side.
 type MergeCheckInput = MergeCheck
 
+// CommitComment is a comment attached to a specific commit.
+type CommitComment struct {
+	ID        int
+	Author    User
+	Body      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// AddCommitCommentInput carries parameters for creating a commit comment.
+type AddCommitCommentInput struct {
+	Body string
+}
+
 // PRActivityEvent is one event in the pull-request activity stream.
 // Type is a normalised event kind: "approval", "unapproval", "comment",
 // "update", "merge", "declined", "rescoped". Detail carries the raw

@@ -64,6 +64,12 @@ type FakeClient struct {
 	ListCommitsFn func(ns, slug, branch string, limit int) ([]backend.Commit, error)
 	GetCommitFn   func(ns, slug, hash string) (backend.Commit, error)
 
+	// Commit comment methods
+	ListCommitCommentsFn  func(ns, slug, hash string, limit int) ([]backend.CommitComment, error)
+	AddCommitCommentFn    func(ns, slug, hash string, in backend.AddCommitCommentInput) (backend.CommitComment, error)
+	EditCommitCommentFn   func(ns, slug, hash string, commentID int, body string) (backend.CommitComment, error)
+	DeleteCommitCommentFn func(ns, slug, hash string, commentID int) error
+
 	// PR comment methods
 	ListPRCommentsFn  func(ns, slug string, id int) ([]backend.PRComment, error)
 	AddPRCommentFn    func(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error)
@@ -465,6 +471,46 @@ func (c *FakeClient) GetCommit(ns, slug, hash string) (backend.Commit, error) {
 		c.T.Fatalf("unexpected call to FakeClient.GetCommit; set GetCommitFn in your test")
 	}
 	return backend.Commit{}, nil
+}
+
+func (c *FakeClient) ListCommitComments(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
+	if c.ListCommitCommentsFn != nil {
+		return c.ListCommitCommentsFn(ns, slug, hash, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListCommitComments; set ListCommitCommentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddCommitComment(ns, slug, hash string, in backend.AddCommitCommentInput) (backend.CommitComment, error) {
+	if c.AddCommitCommentFn != nil {
+		return c.AddCommitCommentFn(ns, slug, hash, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddCommitComment; set AddCommitCommentFn in your test")
+	}
+	return backend.CommitComment{}, nil
+}
+
+func (c *FakeClient) EditCommitComment(ns, slug, hash string, commentID int, body string) (backend.CommitComment, error) {
+	if c.EditCommitCommentFn != nil {
+		return c.EditCommitCommentFn(ns, slug, hash, commentID, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.EditCommitComment; set EditCommitCommentFn in your test")
+	}
+	return backend.CommitComment{}, nil
+}
+
+func (c *FakeClient) DeleteCommitComment(ns, slug, hash string, commentID int) error {
+	if c.DeleteCommitCommentFn != nil {
+		return c.DeleteCommitCommentFn(ns, slug, hash, commentID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteCommitComment; set DeleteCommitCommentFn in your test")
+	}
+	return nil
 }
 
 func (c *FakeClient) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {

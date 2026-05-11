@@ -20,5 +20,6 @@ directory.`,
 	cmd.AddCommand(NewCmdCommitLog(f))
 	cmd.AddCommand(NewCmdCommitView(f))
 	cmd.AddCommand(NewCmdCommitStatus(f))
+	cmd.AddCommand(NewCmdCommitComment(f))
 	return cmd
 }

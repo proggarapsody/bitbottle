@@ -22,6 +22,7 @@ not sure about.**
 | Auth, hosts.yml, env vars, multi-host setup | `references/auth.md` |
 | PR lifecycle (list/view/create/merge/approve/comment/pr activity/review/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
+| commit comment list/add/edit/delete | list, add, edit, and delete commit comments | `references/commit.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
 
