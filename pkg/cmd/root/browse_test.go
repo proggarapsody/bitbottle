@@ -97,9 +97,11 @@ func TestBrowse_HexTarget_OpensCommitURL(t *testing.T) {
 	assert.Contains(t, browser.URLs[0], "/commits/abc1234def")
 }
 
-func TestBrowse_PathTarget_OpensSrcURL(t *testing.T) {
+func TestBrowse_PathTarget_ServerOpensBrowseURL(t *testing.T) {
 	t.Parallel()
 
+	// Server repos: WebURL ends in "/browse"; path targets must use
+	// /browse/{path}?at=refs/heads/{branch} (not Cloud's /src/{branch}/{path}).
 	fake := &testhelpers.FakeClient{
 		T: t,
 		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
@@ -115,6 +117,32 @@ func TestBrowse_PathTarget_OpensSrcURL(t *testing.T) {
 
 	cmd := root.NewCmdBrowse(f)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "README.md"})
+	require.NoError(t, cmd.Execute())
+
+	require.Len(t, browser.URLs, 1)
+	assert.Contains(t, browser.URLs[0], "/browse/README.md")
+	assert.Contains(t, browser.URLs[0], "?at=refs/heads/")
+}
+
+func TestBrowse_PathTarget_CloudOpensSrcURL(t *testing.T) {
+	t.Parallel()
+
+	// Cloud repos: WebURL does not end in "/browse"; path targets use /src/{branch}/{path}.
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			return backend.Repository{
+				WebURL: "https://bitbucket.org/myworkspace/my-service",
+			}, nil
+		},
+	}
+
+	browser := &testhelpers.FakeBrowserLauncher{}
+	f, _, _ := newStatusFactory(t, fake)
+	f.Browser = browser
+
+	cmd := root.NewCmdBrowse(f)
+	cmd.SetArgs([]string{"myworkspace/my-service", "README.md"})
 	require.NoError(t, cmd.Execute())
 
 	require.Len(t, browser.URLs, 1)

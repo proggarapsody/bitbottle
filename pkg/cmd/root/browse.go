@@ -94,18 +94,34 @@ TARGET can be:
 				return f.Browser.Browse(p.WebURL)
 			}
 
-			// 7-40 hex chars: open commit page
+			// 7-40 hex chars: open commit page.
+			// Server repo WebURL ends in "/browse"; commit URL strips that suffix.
+			// Cloud repo WebURL ends in "/<slug>"; commit URL appends "/commits/".
 			if hexHashRE.MatchString(target) {
-				commitURL := repoWebURL + "/commits/" + target
+				base := strings.TrimRight(repoWebURL, "/")
+				var commitURL string
+				if strings.HasSuffix(base, "/browse") {
+					commitURL = strings.TrimSuffix(base, "/browse") + "/commits/" + target
+				} else {
+					commitURL = base + "/commits/" + target
+				}
 				return f.Browser.Browse(commitURL)
 			}
 
-			// Anything else: open src/<currentBranch>/<target>
+			// Anything else: open the file/path in the source browser.
+			// Server: {repoWebURL}/{path}?at=refs/heads/{branch}
+			// Cloud:  {repoWebURL}/src/{branch}/{path}
 			branch := currentBranchForBrowse(f)
 			if branch == "" {
 				branch = "main"
 			}
-			srcURL := strings.TrimRight(repoWebURL, "/") + "/src/" + branch + "/" + target
+			base := strings.TrimRight(repoWebURL, "/")
+			var srcURL string
+			if strings.HasSuffix(base, "/browse") {
+				srcURL = base + "/" + strings.TrimLeft(target, "/") + "?at=refs/heads/" + branch
+			} else {
+				srcURL = base + "/src/" + branch + "/" + strings.TrimLeft(target, "/")
+			}
 			return f.Browser.Browse(srcURL)
 		},
 	}

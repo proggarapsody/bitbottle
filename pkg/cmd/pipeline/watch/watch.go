@@ -12,12 +12,15 @@ import (
 )
 
 // terminalStates are pipeline states that signal completion.
+// The Cloud adapter flattens "COMPLETED" into its result name
+// ("SUCCESSFUL", "FAILED", "STOPPED", "EXPIRED", "ERROR"), so
+// we match on those result names, not on "COMPLETED".
 var terminalStates = map[string]bool{
-	"COMPLETED": true,
-	"FAILED":    true,
-	"STOPPED":   true,
-	"EXPIRED":   true,
-	"ERROR":     true,
+	"SUCCESSFUL": true,
+	"FAILED":     true,
+	"STOPPED":    true,
+	"EXPIRED":    true,
+	"ERROR":      true,
 }
 
 // Options holds parsed flags for `pipeline watch`.
@@ -79,7 +82,7 @@ func watchRun(f *factory.Factory, opts *Options) error {
 		}
 
 		if terminalStates[pl.State] {
-			if pl.State == "COMPLETED" {
+			if pl.State == "SUCCESSFUL" {
 				return nil
 			}
 			return fmt.Errorf("pipeline ended with state: %s", pl.State)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 // wireInboxPR is the shape of items from the Server inbox pull-requests endpoint
@@ -74,62 +75,58 @@ func (c *Client) ListMyPRs(ns, slug string) ([]backend.MyPREntry, error) {
 }
 
 func (c *Client) listInboxPRs() ([]backend.MyPREntry, error) {
-	path := "/inbox/pull-requests?start=0&limit=50"
-	body, err := c.getBytes(path)
-	if err != nil {
-		return nil, err
-	}
-	var page PagedResponse[wireInboxPR]
-	if err := json.Unmarshal(body, &page); err != nil {
-		return nil, err
-	}
-	out := make([]backend.MyPREntry, 0, len(page.Values))
-	for _, w := range page.Values {
-		webURL := ""
-		if len(w.Links.Self) > 0 {
-			webURL = w.Links.Self[0].Href
+	path := "/inbox/pull-requests?limit=50"
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.MyPREntry, error) {
+		var page PagedResponse[wireInboxPR]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
 		}
-		key := w.ToRef.Repository.Project.Key
-		repoSlug := w.ToRef.Repository.Slug
-		entry := backend.MyPREntry{
-			PullRequest: backend.PullRequest{
-				ID:    w.ID,
-				Title: w.Title,
-				State: w.State,
-				Author: backend.User{
-					Slug:        w.Author.User.Slug,
-					DisplayName: w.Author.User.DisplayName,
+		out := make([]backend.MyPREntry, 0, len(page.Values))
+		for _, w := range page.Values {
+			webURL := ""
+			if len(w.Links.Self) > 0 {
+				webURL = w.Links.Self[0].Href
+			}
+			key := w.ToRef.Repository.Project.Key
+			repoSlug := w.ToRef.Repository.Slug
+			entry := backend.MyPREntry{
+				PullRequest: backend.PullRequest{
+					ID:    w.ID,
+					Title: w.Title,
+					State: w.State,
+					Author: backend.User{
+						Slug:        w.Author.User.Slug,
+						DisplayName: w.Author.User.DisplayName,
+					},
+					WebURL:         webURL,
+					HeadCommitHash: w.FromRef.LatestCommit,
 				},
-				WebURL:         webURL,
-				HeadCommitHash: w.FromRef.LatestCommit,
-			},
-			Repo: fmt.Sprintf("%s/%s", key, repoSlug),
-			Role: "REVIEWER",
+				Repo: fmt.Sprintf("%s/%s", key, repoSlug),
+				Role: "REVIEWER",
+			}
+			out = append(out, entry)
 		}
-		out = append(out, entry)
-	}
-	return out, nil
+		return out, nil
+	}, 0)
 }
 
 func (c *Client) listAuthorPRs(ns, slug, userSlug string) ([]backend.MyPREntry, error) {
-	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests?author=%s&state=OPEN&start=0&limit=50", ns, slug, userSlug)
-	body, err := c.getBytes(path)
-	if err != nil {
-		return nil, err
-	}
-	var page PagedResponse[wirePR]
-	if err := json.Unmarshal(body, &page); err != nil {
-		return nil, err
-	}
-	out := make([]backend.MyPREntry, 0, len(page.Values))
-	for _, w := range page.Values {
-		pr := w.toDomain()
-		entry := backend.MyPREntry{
-			PullRequest: pr,
-			Repo:        fmt.Sprintf("%s/%s", ns, slug),
-			Role:        "AUTHOR",
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests?author=%s&state=OPEN&limit=50", ns, slug, userSlug)
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.MyPREntry, error) {
+		var page PagedResponse[wirePR]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
 		}
-		out = append(out, entry)
-	}
-	return out, nil
+		out := make([]backend.MyPREntry, 0, len(page.Values))
+		for _, w := range page.Values {
+			pr := w.toDomain()
+			entry := backend.MyPREntry{
+				PullRequest: pr,
+				Repo:        fmt.Sprintf("%s/%s", ns, slug),
+				Role:        "AUTHOR",
+			}
+			out = append(out, entry)
+		}
+		return out, nil
+	}, 0)
 }

@@ -137,7 +137,7 @@ bitbottle browse [PROJECT/REPO] src/main.go      # file in current branch
 bitbottle pipeline watch PROJECT/REPO UUID [--interval 5]
 ```
 
-MCP tools: `status` (top-level dashboard), `pr_status`, `pipeline_watch`.
+MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`.
 
 ## PR review quick-reference
 
