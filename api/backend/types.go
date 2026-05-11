@@ -223,6 +223,35 @@ type AddPRCommentInput struct {
 	Parent *int
 }
 
+// SubmitReviewInput bundles the review action, optional top-level body, and
+// optional inline comments for a compound `pr review` call. The adapter
+// posts the body comment first (if any), then each inline comment in order,
+// then applies the action — so partial failures surface at the first
+// failing step rather than corrupting the review state silently.
+//
+// Action is one of:
+//   - "approve"          — calls ApprovePR after comments
+//   - "request_changes"  — calls RequestChangesPR (Cloud only; Server returns
+//     a typed *DomainError with Kind=ErrUnsupportedOnHost)
+//   - "comment"          — comment-only review; no action call after the
+//     comments are posted
+type SubmitReviewInput struct {
+	Action string
+	Body   string
+	Inline []SubmitReviewInline
+}
+
+// SubmitReviewInline is one inline comment in a compound review. The shape
+// mirrors PRCommentInline + the comment body, so the adapter can splat each
+// entry into AddPRComment without an intermediate translation.
+type SubmitReviewInline struct {
+	Path      string
+	Line      int
+	StartLine int    // 0 = single-line
+	Side      string // "new" or "old"; defaults to "new" when empty
+	Body      string
+}
+
 // CommitStatus is a build / CI status reported against a commit hash.
 type CommitStatus struct {
 	Key         string
