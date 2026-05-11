@@ -139,6 +139,12 @@ bitbottle pr comment add 42 --parent 1234 --body "agreed"                # reply
 bitbottle pr comment edit   42 1234 --body "updated"
 bitbottle pr comment delete 42 1234
 bitbottle pr comment resolve 42 1234                                     # Bitbucket Cloud only
+
+# Submit a compound review (body + inline comments + action) in one call
+bitbottle pr review 42 --approve --body "lgtm overall"
+bitbottle pr review 42 --request-changes --body "see comments" \
+    --inline pkg/foo.go:88:please rename                                  # request-changes is Cloud only
+bitbottle pr review 42 --comment --inline pkg/foo.go:10-15:extract helper # comment-only review
 ```
 
 ### Repos & Branches
