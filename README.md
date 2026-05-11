@@ -145,6 +145,11 @@ bitbottle pr review 42 --approve --body "lgtm overall"
 bitbottle pr review 42 --request-changes --body "see comments" \
     --inline pkg/foo.go:88:please rename                                  # request-changes is Cloud only
 bitbottle pr review 42 --comment --inline pkg/foo.go:10-15:extract helper # comment-only review
+
+# PR activity event stream (approvals, comments, updates, merges)
+bitbottle pr activity 42
+bitbottle pr activity 42 --limit 20
+bitbottle pr activity 42 --json type,actor,createdAt,detail
 ```
 
 ### Repos & Branches

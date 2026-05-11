@@ -572,3 +572,14 @@ type MergeCheck struct {
 
 // MergeCheckInput is an alias of MergeCheck used on the write side.
 type MergeCheckInput = MergeCheck
+
+// PRActivityEvent is one event in the pull-request activity stream.
+// Type is a normalised event kind: "approval", "unapproval", "comment",
+// "update", "merge", "declined", "rescoped". Detail carries the raw
+// sub-object so callers can surface backend-specific fields via --json.
+type PRActivityEvent struct {
+	Type      string
+	Actor     User
+	CreatedAt time.Time
+	Detail    map[string]any
+}

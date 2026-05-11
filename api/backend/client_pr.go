@@ -111,6 +111,11 @@ type PRCommentResolver interface {
 	ResolvePRComment(ns, slug string, id, commentID int) error
 }
 
+// PRActivityReader reads the activity event stream for a pull request.
+type PRActivityReader interface {
+	GetPRActivity(ns, slug string, id int, limit int) ([]PRActivityEvent, error)
+}
+
 // FeaturePRCommentResolve names the inline-comment resolution capability
 // for typed-error reporting via AsPRCommentResolver.
 const FeaturePRCommentResolve Feature = "pr-comment-resolve"

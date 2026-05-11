@@ -90,7 +90,7 @@ Current state of every command area against gh feature parity:
 | `pr comment edit / delete` | ✅ | `PUT/DELETE .../comments/{id}`. Server fetches comment `version` on demand for optimistic-locking. — RV3 of scope **RV** |
 | `pr comment reply / resolve` | ✅ | Reply via `--parent COMMENT_ID` on `pr comment add`. `pr comment resolve` writes Cloud's `resolution.type=resolved`; Server returns typed `host.unsupported` (resolution lives on tasks, separate scope). — RV3 of scope **RV** |
 | `pr review --approve\|--request-changes\|--comment --body --inline ...` | ✅ | Compound review in one call (gh parity). Cloud sequences body → inline → action; Server mirrors but returns typed `host.unsupported` for `--request-changes`. — RV4 of scope **RV** |
-| `pr activity PR_ID` | 🔲 | PR event stream (`/pullrequests/{id}/activity`) — scope **RV** |
+| `pr activity PR_ID` | ✅ | PR event stream (`/pullrequests/{id}/activity`) — scope **RV** |
 | `pr checks PR_ID` | 🔲 | CI status for PR head commit — scope **GHP** |
 | `pr update-branch PR_ID` | 🔲 | Sync PR head with base (the action our `pr.merge.behind` hint promises) — scope **GHP** |
 | `pr reopen PR_ID` | ✅ | Reverse `pr decline` (Bitbucket Server / DC only — Cloud has no reopen primitive, BCLOUD-23807) |
@@ -267,7 +267,7 @@ Current state of every command area against gh feature parity:
 | O | **Issues** | `issue list`, `issue view`, `issue create`, `issue close` | Cloud | 3 | ✅ |
 | BP | **Branch Protect** | `branch protect list`, `branch protect create`, `branch protect delete` | Server/DC | 2 | ✅ |
 | EX | **Error UX** | Centralised, human-readable errors with actionable hints across every command | N/A | DX | ✅ |
-| RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🟡 RV1+RV2+RV3+RV4 ✅; RV5-RV6 🔲 |
+| RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | 🟡 RV1+RV2+RV3+RV4+RV5 ✅; RV6 🔲 |
 | SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | ✅ |
 | CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | ✅ |
 | GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |

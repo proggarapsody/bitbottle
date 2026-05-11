@@ -26,6 +26,9 @@ bitbottle pr comment add  42 --body "agreed" --parent 1234     # reply to thread
 bitbottle pr comment edit 42 1234 --body "..."
 bitbottle pr comment delete 42 1234
 bitbottle pr comment resolve 42 1234                          # Cloud only
+bitbottle pr activity 42                                      # PR event stream
+bitbottle pr activity 42 --limit 20
+bitbottle pr activity 42 --json type,actor,createdAt,detail   # structured output
 ```
 
 The `pr comment list` output includes inline review comments (file:line
@@ -42,6 +45,12 @@ pass `--side old` to comment on the removed/old side of the diff.
 `pr comment resolve` is Cloud-only — Server/DC returns a typed
 `host.unsupported` because resolution lives on tasks, not regular
 comments.
+
+`pr activity` streams all PR events (approvals, unapprovals, comments,
+updates, merges, declines, rescopes) from both backends. The TTY table
+shows TIME (relative), TYPE, ACTOR. Use `--json type,actor,createdAt,detail`
+for structured output; `detail` carries the raw backend sub-object.
+`--limit N` caps results (default: no limit). MCP tool: `get_pr_activity`.
 
 ## Flag reality check
 
