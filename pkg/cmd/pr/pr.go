@@ -40,6 +40,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRRequestChanges(f))
 	cmd.AddCommand(NewCmdPRReview(f))
 	cmd.AddCommand(NewCmdPRComment(f))
+	cmd.AddCommand(NewCmdPRActivity(f))
 	return cmd
 }
 
