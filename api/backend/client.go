@@ -34,6 +34,7 @@ type Client interface {
 	PRUnapprover
 	PRReadier
 	PRReviewRequester
+	PRReviewer
 	UserGetter
 	CommitLister
 	CommitReader

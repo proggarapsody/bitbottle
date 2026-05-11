@@ -48,6 +48,7 @@ type FakeClient struct {
 	UnapprovePRFn   func(ns, slug string, id int) error
 	ReadyPRFn       func(ns, slug string, id int) error
 	RequestReviewFn func(ns, slug string, id int, users []string) error
+	SubmitReviewFn  func(ns, slug string, id int, in backend.SubmitReviewInput) error
 
 	// Pipeline methods (Cloud-only; satisfies backend.PipelineClient when set)
 	ListPipelinesFn          func(ns, slug string, limit int) ([]backend.Pipeline, error)
@@ -349,6 +350,16 @@ func (c *FakeClient) RequestReview(ns, slug string, id int, users []string) erro
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RequestReview; set RequestReviewFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) SubmitReview(ns, slug string, id int, in backend.SubmitReviewInput) error {
+	if c.SubmitReviewFn != nil {
+		return c.SubmitReviewFn(ns, slug, id, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SubmitReview; set SubmitReviewFn in your test")
 	}
 	return nil
 }
