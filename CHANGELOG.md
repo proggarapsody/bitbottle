@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.0](https://github.com/proggarapsody/bitbottle/compare/v1.27.0...v1.28.0) (2026-05-11)
+
+
+### Features
+
+* **ghp:** pr checks / pr update-branch / pr status / status / browse / pipeline watch ([#155](https://github.com/proggarapsody/bitbottle/issues/155)) ([f6dbb49](https://github.com/proggarapsody/bitbottle/commit/f6dbb49a5511433f46b2a9fd9ed9080ca36ec5cf))
+
 ## [1.27.0](https://github.com/proggarapsody/bitbottle/compare/v1.26.0...v1.27.0) (2026-05-11)
 
 
