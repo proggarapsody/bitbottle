@@ -80,7 +80,7 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
-| `commit` | `log` `view` |
+| `commit` | `log` `view` `status` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `workspace` | `list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
@@ -378,6 +378,33 @@ bitbottle --hostname git.example.com code-insights merge-check delete \
 
 Invoking any `code-insights` command against a Bitbucket Cloud host returns
 the typed `host.unsupported` error.
+
+### Commit Comments
+
+Add and manage review-style comments on individual commits. Both Bitbucket
+Cloud and Server / Data Center are supported.
+
+```bash
+# List all comments on a commit
+bitbottle commit comment list MYPROJ/my-service abc1234
+
+# Add a comment
+bitbottle commit comment add MYPROJ/my-service abc1234 --body "LGTM"
+
+# Edit an existing comment (COMMENT_ID from list --json id)
+bitbottle commit comment edit MYPROJ/my-service abc1234 1234 --body "Updated text"
+
+# Delete a comment
+bitbottle commit comment delete MYPROJ/my-service abc1234 1234
+
+# Structured output
+bitbottle commit comment list MYPROJ/my-service abc1234 --json id,author,body
+bitbottle commit comment list MYPROJ/my-service abc1234 --jq '.[].body'
+```
+
+On Bitbucket Server / Data Center, `edit` and `delete` use optimistic
+concurrency (fetches the current `version` before writing). A 409 Conflict
+means the comment changed between calls — retry.
 
 ### Raw API
 
