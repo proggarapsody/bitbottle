@@ -1948,13 +1948,14 @@ func (h *handlers) listCommitComments(_ context.Context, req mcplib.CallToolRequ
 	if err != nil {
 		return errResultErr(err), nil
 	}
+	limit := req.GetInt("limit", 0)
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
 		return errResultErr(err), nil
 	}
 
-	cmts, err := client.ListCommitComments(project, slug, hash)
+	cmts, err := client.ListCommitComments(project, slug, hash, limit)
 	if err != nil {
 		return errResultErr(err), nil
 	}

@@ -65,7 +65,7 @@ type FakeClient struct {
 	GetCommitFn   func(ns, slug, hash string) (backend.Commit, error)
 
 	// Commit comment methods
-	ListCommitCommentsFn  func(ns, slug, hash string) ([]backend.CommitComment, error)
+	ListCommitCommentsFn  func(ns, slug, hash string, limit int) ([]backend.CommitComment, error)
 	AddCommitCommentFn    func(ns, slug, hash string, in backend.AddCommitCommentInput) (backend.CommitComment, error)
 	EditCommitCommentFn   func(ns, slug, hash string, commentID int, body string) (backend.CommitComment, error)
 	DeleteCommitCommentFn func(ns, slug, hash string, commentID int) error
@@ -473,9 +473,9 @@ func (c *FakeClient) GetCommit(ns, slug, hash string) (backend.Commit, error) {
 	return backend.Commit{}, nil
 }
 
-func (c *FakeClient) ListCommitComments(ns, slug, hash string) ([]backend.CommitComment, error) {
+func (c *FakeClient) ListCommitComments(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
 	if c.ListCommitCommentsFn != nil {
-		return c.ListCommitCommentsFn(ns, slug, hash)
+		return c.ListCommitCommentsFn(ns, slug, hash, limit)
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListCommitComments; set ListCommitCommentsFn in your test")

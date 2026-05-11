@@ -39,7 +39,7 @@ func (w wireServerCommitComment) toDomain() backend.CommitComment {
 
 // ListCommitComments lists all comments on a commit using the standard
 // Bitbucket Server paged response. Uses paging.Collect to handle pagination.
-func (c *Client) ListCommitComments(ns, slug, hash string) ([]backend.CommitComment, error) {
+func (c *Client) ListCommitComments(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/commits/%s/comments?limit=100", ns, slug, hash)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.CommitComment, error) {
 		var page PagedResponse[wireServerCommitComment]
@@ -51,7 +51,7 @@ func (c *Client) ListCommitComments(ns, slug, hash string) ([]backend.CommitComm
 			out = append(out, w.toDomain())
 		}
 		return out, nil
-	}, 0)
+	}, limit)
 }
 
 type wireServerAddCommitComment struct {

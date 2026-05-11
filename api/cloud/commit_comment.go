@@ -42,7 +42,7 @@ func (w wireCloudCommitComment) toDomain() backend.CommitComment {
 
 // ListCommitComments lists all comments on a commit. Cloud supports
 // pagination via the standard paged response envelope.
-func (c *Client) ListCommitComments(ns, slug, hash string) ([]backend.CommitComment, error) {
+func (c *Client) ListCommitComments(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments?pagelen=100", ns, slug, hash)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.CommitComment, error) {
 		var page cloudPagedResponse[wireCloudCommitComment]
@@ -54,7 +54,7 @@ func (c *Client) ListCommitComments(ns, slug, hash string) ([]backend.CommitComm
 			out = append(out, w.toDomain())
 		}
 		return out, nil
-	}, 0)
+	}, limit)
 }
 
 type wireCloudAddCommitComment struct {

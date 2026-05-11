@@ -28,7 +28,7 @@ func NewCmdCommitCommentList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			hash := args[1]
-			cmts, err := client.ListCommitComments(ref.Project, ref.Slug, hash)
+			cmts, err := client.ListCommitComments(ref.Project, ref.Slug, hash, 0)
 			if err != nil {
 				return err
 			}

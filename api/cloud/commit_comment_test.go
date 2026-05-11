@@ -28,7 +28,7 @@ func TestCloudClient_ListCommitComments_Single(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
-	cmts, err := client.ListCommitComments("myws", "my-repo", "abc123")
+	cmts, err := client.ListCommitComments("myws", "my-repo", "abc123", 0)
 	require.NoError(t, err)
 
 	assert.Equal(t, "/repositories/myws/my-repo/commits/abc123/comments", gotPath)
@@ -61,7 +61,7 @@ func TestCloudClient_ListCommitComments_Pagination(t *testing.T) {
 	_ = page1
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
-	cmts, err := client.ListCommitComments("myws", "my-repo", "abc123")
+	cmts, err := client.ListCommitComments("myws", "my-repo", "abc123", 0)
 	require.NoError(t, err)
 	assert.Len(t, cmts, 2)
 	assert.Equal(t, 2, callCount)
@@ -77,7 +77,7 @@ func TestCloudClient_ListCommitComments_NicknameFallback(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
-	cmts, err := client.ListCommitComments("myws", "my-repo", "abc123")
+	cmts, err := client.ListCommitComments("myws", "my-repo", "abc123", 0)
 	require.NoError(t, err)
 	require.Len(t, cmts, 1)
 	// When nickname is empty, fall back to account_id

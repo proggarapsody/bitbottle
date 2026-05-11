@@ -2688,7 +2688,7 @@ func TestSubmitPRReview_BackendErrorPropagates(t *testing.T) {
 func TestListCommitComments_ReturnsList(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
-		ListCommitCommentsFn: func(ns, slug, hash string) ([]backend.CommitComment, error) {
+		ListCommitCommentsFn: func(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
 			return []backend.CommitComment{
 				{ID: 1, Author: backend.User{Slug: "alice"}, Body: "Looks good"},
 				{ID: 2, Author: backend.User{Slug: "bob"}, Body: "Minor nit"},
@@ -2719,7 +2719,7 @@ func TestListCommitComments_MissingProject_ReturnsError(t *testing.T) {
 func TestListCommitComments_BackendError_ReturnsError(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
-		ListCommitCommentsFn: func(ns, slug, hash string) ([]backend.CommitComment, error) {
+		ListCommitCommentsFn: func(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
 			return nil, errors.New("connection refused")
 		},
 	}

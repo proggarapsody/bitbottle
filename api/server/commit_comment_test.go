@@ -29,7 +29,7 @@ func TestServerClient_ListCommitComments(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
 
-	cmts, err := client.ListCommitComments("MYPROJ", "my-repo", "deadbeef")
+	cmts, err := client.ListCommitComments("MYPROJ", "my-repo", "deadbeef", 0)
 	require.NoError(t, err)
 
 	assert.Equal(t, "/rest/api/1.0/projects/MYPROJ/repos/my-repo/commits/deadbeef/comments", gotPath)
@@ -69,7 +69,7 @@ func TestServerClient_ListCommitComments_Pagination(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
 
-	cmts, err := client.ListCommitComments("MYPROJ", "my-repo", "deadbeef")
+	cmts, err := client.ListCommitComments("MYPROJ", "my-repo", "deadbeef", 0)
 	require.NoError(t, err)
 	assert.Len(t, cmts, 2)
 	assert.Equal(t, 2, callCount)
