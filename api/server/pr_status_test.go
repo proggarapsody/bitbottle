@@ -44,8 +44,8 @@ func makeServerPR(id int, title string) map[string]any {
 			"latestCommit": "abc1234",
 		},
 		"toRef": map[string]any{
-			"id":           "refs/heads/main",
-			"displayId":    "main",
+			"id":        "refs/heads/main",
+			"displayId": "main",
 		},
 		"links": map[string]any{
 			"self": []map[string]any{
@@ -91,10 +91,10 @@ func TestServerClient_ListMyPRs_ReturnsReviewerPRsFromInbox(t *testing.T) {
 
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		switch {
-		case r.URL.Path == "/inbox/pull-requests":
+		switch r.URL.Path {
+		case "/inbox/pull-requests":
 			_, _ = w.Write(buildServerPagedPRs([]map[string]any{inboxPR}))
-		case r.URL.Path == "/users/~":
+		case "/users/~":
 			_, _ = w.Write([]byte(`{"slug":"alice","displayName":"Alice"}`))
 		default:
 			_, _ = w.Write(buildServerPagedPRs([]map[string]any{authorPR}))
@@ -138,10 +138,10 @@ func TestServerClient_ListMyPRs_AuthorWinsOnConflict(t *testing.T) {
 
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		switch {
-		case r.URL.Path == "/inbox/pull-requests":
+		switch r.URL.Path {
+		case "/inbox/pull-requests":
 			_, _ = w.Write(buildServerPagedPRs([]map[string]any{inboxPR}))
-		case r.URL.Path == "/users/~":
+		case "/users/~":
 			_, _ = w.Write([]byte(`{"slug":"alice","displayName":"Alice"}`))
 		default:
 			_, _ = w.Write(buildServerPagedPRs([]map[string]any{authorPR}))

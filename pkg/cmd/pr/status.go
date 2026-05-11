@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -70,17 +69,4 @@ func printSection(out interface{ Write([]byte) (int, error) }, heading string, e
 	if !found {
 		fmt.Fprintf(out, "  (none)\n")
 	}
-}
-
-// resolveRepoRef is a helper for commands that need a RepoRef but not a PR ID.
-func resolveRepoRef(f *factory.Factory, args []string, hostname string) (bbrepo.RepoRef, backend.Client, error) {
-	ref, err := factory.ResolveTarget(f, args, hostname)
-	if err != nil {
-		return bbrepo.RepoRef{}, nil, err
-	}
-	client, err := f.Backend(ref.Host)
-	if err != nil {
-		return bbrepo.RepoRef{}, nil, err
-	}
-	return ref, client, nil
 }

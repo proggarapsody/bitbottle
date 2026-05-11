@@ -11,9 +11,9 @@ import (
 // wireCloudDashboardPR is the shape of each item from the Cloud dashboard
 // pull-requests endpoint.
 type wireCloudDashboardPR struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
-	State string `json:"state"`
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	State  string `json:"state"`
 	Source struct {
 		Repository struct {
 			FullName string `json:"full_name"`
