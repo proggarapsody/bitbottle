@@ -468,6 +468,37 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 	)
 
 	s.AddTool(
+		mcplib.NewTool("submit_pr_review",
+			mcplib.WithDescription("Submit a compound pull-request review (top-level body + inline comments + an action). Action defaults to \"comment\" when body or inline_comments is set without an explicit action; \"request_changes\" is Bitbucket Cloud only and surfaces host.unsupported on Server."),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+			mcplib.WithString("action",
+				mcplib.Description(`Review action: "approve", "request_changes", or "comment" (default)`),
+			),
+			mcplib.WithString("body",
+				mcplib.Description("Top-level review body comment"),
+			),
+			mcplib.WithArray("inline_comments",
+				mcplib.Description("Inline review comments anchored to file:line in the diff. Each item: {path, line, body}; optional start_line for ranges (Cloud only); optional side (\"new\" or \"old\", default \"new\")."),
+				mcplib.Items(map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"path":       map[string]any{"type": "string"},
+						"line":       map[string]any{"type": "number"},
+						"body":       map[string]any{"type": "string"},
+						"start_line": map[string]any{"type": "number"},
+						"side":       map[string]any{"type": "string", "enum": []string{"new", "old"}},
+					},
+					"required": []string{"path", "line", "body"},
+				}),
+			),
+		),
+		h.submitPRReview,
+	)
+
+	s.AddTool(
 		mcplib.NewTool("list_pr_comments",
 			mcplib.WithDescription("List comments on a pull request, including inline (file:line) review comments and replies"),
 			optHostname,

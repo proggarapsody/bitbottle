@@ -72,6 +72,15 @@ type PRChangesRequester interface {
 	RequestChangesPR(ns, slug string, id int) error
 }
 
+// PRReviewer submits a compound review on a pull request — an optional
+// top-level body comment, zero or more inline comments, and a review action
+// (approve / request_changes / comment). The adapter sequences the writes
+// internally so callers express "what the review looks like" rather than
+// "how to assemble it".
+type PRReviewer interface {
+	SubmitReview(ns, slug string, id int, in SubmitReviewInput) error
+}
+
 // PRCommentLister lists top-level comments on a pull request.
 type PRCommentLister interface {
 	ListPRComments(ns, slug string, id int) ([]PRComment, error)

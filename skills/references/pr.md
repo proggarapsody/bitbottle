@@ -16,6 +16,9 @@ bitbottle pr decline   42
 bitbottle pr ready     42                       # draft → ready
 bitbottle pr request-review  42 --reviewer alice [--reviewer bob]
 bitbottle pr request-changes 42                 # Cloud only
+bitbottle pr review 42 --approve                     # approve + optional body/inline comments
+bitbottle pr review 42 --request-changes             # Cloud only; --body "see comments"
+bitbottle pr review 42 --comment --body "x" --inline pkg/foo.go:42:nit    # PATH:LINE:BODY
 bitbottle pr comment list 42 [--inline]              # --inline filters to file:line review comments
 bitbottle pr comment add  42 --body "x"
 bitbottle pr comment add  42 --body "nit" --inline pkg/foo.go:88 [--side new|old]

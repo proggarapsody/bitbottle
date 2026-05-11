@@ -118,6 +118,27 @@ When you see one of these messages, you know the fix:
   is partly undocumented; these commands are experimental. Verify the
   report key matches an existing Code Insights report on the same repo.
 
+## PR review quick-reference
+
+`pr review` bundles a body + inline comments + an action into one call:
+
+```bash
+# Approve with body
+bitbottle pr review 42 --approve --body "lgtm"
+
+# Comment-only review with inline comments (PATH:LINE:BODY, repeatable)
+bitbottle pr review 42 --comment \
+  --inline pkg/foo.go:88:please rename \
+  --inline pkg/bar.go:10-15:extract helper          # ranges Cloud only
+
+# Request changes (Cloud only — Server returns host.unsupported)
+bitbottle pr review 42 --request-changes --body "see comments"
+```
+
+If `--body` or `--inline` is given without an explicit action flag the
+review defaults to `--comment`. MCP tool: `submit_pr_review`
+(`{action, body, inline_comments[]}`).
+
 ## Code Insights quick-reference _(Server / DC only)_
 
 ```bash
