@@ -25,8 +25,9 @@ type wirePR struct {
 		} `json:"user"`
 	} `json:"author"`
 	FromRef struct {
-		ID        string `json:"id"`
-		DisplayID string `json:"displayId"`
+		ID           string `json:"id"`
+		DisplayID    string `json:"displayId"`
+		LatestCommit string `json:"latestCommit"`
 	} `json:"fromRef"`
 	ToRef struct {
 		ID        string `json:"id"`
@@ -54,9 +55,10 @@ func (w wirePR) toDomain() backend.PullRequest {
 			Slug:        w.Author.User.Slug,
 			DisplayName: w.Author.User.DisplayName,
 		},
-		FromBranch: w.FromRef.DisplayID,
-		ToBranch:   w.ToRef.DisplayID,
-		WebURL:     webURL,
+		FromBranch:     w.FromRef.DisplayID,
+		ToBranch:       w.ToRef.DisplayID,
+		WebURL:         webURL,
+		HeadCommitHash: w.FromRef.LatestCommit,
 	}
 }
 

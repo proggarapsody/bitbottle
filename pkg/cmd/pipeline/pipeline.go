@@ -10,6 +10,7 @@ import (
 	cmdSteps "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/steps"
 	cmdVariable "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/variable"
 	cmdView "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/view"
+	cmdWatch "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/watch"
 )
 
 // NewCmdPipeline builds the root `pipeline` command. Subcommands live in their
@@ -32,5 +33,6 @@ directory.`,
 	cmd.AddCommand(cmdSteps.NewCmdSteps(f, nil))
 	cmd.AddCommand(cmdLogs.NewCmdLogs(f, nil))
 	cmd.AddCommand(cmdVariable.NewCmdVariable(f))
+	cmd.AddCommand(cmdWatch.NewCmdWatch(f, nil))
 	return cmd
 }

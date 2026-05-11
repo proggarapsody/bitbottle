@@ -29,6 +29,11 @@ bitbottle pr comment resolve 42 1234                          # Cloud only
 bitbottle pr activity 42                                      # PR event stream
 bitbottle pr activity 42 --limit 20
 bitbottle pr activity 42 --json type,actor,createdAt,detail   # structured output
+bitbottle pr checks    42                                      # list CI statuses for the PR head commit
+bitbottle pr checks    42 --watch [--interval 10]             # poll until all checks settle
+bitbottle pr update-branch 42                                  # rebase/sync PR branch onto target (Cloud merge commit; Server rebase)
+bitbottle pr status [PROJ/repo]                               # show your open PRs split by role (AUTHOR / REVIEWER)
+bitbottle pr reopen 42                                        # reopen a declined/closed PR
 ```
 
 The `pr comment list` output includes inline review comments (file:line

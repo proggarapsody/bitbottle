@@ -67,6 +67,8 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
 	cmd.AddCommand(searchcmd.NewCmdSearch(f))
 	cmd.AddCommand(skill.NewCmdSkill(f))
+	cmd.AddCommand(NewCmdStatus(f))
+	cmd.AddCommand(NewCmdBrowse(f))
 
 	// Self-registered commands (legacy fixed list above; new commands use
 	// cmdregistry instead of editing this file).

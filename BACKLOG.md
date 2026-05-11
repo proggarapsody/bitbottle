@@ -91,10 +91,10 @@ Current state of every command area against gh feature parity:
 | `pr comment reply / resolve` | ✅ | Reply via `--parent COMMENT_ID` on `pr comment add`. `pr comment resolve` writes Cloud's `resolution.type=resolved`; Server returns typed `host.unsupported` (resolution lives on tasks, separate scope). — RV3 of scope **RV** |
 | `pr review --approve\|--request-changes\|--comment --body --inline ...` | ✅ | Compound review in one call (gh parity). Cloud sequences body → inline → action; Server mirrors but returns typed `host.unsupported` for `--request-changes`. — RV4 of scope **RV** |
 | `pr activity PR_ID` | ✅ | PR event stream (`/pullrequests/{id}/activity`) — scope **RV** |
-| `pr checks PR_ID` | 🔲 | CI status for PR head commit — scope **GHP** |
-| `pr update-branch PR_ID` | 🔲 | Sync PR head with base (the action our `pr.merge.behind` hint promises) — scope **GHP** |
+| `pr checks PR_ID` | ✅ | CI status for PR head commit — scope **GHP** |
+| `pr update-branch PR_ID` | ✅ | Sync PR head with base (the action our `pr.merge.behind` hint promises) — scope **GHP** |
 | `pr reopen PR_ID` | ✅ | Reverse `pr decline` (Bitbucket Server / DC only — Cloud has no reopen primitive, BCLOUD-23807) |
-| `pr status` | 🔲 | Cross-repo "PRs on my plate" (assigned / review-requested / mine) — scope **GHP** |
+| `pr status` | ✅ | Cross-repo "PRs on my plate" (assigned / review-requested / mine) — scope **GHP** |
 
 ### Branch
 
@@ -118,7 +118,7 @@ Current state of every command area against gh feature parity:
 | `pipeline variable list` | ✅ | |
 | `pipeline variable set` | ✅ | Upsert by KEY; `--body=-` reads stdin |
 | `pipeline variable delete` | ✅ | By KEY (UUID lookup is internal) |
-| `pipeline watch UUID` | 🔲 | Poll until terminal state, stream step transitions — scope **GHP** |
+| `pipeline watch UUID` | ✅ | Poll until terminal state, stream step transitions — scope **GHP** |
 
 ### Commits
 
@@ -235,13 +235,13 @@ Current state of every command area against gh feature parity:
 | Command | Status | Notes |
 |---|---|---|
 | `bitbottle context [--json]` | ✅ | One-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind. Replaces 3-4 calls for agents. — scope **CTX** |
-| `bitbottle status` | 🔲 | Cross-repo "what's on my plate": review requests, mentions, assigned issues. (gh `status` analogue, workspace-scoped on Cloud.) — scope **GHP** |
+| `bitbottle status` | ✅ | Cross-repo "what's on my plate": review requests, mentions, assigned issues. (gh `status` analogue, workspace-scoped on Cloud.) — scope **GHP** |
 
 ### Top-level / Web
 
 | Command | Status | Notes |
 |---|---|---|
-| `bitbottle browse [PATH\|NUMBER]` | 🔲 | Unified web shortcut (commit/PR/issue/path) — scope **GHP** |
+| `bitbottle browse [PATH\|NUMBER]` | ✅ | Unified web shortcut (commit/PR/issue/path) — scope **GHP** |
 
 ---
 
@@ -270,7 +270,7 @@ Current state of every command area against gh feature parity:
 | RV | **Code-Review Primitives** | `repo file get`, `repo tree`, `pr review`, `pr comment {add\|edit\|delete\|reply\|resolve} --inline`, `pr comment list --inline`, `pr activity`, `commit comment *` | Both | 1 | ✅ RV1+RV2+RV3+RV4+RV5+RV6 ✅ |
 | SR | **Code Search** | `search code QUERY [--workspace W]` | Cloud | 2 | ✅ |
 | CTX | **Context Primitive** | `context --json` (one-call orientation: host + repo + branch + user + scopes + default-branch + ahead/behind) | N/A | DX | ✅ |
-| GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | 🔲 |
+| GHP | **gh-Parity Gaps** | `pr checks`, `pr update-branch`, `pr reopen`, `pr status`, `status`, `browse`, `pipeline watch` | Both | 2 | ✅ |
 | OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | ✅ |
 | CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | ✅ |
 | DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | 🔲 |

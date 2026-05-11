@@ -137,6 +137,16 @@ func AsPRCommentResolver(c Client, host string) (PRCommentResolver, error) {
 	return r, nil
 }
 
+// PRBranchUpdater syncs a PR's source branch with its base branch.
+type PRBranchUpdater interface {
+	UpdatePRBranch(ns, slug string, prID int) error
+}
+
+// PRStatusLister returns the authenticated user's open PRs across all repos.
+type PRStatusLister interface {
+	ListMyPRs(ns, slug string) ([]MyPREntry, error)
+}
+
 // FeaturePRReopen names the PR-reopen capability for typed-error reporting.
 // Bitbucket Cloud has no reopen primitive (BCLOUD-23807), so callers gate
 // the feature behind AsPRReopener.
