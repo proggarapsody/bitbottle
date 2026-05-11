@@ -70,6 +70,9 @@ type FakeClient struct {
 	EditPRCommentFn   func(ns, slug string, id, commentID int, body string) (backend.PRComment, error)
 	DeletePRCommentFn func(ns, slug string, id, commentID int) error
 
+	// PR activity
+	GetPRActivityFn func(ns, slug string, id int, limit int) ([]backend.PRActivityEvent, error)
+
 	// Commit status methods
 	ListCommitStatusesFn func(ns, slug, hash string) ([]backend.CommitStatus, error)
 
@@ -502,6 +505,16 @@ func (c *FakeClient) DeletePRComment(ns, slug string, id, commentID int) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeletePRComment; set DeletePRCommentFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) GetPRActivity(ns, slug string, id int, limit int) ([]backend.PRActivityEvent, error) {
+	if c.GetPRActivityFn != nil {
+		return c.GetPRActivityFn(ns, slug, id, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPRActivity; set GetPRActivityFn in your test")
+	}
+	return nil, nil
 }
 
 func (c *FakeClient) ListCommitStatuses(ns, slug, hash string) ([]backend.CommitStatus, error) {

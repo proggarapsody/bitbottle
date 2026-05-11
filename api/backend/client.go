@@ -42,6 +42,7 @@ type Client interface {
 	PRCommentAdder
 	PRCommentEditor
 	PRCommentDeleter
+	PRActivityReader
 	CommitStatusLister
 	WebhookLister
 	WebhookReader
