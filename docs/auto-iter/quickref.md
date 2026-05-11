@@ -52,7 +52,7 @@ Default to **Sonnet**. Escalate to **Opus** only for genuinely judgment-heavy ph
 | §2 TDD implementation | **Sonnet** (subagent) | Code generation. Dispatch via `Task` tool with `isolation: "worktree"` — keeps orchestrator context light. Opus only if scope is genuinely complex (rare). |
 | §2 doc sync | Sonnet | Mechanical doc updates per §5 doc-sync table |
 | §2 pre-merge gate | Sonnet | Reads CI status, runs grep checks |
-| §6 design-judge | **Haiku** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Returns findings; cheap focused review. |
+| §6 design-judge | **Opus** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Returns findings; runs in parallel with CI. |
 | §2 PR open + CI wait | Sonnet | Polling |
 | §2 halts (HALT 1, HALT 2) | Sonnet | Frame the question, wait for tap |
 | §2 fix-after-CI-red | **Sonnet** (subagent) | Targeted code change against existing branch |
