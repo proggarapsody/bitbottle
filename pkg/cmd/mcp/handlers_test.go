@@ -2540,3 +2540,145 @@ func TestUpdateIssue_ServerBackend_EmitsUnsupportedEnvelope(t *testing.T) {
 	assert.Equal(t, string(backend.CodeHostUnsupported), env.Code)
 	assert.Equal(t, "issues", env.Feature)
 }
+
+// ---- submit_pr_review ----
+
+func TestSubmitPRReview_ApproveWithBody(t *testing.T) {
+	t.Parallel()
+	var got backend.SubmitReviewInput
+	fake := &testhelpers.FakeClient{
+		SubmitReviewFn: func(ns, slug string, id int, in backend.SubmitReviewInput) error {
+			got = in
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.submitPRReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"action":  "approve",
+		"body":    "lgtm",
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	assert.Equal(t, "approve", got.Action)
+	assert.Equal(t, "lgtm", got.Body)
+	assertJSONContains(t, result, "{}", "")
+}
+
+func TestSubmitPRReview_DefaultsToCommentWhenBodyOnly(t *testing.T) {
+	t.Parallel()
+	var got backend.SubmitReviewInput
+	fake := &testhelpers.FakeClient{
+		SubmitReviewFn: func(ns, slug string, id int, in backend.SubmitReviewInput) error {
+			got = in
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.submitPRReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"body":    "fyi",
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	assert.Equal(t, "comment", got.Action)
+}
+
+func TestSubmitPRReview_InlineCommentsArrayParsesIntoInput(t *testing.T) {
+	t.Parallel()
+	var got backend.SubmitReviewInput
+	fake := &testhelpers.FakeClient{
+		SubmitReviewFn: func(ns, slug string, id int, in backend.SubmitReviewInput) error {
+			got = in
+			return nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.submitPRReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"action":  "approve",
+		"inline_comments": []any{
+			map[string]any{"path": "pkg/a.go", "line": float64(12), "body": "rename"},
+			map[string]any{"path": "pkg/b.go", "line": float64(7), "body": "extract", "start_line": float64(5), "side": "old"},
+		},
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError, extractText(t, result))
+	require.Len(t, got.Inline, 2)
+	assert.Equal(t, "pkg/a.go", got.Inline[0].Path)
+	assert.Equal(t, 12, got.Inline[0].Line)
+	assert.Equal(t, "new", got.Inline[0].Side, "side defaults to \"new\" when omitted")
+	assert.Equal(t, "rename", got.Inline[0].Body)
+	assert.Equal(t, "pkg/b.go", got.Inline[1].Path)
+	assert.Equal(t, 5, got.Inline[1].StartLine)
+	assert.Equal(t, 7, got.Inline[1].Line)
+	assert.Equal(t, "old", got.Inline[1].Side)
+}
+
+func TestSubmitPRReview_RejectsEmptyRequest(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t} // SubmitReviewFn unset → fatal if reached
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.submitPRReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "required")
+}
+
+func TestSubmitPRReview_RejectsUnknownAction(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.submitPRReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"action":  "bogus",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "approve")
+}
+
+func TestSubmitPRReview_RejectsInlineMissingFields(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.submitPRReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"action":  "approve",
+		"inline_comments": []any{
+			map[string]any{"path": "pkg/a.go", "line": float64(12)}, // missing body
+		},
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "body is required")
+}
+
+func TestSubmitPRReview_BackendErrorPropagates(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		SubmitReviewFn: func(ns, slug string, id int, in backend.SubmitReviewInput) error {
+			return errors.New("403 forbidden")
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.submitPRReview(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+		"action":  "approve",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "403")
+}
