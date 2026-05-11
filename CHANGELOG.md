@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.0](https://github.com/proggarapsody/bitbottle/compare/v1.25.0...v1.26.0) (2026-05-11)
+
+
+### Features
+
+* **rv5:** pr activity event stream ([#149](https://github.com/proggarapsody/bitbottle/issues/149)) ([66e2487](https://github.com/proggarapsody/bitbottle/commit/66e24870f73351fc726a5bc4b75050b31b88fe47))
+
 ## [1.25.0](https://github.com/proggarapsody/bitbottle/compare/v1.24.0...v1.25.0) (2026-05-11)
 
 
