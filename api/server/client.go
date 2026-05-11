@@ -149,7 +149,6 @@ func (c *Client) getJSON(path string, v any) error {
 	return c.http.GetJSON(path, v)
 }
 
-
 func (c *Client) getText(path string) (string, error) {
 	return c.http.GetText(path)
 }
