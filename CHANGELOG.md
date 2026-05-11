@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.0](https://github.com/proggarapsody/bitbottle/compare/v1.24.0...v1.25.0) (2026-05-11)
+
+
+### Features
+
+* **rv4:** pr review compound command (approve/request-changes/comment + inline) ([#146](https://github.com/proggarapsody/bitbottle/issues/146)) ([28b752f](https://github.com/proggarapsody/bitbottle/commit/28b752f0ca6e994f7c85ce0ec107fed946c89805))
+
 ## [1.24.0](https://github.com/proggarapsody/bitbottle/compare/v1.23.0...v1.24.0) (2026-05-09)
 
 
