@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.27.0](https://github.com/proggarapsody/bitbottle/compare/v1.26.0...v1.27.0) (2026-05-11)
+
+
+### Features
+
+* **rv6:** commit comment list/add/edit/delete ([#152](https://github.com/proggarapsody/bitbottle/issues/152)) ([5e9ddfd](https://github.com/proggarapsody/bitbottle/commit/5e9ddfdec65dd208602f9e2e479b1c971e23f048))
+
 ## [1.26.0](https://github.com/proggarapsody/bitbottle/compare/v1.25.0...v1.26.0) (2026-05-11)
 
 
