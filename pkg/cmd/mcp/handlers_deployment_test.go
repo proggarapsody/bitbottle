@@ -17,10 +17,10 @@ const singleCloudConfig = "bitbucket.org:\n  oauth_token: tok\n"
 func TestSplitRepo(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		input   string
-		wantNS  string
+		input    string
+		wantNS   string
 		wantSlug string
-		wantErr bool
+		wantErr  bool
 	}{
 		{"myws/my-repo", "myws", "my-repo", false},
 		{"myws/", "", "", true},
