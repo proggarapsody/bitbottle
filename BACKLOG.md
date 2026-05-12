@@ -51,6 +51,7 @@ Current state of every command area against gh feature parity:
 | `auth status` | ✅ | |
 | `auth token` | ✅ | Print raw stored token (gh has this) |
 | `auth refresh` | ✅ | Re-validate token + update stored user |
+| `auth migrate` | 🔲 | Move config-file tokens into the keyring; strip from `hosts.yml`. Non-interactive (CI-safe). — scope **SEC** |
 
 ### Repo
 
@@ -353,8 +354,8 @@ Current state of every command area against gh feature parity:
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
-| TASK | **PR Tasks** | `pr task list/create/complete/reopen` | Server/DC | 3 | 🔲 |
-| REACT | **PR Reactions** | `pr reaction list/add/remove` | Server/DC | 3 | 🔲 |
+| TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | 🔲 |
+| REACT | **Comment Reactions** | `pr comment react/unreact`, `commit comment react/unreact`, `pr comment list --reactions` | Server/DC | 3 | 🔲 |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
 | EXT | **Extension System** | `extension install/list/remove/exec` | N/A | 4 | 🔲 |
@@ -2534,7 +2535,7 @@ We do NOT promise integrity verification we cannot actually provide:
 | 28 | **VAR** Variable Command Promotion | gh-parity: `gh variable` is top-level. Mirror with `--scope repository\|workspace\|deployment`. |
 | 29 | **PROF** Named Profiles | gh-parity: `gh auth switch` + multi-account. Real user pain for anyone running work Server + personal Cloud. |
 | 30 | **EXT** Extension System | gh-parity: signature gh feature — `gh-dash`, `gh-copilot` show what an ecosystem looks like. Offloads the long tail of features to the community. |
-| 31 | **REACT** PR Reactions | gh-parity: `gh pr comment --reaction`. Low effort, completes the comment surface. |
+| 31 | **REACT** Comment Reactions | gh-parity: `gh pr comment --reaction`. Reactions live on comments (not on PRs) per Bitbucket's API — completes the comment surface. |
 | 32 | **TASK** PR Tasks | gh-adjacent: gh has no tasks (GitHub lacks the primitive) but tasks fit gh philosophy of exposing platform-native verbs cleanly. DC only. |
 | 33 | **SEC** Secret Store & Config Security | Hygiene: token-never-in-file + keyring hardening. gh ships this; you should too. |
 | 34 | **HTTPH** HTTP Client Hardening | Hygiene: retry + rate limiting + ETag cache. gh has all three. |
