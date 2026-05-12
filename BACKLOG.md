@@ -284,7 +284,7 @@ Current state of every command area against gh feature parity:
 | `extension remove NAME` | 🔲 | Remove an installed extension — scope **EXT** |
 | `extension exec NAME [args...]` | 🔲 | Run an installed extension (BKT_TOKEN / credentials filtered from env) — scope **EXT** |
 
-### Named Profiles _(missing)_
+### Named Profiles
 
 | Command | Status | Notes |
 |---|---|---|

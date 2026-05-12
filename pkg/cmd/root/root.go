@@ -19,6 +19,7 @@ import (
 	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	cmdProfile "github.com/proggarapsody/bitbottle/pkg/cmd/profile"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/project"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	searchcmd "github.com/proggarapsody/bitbottle/pkg/cmd/search"
@@ -71,6 +72,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(searchcmd.NewCmdSearch(f))
 	cmd.AddCommand(skill.NewCmdSkill(f))
 	cmd.AddCommand(cmdVariable.NewCmdVariable(f))
+	cmd.AddCommand(cmdProfile.NewCmdProfile(f))
 	cmd.AddCommand(NewCmdStatus(f))
 	cmd.AddCommand(NewCmdBrowse(f))
 

@@ -17,6 +17,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/internal/keyring"
+	"github.com/proggarapsody/bitbottle/internal/profiles"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/internal/userconfig"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
@@ -35,6 +36,7 @@ type Factory struct {
 	HTTPClient         func(hostname string) (HTTPClient, error)
 	UserConfig         func() (*userconfig.Config, error)
 	Aliases            func() (*aliases.Store, error)
+	Profiles           func() (*profiles.Store, error)
 	GitRunner          func() run.Runner
 	Keyring            keyring.Keyring
 	Browser            cmdutil.BrowserLauncher
@@ -85,6 +87,15 @@ func New() *Factory {
 		}
 		return aliasStore, nil
 	}
+
+	profileStore := profiles.New(configDir)
+	profilesFn := func() (*profiles.Store, error) {
+		if err := profileStore.Load(); err != nil {
+			return nil, err
+		}
+		return profileStore, nil
+	}
+
 	gitRunner := func() run.Runner { return &run.SystemRunner{} }
 
 	return &Factory{
@@ -128,6 +139,7 @@ func New() *Factory {
 		},
 		UserConfig: userConfigFn,
 		Aliases:    aliasesFn,
+		Profiles:   profilesFn,
 		GitRunner:  gitRunner,
 		Keyring:    &keyring.OSKeyring{},
 		Browser:    &cmdutil.SystemBrowser{},

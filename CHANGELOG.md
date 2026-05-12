@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.32.0](https://github.com/proggarapsody/bitbottle/compare/v1.31.0...v1.32.0) (2026-05-12)
+
+
+### Features
+
+* **prof:** named credential profiles (profile create/list/use/delete) ([#166](https://github.com/proggarapsody/bitbottle/issues/166)) ([e065e46](https://github.com/proggarapsody/bitbottle/commit/e065e4665447e45bda48eaf2d1a481e490a44e23))
+
 ## [1.31.0](https://github.com/proggarapsody/bitbottle/compare/v1.30.0...v1.31.0) (2026-05-12)
 
 

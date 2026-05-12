@@ -24,6 +24,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/config"
+	"github.com/proggarapsody/bitbottle/internal/profiles"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/internal/userconfig"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
@@ -86,6 +87,7 @@ func New(t *testing.T, opts Opts) (*factory.Factory, *bytes.Buffer, *bytes.Buffe
 	cfg := config.New(configDir)
 	userCfg := userconfig.New(configDir)
 	aliasStore := aliases.New(configDir)
+	profileStore := profiles.New(configDir)
 	gitRunner := testhelpers.NewFakeRunner()
 
 	defaultBaseURL := func(h string) string {
@@ -111,6 +113,12 @@ func New(t *testing.T, opts Opts) (*factory.Factory, *bytes.Buffer, *bytes.Buffe
 				return nil, err
 			}
 			return aliasStore, nil
+		},
+		Profiles: func() (*profiles.Store, error) {
+			if err := profileStore.Load(); err != nil {
+				return nil, err
+			}
+			return profileStore, nil
 		},
 		HTTPClient: func(_ string) (factory.HTTPClient, error) {
 			return &noopHTTPClient{}, nil
@@ -201,6 +209,12 @@ func StubHTTPClient(hc factory.HTTPClient) func(string) (factory.HTTPClient, err
 // the deterministic format from bbinstance directly.
 func stubServerPATURLProber(hostname, username string, _ bool) string {
 	return bbinstance.PATManageURL(hostname, username)
+}
+
+// UseProfiles wires f.Profiles to return the given store. This lets tests
+// inject a pre-populated store without touching the real filesystem.
+func UseProfiles(f *factory.Factory, store *profiles.Store) {
+	f.Profiles = func() (*profiles.Store, error) { return store, nil }
 }
 
 // noopHTTPClient returns 404 for every request so tests that forget
