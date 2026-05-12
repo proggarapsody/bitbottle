@@ -253,18 +253,19 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `pr task list PR_ID` | 🔲 | List tasks attached to a PR — scope **TASK** |
-| `pr task create PR_ID` | 🔲 | Create a new task (text, optional anchor comment) — scope **TASK** |
-| `pr task complete PR_ID TASK_ID` | 🔲 | Mark a task as resolved — scope **TASK** |
-| `pr task reopen PR_ID TASK_ID` | 🔲 | Re-open a resolved task — scope **TASK** |
+| `pr task list PR_ID` | 🔲 | List blocker-comments on a PR (modern API: comments with `severity=BLOCKER`) — scope **TASK** |
+| `pr task create PR_ID` | 🔲 | Post a blocker-comment (anchors to a comment or stands alone) — scope **TASK** |
+| `pr task resolve PR_ID TASK_ID` | 🔲 | Set comment `state=RESOLVED` — scope **TASK** |
+| `pr task reopen PR_ID TASK_ID` | 🔲 | Set comment `state=OPEN` — scope **TASK** |
 
-### PR Reactions _(Server / DC only — missing)_
+### Comment Reactions _(Server / DC only — missing)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `pr reaction list PR_ID` | 🔲 | List all emoji reactions on a PR — scope **REACT** |
-| `pr reaction add PR_ID` | 🔲 | Add a reaction (`--emoji EMOJI`) — scope **REACT** |
-| `pr reaction remove PR_ID` | 🔲 | Remove own reaction — scope **REACT** |
+| `pr comment react PR_ID COMMENT_ID --emoji E` | 🔲 | Add an emoji reaction to a PR comment — scope **REACT** |
+| `pr comment unreact PR_ID COMMENT_ID --emoji E` | 🔲 | Remove own reaction from a comment — scope **REACT** |
+| `pr comment list --reactions` | 🔲 | Existing command grows a reactions column when flag is set — scope **REACT** |
+| `commit comment react / unreact` | 🔲 | Same pattern for commit comments — scope **REACT** |
 
 ### Variable _(standalone promotion — missing)_
 
@@ -1396,6 +1397,11 @@ type EnvVariableInput struct {
 }
 ```
 
+> **Note**: if scope **VAR** ships before DEP, drop `EnvVariable` /
+> `EnvVariableInput` from this scope and reuse `PipelineVariable` /
+> `PipelineVariableInput` instead. The two types are byte-for-byte identical; do
+> not duplicate. See VAR's "Implementation notes" point 4.
+
 **Commands**:
 
 | Command | Args | Required flags | Optional flags |
@@ -1455,11 +1461,39 @@ modelled on bkt's `internal/secret/store.go`:
 
 **No new backend interfaces. No new types. No new commands.**
 
+**Implementation notes**:
+1. **macOS Keychain "trust application after upgrade" footgun.** Every time
+   `bitbottle` is rebuilt (i.e. every release), macOS treats the new binary as
+   untrusted and re-prompts the user for the Keychain password. Set
+   `KeychainTrustApplication: true` in the `99designs/keyring` config to avoid
+   this — it tells the Keychain to trust the binary by code-signing identity
+   rather than path+inode. Forget this and every release breaks Keychain UX for
+   every macOS user.
+2. **Linux Secret Service needs DBus + an active session.** Headless Linux
+   servers (most CI runners, most SSH-into-VPS workflows) have neither.
+   `IsHeadless()` must return true when `DBUS_SESSION_BUS_ADDRESS` is unset,
+   even if `DISPLAY` is set.
+3. **Windows Credential Manager 2048-byte limit.** OAuth refresh tokens can
+   exceed this. If `Set` returns `ERROR_INVALID_PARAMETER` on Windows, fall back
+   to the file-based store with a clear user-facing message — don't silently
+   lose data.
+4. **Migration command, not just a warning.** Users in CI pipelines who
+   authenticate via config-file token cannot run `auth login` interactively.
+   Ship `bitbottle auth migrate` that reads the file token, writes it to the
+   keyring, and rewrites the config file with the token field stripped. The
+   load-time warning points users at this command, not at interactive `auth login`.
+5. **Test infrastructure.** Real keyring backends can't run in CI. Use
+   `keyring.NewArrayKeyring` (in-memory) for unit tests; gate real-backend tests
+   behind `// +build keyring_integration`.
+
 **Definition of Done**:
 - [ ] `HostConfig.MarshalYAML()` strips token; `cfg.Save()` verified by test
 - [ ] Load-time warning test for pre-migration config with token in file
+- [ ] `bitbottle auth migrate` command + integration test against fake keyring
 - [ ] `IsHeadless()` + timeout wrapping; verified in CI environment simulation
 - [ ] Darwin advisory lock; verified with parallel test
+- [ ] `KeychainTrustApplication: true` set on Darwin (regression test against re-prompt)
+- [ ] Windows: handle 2048-byte limit with graceful fallback (test with synthetic large token)
 - [ ] File-fallback gated behind env var; integration test for headless flow
 - [ ] Existing `auth login` golden tests pass unchanged
 
@@ -1532,11 +1566,44 @@ When `Remaining == 0`, block until `Reset` before the next request
 
 **No new backend interfaces. No new command changes. No new types.**
 
+**Implementation notes**:
+1. **Middleware order matters.** The wrapping must be:
+   `Caller → Retry → ETag → RateLimit → ContentTypePolicy → DomainError-Classify → http.Transport`.
+   Retry sits *outside* domain-error classification, otherwise a successful retry
+   after a 500 gets reclassified by the wrap-around. ContentTypePolicy must sit
+   *inside* ETag (the cached response was for a request that already had its
+   content-type adjusted). Document this stack order in `httpx/transport.go`.
+2. **ETag cache must invalidate on writes to the same resource path.** Caching
+   `GET /repositories/X` and then `PUT /repositories/X` (rename) without
+   flushing returns stale data on the next GET. On any non-GET response with
+   2xx status, flush all cache entries whose URL path starts with the request
+   path. Document this is best-effort — Bitbucket sometimes mutates parent
+   resources from child URLs.
+3. **Cache bound: total bytes, not entry count.** 256 entries × 50KB diff bodies
+   = 12MB; that's fine, but one cached `pr diff` of a giant PR can be 5MB
+   alone. Use a byte-budget LRU (default 16MB total) rather than entry count.
+4. **Retry body replay needs `req.GetBody`.** Go's `http.Request` consumes the
+   body on first send. Retry requires `req.GetBody` to be set so the body can
+   be re-read. Document the contract: any call-site that calls
+   `httpx.WithRetry(ctx, ...)` AND passes a non-nil body MUST set
+   `req.GetBody`. Add a runtime check that panics in dev builds if violated.
+5. **Adaptive throttle thundering herd.** When `Remaining == 0` and many
+   goroutines hit the throttle, they all sleep until the same reset time and
+   wake together. Add per-goroutine jitter (e.g., `+rand(0..500ms)`) to the
+   reset deadline to spread the wake.
+6. **Rate-limit headers are optional.** Bitbucket Cloud doesn't emit them on
+   every endpoint; Server emits them only when rate limiting is enabled in
+   admin config. Missing headers must be treated as "no limit info"
+   (no-op), not as a parse error.
+
 **Definition of Done**:
 - [ ] `retryRoundTripper` with table-driven tests covering 5xx retry, 429+Retry-After, non-retriable 4xx
-- [ ] `RateLimitState` parser with test against Bitbucket header shapes
-- [ ] `applyAdaptiveThrottle` test (mock clock)
-- [ ] ETag cache unit tests (hit, miss, 304, eviction)
+- [ ] Per-call retry opt-in via `httpx.WithRetry(ctx, policy)` context value
+- [ ] `RateLimitState` parser with test against Bitbucket header shapes (incl. missing headers)
+- [ ] `applyAdaptiveThrottle` test (mock clock + jitter verification)
+- [ ] ETag cache unit tests (hit, miss, 304, write-invalidates-prefix, byte-budget eviction)
+- [ ] Middleware-order regression test (verify a 500-then-200 retry doesn't re-classify)
+- [ ] `req.GetBody` runtime check in dev builds
 - [ ] `go test ./... -race` green — cache map is safe under concurrent access
 - [ ] Integration test against a mock server simulating 500→500→200 sequence
 
@@ -1603,6 +1670,27 @@ Audit pass before the PR lands:
 
 **No new backend interfaces. No new types. No new commands.**
 
+**Implementation notes**:
+1. **Template function set must match gh.** Users moving from gh expect
+   `color`, `truncate`, `timeago`, `pluck`, `join`, `tablerender`, `autocolor`,
+   `hyperlink`. Without these, ported `gh ... --template` snippets break.
+   Implement the same names + signatures as `cli/cli/pkg/cmd/factory/template.go`.
+2. **`--jq` and `--yaml` are incompatible.** jq is a JSON query language.
+   Surface a clean error: `--jq requires --json (or --format json)`.
+3. **Color and structured output don't mix.** When `--format yaml/json/template`
+   is active, force `IOStreams.SetColorEnabled(false)` for that invocation.
+   ANSI escapes in piped YAML break downstream parsers.
+4. **Field selection (gh's `--json field1,field2,...`).** gh allows
+   `--json title,state,author` to subselect. Decide whether to support this
+   now or defer. Recommendation: defer, ship full-object JSON first, add
+   field selection in a follow-up PR (it's a Printer extension, not a flag change).
+5. **Pager auto-disable for structured output.** `$PAGER` makes no sense for
+   JSON/YAML output destined for `jq` or a script. Skip `IOStreams.StartPager`
+   when format is not `table`.
+6. **Default field stability.** Once we emit `--json` for a command, the field
+   set becomes an API contract. Snapshot golden tests against the JSON output
+   so any unintended schema change fails CI.
+
 **Definition of Done**:
 - [ ] `format.WriteYAML` + `format.WriteTemplate` with table-driven tests
 - [ ] Global flags on root; `PersistentPreRunE` validates combos
@@ -1653,13 +1741,46 @@ Scorecard badge. These are table-stakes supply-chain controls for a published CL
 
 **No backend changes. No new Go code beyond Makefile targets.**
 
+**Implementation notes**:
+1. **Dependabot for SHA-pinned actions.** Tag-pinned actions get auto-bumped by
+   Dependabot's default config. SHA-pinned actions do NOT — Dependabot needs
+   explicit configuration in `.github/dependabot.yml`:
+   ```yaml
+   updates:
+     - package-ecosystem: "github-actions"
+       directory: "/"
+       schedule: { interval: "weekly" }
+   ```
+   Without this, our SHA pins go stale and accumulate CVEs faster than we
+   notice. Ship the Dependabot config in the same PR.
+2. **SBOM timing.** The SBOM must be generated AFTER release-please creates the
+   release tag but BEFORE Goreleaser uploads artifacts, so it attaches to the
+   GitHub release and to npm. Add the SBOM step inside `release.yml` after
+   `goreleaser release` runs, not as a separate workflow.
+3. **Scorecard requires `id-token: write`.** The workflow needs
+   `permissions: { id-token: write, contents: read }` at the job level.
+   Forget this and Scorecard silently runs with degraded checks (no
+   keyless signing verification).
+4. **gitleaks licence.** gitleaks-action wraps the gitleaks binary; the binary
+   is BSD-3 with a 2023 commercial-use clarification. Our public-OSS use is
+   fine, but document the choice in `docs/dev/ci.md` so future contributors
+   don't need to re-verify.
+5. **Codecov free tier covers public repos.** Confirm bitbottle's repo is
+   `Public` in Codecov's dashboard — private repos require a paid tier and
+   uploads silently 401.
+6. **`make check-skills` source of truth.** The skill-sync check needs a
+   definition of "in sync." Recommend: parse `skills/SKILL.md` for the
+   command list, compare against `pkg/cmdregistry.All(f)` output. Fail if
+   any command exists in code but not skill (or vice versa).
+
 **Definition of Done**:
 - [ ] All `uses:` in all workflows reference pinned SHAs (no tag refs)
+- [ ] `.github/dependabot.yml` configured for weekly action-version bumps
 - [ ] `gitleaks` workflow runs and passes on main
-- [ ] SBOM attached to a test release run
-- [ ] Scorecard workflow publishes; README badge added
-- [ ] Codecov upload confirmed in a CI run
-- [ ] `make check-skills` target exists and is called in CI
+- [ ] SBOM attached to a test release run (verified in release artifact)
+- [ ] Scorecard workflow publishes with full check coverage; README badge added
+- [ ] Codecov upload confirmed in a CI run; badge added to README
+- [ ] `make check-skills` target exists, has a clear pass/fail contract, and is called in CI
 
 ---
 
@@ -1724,6 +1845,31 @@ specialised view of the more general command.
 **MCP tools**: extend existing `set_pipeline_variable` / `list_pipeline_variables`
 / `delete_pipeline_variable` schemas with optional `scope` + `env_uuid` fields.
 No new MCP tools needed.
+
+**Implementation notes**:
+1. **Server has no workspace variables.** Workspaces are a Cloud-only primitive.
+   `ListWorkspaceVariables` and friends MUST return `host.unsupported` from the
+   Server adapter — don't try to back-fill from project-level variables (different
+   primitive, different semantics).
+2. **System-managed variables are read-only.** Bitbucket Cloud marks some
+   variables `system=true` (e.g., `BITBUCKET_REPO_SLUG`, `BITBUCKET_BUILD_NUMBER`).
+   These appear in `ListPipelineVariables` but `SetPipelineVariable` returns
+   400 on attempts to write. Surface this cleanly: add `System bool` to
+   `PipelineVariable`, and have the CLI's `variable set` print a friendly error
+   if the user targets a system-managed key.
+3. **Workspace path shape.** For workspace scope, the CLI takes `WORKSPACE/-`
+   (the slug `-` is a placeholder that means "ignore"). Pick this over a
+   `--workspace W` flag for two reasons: matches the existing pattern
+   (`PROJECT/REPO` for all other commands), and means the same `variable set`
+   command works on any scope by varying the positional.
+4. **DEP scope dependency.** Scope **DEP** must use `PipelineVariable` /
+   `PipelineVariableInput` (not a new `EnvVariable` type). Update DEP's scope
+   detail when VAR lands to point at the consolidated type. Add a note in DEP
+   right now.
+5. **Secret values write-only.** `Value` is empty on read when `Secured=true`.
+   `variable list --scope` output must NOT show empty value columns
+   misleadingly; print `(secured)` in the value column for secured variables in
+   table output. JSON keeps the empty string for schema stability.
 
 ---
 
@@ -1791,6 +1937,34 @@ per subject, so revoke is "remove whatever grant they have."
 `revoke_project_permission`, `list_repo_permissions`, `grant_repo_permission`,
 `revoke_repo_permission` — each takes `{subject_kind, subject_slug_or_name, permission}`.
 
+**Implementation notes**:
+1. **Grant is really "set."** The PUT endpoint accepts any permission level
+   for an existing subject — granting READ to someone who has WRITE
+   downgrades them silently. The CLI should warn before downgrading:
+   "User X already has REPO_WRITE; this will change to REPO_READ. Continue?"
+   (`--force` or non-TTY skips the prompt.)
+2. **List unions two endpoints.** `ListRepoPermissions` calls both
+   `/permissions/users` and `/permissions/groups`, paginates both via
+   `paging.Collect[T]`, and returns the merged slice. Don't expose the
+   split — users don't care about the URL shape.
+3. **Default project permission is a separate API.** `/projects/{key}/permissions/{perm}/all`
+   toggles "all users get this permission by default." Not exposed in this
+   scope — document it as out of scope and link to the API for users who need
+   it via `api` passthrough.
+4. **Username slugs are not display names.** LDAP-integrated Server instances
+   often have user slugs like `j.smith` and display names `John Smith`. The
+   CLI takes slugs (`--user j.smith`) and the list output shows both. Don't
+   accept display names — they're not unique.
+5. **Group names may contain spaces.** URL-encode group names in the request
+   path: `--group "Senior Developers"` → `%20`. Test against a group with a
+   space character.
+6. **403 vs 404 disambiguation.** Server returns 401 if not authenticated,
+   403 if authenticated but lacking PROJECT_ADMIN, 404 if the project itself
+   doesn't exist. All three currently map to similar typed errors; the
+   `perms` commands should map to distinct hints:
+   - 403 → "you need PROJECT_ADMIN on this project to manage permissions"
+   - 404 → standard `repo.not_found` / `project.not_found`
+
 ---
 
 ### ADMIN — Admin Commands _(Server / DC only)_
@@ -1826,6 +2000,29 @@ type LoggingConfigInput = LoggingConfig
 | `admin logging set` | 0 | one of `--level`, `--async` | `--hostname` |
 
 **MCP tools**: `rotate_secrets`, `get_logging_config`, `set_logging_config`
+
+**Implementation notes**:
+1. **`admin secrets rotate` is NOT user/credential rotation.** It rotates the
+   cluster's internal HTTP Strict Transport Security secret used for
+   inter-node authentication in DC deployments. **A rolling restart of all
+   cluster nodes is required afterwards.** The CLI must print a banner before
+   confirming the action:
+   `"This rotates the cluster's internal HTTPS secret. ALL nodes must be
+   restarted for the new secret to take effect. Continue? [y/N]"`
+   `--confirm` (or non-TTY) skips the prompt.
+2. **Requires SYS_ADMIN, not just PROJECT_ADMIN.** Most admin tokens lack this.
+   Map 403 to a specific hint:
+   `"This requires SYS_ADMIN permission. Standard admin tokens do not include
+   it; the action must be performed by a system administrator."`
+3. **`logging set` is non-persistent by default.** Changes apply to the running
+   instance and reset on next restart. Add `--persistent` to also write to
+   `log4j.properties` (separate endpoint:
+   `PUT /rest/api/1.0/admin/logging/properties`). Document both modes clearly
+   — users hitting "my log level reset on restart" will assume a bug.
+4. **Log levels are case-sensitive.** Server only accepts `DEBUG`, `INFO`,
+   `WARN`, `ERROR` (uppercase). Reject mixed-case input at the CLI layer.
+5. **No equivalent on Cloud.** Both methods surface `host.unsupported` on
+   Cloud. Document this in `--help` text so users don't get confused.
 
 ---
 
@@ -1881,37 +2078,84 @@ No new `status` command needed; status is data, not an action.
 **MCP tools**: extend existing `merge_pr` schema with `auto bool` + `auto_strategy string`.
 No new MCP tools.
 
+**Implementation notes**:
+1. **Strategy name translation.** Three vocabularies in play — keep a single
+   translation table in `api/backend/types.go`:
+   - CLI flag: `--merge` (default) | `--squash` | `--rebase`
+   - Cloud body: `merge_commit` | `squash` | `fast_forward`
+   - Server body: `merge-commit` | `squash` | `fast-forward`
+   Note `--rebase` maps to `fast_forward` on Cloud — that's not strictly a
+   rebase (it's fast-forward only when possible). Document the semantic gap in
+   `--help`.
+2. **Cloud beta detection.** When Cloud's auto-merge is unavailable (workspace
+   hasn't opted into beta), the endpoint returns 404 *with a specific error
+   body*. Don't conflate with "PR not found." Map this specific shape to a new
+   `pr.automerge.beta_disabled` error code in scope **EX**'s catalogue with
+   hint: "Ask your workspace admin to enable auto-merge in workspace settings."
+3. **Race with manual merge.** If auto-merge is queued and the user then runs
+   `pr merge` without `--auto`, the server-side behaviour differs by backend
+   (Cloud: rejects with 409; Server: cancels the auto-queue and merges
+   immediately). Surface both behaviours consistently — pre-check current
+   auto-merge state and prompt: "PR is queued for auto-merge. Cancel and merge
+   immediately? [y/N]".
+4. **Status from `pr view`.** The `AutoMerge` field on `PullRequest` must be
+   populated by both adapters' `GetPR` implementation, not lazily fetched.
+   Adding a second roundtrip from `pr view` to display auto-merge state is a
+   regression in command latency.
+5. **`pr view --json` schema.** Once `AutoMerge` is a JSON field, it's an API
+   contract. Use `*AutoMergeState` (pointer) so JSON omits it when nil, not an
+   empty object — keeps the contract minimal for older PRs without auto-merge state.
+
 ---
 
 ### TASK — PR Tasks _(Server / DC only)_
 
-Server/DC tasks are to-do items attached to a PR, optionally anchored to a
-specific comment. Cloud does not have this concept — surface `ErrUnsupportedOnHost`.
+Server/DC PR tasks are actionable items reviewers leave on a PR. **The old
+`/pull-requests/{id}/tasks` API was deprecated in Server 7.2 (2020)**. The
+modern shape is "comments with `severity: BLOCKER`":
 
-**New optional interface** (`api/backend/client.go`):
+- A task is a comment with `severity=BLOCKER` and `state=OPEN|RESOLVED`.
+- Resolving a task = `PUT /comments/{id}` with `{state: "RESOLVED", version: N}`.
+- Tasks can be top-level on the PR (standalone) or anchored to a parent comment.
+
+Cloud has no equivalent — surface `host.unsupported`.
+
+**Implementation notes**:
+1. **Version detection required.** Server < 7.2 still uses the legacy tasks
+   endpoint and ignores `severity` on comments. Use the existing
+   `ServerCapabilities.GetApplicationProperties()` to read the Server version
+   string; dispatch to legacy `/tasks` API for < 7.2, modern comments API otherwise.
+   This is the first scope to need version-conditional dispatch — establish the
+   pattern (helper in `api/server/version.go`?) cleanly.
+2. **Optimistic locking.** Server comments carry a `version` integer; mutations
+   require it. The shipped `EditPRComment` already handles this — reuse, don't
+   reimplement.
+3. **Reuse `PRCommentClient` interfaces.** Don't add `PRTaskClient` as a separate
+   interface — extend the existing `PRCommentAdder` / `PRCommentEditor` with
+   `severity` and `state` fields on the input. This keeps the optional-interface
+   count flat and acknowledges that tasks ARE comments at the API level.
+
+**Extend existing types** (`api/backend/types.go`):
 ```go
-type PRTaskClient interface {
-    ListPRTasks(ns, slug string, prID int) ([]PRTask, error)
-    CreatePRTask(ns, slug string, prID int, in CreatePRTaskInput) (PRTask, error)
-    CompletePRTask(ns, slug string, prID, taskID int) error
-    ReopenPRTask(ns, slug string, prID, taskID int) error
+type PRComment struct {
+    // ... existing fields ...
+    Severity string  // "" | "BLOCKER"  (BLOCKER comments are tasks)
+    State    string  // "" | "OPEN" | "RESOLVED"  (only meaningful when Severity=BLOCKER)
+    Version  int     // Server optimistic-lock token; 0 on Cloud
+}
+
+type AddPRCommentInput struct {
+    // ... existing fields ...
+    Severity string  // "BLOCKER" to create a task; "" for normal comment
 }
 ```
 
-**New types**:
+**Extend existing interface**:
 ```go
-type PRTask struct {
-    ID        int
-    Text      string
-    State     string // OPEN | RESOLVED
-    Author    User
-    CreatedAt time.Time
-    CommentID int // 0 = not anchored to a comment
-}
-
-type CreatePRTaskInput struct {
-    Text      string
-    CommentID int // optional anchor
+type PRCommentEditor interface {
+    EditPRComment(ns, slug string, id, commentID int, body string) (PRComment, error)
+    // new — Server-only; clean error on Cloud:
+    SetPRCommentState(ns, slug string, id, commentID int, state string) error
 }
 ```
 
@@ -1919,46 +2163,72 @@ type CreatePRTaskInput struct {
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
-| `pr task list PR_ID` | 1 | — | `--json`, `--jq`, `--hostname` |
-| `pr task create PR_ID` | 1 | `--body` | `--comment COMMENT_ID`, `--hostname` |
-| `pr task complete PR_ID TASK_ID` | 2 | — | `--hostname` |
+| `pr task list PR_ID` | 1 | — | `--state open\|resolved\|all`, `--json`, `--jq`, `--hostname` |
+| `pr task create PR_ID` | 1 | `--body` | `--parent COMMENT_ID` (anchor), `--hostname` |
+| `pr task resolve PR_ID TASK_ID` | 2 | — | `--hostname` |
 | `pr task reopen PR_ID TASK_ID` | 2 | — | `--hostname` |
 
-**MCP tools**: `list_pr_tasks`, `create_pr_task`, `complete_pr_task`, `reopen_pr_task`
+`pr task list` is a filtered view of `pr comment list` (only `Severity=BLOCKER`).
+`pr task create` is a thin wrapper around `pr comment add --severity BLOCKER`.
+
+**MCP tools**: `list_pr_tasks`, `create_pr_task`, `resolve_pr_task`, `reopen_pr_task` —
+each implemented as a thin filter over the existing comment tools.
 
 ---
 
-### REACT — PR Reactions _(Server / DC only)_
+### REACT — Comment Reactions _(Server / DC only)_
 
-Emoji reactions on PRs. Server/DC only — surface `ErrUnsupportedOnHost` on Cloud.
+**Important**: Bitbucket reactions exist at the **comment** level, not the PR
+level. The endpoint is `/comments/{commentId}/reactions` — there is no
+PR-level or commit-level "reactions" primitive. Cloud has no documented REST API
+for reactions — surface `host.unsupported`.
 
 **New optional interface** (`api/backend/client.go`):
 ```go
-type PRReactionClient interface {
-    ListPRReactions(ns, slug string, prID int) ([]PRReaction, error)
-    AddPRReaction(ns, slug string, prID int, emoji string) error
-    RemovePRReaction(ns, slug string, prID int, emoji string) error
+type CommentReactor interface {
+    ListCommentReactions(commentID int) ([]CommentReaction, error)
+    AddCommentReaction(commentID int, emoji string) error
+    RemoveCommentReaction(commentID int, emoji string) error
 }
 ```
+Server/DC reactions are keyed only by `commentID` — the PR / commit context is
+not part of the URL. Reuse the same interface for both PR comments and commit
+comments.
 
 **New types**:
 ```go
-type PRReaction struct {
-    Emoji  string // e.g. "+1", "heart", "tada"
-    Author User
-    Count  int
+type CommentReaction struct {
+    Emoji string  // canonical shortcode: "thumbs_up" | "thumbs_down" | "heart" | etc.
+    Users []User  // all users who reacted with this emoji
 }
 ```
+List returns one row per emoji with the deduplicated user list (the API returns
+one row per (emoji, user) pair; we group in the adapter for ergonomic output).
 
-**Commands**:
+**Implementation notes**:
+1. **Emoji shortcode normalisation.** Server accepts `:thumbsup:` and `thumbs_up`
+   inconsistently across versions. Normalise to underscore form on input;
+   normalise responses back to the same form. Document the canonical set in
+   README so users know what to pass.
+2. **No batch API.** Listing reactions for many comments requires N calls. For
+   `pr comment list --reactions`, batch-resolve reactions concurrently with a
+   small worker pool (4-8); don't serialize.
+3. **Permission semantics.** Adding/removing requires write access to the
+   comment's repo. Anonymous users can read reactions but not write.
+
+**Commands** (extend existing comment commands; no new top-level surface):
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
-| `pr reaction list PR_ID` | 1 | — | `--json`, `--jq`, `--hostname` |
-| `pr reaction add PR_ID` | 1 | `--emoji EMOJI` | `--hostname` |
-| `pr reaction remove PR_ID` | 1 | `--emoji EMOJI` | `--hostname` |
+| `pr comment react PR_ID COMMENT_ID` | 2 | `--emoji E` | `--hostname` |
+| `pr comment unreact PR_ID COMMENT_ID` | 2 | `--emoji E` | `--hostname` |
+| `pr comment list PR_ID` | 1 | — | `--reactions` (existing command grows a column), `--json`, `--jq`, `--hostname` |
+| `commit comment react PROJECT/REPO HASH COMMENT_ID` | 3 | `--emoji E` | `--hostname` |
+| `commit comment unreact PROJECT/REPO HASH COMMENT_ID` | 3 | `--emoji E` | `--hostname` |
 
-**MCP tools**: `list_pr_reactions`, `add_pr_reaction`, `remove_pr_reaction`
+**MCP tools**: `add_comment_reaction`, `remove_comment_reaction`,
+`list_comment_reactions`. Extend the existing `list_pr_comments` /
+`list_commit_comments` schemas with an optional `include_reactions bool` field.
 
 ---
 
@@ -2010,6 +2280,33 @@ the `Profile` to a `HostConfig`. Explicit `--hostname` always wins.
 **MCP tools**: none (profile selection is CLI-session state, not suitable for
 stateless MCP calls).
 
+**Implementation notes**:
+1. **Migration from flat `Hosts`.** Existing users have
+   `hosts: {git.example.com: HostConfig}` in `hosts.yml`. On first
+   `profile create`, auto-import existing hosts as profiles named after
+   hostnames (`profile create git_example_com --from-host git.example.com`).
+   Don't drop the legacy `Hosts` map — keep both shapes in the YAML for one
+   release cycle, then deprecate.
+2. **YAML schema versioning.** Add `version: 2` to `hosts.yml` on first write
+   that includes `Profiles`. The loader switches on version: version 0/1
+   reads the flat shape, version 2 reads both. This is the first scope to
+   introduce a config schema break — establish the pattern cleanly.
+3. **`--hostname` always wins.** When `--hostname` is set, the active profile
+   is ignored. Document in `profile use` help text: "Sets the default for
+   subsequent commands; explicit --hostname still overrides."
+4. **Token storage keying.** Profile tokens go to keyring under
+   `bitbottle/profile/<name>` (not `bitbottle/<hostname>`). Two profiles can
+   point at the same host (e.g., two accounts on the same Server instance) —
+   keying by hostname would collide.
+5. **No token rotation on switch.** Switching profiles doesn't revoke the
+   previous profile's token. The keyring entries for inactive profiles
+   persist. Document this — users wanting to "log out" must use
+   `profile delete` (which DOES remove the keyring entry).
+6. **`auth login` behaviour.** Decide whether `auth login` operates on the
+   active profile or creates a new one. Recommendation: `auth login --hostname H`
+   updates the matching profile if one exists, else creates an unnamed
+   default profile. Document this in `auth login --help`.
+
 ---
 
 ### NIX — Nix Flake Packaging
@@ -2044,10 +2341,40 @@ Add a `nix build` test job to CI (runs on `ubuntu-latest` with Nix installed via
 
 **No backend or Go code changes.**
 
+**Implementation notes**:
+1. **Use Goreleaser's prebuilt binaries, not `buildGoModule`.** The flake
+   should `fetchurl` the platform-specific tarball from the GitHub release
+   and `dontStrip = true`. This avoids:
+   - Tracking `vendorHash` on every release (manual chore, breaks easily).
+   - Needing the Go toolchain on the user's Nix builder (faster `nix run`).
+   - Divergence between the Nix binary and the Goreleaser-built npm binary
+     (same binary everywhere).
+2. **Auto-update via release-please hook.** Goreleaser produces a
+   `checksums.txt` per release. Add a small Bash script run from
+   `release.yml` after Goreleaser that:
+   - Parses the SHA256 for each OS/arch tarball
+   - Rewrites `flake.nix` with the new SHAs and version
+   - Commits the change to the release tag
+   Without this automation, `flake.nix` goes stale immediately after the
+   first release post-merge.
+3. **macOS aarch64 codesigning.** Goreleaser handles codesigning during the
+   release build. The Nix flake just needs to point at the signed tarball —
+   no signing in Nix itself.
+4. **`flake.lock` reproducibility.** Pin nixpkgs to a specific commit
+   (`nixos-25.05` branch or similar). Update via `nix flake update` on a
+   scheduled cadence (quarterly), not per-release — release frequency would
+   make the lockfile churn meaningless.
+5. **Test infrastructure.** Add a CI job that runs
+   `nix build .#default` on `ubuntu-latest` after each release tag.
+   Don't run on every push — it's slow and adds little signal vs the existing
+   Goreleaser build.
+
 **Definition of Done**:
-- [ ] `nix run github:proggarapsody/bitbottle -- --version` works from the repo root
-- [ ] `flake.lock` committed
-- [ ] CI job confirms `nix build` succeeds on each push
+- [ ] `nix run github:proggarapsody/bitbottle -- --version` works from a release tag
+- [ ] `flake.nix` fetches Goreleaser-built tarballs (no `buildGoModule`)
+- [ ] `flake.lock` committed and pinned to a nixpkgs commit
+- [ ] Release workflow auto-updates `flake.nix` SHAs on each release
+- [ ] CI job confirms `nix build` succeeds against the latest release
 - [ ] README installation section includes `nix run` one-liner
 
 ---
@@ -2124,13 +2451,49 @@ We do NOT promise integrity verification we cannot actually provide:
 
 **MCP tools**: none (extension management is CLI-only).
 
+**Implementation notes** (operational):
+1. **Binary naming convention.** Adopt gh's convention:
+   `bitbottle-<extname>-<os>-<arch>[.exe]`. The installer matches against
+   `runtime.GOOS` + `runtime.GOARCH`. If no matching asset exists in the
+   release, surface a clean "no binary for darwin/arm64" message — don't
+   silently install a wrong-arch binary.
+2. **macOS Gatekeeper quarantine.** Binaries downloaded by us inherit the
+   `com.apple.quarantine` xattr. On first run, macOS prompts the user. Two
+   options:
+   - **Strip the xattr** during `extension install` via
+     `xattr -d com.apple.quarantine <binary>` (subprocess call). Simple but
+     bypasses an OS security control.
+   - **Document the failure mode** and tell the user to right-click → Open
+     once. Honest but worse UX.
+   Recommend option 1 with a warning printed at install time: "Removed macOS
+   quarantine attribute — extension will run without Gatekeeper review."
+3. **Update flow.** `extension upgrade [NAME|--all]` checks installed
+   extensions for new GitHub releases. Without this, users have no way to
+   stay current short of `remove` + `install`. Include in the initial scope.
+4. **Argv passthrough rules.** Extensions receive `os.Args[2:]`
+   (everything after `bitbottle <extname>`). Global flags like
+   `--debug`, `--hostname`, `--no-color` are NOT auto-injected — extensions
+   read them from env (`BITBOTTLE_DEBUG=1`). Pick one rule and document it.
+5. **Auth env injection — non-token auth.** If the active host uses basic
+   auth or app password, we still inject `BITBOTTLE_TOKEN` with that value
+   (the API server doesn't distinguish). For OAuth tokens with short TTL,
+   inject the current valid token, not the refresh token — extensions don't
+   refresh.
+6. **Local-dev mode.** `extension install --local /path/to/dir` symlinks a
+   local directory instead of downloading. Essential for extension authors;
+   adds <50 LOC.
+
 **Definition of Done**:
-- [ ] `extension install` downloads, prompts for confirmation, records install-time SHA
+- [ ] `extension install` downloads correct OS/arch binary, prompts for confirmation, records install-time SHA
+- [ ] macOS quarantine xattr stripped at install with user-visible warning
 - [ ] `extension list` shows installed extensions
 - [ ] `extension remove` deletes the binary + lockfile
-- [ ] `extension exec` verifies SHA matches lockfile, forks with sanitised env
+- [ ] `extension upgrade [NAME|--all]` implemented
+- [ ] `extension exec` verifies SHA matches lockfile, forks with sanitised env (BITBOTTLE_KEYRING_PASSPHRASE stripped, BITBOTTLE_TOKEN injected fresh)
+- [ ] `extension install --local PATH` for development
 - [ ] Root dispatch resolves unknown first arg to installed extension binary
 - [ ] README documents the trust model in plain language ("extensions run as you")
+- [ ] Cross-platform CI matrix verifies install works on linux/darwin/windows
 
 ---
 
