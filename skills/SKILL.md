@@ -28,6 +28,7 @@ not sure about.**
 | Deployments (list/view) — Cloud only | `references/deployment.md` |
 | Environments (list/create/delete) + variables (list/set/delete) — Cloud only | `references/deployment.md` |
 | Top-level variable command (repository/workspace/deployment scope) — Cloud only | `references/variable.md` |
+| Named credential profiles (create/use/list/delete) | `references/profile.md` |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.
@@ -226,6 +227,35 @@ Use `--state on-hold` on the CLI (the hyphen is normalized; the API uses a space
 MCP tools: `list_issues`, `get_issue`, `create_issue`, `close_issue`,
 `update_issue`, `reopen_issue`, `assign_issue`, `list_issue_comments`,
 `add_issue_comment`, `edit_issue_comment`, `delete_issue_comment`.
+
+## Named Credential Profiles
+
+Profiles are kubectl-context-like named credential sets stored in
+`~/.config/bitbottle/profiles.yml`.
+
+```bash
+# Create a profile (--hostname and --token are required)
+bitbottle profile create work \
+  --hostname git.work.com --token BBDC-... \
+  --user alice --skip-tls --backend server
+
+# Create a Cloud profile
+bitbottle profile create personal \
+  --hostname bitbucket.org --token APP_PASSWORD \
+  --auth-user you@example.com --backend cloud
+
+# Switch the active host config to a profile
+bitbottle profile use work
+
+# List profiles (token is never printed)
+bitbottle profile list
+bitbottle profile list --json name,hostname,backend_type,skip_tls_verify
+
+# Delete a profile
+bitbottle profile delete work --confirm
+```
+
+See `references/profile.md` for full flag reference.
 
 ## Install / version
 
