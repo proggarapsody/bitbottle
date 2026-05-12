@@ -25,6 +25,32 @@ type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// WrapTransport wraps inner with the httpx middleware stack.
+//
+// Middleware order, outermost first (from the request's perspective):
+//
+//	retryRoundTripper → eTagRoundTripper → rateLimitRoundTripper → inner
+//
+// Each call returns a fresh stack with its own ETag cache — entries are never
+// shared across different http.Clients so responses for different auth
+// identities or hosts cannot cross-contaminate each other.
+//
+// retryRoundTripper is opt-in: it only retries when the request context carries
+// a RetryPolicy (via WithRetry or Transport.WireRetry). eTagRoundTripper
+// transparently sends If-None-Match on cached GETs and rewrites 304 responses
+// to 200 with the cached body. rateLimitRoundTripper inspects X-RateLimit-*
+// headers and blocks (honouring context cancellation) when Remaining hits zero.
+func WrapTransport(inner http.RoundTripper) http.RoundTripper {
+	return &retryRoundTripper{
+		inner: &eTagRoundTripper{
+			cache: newETagCache(defaultETagBudget),
+			inner: &rateLimitRoundTripper{
+				inner: inner,
+			},
+		},
+	}
+}
+
 // Auth holds credentials for a single host. If Token is non-empty Bearer auth
 // is used; otherwise if Username is non-empty Basic auth is used with
 // Username:Token as credentials.
@@ -73,13 +99,14 @@ type Paginator interface {
 
 // Transport encapsulates auth injection and JSON helpers over a Doer.
 type Transport struct {
-	doer              Doer
-	baseURL           string
-	auth              Auth
-	decodeErrMsg      ErrorDecoder
-	contentTypePolicy ContentTypePolicy
-	paginator         Paginator
-	domainHost        string // when non-empty, apiError wraps via backend.ClassifyHTTPError
+	doer               Doer
+	baseURL            string
+	auth               Auth
+	decodeErrMsg       ErrorDecoder
+	contentTypePolicy  ContentTypePolicy
+	paginator          Paginator
+	domainHost         string       // when non-empty, apiError wraps via backend.ClassifyHTTPError
+	defaultRetryPolicy *RetryPolicy // when non-nil, injected into every outgoing request context
 }
 
 // UseDomainErrors enables classification of HTTP errors into typed
@@ -92,6 +119,16 @@ type Transport struct {
 // with existing tests.
 func (t *Transport) UseDomainErrors(host string) *Transport {
 	t.domainHost = host
+	return t
+}
+
+// WireRetry sets a default RetryPolicy that is injected into the context of
+// every outgoing request. This enables retry behaviour through all Transport
+// helpers (GetJSON, PostJSON, etc.) without requiring callers to manage
+// context values directly. Callers that want per-request control can still
+// override the policy via WithRetry on the request context.
+func (t *Transport) WireRetry(p RetryPolicy) *Transport {
+	t.defaultRetryPolicy = &p
 	return t
 }
 
@@ -300,7 +337,11 @@ func (t *Transport) newRequest(method, path string, body any) (*http.Request, er
 		}
 		reader = bytes.NewReader(b)
 	}
-	req, err := http.NewRequestWithContext(context.Background(), method, t.baseURL+path, reader)
+	ctx := context.Background()
+	if t.defaultRetryPolicy != nil {
+		ctx = WithRetry(ctx, *t.defaultRetryPolicy)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, t.baseURL+path, reader)
 	if err != nil {
 		return nil, err
 	}
