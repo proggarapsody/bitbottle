@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.0](https://github.com/proggarapsody/bitbottle/compare/v1.33.0...v1.34.0) (2026-05-12)
+
+
+### Features
+
+* **httph:** HTTP client hardening — retry, rate-limit, ETag cache ([#174](https://github.com/proggarapsody/bitbottle/issues/174)) ([c9eeb90](https://github.com/proggarapsody/bitbottle/commit/c9eeb90d5692a8b818fe65023f4137e51c71f122)), closes [#173](https://github.com/proggarapsody/bitbottle/issues/173)
+
 ## [1.33.0](https://github.com/proggarapsody/bitbottle/compare/v1.32.0...v1.33.0) (2026-05-12)
 
 
