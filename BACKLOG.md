@@ -351,7 +351,7 @@ Current state of every command area against gh feature parity:
 | SEC | **Secret Store & Config Security** | (infrastructure) + `auth migrate` | N/A | DX | ✅ |
 | HTTPH | **HTTP Client Hardening** | (infrastructure) | N/A | DX | ✅ |
 | OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | ✅ |
-| CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | 🔲 |
+| CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | ✅ |
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | ✅ |
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
@@ -361,7 +361,7 @@ Current state of every command area against gh feature parity:
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
 | EXT | **Extension System** | `extension install/upgrade/list/remove/exec`, `--local` for dev | N/A | 4 | 🔲 |
-| VAROPS | **Variable scope-ops strategy** | Collapse the three near-identical `As<X>Client` scope switches in `pkg/cmd/variable/{list,set,delete}/*.go` (and the MCP handler) into one `resolveVariableOps(scope)` helper returning a `VariableOps` interface. Pre-empts OCP debt before the 4th scope lands. Move deployment delete-by-key lookup from cmd/MCP into the cloud adapter. Cite v1.31.0 design-judge findings. | N/A | DX | 🔲 |
+| VAROPS | **Variable scope-ops strategy** | Collapse the three near-identical `As<X>Client` scope switches in `pkg/cmd/variable/{list,set,delete}/*.go` (and the MCP handler) into one `resolveVariableOps(scope)` helper returning a `VariableOps` interface. Pre-empts OCP debt before the 4th scope lands. Move deployment delete-by-key lookup from cmd/MCP into the cloud adapter. Cite v1.31.0 design-judge findings. | N/A | DX | ✅ |
 | CMDTEST | **Shared cmdtest helper** | Promote the three near-clone `pkg/cmd/<group>/internal/cmdtest/cmdtest.go` files (`deployment`, `environment`, `variable`) to a single `pkg/cmd/internal/cmdtest` package and update call sites. | N/A | DX | 🔲 |
 | ENVVAR-DEPREC | **Deprecate `environment variable` tree** | `environment variable {list,set,delete}` (shipped v1.29.0) is structurally a subset of `variable --scope deployment` (shipped v1.31.0). Mark the old tree as deprecated in `pkg/cmd/environment/variable/` with a `Deprecated:` cobra field, route to the new commands, and document the migration in README + skills/SKILL.md. Remove after one minor release. | N/A | DX | 🔲 |
 | SRVVER | **Server version detection helper** | `api/server/version.go` parsing `ServerCapabilities.GetApplicationProperties()` into a `semver.Version` + `(v Version) AtLeast(major, minor int) bool` helper. Cached per-host for the process lifetime. Required by **TASK** (comments-with-severity dispatch for Server >= 7.2) and any future Server-version-conditional behaviour. Ship as part of TASK's first PR or as a standalone precursor. | Server/DC | DX | 🔲 |
