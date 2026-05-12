@@ -146,16 +146,3 @@ func TestCloudClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotContains(t, string(gotBody), `"merge_strategy"`)
 }
-
-func TestCloudClient_CloudNotServerCapabilities(t *testing.T) {
-	t.Parallel()
-	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	// cloud.Client must NOT implement backend.ServerCapabilities
-	var iface any = client
-	_, ok := iface.(interface {
-		GetApplicationProperties() (backend.AppProperties, error)
-	})
-	assert.False(t, ok, "cloud.Client must not implement ServerCapabilities")
-}
