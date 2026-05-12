@@ -222,6 +222,76 @@ Current state of every command area against gh feature parity:
 | `environment delete UUID` | 🔲 | `DELETE .../environments/{uuid}` — scope **DEP** |
 | `environment variable list / set / delete` | 🔲 | `/deployments_config/environments/{uuid}/variables` (CRUD) — scope **DEP** |
 
+### Permissions _(Server / DC only — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `perms project list PROJECT` | 🔲 | List all permission grants for a project — scope **PERMS** |
+| `perms project grant PROJECT USER PERM` | 🔲 | Grant `PROJECT_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
+| `perms project revoke PROJECT USER PERM` | 🔲 | Revoke a project permission grant — scope **PERMS** |
+| `perms repo list PROJECT/REPO` | 🔲 | List all permission grants for a repo — scope **PERMS** |
+| `perms repo grant PROJECT/REPO USER PERM` | 🔲 | Grant `REPO_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
+| `perms repo revoke PROJECT/REPO USER PERM` | 🔲 | Revoke a repo permission grant — scope **PERMS** |
+
+### Admin _(Server / DC only — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `admin secrets rotate` | 🔲 | Rotate application secrets (HTTP Strict Transport, etc.) — scope **ADMIN** |
+| `admin logging get` | 🔲 | Show current log level + async flag — scope **ADMIN** |
+| `admin logging set` | 🔲 | `--level DEBUG\|INFO\|WARN\|ERROR`, `--async` — scope **ADMIN** |
+
+### PR Auto-Merge _(Server / DC only — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `pr auto-merge enable PR_ID` | 🔲 | Enable auto-merge when all conditions pass — scope **AUTOMERGE** |
+| `pr auto-merge disable PR_ID` | 🔲 | Disable auto-merge — scope **AUTOMERGE** |
+| `pr auto-merge status PR_ID` | 🔲 | Show current auto-merge configuration — scope **AUTOMERGE** |
+
+### PR Tasks _(Server / DC only — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `pr task list PR_ID` | 🔲 | List tasks attached to a PR — scope **TASK** |
+| `pr task create PR_ID` | 🔲 | Create a new task (text, optional anchor comment) — scope **TASK** |
+| `pr task complete PR_ID TASK_ID` | 🔲 | Mark a task as resolved — scope **TASK** |
+| `pr task reopen PR_ID TASK_ID` | 🔲 | Re-open a resolved task — scope **TASK** |
+
+### PR Reactions _(Server / DC only — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `pr reaction list PR_ID` | 🔲 | List all emoji reactions on a PR — scope **REACT** |
+| `pr reaction add PR_ID` | 🔲 | Add a reaction (`--emoji EMOJI`) — scope **REACT** |
+| `pr reaction remove PR_ID` | 🔲 | Remove own reaction — scope **REACT** |
+
+### Variable _(standalone promotion — missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `variable list PROJECT/REPO` | 🔲 | List variables; `--scope repository\|workspace\|deployment` — scope **VAR** |
+| `variable set PROJECT/REPO KEY VALUE` | 🔲 | Upsert; `--secured`, `--scope` — scope **VAR** |
+| `variable delete PROJECT/REPO KEY` | 🔲 | Delete; `--scope` — scope **VAR** |
+
+### Extensions _(missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `extension install REPO` | 🔲 | Install a third-party bitbottle extension from a GitHub/Bitbucket repo — scope **EXT** |
+| `extension list` | 🔲 | List installed extensions — scope **EXT** |
+| `extension remove NAME` | 🔲 | Remove an installed extension — scope **EXT** |
+| `extension exec NAME [args...]` | 🔲 | Run an installed extension (BKT_TOKEN / credentials filtered from env) — scope **EXT** |
+
+### Named Context Profiles _(missing)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `context create NAME --hostname HOST --token TOKEN` | 🔲 | Create a named credential profile (like kubectl contexts) — scope **MCTX** |
+| `context use NAME` | 🔲 | Switch the active context — scope **MCTX** |
+| `context list` | 🔲 | List all defined context profiles — scope **MCTX** |
+| `context delete NAME` | 🔲 | Delete a context profile — scope **MCTX** |
+
 ### Code Insights _(Server / DC only)_
 
 | Command | Status | Notes |
@@ -274,6 +344,19 @@ Current state of every command area against gh feature parity:
 | OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | ✅ |
 | CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | ✅ |
 | DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | 🔲 |
+| SEC | **Secret Store & Config Security** | (infrastructure) | N/A | DX | 🔲 |
+| HTTPH | **HTTP Client Hardening** | (infrastructure) | N/A | DX | 🔲 |
+| OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | 🔲 |
+| CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | 🔲 |
+| VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | 🔲 |
+| PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
+| ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
+| AUTOMERGE | **PR Auto-Merge** | `pr auto-merge enable/disable/status` | Server/DC | 3 | 🔲 |
+| TASK | **PR Tasks** | `pr task list/create/complete/reopen` | Server/DC | 3 | 🔲 |
+| REACT | **PR Reactions** | `pr reaction list/add/remove` | Server/DC | 3 | 🔲 |
+| MCTX | **Named Context Profiles** | `context create/use/list/delete` | N/A | 3 | 🔲 |
+| NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
+| EXT | **Extension System** | `extension install/list/remove/exec` | N/A | 4 | 🔲 |
 
 ---
 
@@ -1332,6 +1415,628 @@ type EnvVariableInput struct {
 
 ---
 
+### SEC — Secret Store & Config Security
+
+Two closely related hardening items that should ship together in one PR.
+
+**Problem**: `HostConfig.OAuthToken` is written to `hosts.yml` on disk today. In
+CI / containers the keyring is unavailable and the CLI can hang indefinitely
+waiting for a keyring timeout that never fires.
+
+**Sub-task 1 — Token-never-in-config** (`internal/config/`):
+
+Add `MarshalYAML()` to `HostConfig` that zeroes the token field before serialisation:
+```go
+func (h HostConfig) MarshalYAML() (any, error) {
+    type plain HostConfig
+    safe := plain(h)
+    safe.OAuthToken = ""
+    return safe, nil
+}
+```
+Add a load-time warning: if a token is found in the deserialized struct, print
+`! warning: token found in config file — run bitbottle auth login to migrate` and
+continue (do not error; existing users must not be broken on upgrade).
+
+**Sub-task 2 — Keyring hardening** (`internal/keyring/`):
+
+Replace the current `OSKeyring` thin wrapper with a production-grade implementation
+modelled on bkt's `internal/secret/store.go`:
+
+- `IsHeadless() bool` — returns true when `SSH_TTY`/`DISPLAY`/`WAYLAND_DISPLAY`
+  are all unset, or `CI`/`GITHUB_ACTIONS`/`DOCKER` env vars are set.
+- `keyringTimeout() time.Duration` — 3s when headless, 60s when interactive.
+- Wrap every `Get`/`Set`/`Delete` call with `context.WithTimeout`.
+- On macOS, use an advisory file lock (`~/.config/bitbottle/.keyring.lock`) to
+  prevent concurrent Keychain access (race between parallel CLI invocations).
+- File-based fallback (`~/.config/bitbottle/token.enc`, AES-256-GCM) only when
+  `BITBOTTLE_ALLOW_INSECURE_STORE=1` or `--allow-insecure-store` is passed to
+  `auth login`.
+
+**No new backend interfaces. No new types. No new commands.**
+
+**Definition of Done**:
+- [ ] `HostConfig.MarshalYAML()` strips token; `cfg.Save()` verified by test
+- [ ] Load-time warning test for pre-migration config with token in file
+- [ ] `IsHeadless()` + timeout wrapping; verified in CI environment simulation
+- [ ] Darwin advisory lock; verified with parallel test
+- [ ] File-fallback gated behind env var; integration test for headless flow
+- [ ] Existing `auth login` golden tests pass unchanged
+
+---
+
+### HTTPH — HTTP Client Hardening
+
+**Problem**: `api/internal/httpx/Transport` has no retry, no rate-limit awareness,
+no ETag caching. A transient 5xx or a momentary rate-limit spike causes an
+immediate error surfaced to the user. Under heavy usage against Bitbucket Server
+the CLI hammers the host unnecessarily.
+
+Extend `api/internal/httpx/Transport` (or wrap it in a new `ResilientTransport`):
+
+**Retry + backoff** (`httpx/retry.go`):
+```go
+type RetryPolicy struct {
+    MaxAttempts    int           // default 3
+    InitialBackoff time.Duration // default 200ms
+    MaxBackoff     time.Duration // default 2s
+    Jitter         bool          // default true
+}
+// Retry on: 5xx, 429. Never retry: 4xx (except 429), POST mutations.
+```
+`Transport.Do` wraps the inner `http.RoundTripper` with `retryRoundTripper`
+that applies exponential backoff with full jitter.
+
+**Rate-limit tracking** (`httpx/ratelimit.go`):
+```go
+type RateLimitState struct {
+    Limit     int
+    Remaining int
+    Reset     time.Time
+}
+// ParseRateLimit reads X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+// (and X-Attempt-RateLimit-* where present on Cloud).
+```
+When `Remaining == 0`, block until `Reset` before the next request
+(`applyAdaptiveThrottle`).
+
+**ETag cache** (`httpx/etag.go`):
+- Maintain `map[string]*etagEntry` behind `sync.RWMutex`.
+- On GET: if a cached ETag exists for the URL, send `If-None-Match: <etag>`.
+- On 304: return cached body + 200 status.
+- On 200: store `ETag` header + body.
+- Cache is in-process only (no persistence); max 256 entries, LRU eviction.
+
+**429 + Retry-After** (`httpx/retry.go`):
+- If response is 429, read `Retry-After` header (seconds or HTTP-date).
+- Sleep for that duration (capped at `MaxBackoff`) before retrying.
+
+**No new backend interfaces. No new command changes. No new types.**
+
+**Definition of Done**:
+- [ ] `retryRoundTripper` with table-driven tests covering 5xx retry, 429+Retry-After, non-retriable 4xx
+- [ ] `RateLimitState` parser with test against Bitbucket header shapes
+- [ ] `applyAdaptiveThrottle` test (mock clock)
+- [ ] ETag cache unit tests (hit, miss, 304, eviction)
+- [ ] `go test ./... -race` green — cache map is safe under concurrent access
+- [ ] Integration test against a mock server simulating 500→500→200 sequence
+
+---
+
+### OUT2 — Extended Output Formats
+
+**Problem**: bitbottle only supports `--json` + `--jq` today. Power users and
+script authors often need YAML (readable diffs) or Go templates (custom
+one-liners). More importantly, every command must declare its own `--json`/`--jq`
+flags today — a global declaration would simplify every command and enable uniform
+validation.
+
+**Sub-task 1 — YAML + template support** (`internal/format/`):
+
+Extend `Printer[T].Print` to honour two new formats:
+
+```go
+type OutputFormat string
+const (
+    FormatTable    OutputFormat = ""
+    FormatJSON     OutputFormat = "json"
+    FormatYAML     OutputFormat = "yaml"
+    FormatTemplate OutputFormat = "template"
+)
+```
+
+Add `format.WriteYAML(w, v)` (uses `gopkg.in/yaml.v3`) and
+`format.WriteTemplate(w, tmpl string, v any)` (uses `text/template`).
+
+**Sub-task 2 — Global root-level flags** (`pkg/cmd/root/root.go`):
+
+Move `--json`, `--jq` from per-command flags to persistent flags on the root
+command. Add `--yaml` and `--template`:
+
+```go
+rootCmd.PersistentFlags().Bool("json", false, "Output as JSON")
+rootCmd.PersistentFlags().Bool("yaml", false, "Output as YAML")
+rootCmd.PersistentFlags().String("format", "", "Output format: json, yaml, table")
+rootCmd.PersistentFlags().String("jq", "", "Filter JSON output with a jq expression")
+rootCmd.PersistentFlags().String("template", "", "Format output with a Go template")
+```
+
+**Sub-task 3 — Validation in `PersistentPreRunE`**:
+
+```
+--json and --yaml are mutually exclusive
+--jq requires --json (or --format json)
+--template requires neither --json nor --yaml
+```
+
+Surface a clean user error (not a panic) when combinations are invalid.
+
+**Migration**: Per-command `--json`/`--jq` flags become deprecated shims that
+forward to the global flags; remove them in the next major version.
+
+**No new backend interfaces. No new types. No new commands.**
+
+**Definition of Done**:
+- [ ] `format.WriteYAML` + `format.WriteTemplate` with table-driven tests
+- [ ] Global flags on root; `PersistentPreRunE` validates combos
+- [ ] Golden tests for invalid-combo error messages
+- [ ] At least `pr list`, `pr view`, `repo list`, `commit log` verified with `--yaml` and `--template`
+- [ ] `go test ./... -race` green
+
+---
+
+### CIS — CI Supply Chain Hardening
+
+**Problem**: bitbottle's GitHub Actions workflows use tag-pinned actions
+(`uses: actions/checkout@v4`), have no secret scanning, no SBOM, and no OpenSSF
+Scorecard badge. These are table-stakes supply-chain controls for a published CLI.
+
+**Changes** (all in `.github/workflows/`):
+
+1. **Pin all action SHAs** — replace every `@vN` action ref with `@<full SHA>`.
+   Use `step-security/harden-runner` as the first step in each job.
+
+2. **gitleaks** — add `.github/workflows/secret-scan.yml`:
+   ```yaml
+   - uses: gitleaks/gitleaks-action@<SHA>
+     env:
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+   ```
+   Run on every push and PR.
+
+3. **SBOM** — add SBOM generation to the release workflow using
+   `anchore/sbom-action@<SHA>`. Attach the SBOM as a release asset and
+   attest it with `actions/attest-sbom@<SHA>`.
+
+4. **OpenSSF Scorecard** — add `.github/workflows/scorecard.yml`:
+   ```yaml
+   - uses: ossf/scorecard-action@<SHA>
+     with:
+       results_file: results.sarif
+       publish_results: true
+   ```
+   Publish results to GitHub's dependency graph. Add Scorecard badge to README.
+
+5. **Codecov** — add `codecov/codecov-action@<SHA>` to `ci.yml` after the
+   test step. Add a coverage badge to README.
+
+6. **Skill sync check** — add a job to `ci.yml` that runs `make check-skills`
+   (or equivalent) to verify `skills/SKILL.md` is consistent with implemented
+   commands.
+
+**No backend changes. No new Go code beyond Makefile targets.**
+
+**Definition of Done**:
+- [ ] All `uses:` in all workflows reference pinned SHAs (no tag refs)
+- [ ] `gitleaks` workflow runs and passes on main
+- [ ] SBOM attached to a test release run
+- [ ] Scorecard workflow publishes; README badge added
+- [ ] Codecov upload confirmed in a CI run
+- [ ] `make check-skills` target exists and is called in CI
+
+---
+
+### VAR — Variable Command Promotion
+
+**Problem**: Today `pipeline variable` is nested under `pipeline` and is
+Cloud-only. Bitbucket has workspace-level and repository-level variables too,
+plus deployment-environment variables (scope DEP). A top-level `variable` command
+with `--scope` mirrors the bkt `variable` pattern and consolidates all variable
+management in one place.
+
+**New optional interface** (`api/backend/client.go`):
+```go
+type VariableClient interface {
+    ListVariables(ns, slug, scope string) ([]Variable, error)
+    SetVariable(ns, slug, scope string, in VariableInput) (Variable, error)
+    DeleteVariable(ns, slug, scope, key string) error
+}
+```
+Cloud-only optional; `ErrUnsupportedOnHost` on Server.
+
+`scope` is one of `"repository"` | `"workspace"` | `"deployment"`.
+For `"deployment"` scope an additional `--env UUID` flag is required to identify
+the environment.
+
+**New types**:
+```go
+type Variable struct {
+    UUID    string
+    Key     string
+    Value   string // empty when Secured
+    Secured bool
+    Scope   string
+}
+
+type VariableInput struct {
+    Key     string
+    Value   string
+    Secured bool
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `variable list PROJECT/REPO` | 1 | — | `--scope repository\|workspace\|deployment`, `--env UUID`, `--json`, `--jq`, `--hostname` |
+| `variable set PROJECT/REPO KEY VALUE` | 3 | — | `--scope`, `--env UUID`, `--secured`, `--hostname` |
+| `variable delete PROJECT/REPO KEY` | 2 | — | `--scope`, `--env UUID`, `--hostname` |
+
+**Migration**: `pipeline variable *` commands become deprecated aliases pointing
+to `variable * --scope repository`. Remove in next major version.
+
+**MCP tools**: `list_variables`, `set_variable`, `delete_variable`
+
+---
+
+### PERMS — Permissions Management _(Server / DC only)_
+
+Bitbucket Server/DC exposes permission management via
+`/rest/api/1.0/projects/{key}/permissions` and
+`/rest/api/1.0/projects/{key}/repos/{slug}/permissions`. Cloud has no equivalent
+REST API (managed via workspace membership) — surface `ErrUnsupportedOnHost`.
+
+**New optional interface** (`api/backend/client.go`):
+```go
+type PermissionsClient interface {
+    ListProjectPermissions(project string) ([]PermissionGrant, error)
+    GrantProjectPermission(project, user, perm string) error
+    RevokeProjectPermission(project, user, perm string) error
+
+    ListRepoPermissions(project, slug string) ([]PermissionGrant, error)
+    GrantRepoPermission(project, slug, user, perm string) error
+    RevokeRepoPermission(project, slug, user, perm string) error
+}
+```
+
+**New types**:
+```go
+type PermissionGrant struct {
+    User       User
+    Permission string // PROJECT_READ | PROJECT_WRITE | PROJECT_ADMIN
+                      // REPO_READ   | REPO_WRITE   | REPO_ADMIN
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `perms project list PROJECT` | 1 | — | `--json`, `--jq`, `--hostname` |
+| `perms project grant PROJECT USER PERM` | 3 | — | `--hostname` |
+| `perms project revoke PROJECT USER PERM` | 3 | — | `--hostname` |
+| `perms repo list PROJECT/REPO` | 1 | — | `--json`, `--jq`, `--hostname` |
+| `perms repo grant PROJECT/REPO USER PERM` | 3 | — | `--hostname` |
+| `perms repo revoke PROJECT/REPO USER PERM` | 3 | — | `--hostname` |
+
+`PERM` values: `PROJECT_READ` / `PROJECT_WRITE` / `PROJECT_ADMIN` for project;
+`REPO_READ` / `REPO_WRITE` / `REPO_ADMIN` for repo.
+
+**MCP tools**: `list_project_permissions`, `grant_project_permission`,
+`revoke_project_permission`, `list_repo_permissions`, `grant_repo_permission`,
+`revoke_repo_permission`
+
+---
+
+### ADMIN — Admin Commands _(Server / DC only)_
+
+Server/DC admin endpoints for secrets rotation and log-level management.
+Cloud has no equivalent — surface `ErrUnsupportedOnHost`.
+
+**New optional interface** (`api/backend/client.go`):
+```go
+type AdminClient interface {
+    RotateSecrets() error
+    GetLoggingConfig() (LoggingConfig, error)
+    SetLoggingConfig(in LoggingConfigInput) error
+}
+```
+
+**New types**:
+```go
+type LoggingConfig struct {
+    Level string // DEBUG | INFO | WARN | ERROR
+    Async bool
+}
+
+type LoggingConfigInput = LoggingConfig
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `admin secrets rotate` | 0 | — | `--hostname` |
+| `admin logging get` | 0 | — | `--json`, `--hostname` |
+| `admin logging set` | 0 | one of `--level`, `--async` | `--hostname` |
+
+**MCP tools**: `rotate_secrets`, `get_logging_config`, `set_logging_config`
+
+---
+
+### AUTOMERGE — PR Auto-Merge _(Server / DC only)_
+
+Bitbucket Server/DC allows a PR to be queued for automatic merge once all merge
+checks pass. Cloud does not expose this API — surface `ErrUnsupportedOnHost`.
+
+**New optional interface** (`api/backend/client.go`):
+```go
+type PRAutoMerger interface {
+    EnableAutoMerge(ns, slug string, id int, strategy string) error   // strategy: merge|squash|rebase
+    DisableAutoMerge(ns, slug string, id int) error
+    GetAutoMergeStatus(ns, slug string, id int) (AutoMergeStatus, error)
+}
+```
+
+**New types**:
+```go
+type AutoMergeStatus struct {
+    Enabled  bool
+    Strategy string // merge | squash | rebase
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `pr auto-merge enable PR_ID` | 1 | — | `--strategy merge\|squash\|rebase`, `--hostname` |
+| `pr auto-merge disable PR_ID` | 1 | — | `--hostname` |
+| `pr auto-merge status PR_ID` | 1 | — | `--json`, `--hostname` |
+
+**MCP tools**: `enable_auto_merge`, `disable_auto_merge`, `get_auto_merge_status`
+
+---
+
+### TASK — PR Tasks _(Server / DC only)_
+
+Server/DC tasks are to-do items attached to a PR, optionally anchored to a
+specific comment. Cloud does not have this concept — surface `ErrUnsupportedOnHost`.
+
+**New optional interface** (`api/backend/client.go`):
+```go
+type PRTaskClient interface {
+    ListPRTasks(ns, slug string, prID int) ([]PRTask, error)
+    CreatePRTask(ns, slug string, prID int, in CreatePRTaskInput) (PRTask, error)
+    CompletePRTask(ns, slug string, prID, taskID int) error
+    ReopenPRTask(ns, slug string, prID, taskID int) error
+}
+```
+
+**New types**:
+```go
+type PRTask struct {
+    ID        int
+    Text      string
+    State     string // OPEN | RESOLVED
+    Author    User
+    CreatedAt time.Time
+    CommentID int // 0 = not anchored to a comment
+}
+
+type CreatePRTaskInput struct {
+    Text      string
+    CommentID int // optional anchor
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `pr task list PR_ID` | 1 | — | `--json`, `--jq`, `--hostname` |
+| `pr task create PR_ID` | 1 | `--body` | `--comment COMMENT_ID`, `--hostname` |
+| `pr task complete PR_ID TASK_ID` | 2 | — | `--hostname` |
+| `pr task reopen PR_ID TASK_ID` | 2 | — | `--hostname` |
+
+**MCP tools**: `list_pr_tasks`, `create_pr_task`, `complete_pr_task`, `reopen_pr_task`
+
+---
+
+### REACT — PR Reactions _(Server / DC only)_
+
+Emoji reactions on PRs. Server/DC only — surface `ErrUnsupportedOnHost` on Cloud.
+
+**New optional interface** (`api/backend/client.go`):
+```go
+type PRReactionClient interface {
+    ListPRReactions(ns, slug string, prID int) ([]PRReaction, error)
+    AddPRReaction(ns, slug string, prID int, emoji string) error
+    RemovePRReaction(ns, slug string, prID int, emoji string) error
+}
+```
+
+**New types**:
+```go
+type PRReaction struct {
+    Emoji  string // e.g. "+1", "heart", "tada"
+    Author User
+    Count  int
+}
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `pr reaction list PR_ID` | 1 | — | `--json`, `--jq`, `--hostname` |
+| `pr reaction add PR_ID` | 1 | `--emoji EMOJI` | `--hostname` |
+| `pr reaction remove PR_ID` | 1 | `--emoji EMOJI` | `--hostname` |
+
+**MCP tools**: `list_pr_reactions`, `add_pr_reaction`, `remove_pr_reaction`
+
+---
+
+### MCTX — Named Context Profiles
+
+**Problem**: users with access to multiple Bitbucket instances (e.g. company
+Server + personal Cloud) must pass `--hostname` on every command. Named contexts
+(à la kubectl) let them switch the active credential profile globally.
+
+**Config change** (`internal/config/`):
+
+Add a two-level config: `ActiveContext string` + `Contexts map[string]*Context`.
+Each context references a host + stores the credential indirectly (token in
+keyring under `bitbottle/<context-name>`).
+
+```go
+type Context struct {
+    Hostname string
+    Username string // stored in config; token goes to keyring
+    BackendType string // cloud | server
+    SkipTLSVerify bool
+}
+```
+
+Backward compat: if `ActiveContext` is empty, fall back to the existing
+flat `Hosts` map so existing configs continue to work.
+
+**Factory change** (`pkg/cmd/factory/`):
+
+`f.Backend(hostname)` reads `ActiveContext` when `hostname` is empty, resolving
+the `Context` to a `HostConfig`.
+
+**Commands** (`pkg/cmd/context/`):
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `context create NAME` | 1 | `--hostname HOST` | `--token`, `--username`, `--skip-tls-verify` |
+| `context use NAME` | 1 | — | — |
+| `context list` | 0 | — | `--json`, `--jq` |
+| `context delete NAME` | 1 | — | — |
+
+**Note**: `bitbottle context` (no subcommand) remains the orientation primitive
+from scope **CTX** — that command is unaffected. The new `context create/use/list/delete`
+subcommands are additions to the same command group.
+
+**MCP tools**: none (context selection is CLI-session state, not suitable for
+stateless MCP calls)
+
+---
+
+### NIX — Nix Flake Packaging
+
+**Problem**: developers using Nix/NixOS cannot install bitbottle from nixpkgs
+without a PR to that repo. A `flake.nix` + `flake.lock` in the root allows
+`nix run github:proggarapsody/bitbottle` to work immediately.
+
+**Files to add** (`flake.nix`, `flake.lock`):
+
+```nix
+{
+  description = "Bitbottle — Bitbucket CLI";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  outputs = { self, nixpkgs }: {
+    packages = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ] (system:
+      let pkgs = nixpkgs.legacyPackages.${system}; in {
+        default = pkgs.buildGoModule {
+          pname = "bitbottle";
+          version = self.shortRev or "dev";
+          src = self;
+          vendorHash = "sha256-..."; # updated on each release
+        };
+      }
+    );
+  };
+}
+```
+
+Add a `nix build` test job to CI (runs on `ubuntu-latest` with Nix installed via
+`cachix/install-nix-action`).
+
+**No backend or Go code changes.**
+
+**Definition of Done**:
+- [ ] `nix run github:proggarapsody/bitbottle -- --version` works from the repo root
+- [ ] `flake.lock` committed
+- [ ] CI job confirms `nix build` succeeds on each push
+- [ ] README installation section includes `nix run` one-liner
+
+---
+
+### EXT — Extension System
+
+A plugin mechanism that lets the community add `bitbottle <ext-name>` subcommands
+without forking the core. Modelled on bkt's `extension` subsystem.
+
+**Design**:
+- Extensions are single-file executables (any language) named `bitbottle-<name>`
+  stored in `~/.config/bitbottle/extensions/`.
+- `bitbottle extension install USER/REPO` downloads the matching binary from
+  GitHub Releases and makes it executable.
+- `bitbottle extension exec NAME [args...]` forks the binary, injecting
+  `BITBOTTLE_TOKEN`, `BITBOTTLE_HOST`, `BITBOTTLE_REPO` as env vars, but
+  stripping any secret env vars from the parent process environment (e.g.
+  `BITBOTTLE_KEYRING_PASSPHRASE`).
+- Root command resolution: before Cobra parses args, if `os.Args[1]` is not a
+  known command and `~/.config/bitbottle/extensions/bitbottle-<name>` exists,
+  exec that binary. This makes extensions first-class subcommands.
+
+**New package** (`pkg/cmd/extension/`):
+
+```go
+type Extension struct {
+    Name    string
+    Path    string
+    Version string
+}
+
+func List() ([]Extension, error)
+func Install(repo string) error
+func Remove(name string) error
+func Exec(name string, args []string, env []string) error
+```
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `extension install USER/REPO` | 1 | — | `--hostname` (for private repos), `--pin VERSION` |
+| `extension list` | 0 | — | `--json` |
+| `extension remove NAME` | 1 | — | — |
+| `extension exec NAME [args...]` | 1+ | — | — |
+
+**Security**:
+- Verify SHA256 checksums against a `checksums.txt` in the release assets before
+  installing.
+- Warn and require `--force` if the extension binary is not signed.
+- Strip `BITBOTTLE_TOKEN`, `BITBOTTLE_KEYRING_PASSPHRASE`, `GITHUB_TOKEN` from
+  the subprocess env; inject only `BITBOTTLE_TOKEN` (read from config/keyring)
+  for the active host.
+
+**MCP tools**: none (extension management is CLI-only)
+
+**Definition of Done**:
+- [ ] `extension install` downloads + verifies checksum + makes executable
+- [ ] `extension list` shows installed extensions
+- [ ] `extension remove` deletes the binary
+- [ ] `extension exec` forks with clean env (secret vars stripped, credential vars injected)
+- [ ] Root dispatch resolves unknown first arg to installed extension binary
+- [ ] Security: SHA256 verification test with mock release assets
+
+---
+
 ## Implementation Order
 
 | Order | Scope | Rationale |
@@ -1361,3 +2066,16 @@ type EnvVariableInput struct {
 | 23 | **OF** Issues Finish | Closes the gap left by scope O; Cloud-only; APIs all exist |
 | 24 | **CI** Code Insights | Server/DC only; separate REST namespace; required for CI-integration story on Server |
 | 25 | **DEP** Deployments | Cloud-only operational scope; lowest priority unless requested |
+| 26 | **SEC** Secret Store & Config Security | Token-never-in-file + keyring hardening; high security ROI, small scope |
+| 27 | **HTTPH** HTTP Client Hardening | Retry + rate limiting + ETag cache; improves resilience for all commands |
+| 28 | **CIS** CI Supply Chain Hardening | SHA-pin actions, SBOM, Scorecard, gitleaks, Codecov; ship before next public announcement |
+| 29 | **OUT2** Extended Output Formats | YAML + template output + global flags; unblocks scripting use-cases |
+| 30 | **VAR** Variable Command Promotion | Consolidate variable management under top-level `variable`; quick win |
+| 31 | **PERMS** Permissions Management | Server/DC ACL surface; needed for enterprise onboarding workflows |
+| 32 | **ADMIN** Admin Commands | Server/DC only; small scope, high ops value |
+| 33 | **AUTOMERGE** PR Auto-Merge | Server/DC only; frequent request from DC users |
+| 34 | **TASK** PR Tasks | Server/DC only; completes the PR collaboration surface |
+| 35 | **REACT** PR Reactions | Server/DC only; low effort, nice-to-have parity |
+| 36 | **MCTX** Named Context Profiles | Multi-instance UX; needed once users run both Cloud + Server |
+| 37 | **NIX** Nix Flake Packaging | Distribution; no code change; unblocks Nix users |
+| 38 | **EXT** Extension System | Large scope; deferred until core surface is stable |
