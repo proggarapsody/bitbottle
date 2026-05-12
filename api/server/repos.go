@@ -110,4 +110,3 @@ func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error
 	}
 	return w.toDomain(), nil
 }
-

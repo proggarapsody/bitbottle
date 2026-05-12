@@ -55,4 +55,3 @@ type Client interface {
 // As<X> helpers map each Feature to the optional interface a Client must
 // satisfy to expose that capability.
 type Feature string
-
