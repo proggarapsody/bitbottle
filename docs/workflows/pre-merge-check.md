@@ -136,6 +136,38 @@ demonstrating the principle is followed, or cite a violation with file:line
 and the principle violated. No vague "feels off" — every finding must point
 at code.
 
+### 6a. Architecture smells (BLOCKER) — recurring patterns this loop has shipped
+
+The bullet list below is a hard checklist, added after a post-mortem of
+releases v1.29.0 / v1.30.0 / v1.31.0 surfaced structural debt that the
+per-PR judge had missed. Every item that fires is a BLOCKER unless the PR
+description explicitly justifies the exception.
+
+- **Repeated N-way capability switch.** If `pkg/cmd/<group>/` adds the
+  same `As<X>Client → As<Y>Client → As<Z>Client` switch in three or more
+  files (e.g. list/set/delete), refactor to a single
+  `resolveOps(scope) <iface>` helper and call it once per command. Adding
+  a fourth scope must not require editing three switches (OCP). Grep:
+  `git diff origin/main...HEAD -- 'pkg/cmd/**/*.go' | grep -E 'As[A-Z][a-zA-Z]+Client\(\)' | wc -l` — ≥9 hits across ≥3 files in one PR is the trigger.
+- **Per-command-tree `cmdtest` clones.** If the PR adds
+  `pkg/cmd/<new>/internal/cmdtest/cmdtest.go` whose body is structurally
+  identical to an existing `pkg/cmd/<other>/internal/cmdtest/cmdtest.go`,
+  promote to a shared package instead of cloning.
+- **Two surfaces for one job.** If the PR adds a command that overlaps
+  with an open backlog item (`environment variable …` shipped before
+  `variable --scope deployment`), either ship the unified form first or
+  mark the older form deprecated in the same PR. Don't leave both wired
+  in `pkg/cmd/root/root.go`.
+- **Translation-table sprawl.** If the PR adds the third or fourth
+  `ToCloud<X>` / `<X>ToCLI` pair side-by-side in `api/backend/types.go`,
+  collapse them onto a typed enum with `MarshalCloud/MarshalServer/
+  UnmarshalCloud/UnmarshalServer` methods.
+- **Comment density above the codebase baseline.** Run
+  `git diff origin/main...HEAD -- '*.go' | grep -E '^\+\s*//' | wc -l`
+  against `wc -l` of added lines. If comment lines exceed ~5% of added
+  Go lines and the file is not a new exported package, flag — CLAUDE.md
+  prefers minimal comments and the trend across recent PRs is upward.
+
 Skip when the diff touches only docs, CI config, dependencies, or
 `BACKLOG.md`.
 
