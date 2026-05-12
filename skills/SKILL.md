@@ -27,6 +27,7 @@ not sure about.**
 | Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
 | Deployments (list/view) — Cloud only | `references/deployment.md` |
 | Environments (list/create/delete) + variables (list/set/delete) — Cloud only | `references/deployment.md` |
+| Top-level variable command (repository/workspace/deployment scope) — Cloud only | `references/variable.md` |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.
@@ -142,6 +143,8 @@ bitbottle pipeline watch PROJECT/REPO UUID [--interval 5]
 MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`.
 
 Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployment`, `list_environments`, `create_environment`, `delete_environment`, `list_env_variables`, `set_env_variable`, `delete_env_variable`. See `references/deployment.md`.
+
+Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `variable_delete` — each accepts `scope` (repository/workspace/deployment) and `env_uuid` (required for deployment scope). See `references/variable.md`.
 
 ## PR review quick-reference
 
