@@ -12,6 +12,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/variable/shared"
 	"github.com/proggarapsody/bitbottle/pkg/errfmt"
 )
 
@@ -1358,11 +1359,11 @@ func (h *handlers) listPipelineVariables(_ context.Context, req mcplib.CallToolR
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	pc, err := backend.AsPipelineClient(client, hostname)
+	ops, err := shared.ResolveVariableOps("repository", client, hostname, project, slug, "")
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	vars, err := pc.ListPipelineVariables(project, slug)
+	vars, err := ops.ListVariables()
 	if err != nil {
 		return errResultErr(err), nil
 	}
@@ -1400,15 +1401,11 @@ func (h *handlers) setPipelineVariable(_ context.Context, req mcplib.CallToolReq
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	pc, err := backend.AsPipelineClient(client, hostname)
+	ops, err := shared.ResolveVariableOps("repository", client, hostname, project, slug, "")
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	v, err := pc.SetPipelineVariable(project, slug, backend.PipelineVariableInput{
-		Key:     key,
-		Value:   value,
-		Secured: secured,
-	})
+	v, err := ops.SetVariable(key, value, secured)
 	if err != nil {
 		return errResultErr(err), nil
 	}
@@ -1436,11 +1433,11 @@ func (h *handlers) deletePipelineVariable(_ context.Context, req mcplib.CallTool
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	pc, err := backend.AsPipelineClient(client, hostname)
+	ops, err := shared.ResolveVariableOps("repository", client, hostname, project, slug, "")
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	if err := pc.DeletePipelineVariable(project, slug, key); err != nil {
+	if err := ops.DeleteVariableByKey(key); err != nil {
 		return errResultErr(err), nil
 	}
 	return jsonResult(map[string]string{"key": key, "status": "deleted"})

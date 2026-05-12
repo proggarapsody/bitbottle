@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/variable/shared"
 )
 
 // Options holds parsed flags for `variable delete`.
@@ -71,54 +71,12 @@ func deleteRun(f *factory.Factory, opts *Options) error {
 		return err
 	}
 
-	switch opts.Scope {
-	case "repository":
-		pc, err := backend.AsPipelineClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		if err := pc.DeletePipelineVariable(ref.Project, ref.Slug, key); err != nil {
-			return err
-		}
-
-	case "workspace":
-		wc, err := backend.AsWorkspaceVariableClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		if err := wc.DeleteWorkspaceVariable(ref.Project, key); err != nil {
-			return err
-		}
-
-	case "deployment":
-		if opts.EnvUUID == "" {
-			return fmt.Errorf("--env ENV-UUID is required for --scope deployment")
-		}
-		dc, err := backend.AsDeploymentClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		// Find by key first, then delete by UUID.
-		vars, err := dc.ListEnvVariables(ref.Project, ref.Slug, opts.EnvUUID)
-		if err != nil {
-			return err
-		}
-		var varUUID string
-		for _, v := range vars {
-			if v.Key == key {
-				varUUID = v.UUID
-				break
-			}
-		}
-		if varUUID == "" {
-			return fmt.Errorf("variable %q not found in environment %s", key, opts.EnvUUID)
-		}
-		if err := dc.DeleteEnvVariable(ref.Project, ref.Slug, opts.EnvUUID, varUUID); err != nil {
-			return err
-		}
-
-	default:
-		return fmt.Errorf("unknown scope %q; valid: repository, workspace, deployment", opts.Scope)
+	ops, err := shared.ResolveVariableOps(opts.Scope, client, ref.Host, ref.Project, ref.Slug, opts.EnvUUID)
+	if err != nil {
+		return err
+	}
+	if err := ops.DeleteVariableByKey(key); err != nil {
+		return err
 	}
 
 	fmt.Fprintf(f.IOStreams.Out, "Deleted variable %s\n", key)

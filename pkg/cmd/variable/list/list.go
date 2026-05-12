@@ -2,8 +2,6 @@
 package list
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -55,56 +53,28 @@ func listRun(f *factory.Factory, opts *Options) error {
 		return err
 	}
 
-	switch opts.Scope {
-	case "repository":
-		pc, err := backend.AsPipelineClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		vars, err := pc.ListPipelineVariables(ref.Project, ref.Slug)
-		if err != nil {
-			return err
-		}
-		p := shared.VariableFields(f, opts.Output)
-		for _, v := range vars {
-			p.AddItem(v)
-		}
-		return p.Render()
+	ops, err := shared.ResolveVariableOps(opts.Scope, client, ref.Host, ref.Project, ref.Slug, opts.EnvUUID)
+	if err != nil {
+		return err
+	}
+	vars, err := ops.ListVariables()
+	if err != nil {
+		return err
+	}
 
-	case "workspace":
-		wc, err := backend.AsWorkspaceVariableClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		vars, err := wc.ListWorkspaceVariables(ref.Project)
-		if err != nil {
-			return err
-		}
-		p := shared.VariableFields(f, opts.Output)
-		for _, v := range vars {
-			p.AddItem(v)
-		}
-		return p.Render()
-
-	case "deployment":
-		if opts.EnvUUID == "" {
-			return fmt.Errorf("--env ENV-UUID is required for --scope deployment")
-		}
-		dc, err := backend.AsDeploymentClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		vars, err := dc.ListEnvVariables(ref.Project, ref.Slug, opts.EnvUUID)
-		if err != nil {
-			return err
-		}
+	// Pick the printer based on scope: deployment variables surface as
+	// backend.EnvVariable for JSON/template parity with the old switch;
+	// repository and workspace surface as backend.PipelineVariable.
+	if opts.Scope == "deployment" {
 		p := shared.EnvVariableFields(f, opts.Output)
 		for _, v := range vars {
-			p.AddItem(v)
+			p.AddItem(backend.EnvVariable{UUID: v.UUID, Key: v.Key, Value: v.Value, Secured: v.Secured})
 		}
 		return p.Render()
-
-	default:
-		return fmt.Errorf("unknown scope %q; valid: repository, workspace, deployment", opts.Scope)
 	}
+	p := shared.VariableFields(f, opts.Output)
+	for _, v := range vars {
+		p.AddItem(backend.PipelineVariable{UUID: v.UUID, Key: v.Key, Value: v.Value, Secured: v.Secured})
+	}
+	return p.Render()
 }
