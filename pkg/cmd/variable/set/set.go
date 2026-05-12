@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/variable/shared"
 )
 
 // Options holds parsed flags for `variable set`.
@@ -75,58 +75,15 @@ func setRun(f *factory.Factory, opts *Options) error {
 	}
 	key := opts.Args[1]
 
-	switch opts.Scope {
-	case "repository":
-		pc, err := backend.AsPipelineClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		v, err := pc.SetPipelineVariable(ref.Project, ref.Slug, backend.PipelineVariableInput{
-			Key:     key,
-			Value:   value,
-			Secured: opts.Secured,
-		})
-		if err != nil {
-			return err
-		}
-		return printSet(f, v.Secured, v.Key)
-
-	case "workspace":
-		wc, err := backend.AsWorkspaceVariableClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		v, err := wc.SetWorkspaceVariable(ref.Project, backend.PipelineVariableInput{
-			Key:     key,
-			Value:   value,
-			Secured: opts.Secured,
-		})
-		if err != nil {
-			return err
-		}
-		return printSet(f, v.Secured, v.Key)
-
-	case "deployment":
-		if opts.EnvUUID == "" {
-			return fmt.Errorf("--env ENV-UUID is required for --scope deployment")
-		}
-		dc, err := backend.AsDeploymentClient(client, ref.Host)
-		if err != nil {
-			return err
-		}
-		v, err := dc.SetEnvVariable(ref.Project, ref.Slug, opts.EnvUUID, backend.EnvVariableInput{
-			Key:     key,
-			Value:   value,
-			Secured: opts.Secured,
-		})
-		if err != nil {
-			return err
-		}
-		return printSet(f, v.Secured, v.Key)
-
-	default:
-		return fmt.Errorf("unknown scope %q; valid: repository, workspace, deployment", opts.Scope)
+	ops, err := shared.ResolveVariableOps(opts.Scope, client, ref.Host, ref.Project, ref.Slug, opts.EnvUUID)
+	if err != nil {
+		return err
 	}
+	v, err := ops.SetVariable(key, value, opts.Secured)
+	if err != nil {
+		return err
+	}
+	return printSet(f, v.Secured, v.Key)
 }
 
 func printSet(f *factory.Factory, secured bool, key string) error {

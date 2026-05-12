@@ -5,6 +5,8 @@
 [![CI](https://github.com/proggarapsody/bitbottle/actions/workflows/ci.yml/badge.svg)](https://github.com/proggarapsody/bitbottle/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@proggarapsody/bitbottle)](https://www.npmjs.com/package/@proggarapsody/bitbottle)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/proggarapsody/bitbottle/badge)](https://securityscorecards.dev/viewer/?uri=github.com/proggarapsody/bitbottle)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/XXXX/badge)](https://www.bestpractices.dev/projects/XXXX)
 
 Work with Bitbucket from your terminal — pull requests, repos, branches, tags, commits, pipelines, and raw API access. One tool, both backends, same commands.
 
