@@ -30,8 +30,6 @@ func init() {
 // git state, and one backend round-trip (current user + branch list when
 // inside a repo).
 func NewCmdContext(f *factory.Factory) *cobra.Command {
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -56,8 +54,9 @@ func NewCmdContext(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if jsonFields != "" || jqExpr != "" {
-				p := contextFields(f, jsonFields, jqExpr)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := contextFields(f, cfg)
 				p.SetSingleItem()
 				p.AddItem(ctx)
 				return p.Render()
@@ -66,8 +65,6 @@ func NewCmdContext(f *factory.Factory) *cobra.Command {
 			return renderTable(f, ctx)
 		},
 	}
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
@@ -236,8 +233,8 @@ func renderTable(f *factory.Factory, ctx backend.Context) error {
 	return nil
 }
 
-func contextFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Context] {
-	p := format.New[backend.Context](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func contextFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Context] {
+	p := format.New[backend.Context](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Context]{Name: "host", Header: "HOST", Extract: func(c backend.Context) any { return c.Host }})
 	p.AddField(format.Field[backend.Context]{Name: "project", Header: "PROJECT", Extract: func(c backend.Context) any { return c.Project }})
 	p.AddField(format.Field[backend.Context]{Name: "slug", Header: "SLUG", Extract: func(c backend.Context) any { return c.Slug }})

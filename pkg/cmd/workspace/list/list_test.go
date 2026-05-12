@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/workspace/list"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -19,6 +20,7 @@ func TestNewCmdList_Flags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig})
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("limit"))
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
@@ -33,6 +35,7 @@ func TestNewCmdList_RejectsArgs(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig})
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"unexpected"})
 	require.Error(t, cmd.Execute())
 }
@@ -52,6 +55,7 @@ func TestList_PrintsWorkspaceSlugs(t *testing.T) {
 	factorytest.UseBackend(f, fake)
 
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())
 
@@ -75,6 +79,7 @@ func TestList_ForwardsLimit(t *testing.T) {
 	factorytest.UseBackend(f, fake)
 
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"--limit", "5"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, 5, gotLimit)
@@ -95,7 +100,8 @@ func TestList_JSONOutput_OmitsTableButIncludesUUID(t *testing.T) {
 	factorytest.UseBackend(f, fake)
 
 	cmd := list.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"--json", "uuid,slug"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()
@@ -116,6 +122,7 @@ func TestList_ServerBackend_ReturnsUnsupportedError(t *testing.T) {
 	factorytest.UseBackend(f, noWorkspaceFake{Client: &testhelpers.FakeClient{T: t}})
 
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
 	require.Error(t, err)

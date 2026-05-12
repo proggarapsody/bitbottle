@@ -14,8 +14,6 @@ import (
 
 func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 	var web bool
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -53,8 +51,9 @@ func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 				return f.Browser.Browse(r.WebURL)
 			}
 
-			if jsonFields != "" || jqExpr != "" {
-				p := repoFields(f, jsonFields, jqExpr)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := repoFields(f, cfg)
 				p.SetSingleItem()
 				p.AddItem(r)
 				return p.Render()
@@ -73,14 +72,12 @@ func NewCmdRepoView(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&web, "web", false, "Open in browser")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func repoFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Repository] {
-	p := format.New[backend.Repository](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func repoFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Repository] {
+	p := format.New[backend.Repository](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Repository]{Name: "slug", Header: "SLUG", Extract: func(r backend.Repository) any { return r.Slug }})
 	p.AddField(format.Field[backend.Repository]{Name: "name", Header: "NAME", Extract: func(r backend.Repository) any { return r.Name }})
 	p.AddField(format.Field[backend.Repository]{Name: "namespace", Header: "PROJECT", Extract: func(r backend.Repository) any { return r.Namespace }})

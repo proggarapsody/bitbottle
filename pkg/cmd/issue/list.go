@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -30,7 +31,7 @@ func mapIssueState(state string) string {
 }
 
 func NewCmdIssueList(f *factory.Factory) *cobra.Command {
-	var state, jsonFields, jqExpr, hostname string
+	var state, hostname string
 	var limit int
 	cmd := &cobra.Command{
 		Use:   "list [PROJECT/REPO]",
@@ -53,7 +54,7 @@ func NewCmdIssueList(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := issueListFields(f, jsonFields, jqExpr)
+			p := issueListFields(f, format.ConfigFromCmd(cmd))
 			for _, i := range issues {
 				p.AddItem(i)
 			}
@@ -62,8 +63,6 @@ func NewCmdIssueList(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&state, "state", "open", "State filter: open, new, on-hold, resolved, duplicate, invalid, wontfix, closed, all")
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of issues")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }

@@ -6,15 +6,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/deployment/shared"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 // Options holds parsed flags for `deployment view`.
 type Options struct {
-	Hostname   string
-	JSONFields string
-	JQExpr     string
+	Output   format.OutputConfig
+	Hostname string
 
 	// Args[0] = PROJECT/REPO, Args[1] = UUID
 	Args []string
@@ -29,14 +29,13 @@ func NewCmdView(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
+			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {
 				return runF(opts)
 			}
 			return viewRun(f, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
@@ -59,8 +58,8 @@ func viewRun(f *factory.Factory, opts *Options) error {
 		return err
 	}
 
-	if opts.JSONFields != "" || opts.JQExpr != "" {
-		printer := shared.DeploymentFields(f, opts.JSONFields, opts.JQExpr)
+	if opts.Output.Format != format.FormatTable {
+		printer := shared.DeploymentFields(f, opts.Output)
 		printer.SetSingleItem()
 		printer.AddItem(d)
 		return printer.Render()

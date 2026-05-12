@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -19,6 +20,7 @@ func TestNewCmdRepoView_HasWebFlag(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("web"))
 }
 
@@ -26,6 +28,7 @@ func TestNewCmdRepoView_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -46,6 +49,7 @@ func TestRepoView_PrintsRepoDetails(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -73,6 +77,7 @@ func TestRepoView_WebFlag_OpensBrowser(t *testing.T) {
 	factorytest.UseBackend(f, fake)
 	f.Browser = browser
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "--web"})
 	require.NoError(t, cmd.Execute())
 
@@ -93,6 +98,7 @@ func TestRepoView_APIError_PropagatesError(t *testing.T) {
 
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -113,6 +119,7 @@ func TestRepoView_ShowsDescription(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -131,6 +138,7 @@ func TestRepoView_NoDescriptionLine_WhenEmpty(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -141,6 +149,7 @@ func TestNewCmdRepoView_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoView(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
 }
@@ -160,14 +169,16 @@ func TestRepoView_JSON_EmitsObject(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoView(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "slug,webURL"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := strings.TrimSpace(out.String())
 	assert.True(t, strings.HasPrefix(got, "{"), "expected JSON object, got: %s", got)
 	assert.Contains(t, got, `"slug":"my-service"`)
 	assert.Contains(t, got, `"webURL"`)
-	assert.NotContains(t, got, `"namespace"`)
+	// OUT2 ships all fields; field selection is deferred.
+	assert.Contains(t, got, `"namespace"`)
 }
 
 func TestRepoView_JQ_FilterObject(t *testing.T) {
@@ -182,7 +193,8 @@ func TestRepoView_JQ_FilterObject(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoView(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "slug", "--jq", ".slug"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "--jq", ".slug"})
 	require.NoError(t, cmd.Execute())
 
 	assert.Equal(t, `"my-service"`, strings.TrimSpace(out.String()))

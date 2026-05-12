@@ -21,8 +21,8 @@ func DisplayVariableValue(v backend.PipelineVariable) string {
 // VariableFields constructs the formatter for repository and workspace scope
 // variable lists (PipelineVariable). Secured values are redacted via
 // DisplayVariableValue in both TTY and JSON output paths.
-func VariableFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.PipelineVariable] {
-	p := format.New[backend.PipelineVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func VariableFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.PipelineVariable] {
+	p := format.New[backend.PipelineVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.PipelineVariable]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(v backend.PipelineVariable) any { return v.UUID }})
 	p.AddField(format.Field[backend.PipelineVariable]{Name: "key", Header: "KEY", Extract: func(v backend.PipelineVariable) any { return v.Key }})
 	p.AddField(format.Field[backend.PipelineVariable]{
@@ -43,8 +43,8 @@ func DisplayEnvVariableValue(v backend.EnvVariable) string {
 
 // EnvVariableFields constructs the formatter for deployment scope variable
 // lists (EnvVariable). Secured values are redacted in both TTY and JSON paths.
-func EnvVariableFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.EnvVariable] {
-	p := format.New[backend.EnvVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func EnvVariableFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.EnvVariable] {
+	p := format.New[backend.EnvVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.EnvVariable]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(v backend.EnvVariable) any { return v.UUID }})
 	p.AddField(format.Field[backend.EnvVariable]{Name: "key", Header: "KEY", Extract: func(v backend.EnvVariable) any { return v.Key }})
 	p.AddField(format.Field[backend.EnvVariable]{

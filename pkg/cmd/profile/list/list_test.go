@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/internal/profiles"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/profile/list"
@@ -27,6 +28,7 @@ func TestListRun_Empty(t *testing.T) {
 	factorytest.UseProfiles(f, store)
 
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())
 
@@ -42,6 +44,7 @@ func TestListRun_ListsProfiles(t *testing.T) {
 	factorytest.UseProfiles(f, store)
 
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())
 
@@ -64,7 +67,8 @@ func TestListRun_JSONMode(t *testing.T) {
 	factorytest.UseProfiles(f, store)
 
 	cmd := list.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"--json", "name,hostname,backend_type,skip_tls_verify"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
 	require.NoError(t, cmd.Execute())
 
 	output := out.String()
@@ -87,6 +91,7 @@ func TestListRun_TokenNeverPrinted(t *testing.T) {
 
 	// Plain table
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())
 	assert.NotContains(t, out.String(), "ultra-secret-token")
@@ -101,6 +106,7 @@ func TestListRun_SortedOutput(t *testing.T) {
 	factorytest.UseProfiles(f, store)
 
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.NoError(t, cmd.Execute())
 

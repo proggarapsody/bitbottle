@@ -12,6 +12,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	contextcmd "github.com/proggarapsody/bitbottle/pkg/cmd/context"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
@@ -63,6 +64,7 @@ func TestNewCmdContext_HasJSONJqAndHostnameFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := contextcmd.NewCmdContext(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
 	assert.NotNil(t, cmd.Flag("hostname"))
@@ -92,6 +94,7 @@ func TestContext_InRepo_TablePrintsAllFields(t *testing.T) {
 	})
 
 	cmd := contextcmd.NewCmdContext(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs(nil)
 	require.NoError(t, cmd.Execute())
 
@@ -123,7 +126,8 @@ func TestContext_InRepo_JSON_EmitsPRDShape(t *testing.T) {
 	})
 
 	cmd := contextcmd.NewCmdContext(f)
-	cmd.SetArgs([]string{"--json", "host,project,slug,branch,default_branch,ahead,behind,user,backend"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
 	require.NoError(t, cmd.Execute())
 
 	var got map[string]any
@@ -159,7 +163,8 @@ func TestContext_InRepo_JQ_FiltersUserSlug(t *testing.T) {
 	})
 
 	cmd := contextcmd.NewCmdContext(f)
-	cmd.SetArgs([]string{"--json", "user", "--jq", ".user.slug"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json", "--jq", ".user.slug"})
 	require.NoError(t, cmd.Execute())
 
 	assert.Equal(t, `"alice"`, strings.TrimSpace(out.String()))
@@ -181,7 +186,8 @@ func TestContext_OutsideRepo_StillResolvesHostAndUser(t *testing.T) {
 	f, out, _ := newCtxFactory(t, ctxConfigServer, fake, nil, bbrepo.RepoRef{})
 
 	cmd := contextcmd.NewCmdContext(f)
-	cmd.SetArgs([]string{"--json", "host,project,slug,branch,default_branch,ahead,behind,user,backend"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
 	require.NoError(t, cmd.Execute())
 
 	var got map[string]any
@@ -231,7 +237,8 @@ func TestContext_InRepo_AheadBehindGitFailure_OmitsFromJSON(t *testing.T) {
 	})
 
 	cmd := contextcmd.NewCmdContext(f)
-	cmd.SetArgs([]string{"--json", "host,project,slug,branch,default_branch,ahead,behind,user,backend"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
 	require.NoError(t, cmd.Execute())
 
 	var got map[string]any
@@ -265,6 +272,7 @@ func TestContext_InRepo_AheadBehindGitFailure_TableSaysUnknown(t *testing.T) {
 	})
 
 	cmd := contextcmd.NewCmdContext(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs(nil)
 	require.NoError(t, cmd.Execute())
 
@@ -291,6 +299,7 @@ func TestContext_OutsideRepo_Table_PrintsAdvisory(t *testing.T) {
 	f, out, _ := newCtxFactory(t, ctxConfigServer, fake, nil, bbrepo.RepoRef{})
 
 	cmd := contextcmd.NewCmdContext(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs(nil)
 	require.NoError(t, cmd.Execute())
 
@@ -320,7 +329,8 @@ func TestContext_CloudHost_BackendIsCloud(t *testing.T) {
 	f, out, _ := newCtxFactory(t, ctxConfigCloud, fake, nil, bbrepo.RepoRef{})
 
 	cmd := contextcmd.NewCmdContext(f)
-	cmd.SetArgs([]string{"--json", "backend"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
 	require.NoError(t, cmd.Execute())
 
 	var got map[string]any
@@ -343,7 +353,8 @@ func TestContext_HostnameFlag_OverridesConfigPick(t *testing.T) {
 	f, out, _ := newCtxFactory(t, multi, fake, nil, bbrepo.RepoRef{})
 
 	cmd := contextcmd.NewCmdContext(f)
-	cmd.SetArgs([]string{"--hostname", "bitbucket.org", "--json", "host,backend"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--hostname", "bitbucket.org", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	var got map[string]any

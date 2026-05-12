@@ -44,8 +44,8 @@ func assigneeSlug(i backend.Issue) any {
 	return i.Assignee.Slug
 }
 
-func issueListFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Issue] {
-	p := format.New[backend.Issue](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func issueListFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Issue] {
+	p := format.New[backend.Issue](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Issue]{Name: "id", Header: "ID", Extract: func(i backend.Issue) any { return i.ID }})
 	p.AddField(format.Field[backend.Issue]{Name: "title", Header: "TITLE", Extract: func(i backend.Issue) any { return i.Title }})
 	p.AddField(format.Field[backend.Issue]{
@@ -63,8 +63,8 @@ func issueListFields(f *factory.Factory, jsonFields, jqExpr string) *format.Prin
 
 // issueViewFields adds the body content — useful on `issue view` but noisy
 // in the list.
-func issueViewFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Issue] {
-	p := issueListFields(f, jsonFields, jqExpr)
+func issueViewFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Issue] {
+	p := issueListFields(f, cfg)
 	p.AddField(format.Field[backend.Issue]{Name: "content", Header: "CONTENT", Extract: func(i backend.Issue) any { return i.Content }})
 	return p
 }

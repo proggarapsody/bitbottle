@@ -13,8 +13,6 @@ import (
 
 func NewCmdTagList(f *factory.Factory) *cobra.Command {
 	var limit int
-	var jsonFields string
-	var jqExpr string
 	var web bool
 	var hostname string
 
@@ -49,7 +47,7 @@ func NewCmdTagList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			p := tagFields(f, jsonFields, jqExpr)
+			p := tagFields(f, format.ConfigFromCmd(cmd))
 			for _, t := range tags {
 				p.AddItem(t)
 			}
@@ -57,15 +55,13 @@ func NewCmdTagList(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of tags")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().BoolVar(&web, "web", false, "Open repository tags page in browser")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func tagFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Tag] {
-	p := format.New[backend.Tag](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func tagFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Tag] {
+	p := format.New[backend.Tag](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Tag]{Name: "name", Header: "NAME", Extract: func(t backend.Tag) any { return t.Name }})
 	p.AddField(format.Field[backend.Tag]{Name: "hash", Header: "HASH", Extract: func(t backend.Tag) any {
 		if len(t.Hash) > 8 {

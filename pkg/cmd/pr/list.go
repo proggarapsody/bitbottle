@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -27,8 +28,6 @@ func mapPRState(state string) string {
 func NewCmdPRList(f *factory.Factory) *cobra.Command {
 	var state string
 	var limit int
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -51,7 +50,7 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			p := prFields(f, jsonFields, jqExpr)
+			p := prFields(f, format.ConfigFromCmd(cmd))
 			for _, pr := range prs {
 				p.AddItem(pr)
 			}
@@ -60,8 +59,6 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&state, "state", "open", "State filter: open, closed, merged")
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of pull requests")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }

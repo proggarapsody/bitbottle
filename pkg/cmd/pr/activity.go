@@ -13,7 +13,7 @@ import (
 )
 
 func NewCmdPRActivity(f *factory.Factory) *cobra.Command {
-	var hostnameFlag, jsonFields, jqExpr string
+	var hostnameFlag string
 	var limit int
 
 	cmd := &cobra.Command{
@@ -31,12 +31,13 @@ func NewCmdPRActivity(f *factory.Factory) *cobra.Command {
 			}
 
 			isTTY := f.IOStreams.IsStdoutTTY()
-			if jsonFields == "" && jqExpr == "" && len(events) == 0 {
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format == format.FormatTable && len(events) == 0 {
 				fmt.Fprintln(f.IOStreams.Out, "No activity found.")
 				return nil
 			}
 
-			p := activityFields(f, jsonFields, jqExpr, isTTY)
+			p := activityFields(f, cfg, isTTY)
 			for _, ev := range events {
 				p.AddItem(ev)
 			}
@@ -44,19 +45,18 @@ func NewCmdPRActivity(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&hostnameFlag, "hostname", "", "Bitbucket hostname")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum number of events to return (0 = no limit)")
 	return cmd
 }
 
-func activityFields(f *factory.Factory, jsonFields, jqExpr string, isTTY bool) *format.Printer[backend.PRActivityEvent] {
-	p := format.New[backend.PRActivityEvent](f.IOStreams.Out, isTTY, jsonFields, jqExpr)
+func activityFields(f *factory.Factory, cfg format.OutputConfig, isTTY bool) *format.Printer[backend.PRActivityEvent] {
+	p := format.New[backend.PRActivityEvent](f.IOStreams.Out, isTTY, cfg)
+	structured := cfg.Format != format.FormatTable
 	p.AddField(format.Field[backend.PRActivityEvent]{
 		Name:   "time",
 		Header: "TIME",
 		Extract: func(ev backend.PRActivityEvent) any {
-			if jsonFields != "" || !isTTY {
+			if structured || !isTTY {
 				return ev.CreatedAt.Format(time.RFC3339)
 			}
 			return text.RelativeTime(ev.CreatedAt)

@@ -12,8 +12,7 @@ import (
 
 // GetOptions holds parsed flags for `code-insights merge-check get`.
 type GetOptions struct {
-	Hostname   string
-	JSONFields string
+	Hostname string
 	// Args[0]=PROJECT/REPO  Args[1]=KEY
 	Args []string
 }
@@ -36,7 +35,6 @@ EXPERIMENTAL: This command uses a partly undocumented API.`,
 			return getRun(f, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }

@@ -7,11 +7,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func NewCmdIssueView(f *factory.Factory) *cobra.Command {
-	var jsonFields, jqExpr, hostname string
+	var hostname string
 	cmd := &cobra.Command{
 		Use:   "view [PROJECT/REPO] ID",
 		Short: "View a single issue",
@@ -38,14 +39,12 @@ func NewCmdIssueView(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := issueViewFields(f, jsonFields, jqExpr)
+			p := issueViewFields(f, format.ConfigFromCmd(cmd))
 			p.SetSingleItem()
 			p.AddItem(issue)
 			return p.Render()
 		},
 	}
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }

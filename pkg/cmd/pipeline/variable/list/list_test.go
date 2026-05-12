@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/internal/cmdtest"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/variable/list"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -17,6 +18,7 @@ func TestNewCmdList_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.Error(t, cmd.Execute())
 }
@@ -34,6 +36,7 @@ func TestList_PrintsKeysAndRedactsSecuredValuesOnTTY(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -55,7 +58,8 @@ func TestList_JSON_RedactsSecuredValuesViaSameChokepoint(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "key,value,secured"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 	// Parse the JSON output to assert on semantic content rather than the
 	// stdlib's HTML-escaped wire form (`<`/`>`).
@@ -72,6 +76,7 @@ func TestList_ClientNotPipelineCapable_ReturnsError(t *testing.T) {
 	fake := &cmdtest.NoPipelineFake{Client: &testhelpers.FakeClient{T: t}}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)

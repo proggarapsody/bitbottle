@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -19,6 +20,7 @@ func TestNewCmdRepoCreate_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoCreate(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("project"))
 	assert.NotNil(t, cmd.Flag("description"))
 	assert.NotNil(t, cmd.Flag("private"))
@@ -44,6 +46,7 @@ func TestRepoCreate_CallsAPIAndPrintsSummary(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"new-repo", "--project", "MYPROJ"})
 	require.NoError(t, cmd.Execute())
 
@@ -58,6 +61,7 @@ func TestRepoCreate_MissingProject_Errors(t *testing.T) {
 
 	f, _, _ := newRepoFactory(t, nil)
 	cmd := repo.NewCmdRepoCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"new-repo"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -77,6 +81,7 @@ func TestRepoCreate_APIError_PropagatesError(t *testing.T) {
 
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"new-repo", "--project", "MYPROJ"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -87,6 +92,7 @@ func TestNewCmdRepoCreate_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoCreate(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
 }
@@ -103,7 +109,8 @@ func TestRepoCreate_JSON_EmitsObject(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoCreate(f)
-	cmd.SetArgs([]string{"new-repo", "--project", "MYPROJ", "--json", "slug,namespace"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"new-repo", "--project", "MYPROJ", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := strings.TrimSpace(out.String())

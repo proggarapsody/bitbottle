@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
@@ -57,6 +58,7 @@ func TestCommitLog_PrintsTable(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitLog(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main"})
 	require.NoError(t, cmd.Execute())
 
@@ -87,6 +89,7 @@ func TestCommitLog_BranchFlag(t *testing.T) {
 	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitLog(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "feat/x"})
 	require.NoError(t, cmd.Execute())
 
@@ -114,6 +117,7 @@ func TestCommitLog_DefaultBranch(t *testing.T) {
 	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitLog(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -138,6 +142,7 @@ func TestCommitLog_DefaultBranch_FallsBackToMain(t *testing.T) {
 	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitLog(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -173,6 +178,7 @@ func TestCommitLog_TTY_StreamsThroughPager(t *testing.T) {
 	factorytest.UseBackend(f, fake)
 	f.IOStreams = ios
 	cmd := commit.NewCmdCommitLog(f)
+	format.RegisterOutputFlags(cmd)
 	cmdutil.EnablePagerForAnnotated(cmd, ios)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main"})
 	require.NoError(t, cmd.Execute())
@@ -204,7 +210,8 @@ func TestCommitLog_JSONOutput(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitLog(f)
-	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main", "--json", "hash,message"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	var results []map[string]any

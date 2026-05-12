@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -28,6 +29,7 @@ func TestPRActivity_RendersTable(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRActivity(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 
@@ -48,6 +50,7 @@ func TestPRActivity_EmptyResultPrintsSentinel(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRActivity(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "No activity found.")
@@ -65,6 +68,7 @@ func TestPRActivity_LimitFlagPassedThrough(t *testing.T) {
 	}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRActivity(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--limit", "5"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, 5, gotLimit)
@@ -80,6 +84,7 @@ func TestPRActivity_APIError_Propagated(t *testing.T) {
 	}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRActivity(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -99,7 +104,8 @@ func TestPRActivity_JSONFlag(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRActivity(f)
-	cmd.SetArgs([]string{"42", "--json", "type,actor,createdAt"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()

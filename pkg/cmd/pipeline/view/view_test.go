@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/internal/cmdtest"
@@ -19,6 +20,7 @@ func TestNewCmdView_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("web"))
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
@@ -28,6 +30,7 @@ func TestNewCmdView_RequiresTwoArgs(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"}) // missing UUID
 	require.Error(t, cmd.Execute())
 }
@@ -43,6 +46,7 @@ func TestView_PrintsDetails(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", uuid})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -67,6 +71,7 @@ func TestView_WebFlag_OpensBrowser(t *testing.T) {
 	f.GitRunner = func() run.Runner { return cmdtest.NewRunner() }
 	f.Browser = browser
 	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", uuid, "--web"})
 	require.NoError(t, cmd.Execute())
 	require.Len(t, browser.URLs, 1)
@@ -85,6 +90,7 @@ func TestView_APIError_PropagatesError(t *testing.T) {
 	}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", uuid})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -102,7 +108,8 @@ func TestView_JSON_EmitsObject(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := view.NewCmdView(f, nil)
-	cmd.SetArgs([]string{"myworkspace/my-service", uuid, "--json", "buildNumber,state"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", uuid, "--json"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
 	assert.Contains(t, got, `"buildNumber":42`)

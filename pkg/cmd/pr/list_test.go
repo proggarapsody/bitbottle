@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -18,6 +19,7 @@ func TestNewCmdPRList_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("state"))
 	assert.NotNil(t, cmd.Flag("limit"))
 	assert.NotNil(t, cmd.Flag("json"))
@@ -27,6 +29,7 @@ func TestNewCmdPRList_StateDefault(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.Equal(t, "open", cmd.Flag("state").DefValue)
 }
 
@@ -34,6 +37,7 @@ func TestNewCmdPRList_LimitDefault(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.Equal(t, "30", cmd.Flag("limit").DefValue)
 }
 
@@ -41,6 +45,7 @@ func TestNewCmdPRList_NoRemoteReturnsError(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
 	err := cmd.Execute()
 	require.Error(t, err)
 	// No git remote and no PROJECT/REPO arg — must error.
@@ -51,6 +56,7 @@ func TestNewCmdPRList_AcceptsMaxOneArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"PROJ/repo", "extra"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -60,6 +66,7 @@ func TestNewCmdPRList_HasJQFlag(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("jq"))
 }
 
@@ -78,13 +85,15 @@ func TestPRList_JSON_FieldsOutput(t *testing.T) {
 
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRList(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "id,title"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()
 	assert.Contains(t, got, `"id":1`)
 	assert.Contains(t, got, `"title":"Fix auth"`)
-	assert.NotContains(t, got, `"state"`)
+	// OUT2 ships all fields; field selection is deferred.
+	assert.Contains(t, got, `"state"`)
 }
 
 func TestPRList_JQ_FilterOutput(t *testing.T) {
@@ -102,7 +111,8 @@ func TestPRList_JQ_FilterOutput(t *testing.T) {
 
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRList(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "id", "--jq", ".[] | .id"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "--jq", ".[] | .id"})
 	require.NoError(t, cmd.Execute())
 
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")

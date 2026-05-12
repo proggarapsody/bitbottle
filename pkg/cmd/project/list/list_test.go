@@ -27,9 +27,10 @@ func TestNewCmdList_Flags(t *testing.T) {
 	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig})
 	cmd := list.NewCmdList(f, nil)
 	assert.NotNil(t, cmd.Flag("limit"))
-	assert.NotNil(t, cmd.Flag("json"))
-	assert.NotNil(t, cmd.Flag("jq"))
 	assert.NotNil(t, cmd.Flag("hostname"))
+	// --json / --jq are persistent flags on the root in OUT2; they
+	// resolve at execution time via format.ConfigFromCmd rather than as
+	// local subcommand flags.
 }
 
 func TestList_ForwardsWorkspaceArg(t *testing.T) {

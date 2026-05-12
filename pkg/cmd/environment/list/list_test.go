@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/list"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -16,6 +17,7 @@ func TestNewCmdList_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
 }
@@ -24,6 +26,7 @@ func TestNewCmdList_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.Error(t, cmd.Execute())
 }
@@ -41,6 +44,7 @@ func TestList_PrintsEnvironments(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -60,7 +64,8 @@ func TestList_JSON_Output(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "name,type"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), `"name":"Production"`)
 }
@@ -70,6 +75,7 @@ func TestList_ClientNotDeploymentCapable_ReturnsError(t *testing.T) {
 	fake := &cmdtest.NoDeploymentFake{Client: &testhelpers.FakeClient{T: t}}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)

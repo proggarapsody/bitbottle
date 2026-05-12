@@ -25,8 +25,8 @@ func DeploymentStateColor(ios *iostreams.IOStreams) func(string) string {
 }
 
 // DeploymentFields constructs the formatter for deployment list/view.
-func DeploymentFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Deployment] {
-	p := format.New[backend.Deployment](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func DeploymentFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Deployment] {
+	p := format.New[backend.Deployment](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Deployment]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(d backend.Deployment) any { return d.UUID }})
 	p.AddField(format.Field[backend.Deployment]{
 		Name: "state", Header: "STATE",
@@ -46,8 +46,8 @@ func DeploymentFields(f *factory.Factory, jsonFields, jqExpr string) *format.Pri
 }
 
 // EnvironmentFields constructs the formatter for environment list.
-func EnvironmentFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Environment] {
-	p := format.New[backend.Environment](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func EnvironmentFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Environment] {
+	p := format.New[backend.Environment](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Environment]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(e backend.Environment) any { return e.UUID }})
 	p.AddField(format.Field[backend.Environment]{Name: "name", Header: "NAME", Extract: func(e backend.Environment) any { return e.Name }})
 	p.AddField(format.Field[backend.Environment]{Name: "type", Header: "TYPE", Extract: func(e backend.Environment) any { return e.Type }})
@@ -67,8 +67,8 @@ func DisplayEnvVariableValue(v backend.EnvVariable) string {
 }
 
 // EnvVariableFields constructs the formatter for environment variable list.
-func EnvVariableFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.EnvVariable] {
-	p := format.New[backend.EnvVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func EnvVariableFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.EnvVariable] {
+	p := format.New[backend.EnvVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.EnvVariable]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(v backend.EnvVariable) any { return v.UUID }})
 	p.AddField(format.Field[backend.EnvVariable]{Name: "key", Header: "KEY", Extract: func(v backend.EnvVariable) any { return v.Key }})
 	p.AddField(format.Field[backend.EnvVariable]{
