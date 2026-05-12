@@ -4,12 +4,86 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/itchyny/gojq"
+	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/internal/tableprinter"
 )
+
+// OutputFormat enumerates supported output modes.
+type OutputFormat string
+
+const (
+	// FormatTable is the default human-readable table output.
+	FormatTable OutputFormat = ""
+	// FormatJSON emits JSON, optionally piped through jq.
+	FormatJSON OutputFormat = "json"
+	// FormatYAML emits YAML.
+	FormatYAML OutputFormat = "yaml"
+	// FormatTemplate renders results through a Go text/template.
+	FormatTemplate OutputFormat = "template"
+)
+
+// OutputConfig captures the user-facing output-format selection — exactly
+// one Format is active per invocation. JQExpr is only meaningful when
+// Format == FormatJSON; Template only when Format == FormatTemplate.
+type OutputConfig struct {
+	Format   OutputFormat
+	JQExpr   string
+	Template string
+}
+
+// RegisterOutputFlags registers --json, --yaml, --jq and --template as
+// persistent flags on cmd. Use this on the root command; subcommands
+// inherit the flags via cobra's persistent-flag merging.
+//
+// Exposed so tests that instantiate individual subcommands in isolation
+// (without going through the root) can still parse output-format flags
+// the same way production does.
+func RegisterOutputFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().Bool("json", false, "Output as JSON")
+	cmd.PersistentFlags().Bool("yaml", false, "Output as YAML")
+	cmd.PersistentFlags().String("jq", "", "Filter JSON output with a jq expression")
+	cmd.PersistentFlags().String("template", "", "Format output with a Go template")
+}
+
+// ConfigFromCmd reads the four output-format persistent flags from any
+// cobra.Command. Works from any subcommand because Cobra merges persistent
+// flags from ancestors. Falls back to FormatTable when the flags are not
+// registered (e.g. a test calling a subcommand without a parent).
+func ConfigFromCmd(cmd *cobra.Command) OutputConfig {
+	jsonMode := lookupBool(cmd, "json")
+	jqExpr := lookupString(cmd, "jq")
+	yamlMode := lookupBool(cmd, "yaml")
+	tmpl := lookupString(cmd, "template")
+	switch {
+	case yamlMode:
+		return OutputConfig{Format: FormatYAML}
+	case tmpl != "":
+		return OutputConfig{Format: FormatTemplate, Template: tmpl}
+	case jsonMode:
+		return OutputConfig{Format: FormatJSON, JQExpr: jqExpr}
+	default:
+		return OutputConfig{Format: FormatTable, JQExpr: jqExpr}
+	}
+}
+
+func lookupBool(cmd *cobra.Command, name string) bool {
+	if cmd.Flags().Lookup(name) == nil {
+		return false
+	}
+	v, _ := cmd.Flags().GetBool(name)
+	return v
+}
+
+func lookupString(cmd *cobra.Command, name string) string {
+	if cmd.Flags().Lookup(name) == nil {
+		return ""
+	}
+	v, _ := cmd.Flags().GetString(name)
+	return v
+}
 
 // Field describes one output column and JSON key for type T.
 type Field[T any] struct {
@@ -32,24 +106,23 @@ type Field[T any] struct {
 type Printer[T any] struct {
 	w          io.Writer
 	isTTY      bool
-	jsonFields string
-	jqExpr     string
+	cfg        OutputConfig
 	singleItem bool
 	fields     []Field[T]
 	items      []T
 }
 
 // New constructs a Printer.
-func New[T any](w io.Writer, isTTY bool, jsonFields, jqExpr string) *Printer[T] {
+func New[T any](w io.Writer, isTTY bool, cfg OutputConfig) *Printer[T] {
 	return &Printer[T]{
-		w:          w,
-		isTTY:      isTTY,
-		jsonFields: jsonFields,
-		jqExpr:     jqExpr,
+		w:     w,
+		isTTY: isTTY,
+		cfg:   cfg,
 	}
 }
 
-// SetSingleItem marks the printer to emit a JSON object instead of an array.
+// SetSingleItem marks the printer to emit a single object (JSON/YAML/template)
+// instead of an array.
 func (p *Printer[T]) SetSingleItem() {
 	p.singleItem = true
 }
@@ -66,15 +139,23 @@ func (p *Printer[T]) AddItem(item T) {
 
 // Render writes all items in the appropriate format.
 func (p *Printer[T]) Render() error {
-	if p.jqExpr != "" && p.jsonFields == "" {
+	if p.cfg.JQExpr != "" && p.cfg.Format != FormatJSON {
 		return fmt.Errorf("--jq requires --json")
 	}
 
-	if p.jsonFields != "" {
+	switch p.cfg.Format {
+	case FormatJSON:
 		return p.renderJSON()
+	case FormatYAML:
+		return p.renderYAML()
+	case FormatTemplate:
+		if p.cfg.Template == "" {
+			return fmt.Errorf("--template: expression is empty")
+		}
+		return p.renderTemplate()
+	default:
+		return p.renderTable()
 	}
-
-	return p.renderTable()
 }
 
 func (p *Printer[T]) renderTable() error {
@@ -112,18 +193,13 @@ func (p *Printer[T]) renderTable() error {
 }
 
 func (p *Printer[T]) renderJSON() error {
-	requested, err := p.resolveFields()
-	if err != nil {
-		return err
-	}
-
 	if p.singleItem {
 		if len(p.items) == 0 {
 			_, err := fmt.Fprintln(p.w, "{}")
 			return err
 		}
-		obj := p.itemToMap(p.items[0], requested)
-		if p.jqExpr != "" {
+		obj := p.itemToMap(p.items[0])
+		if p.cfg.JQExpr != "" {
 			return p.runJQ(obj)
 		}
 		return json.NewEncoder(p.w).Encode(obj)
@@ -131,10 +207,10 @@ func (p *Printer[T]) renderJSON() error {
 
 	objs := make([]any, len(p.items))
 	for i, item := range p.items {
-		objs[i] = p.itemToMap(item, requested)
+		objs[i] = p.itemToMap(item)
 	}
 
-	if p.jqExpr != "" {
+	if p.cfg.JQExpr != "" {
 		return p.runJQ(objs)
 	}
 
@@ -143,40 +219,38 @@ func (p *Printer[T]) renderJSON() error {
 	return enc.Encode(objs)
 }
 
-func (p *Printer[T]) resolveFields() ([]Field[T], error) {
-	names := strings.Split(p.jsonFields, ",")
-	fieldByName := make(map[string]Field[T], len(p.fields))
-	for _, f := range p.fields {
-		fieldByName[f.Name] = f
-		for _, alias := range f.Aliases {
-			fieldByName[alias] = f
+func (p *Printer[T]) renderYAML() error {
+	if p.singleItem {
+		if len(p.items) == 0 {
+			return WriteYAML(p.w, map[string]any{})
 		}
+		return WriteYAML(p.w, p.itemToMap(p.items[0]))
 	}
-
-	result := make([]Field[T], 0, len(names))
-	for _, name := range names {
-		name = strings.TrimSpace(name)
-		f, ok := fieldByName[name]
-		if !ok {
-			valid := make([]string, len(p.fields))
-			for i, f := range p.fields {
-				valid[i] = f.Name
-			}
-			return nil, fmt.Errorf("unknown field %q; valid fields: %s", name, strings.Join(valid, ", "))
-		}
-		// Use the requested name as the JSON key so that --json link produces
-		// {"link": ...} and --jq '.[].link' works as expected.
-		if name != f.Name {
-			f.Name = name
-		}
-		result = append(result, f)
+	objs := make([]map[string]any, len(p.items))
+	for i, item := range p.items {
+		objs[i] = p.itemToMap(item)
 	}
-	return result, nil
+	return WriteYAML(p.w, objs)
 }
 
-func (p *Printer[T]) itemToMap(item T, fields []Field[T]) map[string]any {
-	m := make(map[string]any, len(fields))
-	for _, f := range fields {
+func (p *Printer[T]) renderTemplate() error {
+	if p.singleItem {
+		var item map[string]any
+		if len(p.items) > 0 {
+			item = p.itemToMap(p.items[0])
+		}
+		return WriteTemplate(p.w, p.cfg.Template, item)
+	}
+	objs := make([]map[string]any, len(p.items))
+	for i, item := range p.items {
+		objs[i] = p.itemToMap(item)
+	}
+	return WriteTemplate(p.w, p.cfg.Template, objs)
+}
+
+func (p *Printer[T]) itemToMap(item T) map[string]any {
+	m := make(map[string]any, len(p.fields))
+	for _, f := range p.fields {
 		v := f.Extract(item)
 		// Honour an "unknown" / "not applicable" signal from the field by
 		// omitting the key entirely when Extract returns nil — mirroring
@@ -191,7 +265,7 @@ func (p *Printer[T]) itemToMap(item T, fields []Field[T]) map[string]any {
 }
 
 func (p *Printer[T]) runJQ(input any) error {
-	q, err := gojq.Parse(p.jqExpr)
+	q, err := gojq.Parse(p.cfg.JQExpr)
 	if err != nil {
 		return fmt.Errorf("--jq: %w", err)
 	}

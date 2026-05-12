@@ -17,8 +17,8 @@ type testItem struct {
 	State string
 }
 
-func newPrinter(w *bytes.Buffer, isTTY bool, jsonFields, jqExpr string) *format.Printer[testItem] {
-	p := format.New[testItem](w, isTTY, jsonFields, jqExpr)
+func newPrinter(w *bytes.Buffer, isTTY bool, cfg format.OutputConfig) *format.Printer[testItem] {
+	p := format.New[testItem](w, isTTY, cfg)
 	p.AddField(format.Field[testItem]{Name: "id", Header: "ID", Extract: func(i testItem) any { return i.ID }})
 	p.AddField(format.Field[testItem]{Name: "title", Header: "TITLE", Extract: func(i testItem) any { return i.Title }})
 	p.AddField(format.Field[testItem]{Name: "state", Header: "STATE", Extract: func(i testItem) any { return i.State }})
@@ -30,7 +30,7 @@ func newPrinter(w *bytes.Buffer, isTTY bool, jsonFields, jqExpr string) *format.
 func TestPrinter_TTY_TableHasHeader(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, true, "", "")
+	p := newPrinter(&buf, true, format.OutputConfig{})
 	p.AddItem(testItem{1, "Fix auth", "OPEN"})
 	p.AddItem(testItem{2, "Bump deps", "MERGED"})
 	require.NoError(t, p.Render())
@@ -45,7 +45,7 @@ func TestPrinter_TTY_TableHasHeader(t *testing.T) {
 func TestPrinter_NonTTY_TSVNoHeader(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, false, "", "")
+	p := newPrinter(&buf, false, format.OutputConfig{})
 	p.AddItem(testItem{1, "Fix auth", "OPEN"})
 	require.NoError(t, p.Render())
 	out := buf.String()
@@ -59,17 +59,17 @@ func TestPrinter_NonTTY_TSVNoHeader(t *testing.T) {
 func TestPrinter_Empty_NoOutput(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, true, "", "")
+	p := newPrinter(&buf, true, format.OutputConfig{})
 	require.NoError(t, p.Render())
 	assert.Empty(t, buf.String())
 }
 
 // --- JSON output ---
 
-func TestPrinter_JSON_Array_SelectedFields(t *testing.T) {
+func TestPrinter_JSON_Array_AllFields(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, false, "id,title", "")
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatJSON})
 	p.AddItem(testItem{42, "Fix auth", "OPEN"})
 	p.AddItem(testItem{43, "Bump deps", "OPEN"})
 	require.NoError(t, p.Render())
@@ -79,14 +79,14 @@ func TestPrinter_JSON_Array_SelectedFields(t *testing.T) {
 	assert.True(t, strings.HasSuffix(out, "]"))
 	assert.Contains(t, out, `"id":42`)
 	assert.Contains(t, out, `"title":"Fix auth"`)
-	// state not requested
-	assert.NotContains(t, out, `"state"`)
+	// All fields ship in OUT2 (field selection deferred)
+	assert.Contains(t, out, `"state":"OPEN"`)
 }
 
 func TestPrinter_JSON_SingleItem_EmitsObject(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, false, "id,title", "")
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatJSON})
 	p.SetSingleItem()
 	p.AddItem(testItem{42, "Fix auth", "OPEN"})
 	require.NoError(t, p.Render())
@@ -96,24 +96,12 @@ func TestPrinter_JSON_SingleItem_EmitsObject(t *testing.T) {
 	assert.Contains(t, out, `"id":42`)
 }
 
-func TestPrinter_JSON_UnknownField_Error(t *testing.T) {
-	t.Parallel()
-	var buf bytes.Buffer
-	p := newPrinter(&buf, false, "bad", "")
-	p.AddItem(testItem{1, "x", "OPEN"})
-	err := p.Render()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), `unknown field "bad"`)
-	assert.Contains(t, err.Error(), "id")
-	assert.Contains(t, err.Error(), "title")
-}
-
 // --- JQ output ---
 
 func TestPrinter_JQ_WithoutJSON_Error(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, false, "", ".[] | .id")
+	p := newPrinter(&buf, false, format.OutputConfig{JQExpr: ".[] | .id"})
 	p.AddItem(testItem{1, "x", "OPEN"})
 	err := p.Render()
 	require.Error(t, err)
@@ -123,7 +111,7 @@ func TestPrinter_JQ_WithoutJSON_Error(t *testing.T) {
 func TestPrinter_JQ_FilterOutput(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, false, "id,state", ".[] | .id")
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatJSON, JQExpr: ".[] | .id"})
 	p.AddItem(testItem{42, "Fix auth", "OPEN"})
 	p.AddItem(testItem{43, "Bump deps", "OPEN"})
 	require.NoError(t, p.Render())
@@ -134,8 +122,78 @@ func TestPrinter_JQ_FilterOutput(t *testing.T) {
 func TestPrinter_JQ_InvalidExpression_Error(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	p := newPrinter(&buf, false, "id", "bad bad bad |||")
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatJSON, JQExpr: "bad bad bad |||"})
 	p.AddItem(testItem{1, "x", "OPEN"})
 	err := p.Render()
 	require.Error(t, err)
+}
+
+// --- YAML output ---
+
+func TestPrinter_YAML_Array(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatYAML})
+	p.AddItem(testItem{42, "Fix auth", "OPEN"})
+	p.AddItem(testItem{43, "Bump deps", "MERGED"})
+	require.NoError(t, p.Render())
+	out := buf.String()
+	assert.Contains(t, out, "id: 42")
+	assert.Contains(t, out, "title: Fix auth")
+	assert.Contains(t, out, "state: OPEN")
+	assert.Contains(t, out, "- ")
+}
+
+func TestPrinter_YAML_SingleItem(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatYAML})
+	p.SetSingleItem()
+	p.AddItem(testItem{42, "Fix auth", "OPEN"})
+	require.NoError(t, p.Render())
+	out := buf.String()
+	assert.Contains(t, out, "id: 42")
+	assert.Contains(t, out, "title: Fix auth")
+	// not an array
+	assert.False(t, strings.HasPrefix(strings.TrimSpace(out), "- "))
+}
+
+// --- Template output ---
+
+func TestPrinter_Template_Array(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := newPrinter(&buf, false, format.OutputConfig{
+		Format:   format.FormatTemplate,
+		Template: `{{range .}}{{.id}}:{{.title}}\n{{end}}`,
+	})
+	p.AddItem(testItem{42, "Fix auth", "OPEN"})
+	p.AddItem(testItem{43, "Bump deps", "OPEN"})
+	require.NoError(t, p.Render())
+	out := buf.String()
+	assert.Contains(t, out, "42:Fix auth")
+	assert.Contains(t, out, "43:Bump deps")
+}
+
+func TestPrinter_Template_SingleItem(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := newPrinter(&buf, false, format.OutputConfig{
+		Format:   format.FormatTemplate,
+		Template: `{{.id}} - {{.title}}`,
+	})
+	p.SetSingleItem()
+	p.AddItem(testItem{42, "Fix auth", "OPEN"})
+	require.NoError(t, p.Render())
+	assert.Equal(t, "42 - Fix auth", buf.String())
+}
+
+func TestPrinter_Template_EmptyExpr_Error(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatTemplate})
+	p.AddItem(testItem{42, "x", "OPEN"})
+	err := p.Render()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--template")
 }
