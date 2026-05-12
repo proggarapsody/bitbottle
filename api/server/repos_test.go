@@ -130,11 +130,3 @@ func TestServerClient_DeleteRepo_204(t *testing.T) {
 	err := client.DeleteRepo("MYPROJ", "my-service")
 	require.NoError(t, err)
 }
-
-func TestServerClient_GetApplicationProperties_ReturnsVersion(t *testing.T) {
-	t.Parallel()
-	client := fixtureClient(t, "testdata/application_properties.json", 200)
-	props, err := client.GetApplicationProperties()
-	require.NoError(t, err)
-	assert.Equal(t, "8.9.1", props.Version)
-}

@@ -110,21 +110,3 @@ func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error
 	}
 	return w.toDomain(), nil
 }
-
-type wireAppProperties struct {
-	Version     string `json:"version"`
-	BuildNumber string `json:"buildNumber"`
-	DisplayName string `json:"displayName"`
-}
-
-func (c *Client) GetApplicationProperties() (backend.AppProperties, error) {
-	var w wireAppProperties
-	if err := c.getJSON("/application-properties", &w); err != nil {
-		return backend.AppProperties{}, err
-	}
-	return backend.AppProperties{
-		Version:     w.Version,
-		BuildNumber: w.BuildNumber,
-		DisplayName: w.DisplayName,
-	}, nil
-}

@@ -55,8 +55,3 @@ type Client interface {
 // As<X> helpers map each Feature to the optional interface a Client must
 // satisfy to expose that capability.
 type Feature string
-
-// ServerCapabilities is implemented only by Bitbucket Data Center clients.
-type ServerCapabilities interface {
-	GetApplicationProperties() (AppProperties, error)
-}

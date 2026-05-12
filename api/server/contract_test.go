@@ -7,6 +7,5 @@ import (
 
 // Compile-time assertions.
 var (
-	_ backend.Client             = (*server.Client)(nil)
-	_ backend.ServerCapabilities = (*server.Client)(nil)
+	_ backend.Client = (*server.Client)(nil)
 )

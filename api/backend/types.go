@@ -99,13 +99,6 @@ type MergePRInput struct {
 	Strategy string
 }
 
-// AppProperties holds Bitbucket server version metadata.
-type AppProperties struct {
-	Version     string
-	BuildNumber string
-	DisplayName string
-}
-
 // Branch is the domain representation of a repository branch.
 type Branch struct {
 	Name       string
