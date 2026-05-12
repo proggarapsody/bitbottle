@@ -4,7 +4,6 @@ package set
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -66,7 +65,7 @@ func setRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	value, err := resolveValue(opts)
+	value, err := resolveValue(opts, f.IOStreams.In)
 	if err != nil {
 		return err
 	}
@@ -139,12 +138,12 @@ func printSet(f *factory.Factory, secured bool, key string) error {
 	return nil
 }
 
-func resolveValue(opts *Options) (string, error) {
+func resolveValue(opts *Options, fallbackIn io.Reader) (string, error) {
 	switch {
 	case opts.Body == "-":
 		stdin := opts.Stdin
 		if stdin == nil {
-			stdin = os.Stdin
+			stdin = fallbackIn
 		}
 		b, err := io.ReadAll(stdin)
 		if err != nil {

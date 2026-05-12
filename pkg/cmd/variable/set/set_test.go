@@ -1,6 +1,7 @@
 package set_test
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -114,18 +115,12 @@ func TestSet_ValueFromStdin(t *testing.T) {
 		},
 	}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	// Use runF override to inject stdin.
-	cmd := cmdSet.NewCmdSet(f, func(opts *cmdSet.Options) error {
-		opts.Stdin = strings.NewReader("stdinval\n")
-		opts.Body = "-"
-		opts.Args = []string{"myworkspace/my-service", "MY_KEY"}
-		opts.Scope = "repository"
-		return nil
-	})
-	cmd.SetArgs([]string{"myworkspace/my-service", "MY_KEY"})
+	// Inject stdin via IOStreams.In — setRun falls back to it when opts.Stdin is nil.
+	f.IOStreams.In = io.NopCloser(strings.NewReader("stdinval\n"))
+	cmd := cmdSet.NewCmdSet(f, nil)
+	cmd.SetArgs([]string{"myworkspace/my-service", "MY_KEY", "--body", "-"})
 	require.NoError(t, cmd.Execute())
-	// capturedValue is not set because runF returned early, but no panic.
-	_ = capturedValue
+	assert.Equal(t, "stdinval", capturedValue)
 }
 
 func TestSet_UnknownScope_ReturnsError(t *testing.T) {
