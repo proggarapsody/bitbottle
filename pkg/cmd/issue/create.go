@@ -4,11 +4,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func NewCmdIssueCreate(f *factory.Factory) *cobra.Command {
-	var title, body, kind, priority, jsonFields, jqExpr, hostname string
+	var title, body, kind, priority, hostname string
 	cmd := &cobra.Command{
 		Use:   "create [PROJECT/REPO]",
 		Short: "Create a new issue",
@@ -35,7 +36,7 @@ func NewCmdIssueCreate(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := issueViewFields(f, jsonFields, jqExpr)
+			p := issueViewFields(f, format.ConfigFromCmd(cmd))
 			p.SetSingleItem()
 			p.AddItem(issue)
 			return p.Render()
@@ -45,8 +46,6 @@ func NewCmdIssueCreate(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVarP(&body, "body", "b", "", "Issue body (markdown)")
 	cmd.Flags().StringVar(&kind, "kind", "", "Issue kind: bug, enhancement, proposal, task")
 	cmd.Flags().StringVar(&priority, "priority", "", "Priority: trivial, minor, major, critical, blocker")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	_ = cmd.MarkFlagRequired("title")
 	return cmd

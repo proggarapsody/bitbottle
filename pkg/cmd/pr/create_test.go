@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -29,6 +30,7 @@ func TestNewCmdPRCreate_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRCreate(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("title"))
 	assert.NotNil(t, cmd.Flag("body"))
 	assert.NotNil(t, cmd.Flag("base"))
@@ -64,6 +66,7 @@ func TestPRCreate_WithHeadFlag_SkipsGitDetection(t *testing.T) {
 	// called it would consume a second slot (which doesn't exist) and panic/fail.
 	f, out, _ := newPRFactory(t, fake, newPRCreateRunnerNoGit())
 	cmd := pr.NewCmdPRCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"--title", "feat: add thing", "--base", "main", "--head", "feat/explicit-branch"})
 	require.NoError(t, cmd.Execute())
 
@@ -83,6 +86,7 @@ func TestPRCreate_NoHeadFlag_GitError_HintsAtHeadFlag(t *testing.T) {
 
 	f, _, _ := newPRFactory(t, nil, runner)
 	cmd := pr.NewCmdPRCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"--title", "My PR", "--base", "main"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -111,6 +115,7 @@ func TestPRCreate_WithFlags_CallsAPIAndPrints(t *testing.T) {
 
 	f, out, _ := newPRFactory(t, fake, newPRCreateRunner())
 	cmd := pr.NewCmdPRCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"--title", "My PR", "--base", "main"})
 	require.NoError(t, cmd.Execute())
 
@@ -126,6 +131,7 @@ func TestPRCreate_MissingTitle_Errors(t *testing.T) {
 
 	f, _, _ := newPRFactory(t, nil, newPRCreateRunner())
 	cmd := pr.NewCmdPRCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"--base", "main"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -145,6 +151,7 @@ func TestPRCreate_APIError_PropagatesError(t *testing.T) {
 
 	f, _, _ := newPRFactory(t, fake, newPRCreateRunner())
 	cmd := pr.NewCmdPRCreate(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"--title", "My PR", "--base", "main"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -155,6 +162,7 @@ func TestNewCmdPRCreate_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRCreate(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
 }
@@ -174,7 +182,8 @@ func TestPRCreate_JSON_EmitsObject(t *testing.T) {
 
 	f, out, _ := newPRFactory(t, fake, newPRCreateRunner())
 	cmd := pr.NewCmdPRCreate(f)
-	cmd.SetArgs([]string{"--title", "New PR", "--base", "main", "--json", "id,title"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--title", "New PR", "--base", "main", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := strings.TrimSpace(out.String())

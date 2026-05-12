@@ -5,13 +5,12 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 	var limit int
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -39,7 +38,7 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			p := repoFields(f, jsonFields, jqExpr)
+			p := repoFields(f, format.ConfigFromCmd(cmd))
 			for _, r := range repos {
 				p.AddItem(r)
 			}
@@ -47,8 +46,6 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of repositories")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (defaults to configured host)")
 	return cmd
 }

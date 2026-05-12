@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/variable/list"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -16,6 +17,7 @@ func TestNewCmdList_RequiresTwoArgs(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.Error(t, cmd.Execute())
 }
@@ -33,6 +35,7 @@ func TestList_PrintsVariables(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "env-uuid"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -53,7 +56,8 @@ func TestList_JSON_Output(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := list.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"myworkspace/my-service", "env-uuid", "--json", "key,value"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "env-uuid", "--json"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), `"key":"MY_VAR"`)
 }

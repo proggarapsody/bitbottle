@@ -25,8 +25,8 @@ func NewCmdIssueComment(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-func issueCommentFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.IssueComment] {
-	p := format.New[backend.IssueComment](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func issueCommentFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.IssueComment] {
+	p := format.New[backend.IssueComment](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.IssueComment]{Name: "id", Header: "ID", Extract: func(c backend.IssueComment) any { return c.ID }})
 	p.AddField(format.Field[backend.IssueComment]{Name: "author", Header: "AUTHOR", Extract: func(c backend.IssueComment) any { return c.Author.Slug }})
 	p.AddField(format.Field[backend.IssueComment]{Name: "content", Header: "CONTENT", Extract: func(c backend.IssueComment) any { return c.Content }})
@@ -40,7 +40,7 @@ func issueCommentFields(f *factory.Factory, jsonFields, jqExpr string) *format.P
 }
 
 func NewCmdIssueCommentList(f *factory.Factory) *cobra.Command {
-	var jsonFields, jqExpr, hostname string
+	var hostname string
 	cmd := &cobra.Command{
 		Use:   "list [PROJECT/REPO] ISSUE_ID",
 		Short: "List comments on an issue",
@@ -67,15 +67,13 @@ func NewCmdIssueCommentList(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := issueCommentFields(f, jsonFields, jqExpr)
+			p := issueCommentFields(f, format.ConfigFromCmd(cmd))
 			for _, c := range comments {
 				p.AddItem(c)
 			}
 			return p.Render()
 		},
 	}
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }

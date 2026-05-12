@@ -10,8 +10,6 @@ import (
 
 func NewCmdBranchList(f *factory.Factory) *cobra.Command {
 	var limit int
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -34,7 +32,7 @@ func NewCmdBranchList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			p := branchFields(f, jsonFields, jqExpr)
+			p := branchFields(f, format.ConfigFromCmd(cmd))
 			for _, b := range branches {
 				p.AddItem(b)
 			}
@@ -42,14 +40,12 @@ func NewCmdBranchList(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of branches")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func branchFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Branch] {
-	p := format.New[backend.Branch](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func branchFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Branch] {
+	p := format.New[backend.Branch](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Branch]{Name: "name", Header: "NAME", Extract: func(b backend.Branch) any { return b.Name }})
 	p.AddField(format.Field[backend.Branch]{Name: "default", Header: "DEFAULT", Extract: func(b backend.Branch) any { return b.IsDefault }})
 	p.AddField(format.Field[backend.Branch]{Name: "hash", Header: "HASH", Extract: func(b backend.Branch) any {

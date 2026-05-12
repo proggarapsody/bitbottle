@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -34,6 +35,7 @@ func TestCommitStatus_RendersTable(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitStatus(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234"})
 	require.NoError(t, cmd.Execute())
 
@@ -65,6 +67,7 @@ func TestCommitStatus_TTY_ColorsState(t *testing.T) {
 	factorytest.UseBackend(f, fake)
 	f.IOStreams = ios
 	cmd := commit.NewCmdCommitStatus(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234"})
 	require.NoError(t, cmd.Execute())
 
@@ -91,7 +94,8 @@ func TestCommitStatus_JSONOutput(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := commit.NewCmdCommitStatus(f)
-	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234", "--json", "key,state"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "abc1234", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	var rows []map[string]any

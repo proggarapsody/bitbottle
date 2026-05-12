@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
@@ -59,6 +60,7 @@ func TestCode_Cloud_PassesQueryAndWorkspace(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake)
 	cmd := search.NewCmdSearchCode(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"TODO", "--workspace", "acme", "--limit", "50"})
 	require.NoError(t, cmd.Execute())
 
@@ -94,6 +96,7 @@ func TestCode_Cloud_DefaultsWorkspaceFromPinnedRepo(t *testing.T) {
 	f.GitRunner = func() run.Runner { return r }
 
 	cmd := search.NewCmdSearchCode(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"TODO"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "acme", gotWS, "workspace must default to the pinned repo's project")
@@ -103,6 +106,7 @@ func TestCode_Cloud_RejectsEmptyQuery(t *testing.T) {
 	t.Parallel()
 	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t})
 	cmd := search.NewCmdSearchCode(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{}) // no QUERY positional
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -116,6 +120,7 @@ func TestCode_ServerBackend_ReturnsUnsupported(t *testing.T) {
 	f.GitRunner = func() run.Runner { return r }
 
 	cmd := search.NewCmdSearchCode(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"TODO", "--workspace", "acme"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -141,7 +146,8 @@ func TestCode_JSONOutputCarriesShape(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake)
 	cmd := search.NewCmdSearchCode(f)
-	cmd.SetArgs([]string{"TODO", "--workspace", "acme", "--json", "repository,path,contentMatchCount"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"TODO", "--workspace", "acme", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	var got []map[string]any
@@ -166,9 +172,10 @@ func TestCode_JQFiltersJSONOutput(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake)
 	cmd := search.NewCmdSearchCode(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{
 		"TODO", "--workspace", "acme",
-		"--json", "path",
+		"--json",
 		"--jq", ".[].path",
 	})
 	require.NoError(t, cmd.Execute())

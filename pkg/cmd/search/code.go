@@ -19,7 +19,7 @@ import (
 // The query string is passed to Bitbucket Cloud verbatim — operators like
 // `path:`, `lang:`, etc. are interpreted by Bitbucket itself.
 func NewCmdSearchCode(f *factory.Factory) *cobra.Command {
-	var workspace, jsonFields, jqExpr, hostname string
+	var workspace, hostname string
 	var limit int
 	cmd := &cobra.Command{
 		Use:   "code QUERY",
@@ -44,7 +44,7 @@ func NewCmdSearchCode(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := codeSearchFields(f, jsonFields, jqExpr)
+			p := codeSearchFields(f, format.ConfigFromCmd(cmd))
 			for _, h := range hits {
 				p.AddItem(h)
 			}
@@ -53,8 +53,6 @@ func NewCmdSearchCode(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Bitbucket Cloud workspace slug (defaults to current repo's workspace)")
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of results")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }
@@ -89,8 +87,8 @@ func resolveSearchTarget(f *factory.Factory, workspaceFlag, hostnameFlag string)
 // codeSearchFields wires the Printer columns / JSON keys for CodeSearchHit.
 // Matched-segment text is unrolled into "match" strings so JSON consumers
 // can grep for the literal hits without re-parsing the segment shape.
-func codeSearchFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.CodeSearchHit] {
-	p := format.New[backend.CodeSearchHit](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func codeSearchFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.CodeSearchHit] {
+	p := format.New[backend.CodeSearchHit](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.CodeSearchHit]{Name: "repository", Header: "REPOSITORY", Extract: func(h backend.CodeSearchHit) any { return h.Repository }})
 	p.AddField(format.Field[backend.CodeSearchHit]{Name: "path", Header: "PATH", Extract: func(h backend.CodeSearchHit) any { return h.Path }})
 	p.AddField(format.Field[backend.CodeSearchHit]{

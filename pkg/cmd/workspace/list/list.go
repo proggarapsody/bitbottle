@@ -11,10 +11,9 @@ import (
 
 // Options carries parsed flags for `workspace list`.
 type Options struct {
-	Hostname   string
-	JSONFields string
-	JQExpr     string
-	Limit      int
+	Output   format.OutputConfig
+	Hostname string
+	Limit    int
 }
 
 // NewCmdList constructs the cobra command. The runF parameter follows the
@@ -27,6 +26,7 @@ func NewCmdList(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Short: "List workspaces the authenticated user belongs to",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {
 				return runF(opts)
 			}
@@ -34,8 +34,6 @@ func NewCmdList(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&opts.Limit, "limit", 30, "Maximum number of workspaces (0 = no cap)")
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (Cloud only)")
 	return cmd
 }
@@ -64,7 +62,7 @@ func listRun(f *factory.Factory, opts *Options) error {
 		return err
 	}
 
-	p := workspaceFields(f, opts.JSONFields, opts.JQExpr)
+	p := workspaceFields(f, opts.Output)
 	for _, w := range workspaces {
 		p.AddItem(w)
 	}
@@ -73,8 +71,8 @@ func listRun(f *factory.Factory, opts *Options) error {
 
 // workspaceFields wires the format printer for both TTY and JSON paths.
 // UUID is JSON-only; it's noisy in a TTY column but useful for scripting.
-func workspaceFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Workspace] {
-	p := format.New[backend.Workspace](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func workspaceFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Workspace] {
+	p := format.New[backend.Workspace](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Workspace]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(w backend.Workspace) any { return w.UUID }})
 	p.AddField(format.Field[backend.Workspace]{Name: "slug", Header: "SLUG", Extract: func(w backend.Workspace) any { return w.Slug }})
 	p.AddField(format.Field[backend.Workspace]{Name: "name", Header: "NAME", Extract: func(w backend.Workspace) any { return w.Name }})

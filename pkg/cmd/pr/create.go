@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/git"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -15,8 +16,6 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 	var title, body, base, head string
 	var draft, noDefaultReviewers bool
 	var reviewers []string
-	var jsonFields string
-	var jqExpr string
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -65,8 +64,9 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if jsonFields != "" || jqExpr != "" {
-				printer := prFields(f, jsonFields, jqExpr)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				printer := prFields(f, cfg)
 				printer.SetSingleItem()
 				printer.AddItem(p)
 				return printer.Render()
@@ -86,8 +86,6 @@ func NewCmdPRCreate(f *factory.Factory) *cobra.Command {
 	cmd.Flags().BoolVar(&draft, "draft", false, "Create as draft")
 	cmd.Flags().StringSliceVar(&reviewers, "reviewer", nil, "Reviewer user slug (repeatable; combines with auto-applied default reviewers)")
 	cmd.Flags().BoolVar(&noDefaultReviewers, "no-default-reviewers", false, "Skip auto-applying the repo's configured default reviewers")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -17,6 +18,7 @@ func TestNewCmdRepoRename_RequiresTwoArgs(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoRename(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -34,6 +36,7 @@ func TestRepoRename_CallsBackendWithNewName(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoRename(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--confirm"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "MYPROJ", gotNS)
@@ -51,6 +54,7 @@ func TestRepoRename_PrintsNewCoordinate(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoRename(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--confirm"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "MYPROJ/renamed")
@@ -66,7 +70,8 @@ func TestRepoRename_JSONOutput(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoRename(f)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--json", "slug,namespace", "--confirm"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--json", "--confirm"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
 	assert.Contains(t, got, `"slug":"renamed"`)
@@ -80,6 +85,7 @@ func TestRepoRename_WithoutConfirm_NonTTY_Errors(t *testing.T) {
 	// match the safety bar set by `repo delete` for destructive ops.
 	f, _, _ := newRepoFactory(t, nil)
 	cmd := repo.NewCmdRepoRename(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -97,6 +103,7 @@ func TestRepoRename_APIError_Propagates(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoRename(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "renamed", "--confirm"})
 	err := cmd.Execute()
 	require.Error(t, err)

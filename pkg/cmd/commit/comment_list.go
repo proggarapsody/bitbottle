@@ -12,7 +12,7 @@ import (
 
 // NewCmdCommitCommentList lists all comments on a commit.
 func NewCmdCommitCommentList(f *factory.Factory) *cobra.Command {
-	var jsonFields, jqExpr, hostname string
+	var hostname string
 
 	cmd := &cobra.Command{
 		Use:   "list PROJECT/REPO HASH",
@@ -32,22 +32,21 @@ func NewCmdCommitCommentList(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := commitCommentFields(f, jsonFields, jqExpr)
+			p := commitCommentFields(f, format.ConfigFromCmd(cmd))
 			for _, c := range cmts {
 				p.AddItem(c)
 			}
 			return p.Render()
 		},
 	}
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }
 
-func commitCommentFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.CommitComment] {
+func commitCommentFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.CommitComment] {
 	isTTY := f.IOStreams.IsStdoutTTY()
-	p := format.New[backend.CommitComment](f.IOStreams.Out, isTTY, jsonFields, jqExpr)
+	structured := cfg.Format != format.FormatTable
+	p := format.New[backend.CommitComment](f.IOStreams.Out, isTTY, cfg)
 	p.AddField(format.Field[backend.CommitComment]{
 		Name:    "id",
 		Header:  "ID",
@@ -67,7 +66,7 @@ func commitCommentFields(f *factory.Factory, jsonFields, jqExpr string) *format.
 		Name:   "createdAt",
 		Header: "CREATED",
 		Extract: func(c backend.CommitComment) any {
-			if jsonFields != "" || !isTTY {
+			if structured || !isTTY {
 				return c.CreatedAt.Format(time.RFC3339)
 			}
 			return c.CreatedAt.Format("2006-01-02 15:04")

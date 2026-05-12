@@ -10,7 +10,7 @@ import (
 )
 
 func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
-	var jsonFields, jqExpr, hostname string
+	var hostname string
 
 	cmd := &cobra.Command{
 		Use:   "status PROJECT/REPO HASH",
@@ -29,21 +29,19 @@ func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := commitStatusFields(f, jsonFields, jqExpr)
+			p := commitStatusFields(f, format.ConfigFromCmd(cmd))
 			for _, s := range statuses {
 				p.AddItem(s)
 			}
 			return p.Render()
 		},
 	}
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }
 
-func commitStatusFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.CommitStatus] {
-	p := format.New[backend.CommitStatus](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func commitStatusFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.CommitStatus] {
+	p := format.New[backend.CommitStatus](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.CommitStatus]{Name: "key", Header: "KEY", Extract: func(s backend.CommitStatus) any { return s.Key }})
 	p.AddField(format.Field[backend.CommitStatus]{
 		Name:      "state",

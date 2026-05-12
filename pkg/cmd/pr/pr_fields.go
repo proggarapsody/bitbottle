@@ -29,8 +29,8 @@ func PRStateColor(ios *iostreams.IOStreams) func(string) string {
 	}
 }
 
-func prFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.PullRequest] {
-	p := format.New[backend.PullRequest](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func prFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.PullRequest] {
+	p := format.New[backend.PullRequest](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.PullRequest]{Name: "id", Header: "ID", Extract: func(pr backend.PullRequest) any { return pr.ID }})
 	p.AddField(format.Field[backend.PullRequest]{Name: "title", Header: "TITLE", Extract: func(pr backend.PullRequest) any { return pr.Title }})
 	p.AddField(format.Field[backend.PullRequest]{
@@ -46,8 +46,8 @@ func prFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[bac
 	return p
 }
 
-func prFieldsWithDescription(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.PullRequest] {
-	p := prFields(f, jsonFields, jqExpr)
+func prFieldsWithDescription(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.PullRequest] {
+	p := prFields(f, cfg)
 	p.AddField(format.Field[backend.PullRequest]{Name: "description", Header: "DESCRIPTION", Extract: func(pr backend.PullRequest) any { return pr.Description }})
 	p.AddField(format.Field[backend.PullRequest]{Name: "autoMerge", Header: "AUTO_MERGE", Extract: func(pr backend.PullRequest) any { return pr.AutoMerge }})
 	return p

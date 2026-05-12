@@ -26,7 +26,7 @@ func NewCmdPRComment(f *factory.Factory) *cobra.Command {
 }
 
 func NewCmdPRCommentList(f *factory.Factory) *cobra.Command {
-	var jsonFields, jqExpr, hostname string
+	var hostname string
 	var inlineOnly bool
 
 	cmd := &cobra.Command{
@@ -45,15 +45,13 @@ func NewCmdPRCommentList(f *factory.Factory) *cobra.Command {
 			if inlineOnly {
 				cmts = filterInlinePRComments(cmts)
 			}
-			p := prCommentFields(f, jsonFields, jqExpr, hasInline(cmts))
+			p := prCommentFields(f, format.ConfigFromCmd(cmd), hasInline(cmts))
 			for _, c := range cmts {
 				p.AddItem(c)
 			}
 			return p.Render()
 		},
 	}
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().BoolVar(&inlineOnly, "inline", false, "Only show inline (file:line) review comments")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
@@ -238,9 +236,10 @@ func NewCmdPRCommentResolve(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-func prCommentFields(f *factory.Factory, jsonFields, jqExpr string, showLocation bool) *format.Printer[backend.PRComment] {
+func prCommentFields(f *factory.Factory, cfg format.OutputConfig, showLocation bool) *format.Printer[backend.PRComment] {
 	isTTY := f.IOStreams.IsStdoutTTY()
-	p := format.New[backend.PRComment](f.IOStreams.Out, isTTY, jsonFields, jqExpr)
+	structured := cfg.Format != format.FormatTable
+	p := format.New[backend.PRComment](f.IOStreams.Out, isTTY, cfg)
 	p.AddField(format.Field[backend.PRComment]{Name: "id", Header: "ID", Extract: func(c backend.PRComment) any { return c.ID }})
 	p.AddField(format.Field[backend.PRComment]{Name: "author", Header: "AUTHOR", Extract: func(c backend.PRComment) any {
 		if c.Author.Slug != "" {
@@ -249,7 +248,7 @@ func prCommentFields(f *factory.Factory, jsonFields, jqExpr string, showLocation
 		return c.Author.DisplayName
 	}})
 	p.AddField(format.Field[backend.PRComment]{Name: "createdAt", Header: "CREATED", Extract: func(c backend.PRComment) any {
-		if jsonFields != "" || !isTTY {
+		if structured || !isTTY {
 			return c.CreatedAt.Format(time.RFC3339)
 		}
 		return c.CreatedAt.Format("2006-01-02 15:04")

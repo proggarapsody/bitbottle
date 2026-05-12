@@ -13,8 +13,6 @@ import (
 
 func NewCmdCommitView(f *factory.Factory) *cobra.Command {
 	var web bool
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -49,8 +47,9 @@ func NewCmdCommitView(f *factory.Factory) *cobra.Command {
 				return f.Browser.Browse(c.WebURL)
 			}
 
-			if jsonFields != "" || jqExpr != "" {
-				p := commitViewFields(f, jsonFields, jqExpr)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := commitViewFields(f, cfg)
 				p.SetSingleItem()
 				p.AddItem(c)
 				return p.Render()
@@ -69,14 +68,12 @@ func NewCmdCommitView(f *factory.Factory) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&web, "web", false, "Open commit in browser")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func commitViewFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Commit] {
-	p := format.New[backend.Commit](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func commitViewFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Commit] {
+	p := format.New[backend.Commit](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 
 	p.AddField(format.Field[backend.Commit]{
 		Name:    "hash",

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch/protect"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
@@ -64,6 +65,7 @@ func TestList_PrintsRows(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake, serverConfig)
 	cmd := protect.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -85,7 +87,8 @@ func TestList_JSON(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake, serverConfig)
 	cmd := protect.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "--json", "id,type,matcher"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()
@@ -102,6 +105,7 @@ func TestList_CloudBackend_ReturnsUnsupported(t *testing.T) {
 	f.GitRunner = func() run.Runner { return r }
 
 	cmd := protect.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -126,6 +130,7 @@ func TestCreate_RequiresExactlyOneOfBranchOrPattern(t *testing.T) {
 			fake := &testhelpers.FakeClient{T: t} // no Fn — must not be called
 			f, _, _ := newFactory(t, fake, serverConfig)
 			cmd := protect.NewCmdCreate(f, nil)
+			format.RegisterOutputFlags(cmd)
 			cmd.SetArgs(tc.args)
 			err := cmd.Execute()
 			require.Error(t, err)
@@ -139,6 +144,7 @@ func TestCreate_RejectsUnknownType(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newFactory(t, fake, serverConfig)
 	cmd := protect.NewCmdCreate(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "--type", "garbage", "--branch", "main"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -157,6 +163,7 @@ func TestCreate_BranchPath(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake, serverConfig)
 	cmd := protect.NewCmdCreate(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "--type", "fast-forward-only", "--branch", "main", "--user", "alice", "--group", "devs"})
 	require.NoError(t, cmd.Execute())
 
@@ -180,6 +187,7 @@ func TestCreate_PatternPath(t *testing.T) {
 	}
 	f, _, _ := newFactory(t, fake, serverConfig)
 	cmd := protect.NewCmdCreate(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "--type", "no-deletes", "--pattern", "release/*"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "release/*", got.MatcherID)
@@ -193,6 +201,7 @@ func TestDelete_RejectsNonNumericID(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newFactory(t, fake, serverConfig)
 	cmd := protect.NewCmdDelete(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -213,6 +222,7 @@ func TestDelete_HappyPath(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake, serverConfig)
 	cmd := protect.NewCmdDelete(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "42"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, 42, gotID)

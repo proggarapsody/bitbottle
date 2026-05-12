@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/variable/internal/cmdtest"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/variable/list"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -17,6 +18,7 @@ func TestList_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	require.Error(t, cmd.Execute())
 }
@@ -36,6 +38,7 @@ func TestList_RepositoryScope_PrintsVariables(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -58,6 +61,7 @@ func TestList_WorkspaceScope_PrintsVariables(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--scope", "workspace"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -69,6 +73,7 @@ func TestList_DeploymentScope_RequiresEnv(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--scope", "deployment"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -91,6 +96,7 @@ func TestList_DeploymentScope_PrintsEnvVariables(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--scope", "deployment", "--env", "env-123"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -104,6 +110,7 @@ func TestList_UnknownScope_ReturnsError(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--scope", "invalid"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -115,6 +122,7 @@ func TestList_WorkspaceScope_UnsupportedHost_ReturnsError(t *testing.T) {
 	fake := &cmdtest.NoWorkspaceVarFake{Client: &testhelpers.FakeClient{T: t}}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--scope", "workspace"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -133,7 +141,8 @@ func TestList_RepositoryScope_JSON_RedactsSecuredValues(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := cmdList.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "key,value,secured"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 	var rows []map[string]any
 	require.NoError(t, json.Unmarshal(out.Bytes(), &rows))

@@ -16,8 +16,6 @@ import (
 func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 	var branch string
 	var limit int
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -60,7 +58,7 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			p := commitLogFields(f, jsonFields, jqExpr)
+			p := commitLogFields(f, format.ConfigFromCmd(cmd))
 			for _, c := range commits {
 				p.AddItem(c)
 			}
@@ -70,15 +68,14 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 
 	cmd.Flags().StringVarP(&branch, "branch", "b", "", "Branch name (defaults to current git branch)")
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of commits")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func commitLogFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Commit] {
+func commitLogFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Commit] {
 	isTTY := f.IOStreams.IsStdoutTTY()
-	p := format.New[backend.Commit](f.IOStreams.Out, isTTY, jsonFields, jqExpr)
+	structured := cfg.Format != format.FormatTable
+	p := format.New[backend.Commit](f.IOStreams.Out, isTTY, cfg)
 
 	p.AddField(format.Field[backend.Commit]{
 		Name:   "hash",
@@ -112,7 +109,7 @@ func commitLogFields(f *factory.Factory, jsonFields, jqExpr string) *format.Prin
 		Name:   "date",
 		Header: "DATE",
 		Extract: func(c backend.Commit) any {
-			if jsonFields != "" || !isTTY {
+			if structured || !isTTY {
 				return c.Timestamp.Format(time.RFC3339)
 			}
 			return humanizeTime(c.Timestamp)

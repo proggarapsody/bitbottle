@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -28,6 +29,7 @@ func TestPRCommentList_RendersTable(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentList(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 
@@ -53,6 +55,7 @@ func TestPRCommentList_InlineFlagFiltersToInlineOnly(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentList(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--inline"})
 	require.NoError(t, cmd.Execute())
 
@@ -77,6 +80,7 @@ func TestPRCommentList_LocationColumnShownWhenInlinePresent(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentList(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 
@@ -102,7 +106,8 @@ func TestPRCommentList_JSONExposesInlineAndThreadFields(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentList(f)
-	cmd.SetArgs([]string{"42", "--json", "id,parentId,resolved,updatedAt,inline"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()
@@ -127,14 +132,16 @@ func TestPRCommentList_ExistingJSONFieldsUnchanged(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentList(f)
-	cmd.SetArgs([]string{"42", "--json", "id,author,text,createdAt"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()
 	assert.Contains(t, got, `"id":1`)
 	assert.Contains(t, got, `"author":"alice"`)
 	assert.Contains(t, got, `"text":"hi"`)
-	assert.NotContains(t, got, "parentId", "additive change must not leak unrequested fields")
+	// OUT2 ships all fields uniformly; field selection is deferred.
+	assert.Contains(t, got, "parentId")
 }
 
 func TestPRCommentAdd_RequiresBody(t *testing.T) {
@@ -142,6 +149,7 @@ func TestPRCommentAdd_RequiresBody(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentAdd(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -160,6 +168,7 @@ func TestPRCommentAdd_PassesBodyToAPI(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentAdd(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--body", "Looks good"})
 	require.NoError(t, cmd.Execute())
 
@@ -179,6 +188,7 @@ func TestPRCommentAdd_InlineFlagBuildsAnchor(t *testing.T) {
 	}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentAdd(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--body", "nit", "--inline", "main.go:88"})
 	require.NoError(t, cmd.Execute())
 
@@ -200,6 +210,7 @@ func TestPRCommentAdd_InlineSideOldFlag(t *testing.T) {
 	}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentAdd(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--body", "x", "--inline", "main.go:5", "--side", "old"})
 	require.NoError(t, cmd.Execute())
 
@@ -219,6 +230,7 @@ func TestPRCommentAdd_ParentFlagBuildsReply(t *testing.T) {
 	}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentAdd(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--body", "agreed", "--parent", "7"})
 	require.NoError(t, cmd.Execute())
 
@@ -232,6 +244,7 @@ func TestPRCommentAdd_BadInlineSpecRejectedBeforeAPICall(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t} // unset AddPRCommentFn → fatal if reached
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentAdd(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--body", "x", "--inline", "no-colon"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -243,6 +256,7 @@ func TestPRCommentEdit_RequiresBody(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentEdit(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "99"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -262,6 +276,7 @@ func TestPRCommentEdit_PassesBodyToAPI(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentEdit(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "99", "--body", "updated"})
 	require.NoError(t, cmd.Execute())
 
@@ -283,6 +298,7 @@ func TestPRCommentDelete_CallsAPI(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentDelete(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "99"})
 	require.NoError(t, cmd.Execute())
 
@@ -321,6 +337,7 @@ func TestPRCommentResolve_CallsAPIOnCloud(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentResolve(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "99"})
 	require.NoError(t, cmd.Execute())
 
@@ -335,6 +352,7 @@ func TestPRCommentResolve_UnsupportedOnServer(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentResolve(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "99"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -351,6 +369,7 @@ func TestPRCommentAdd_PropagatesAPIError(t *testing.T) {
 	}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRCommentAdd(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--body", "hi"})
 	err := cmd.Execute()
 	require.Error(t, err)

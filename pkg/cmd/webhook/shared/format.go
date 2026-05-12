@@ -30,8 +30,8 @@ func WebhookActiveColor(ios *iostreams.IOStreams) func(string) string {
 
 // WebhookFields constructs the formatter shared by `webhook list` and
 // `webhook view` so JSON field names and TTY columns stay in lock step.
-func WebhookFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Webhook] {
-	p := format.New[backend.Webhook](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func WebhookFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Webhook] {
+	p := format.New[backend.Webhook](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Webhook]{Name: "id", Header: "ID", Extract: func(h backend.Webhook) any { return h.ID }})
 	p.AddField(format.Field[backend.Webhook]{Name: "url", Header: "URL", Extract: func(h backend.Webhook) any { return h.URL }})
 	p.AddField(format.Field[backend.Webhook]{

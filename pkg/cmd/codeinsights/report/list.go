@@ -4,14 +4,14 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 // ListOptions holds parsed flags for `code-insights report list`.
 type ListOptions struct {
-	Hostname   string
-	JSONFields string
-	JQExpr     string
+	Output   format.OutputConfig
+	Hostname string
 	// Args[0]=PROJECT/REPO  Args[1]=HASH
 	Args []string
 }
@@ -25,14 +25,13 @@ func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Comman
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
+			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {
 				return runF(opts)
 			}
 			return listRun(f, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
@@ -55,7 +54,7 @@ func listRun(f *factory.Factory, opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	p := reportFields(f, opts.JSONFields, opts.JQExpr)
+	p := reportFields(f, opts.Output)
 	for _, r := range reports {
 		p.AddItem(r)
 	}

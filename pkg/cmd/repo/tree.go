@@ -16,8 +16,6 @@ import (
 // or JSON via --json/--jq.
 func NewCmdRepoTree(f *factory.Factory) *cobra.Command {
 	var ref string
-	var jsonFields string
-	var jqExpr string
 	var hostname string
 
 	cmd := &cobra.Command{
@@ -57,7 +55,7 @@ func NewCmdRepoTree(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := treeFields(f, jsonFields, jqExpr)
+			p := treeFields(f, format.ConfigFromCmd(cmd))
 			for _, e := range entries {
 				p.AddItem(e)
 			}
@@ -65,14 +63,12 @@ func NewCmdRepoTree(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&ref, "ref", "", "Branch, tag, or commit hash to read from (required)")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func treeFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.TreeEntry] {
-	p := format.New[backend.TreeEntry](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func treeFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.TreeEntry] {
+	p := format.New[backend.TreeEntry](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.TreeEntry]{Name: "type", Header: "TYPE", Extract: func(e backend.TreeEntry) any { return e.Type }})
 	p.AddField(format.Field[backend.TreeEntry]{Name: "path", Header: "PATH", Extract: func(e backend.TreeEntry) any { return e.Path }})
 	p.AddField(format.Field[backend.TreeEntry]{Name: "size", Header: "SIZE", Extract: func(e backend.TreeEntry) any { return e.Size }})

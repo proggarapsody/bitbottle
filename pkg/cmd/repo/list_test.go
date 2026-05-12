@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -18,6 +19,7 @@ func TestNewCmdRepoList_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("limit"))
 	assert.NotNil(t, cmd.Flag("json"))
 }
@@ -26,6 +28,7 @@ func TestNewCmdRepoList_LimitDefault(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.Equal(t, "30", cmd.Flag("limit").DefValue)
 }
 
@@ -33,6 +36,7 @@ func TestNewCmdRepoList_NoConfigReturnsError(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
+	format.RegisterOutputFlags(cmd)
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not authenticated")
@@ -42,6 +46,7 @@ func TestNewCmdRepoList_HasHostnameFlag(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("hostname"))
 }
 
@@ -49,6 +54,7 @@ func TestNewCmdRepoList_HasJQFlag(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("jq"))
 }
 
@@ -67,13 +73,15 @@ func TestRepoList_JSON_FieldsOutput(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoList(f)
-	cmd.SetArgs([]string{"--json", "slug,name"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()
 	assert.Contains(t, got, `"slug":"svc-a"`)
 	assert.Contains(t, got, `"name":"svc-b"`)
-	assert.NotContains(t, got, `"namespace"`)
+	// OUT2 ships all fields; field selection is deferred.
+	assert.Contains(t, got, `"namespace"`)
 }
 
 func TestRepoList_JQ_FilterOutput(t *testing.T) {
@@ -91,7 +99,8 @@ func TestRepoList_JQ_FilterOutput(t *testing.T) {
 
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoList(f)
-	cmd.SetArgs([]string{"--json", "slug", "--jq", ".[] | .slug"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json", "--jq", ".[] | .slug"})
 	require.NoError(t, cmd.Execute())
 
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")

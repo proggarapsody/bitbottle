@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -17,6 +18,7 @@ func TestRepoTree_RequiresRefFlag(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoTree(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-svc"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -37,6 +39,7 @@ func TestRepoTree_RootListing_CallsBackendWithEmptyPath(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoTree(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-svc", "--ref", "main"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "MYPROJ", gotNS)
@@ -61,6 +64,7 @@ func TestRepoTree_NestedPath(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoTree(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-svc", "cmd/foo", "--ref", "main"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "cmd/foo", gotPath)
@@ -78,7 +82,8 @@ func TestRepoTree_JSONOutput(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoTree(f)
-	cmd.SetArgs([]string{"MYPROJ/my-svc", "--ref", "main", "--json", "path,type,size"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-svc", "--ref", "main", "--json"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
 	assert.Contains(t, got, `"path":"README.md"`)
@@ -99,7 +104,8 @@ func TestRepoTree_JQFilter(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoTree(f)
-	cmd.SetArgs([]string{"MYPROJ/my-svc", "--ref", "main", "--json", "path,type", "--jq", ".[].path"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-svc", "--ref", "main", "--json", "--jq", ".[].path"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
 	assert.Contains(t, got, "README.md")

@@ -6,14 +6,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 	var hostname, project, description string
 	var private bool
-	var jsonFields string
-	var jqExpr string
 
 	cmd := &cobra.Command{
 		Use:   "create [NAME]",
@@ -46,8 +45,9 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if jsonFields != "" || jqExpr != "" {
-				p := repoFields(f, jsonFields, jqExpr)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := repoFields(f, cfg)
 				p.SetSingleItem()
 				p.AddItem(r)
 				return p.Render()
@@ -64,7 +64,5 @@ func NewCmdRepoCreate(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "Project key")
 	cmd.Flags().StringVar(&description, "description", "", "Repository description")
 	cmd.Flags().BoolVar(&private, "private", true, "Make repository private")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }

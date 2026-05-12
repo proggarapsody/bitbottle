@@ -11,8 +11,7 @@ import (
 
 // Options holds parsed flags for `profile list`.
 type Options struct {
-	JSONFields string
-	JQExpr     string
+	Output format.OutputConfig
 }
 
 // NewCmdList builds the `profile list` cobra command.
@@ -23,14 +22,13 @@ func NewCmdList(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Short: "List named credential profiles",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {
 				return runF(opts)
 			}
 			return listRun(f, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }
 
@@ -41,16 +39,16 @@ func listRun(f *factory.Factory, opts *Options) error {
 	}
 	all := store.All()
 
-	p := profileListFields(f, opts.JSONFields, opts.JQExpr)
+	p := profileListFields(f, opts.Output)
 	for _, np := range all {
 		p.AddItem(np)
 	}
 	return p.Render()
 }
 
-func profileListFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[profiles.NamedProfile] {
+func profileListFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[profiles.NamedProfile] {
 	isTTY := f.IOStreams.IsStdoutTTY()
-	p := format.New[profiles.NamedProfile](f.IOStreams.Out, isTTY, jsonFields, jqExpr)
+	p := format.New[profiles.NamedProfile](f.IOStreams.Out, isTTY, cfg)
 
 	p.AddField(format.Field[profiles.NamedProfile]{
 		Name:    "name",

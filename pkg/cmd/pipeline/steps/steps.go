@@ -4,15 +4,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/shared"
 )
 
 // Options holds parsed flags for `pipeline steps`.
 type Options struct {
-	Hostname   string
-	JSONFields string
-	JQExpr     string
+	Output   format.OutputConfig
+	Hostname string
 
 	// Args[0] = PROJECT/REPO, Args[1] = PIPELINE-UUID
 	Args []string
@@ -27,14 +27,13 @@ func NewCmdSteps(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
+			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {
 				return runF(opts)
 			}
 			return stepsRun(f, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
@@ -56,7 +55,7 @@ func stepsRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	p := shared.StepFields(f, opts.JSONFields, opts.JQExpr)
+	p := shared.StepFields(f, opts.Output)
 	for _, s := range steps {
 		p.AddItem(s)
 	}

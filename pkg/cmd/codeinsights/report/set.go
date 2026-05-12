@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -112,7 +113,7 @@ func setRun(f *factory.Factory, opts *SetOptions) error {
 	if err != nil {
 		return err
 	}
-	p := reportFields(f, "", "")
+	p := reportFields(f, format.OutputConfig{})
 	p.SetSingleItem()
 	p.AddItem(r)
 	return p.Render()

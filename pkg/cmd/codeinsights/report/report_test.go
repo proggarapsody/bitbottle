@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/codeinsights/report"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
@@ -51,6 +52,7 @@ func TestReportList_PrintsRows(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake)
 	cmd := report.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "tool-1")
@@ -66,7 +68,8 @@ func TestReportList_JSON(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake)
 	cmd := report.NewCmdList(f, nil)
-	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123", "--json", "key,result"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123", "--json"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), `"key":"k1"`)
 	assert.Contains(t, out.String(), `"result":"FAIL"`)
@@ -80,6 +83,7 @@ func TestReportList_Unsupported(t *testing.T) {
 	f.GitRunner = func() run.Runner { return r }
 
 	cmd := report.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -98,6 +102,7 @@ func TestReportView_PrintsSingleRow(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake)
 	cmd := report.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123", "my-key"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "my-key")
@@ -117,6 +122,7 @@ func TestReportSet_CallsWithCorrectInput(t *testing.T) {
 	}
 	f, _, _ := newFactory(t, fake)
 	cmd := report.NewCmdSet(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123", "my-key",
 		"--title", "Scan", "--result", "fail", "--report-type", "security"})
 	require.NoError(t, cmd.Execute())
@@ -136,6 +142,7 @@ func TestReportSet_ParsesDatum(t *testing.T) {
 	}
 	f, _, _ := newFactory(t, fake)
 	cmd := report.NewCmdSet(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123", "k",
 		"--title", "T", "--result", "PASS",
 		"--data", "Coverage=87.5:PERCENTAGE"})
@@ -151,6 +158,7 @@ func TestReportSet_InvalidDatum(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newFactory(t, fake)
 	cmd := report.NewCmdSet(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123", "k",
 		"--title", "T", "--result", "PASS",
 		"--data", "bad-datum-no-type"})
@@ -173,6 +181,7 @@ func TestReportDelete_Succeeds(t *testing.T) {
 	}
 	f, out, _ := newFactory(t, fake)
 	cmd := report.NewCmdDelete(f, nil)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"MYPROJ/my-service", "abc123", "del-key"})
 	require.NoError(t, cmd.Execute())
 	assert.True(t, called)

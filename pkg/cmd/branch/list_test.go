@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -20,6 +21,7 @@ func TestNewCmdBranchList_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := branch.NewCmdBranchList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("limit"))
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
@@ -29,6 +31,7 @@ func TestNewCmdBranchList_LimitDefault(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := branch.NewCmdBranchList(f)
+	format.RegisterOutputFlags(cmd)
 	assert.Equal(t, "30", cmd.Flag("limit").DefValue)
 }
 
@@ -36,6 +39,7 @@ func TestNewCmdBranchList_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := branch.NewCmdBranchList(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -57,6 +61,7 @@ func TestBranchList_PrintsNames(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -80,6 +85,7 @@ func TestBranchList_TruncatesHash(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 
@@ -103,7 +109,8 @@ func TestBranchList_JSON_FieldsOutput(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
-	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "name,default"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := out.String()
@@ -127,7 +134,8 @@ func TestBranchList_JQ_FilterOutput(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
 	factorytest.UseBackend(f, fake)
 	cmd := branch.NewCmdBranchList(f)
-	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "name", "--jq", ".[] | .name"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--json", "--jq", ".[] | .name"})
 	require.NoError(t, cmd.Execute())
 
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")

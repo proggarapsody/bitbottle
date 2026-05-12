@@ -12,8 +12,8 @@ import (
 // matcher form the always-on columns; users/groups become a single comma-
 // joined column to keep the table readable on narrow terminals while
 // remaining queryable via --json.
-func fields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.BranchProtection] {
-	p := format.New[backend.BranchProtection](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func fields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.BranchProtection] {
+	p := format.New[backend.BranchProtection](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.BranchProtection]{Name: "id", Header: "ID", Extract: func(b backend.BranchProtection) any { return b.ID }})
 	p.AddField(format.Field[backend.BranchProtection]{Name: "type", Header: "TYPE", Extract: func(b backend.BranchProtection) any { return b.Type }})
 	p.AddField(format.Field[backend.BranchProtection]{Name: "matcher", Header: "MATCHER", Extract: func(b backend.BranchProtection) any { return b.MatcherID }})

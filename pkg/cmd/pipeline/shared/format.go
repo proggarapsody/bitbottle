@@ -34,8 +34,8 @@ func PipelineStateColor(ios *iostreams.IOStreams) func(string) string {
 // PipelineFields constructs the formatter used by both `pipeline list` and
 // `pipeline view` so the JSON field names and TTY column layout stay in lock
 // step.
-func PipelineFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.Pipeline] {
-	p := format.New[backend.Pipeline](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func PipelineFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Pipeline] {
+	p := format.New[backend.Pipeline](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.Pipeline]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(pl backend.Pipeline) any { return pl.UUID }})
 	p.AddField(format.Field[backend.Pipeline]{Name: "buildNumber", Header: "BUILD", Extract: func(pl backend.Pipeline) any { return pl.BuildNumber }})
 	p.AddField(format.Field[backend.Pipeline]{
@@ -50,8 +50,8 @@ func PipelineFields(f *factory.Factory, jsonFields, jqExpr string) *format.Print
 }
 
 // StepFields constructs the formatter for `pipeline steps`.
-func StepFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.PipelineStep] {
-	p := format.New[backend.PipelineStep](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func StepFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.PipelineStep] {
+	p := format.New[backend.PipelineStep](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.PipelineStep]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(s backend.PipelineStep) any { return s.UUID }})
 	p.AddField(format.Field[backend.PipelineStep]{Name: "name", Header: "NAME", Extract: func(s backend.PipelineStep) any { return s.Name }})
 	p.AddField(format.Field[backend.PipelineStep]{
@@ -82,8 +82,8 @@ func DisplayVariableValue(v backend.PipelineVariable) string {
 // TTY value column applies DisplayVariableValue so secured variables print the
 // placeholder; the JSON `value` field passes through the raw value (always
 // empty for secured variables, since the API never returns those).
-func VariableFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.PipelineVariable] {
-	p := format.New[backend.PipelineVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func VariableFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.PipelineVariable] {
+	p := format.New[backend.PipelineVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.PipelineVariable]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(v backend.PipelineVariable) any { return v.UUID }})
 	p.AddField(format.Field[backend.PipelineVariable]{Name: "key", Header: "KEY", Extract: func(v backend.PipelineVariable) any { return v.Key }})
 	// Both TTY and JSON paths route through DisplayVariableValue so secured

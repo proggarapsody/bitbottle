@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -20,6 +21,7 @@ func TestNewCmdPRView_HasWebFlag(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("web"))
 }
 
@@ -27,6 +29,7 @@ func TestNewCmdPRView_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -47,6 +50,7 @@ func TestPRView_PrintsDetails(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 
@@ -74,6 +78,7 @@ func TestPRView_WebFlag_OpensBrowser(t *testing.T) {
 	f.GitRunner = func() run.Runner { return newPRRunner() }
 	f.Browser = browser
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42", "--web"})
 	require.NoError(t, cmd.Execute())
 
@@ -93,6 +98,7 @@ func TestPRView_APIError_PropagatesError(t *testing.T) {
 	}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -112,6 +118,7 @@ func TestPRView_ShowsBody(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"7"})
 	require.NoError(t, cmd.Execute())
 
@@ -134,6 +141,7 @@ func TestPRView_ShowsDraftIndicator(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"7"})
 	require.NoError(t, cmd.Execute())
 
@@ -154,6 +162,7 @@ func TestPRView_NoDraftIndicator_WhenNotDraft(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"7"})
 	require.NoError(t, cmd.Execute())
 
@@ -173,6 +182,7 @@ func TestPRView_ShowsAutoMergeLine(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"7"})
 	require.NoError(t, cmd.Execute())
 
@@ -190,6 +200,7 @@ func TestPRView_NoAutoMergeLine_WhenNil(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"7"})
 	require.NoError(t, cmd.Execute())
 
@@ -200,6 +211,7 @@ func TestNewCmdPRView_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("json"))
 	assert.NotNil(t, cmd.Flag("jq"))
 }
@@ -218,7 +230,8 @@ func TestPRView_JSON_EmitsObject(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
-	cmd.SetArgs([]string{"42", "--json", "id,title"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	got := strings.TrimSpace(out.String())
@@ -240,7 +253,8 @@ func TestPRView_JSON_IncludesDescription(t *testing.T) {
 	}
 	f, out, _ := newPRFactory(t, fake, newPRRunner())
 	cmd := pr.NewCmdPRView(f)
-	cmd.SetArgs([]string{"1", "--json", "id,description"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"1", "--json"})
 	require.NoError(t, cmd.Execute())
 
 	assert.Contains(t, out.String(), `"description":"Some description"`)

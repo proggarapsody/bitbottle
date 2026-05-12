@@ -10,9 +10,8 @@ import (
 
 // ListOptions holds parsed flags for `code-insights annotation list`.
 type ListOptions struct {
-	Hostname   string
-	JSONFields string
-	JQExpr     string
+	Output   format.OutputConfig
+	Hostname string
 	// Args[0]=PROJECT/REPO  Args[1]=HASH  Args[2]=KEY
 	Args []string
 }
@@ -26,20 +25,19 @@ func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Comman
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
+			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {
 				return runF(opts)
 			}
 			return listRun(f, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func annotationFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.CodeInsightsAnnotation] {
-	p := format.New[backend.CodeInsightsAnnotation](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func annotationFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.CodeInsightsAnnotation] {
+	p := format.New[backend.CodeInsightsAnnotation](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.CodeInsightsAnnotation]{
 		Name: "path", Header: "PATH",
 		Extract: func(a backend.CodeInsightsAnnotation) any { return a.Path },
@@ -92,7 +90,7 @@ func listRun(f *factory.Factory, opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	p := annotationFields(f, opts.JSONFields, opts.JQExpr)
+	p := annotationFields(f, opts.Output)
 	for _, a := range anns {
 		p.AddItem(a)
 	}

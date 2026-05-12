@@ -7,8 +7,8 @@ import (
 )
 
 // reportFields builds the Printer for Code Insights reports.
-func reportFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.CodeInsightsReport] {
-	p := format.New[backend.CodeInsightsReport](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), jsonFields, jqExpr)
+func reportFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.CodeInsightsReport] {
+	p := format.New[backend.CodeInsightsReport](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.CodeInsightsReport]{
 		Name: "key", Header: "KEY",
 		Extract: func(r backend.CodeInsightsReport) any { return r.Key },

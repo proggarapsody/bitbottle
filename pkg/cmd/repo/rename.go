@@ -8,11 +8,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 func NewCmdRepoRename(f *factory.Factory) *cobra.Command {
-	var hostname, jsonFields, jqExpr string
+	var hostname string
 	var confirm bool
 
 	cmd := &cobra.Command{
@@ -55,8 +56,9 @@ func NewCmdRepoRename(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if jsonFields != "" || jqExpr != "" {
-				p := repoFields(f, jsonFields, jqExpr)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := repoFields(f, cfg)
 				p.SetSingleItem()
 				p.AddItem(updated)
 				return p.Render()
@@ -69,8 +71,6 @@ func NewCmdRepoRename(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&confirm, "confirm", false, "Skip confirmation prompt")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }
 

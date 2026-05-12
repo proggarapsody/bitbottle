@@ -5,14 +5,13 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 func NewCmdPRView(f *factory.Factory) *cobra.Command {
 	var web bool
-	var jsonFields string
-	var jqExpr string
 
 	cmd := &cobra.Command{
 		Use:   "view PR_ID",
@@ -40,8 +39,9 @@ func NewCmdPRView(f *factory.Factory) *cobra.Command {
 				return f.Browser.Browse(p.WebURL)
 			}
 
-			if jsonFields != "" || jqExpr != "" {
-				printer := prFieldsWithDescription(f, jsonFields, jqExpr)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				printer := prFieldsWithDescription(f, cfg)
 				printer.SetSingleItem()
 				printer.AddItem(p)
 				return printer.Render()
@@ -74,7 +74,5 @@ func NewCmdPRView(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&web, "web", false, "Open in browser")
-	cmd.Flags().StringVar(&jsonFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&jqExpr, "jq", "", "Filter JSON output with a jq expression")
 	return cmd
 }

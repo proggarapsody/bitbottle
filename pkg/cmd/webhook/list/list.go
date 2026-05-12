@@ -3,15 +3,15 @@ package list
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook/shared"
 )
 
 // Options holds parsed flags for `webhook list`.
 type Options struct {
-	Hostname   string
-	JSONFields string
-	JQExpr     string
+	Output   format.OutputConfig
+	Hostname string
 
 	// Args[0] = PROJECT/REPO
 	Args []string
@@ -26,14 +26,13 @@ func NewCmdList(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
+			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {
 				return runF(opts)
 			}
 			return listRun(f, opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.JSONFields, "json", "", "Output JSON with specified fields (comma-separated)")
-	cmd.Flags().StringVar(&opts.JQExpr, "jq", "", "Filter JSON output with a jq expression")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
@@ -51,7 +50,7 @@ func listRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	p := shared.WebhookFields(f, opts.JSONFields, opts.JQExpr)
+	p := shared.WebhookFields(f, opts.Output)
 	for _, h := range hooks {
 		p.AddItem(h)
 	}

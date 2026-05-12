@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
@@ -17,6 +18,7 @@ func TestNewCmdRepoFork_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	cmd := repo.NewCmdRepoFork(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -27,6 +29,7 @@ func TestRepoFork_RequiresInto(t *testing.T) {
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoFork(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -47,6 +50,7 @@ func TestRepoFork_CallsBackendWithTargetWorkspace(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoFork(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "myworkspace", gotNS)
@@ -67,6 +71,7 @@ func TestRepoFork_NameFlagRenamesFork(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoFork(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws", "--name", "renamed-fork"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "renamed-fork", gotIn.Name)
@@ -87,6 +92,7 @@ func TestRepoFork_PrintsForkCoordinate(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoFork(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "otherws/my-service")
@@ -102,7 +108,8 @@ func TestRepoFork_JSONOutput(t *testing.T) {
 	}
 	f, out, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoFork(f)
-	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws", "--json", "slug,namespace,webURL"})
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws", "--json"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
 	assert.Contains(t, got, `"slug":"my-service"`)
@@ -120,6 +127,7 @@ func TestRepoFork_APIError_Propagates(t *testing.T) {
 	}
 	f, _, _ := newRepoFactory(t, fake)
 	cmd := repo.NewCmdRepoFork(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws"})
 	err := cmd.Execute()
 	require.Error(t, err)
