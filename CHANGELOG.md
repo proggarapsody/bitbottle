@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.36.0](https://github.com/proggarapsody/bitbottle/compare/v1.35.0...v1.36.0) (2026-05-12)
+
+
+### Features
+
+* **cis+varops:** SHA-pin Actions, supply-chain tooling & VariableOps interface ([#181](https://github.com/proggarapsody/bitbottle/issues/181)) ([7fddae2](https://github.com/proggarapsody/bitbottle/commit/7fddae2bcafb9471830438bdc3a67b32c25c05f1))
+
 ## [1.35.0](https://github.com/proggarapsody/bitbottle/compare/v1.34.0...v1.35.0) (2026-05-12)
 
 
