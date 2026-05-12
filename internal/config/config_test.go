@@ -257,7 +257,7 @@ func TestLoad_warnsMigration(t *testing.T) {
 	c := config.New(dir)
 	loadErr := c.Load()
 
-	w.Close()
+	require.NoError(t, w.Close())
 	os.Stderr = origStderr
 
 	var buf bytes.Buffer

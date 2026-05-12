@@ -120,6 +120,8 @@ func TestIsHeadless_Interactive(t *testing.T) {
 			t.Cleanup(func() { os.Unsetenv(v) }) //nolint:errcheck
 		}
 	}
+	// Simulate an active DBus session so Linux does not treat this as headless.
+	t.Setenv("DBUS_SESSION_BUS_ADDRESS", "/run/user/1000/bus")
 	// Set DISPLAY to simulate an interactive session.
 	t.Setenv("DISPLAY", ":0")
 	assert.False(t, keyring.IsHeadless())

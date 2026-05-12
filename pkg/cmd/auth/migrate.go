@@ -18,6 +18,15 @@ func NewCmdAuthMigrate(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "migrate",
 		Short: "Migrate token from config file to keyring",
+		Long: `Move any plaintext token from hosts.yml into the OS keyring.
+
+After migration, bitbottle saves and loads credentials from the keyring
+only. The hosts.yml file is rewritten with the token field removed.`,
+		Example: `  # Migrate tokens for all configured hosts
+  bitbottle auth migrate
+
+  # Migrate a single host
+  bitbottle auth migrate --hostname git.example.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := f.Config()
 			if err != nil {
