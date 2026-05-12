@@ -1,0 +1,6 @@
+cycle,version,scope,pr,merged_at_utc,wall_minutes,ci_seconds,loc_added,loc_deleted,files_touched,subagent_tokens_k
+10,1.32.0,PROF,166,2026-05-12T08:45:31Z,32,92,1181,5,17,
+11,1.33.0,SEC,171,2026-05-12T09:28:44Z,23,87,623,22,16,
+12,1.34.0,HTTPH,174,2026-05-12T09:52:44Z,24,88,959,10,11,
+13,1.35.0,OUT2,177,2026-05-12T10:38:24Z,46,94,1173,437,91,
+14,1.36.0,CIS+VAROPS,181,2026-05-12T11:05:54Z,28,117,627,175,13,

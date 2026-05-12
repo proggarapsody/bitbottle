@@ -172,6 +172,15 @@ scope and only that scope.
    passing it to the agent up front saves the discovery round that
    ballooned cycle 9 to 47 minutes / 210k tokens. Use the §1 estimation
    cheatsheet as a starting point.
+
+   **Files-touched budget.** If the expected list contains ≥50 entries,
+   the PRD MUST include a `## Rolling refactor` section explaining
+   *why* the cross-cutting blast radius is unavoidable (e.g. a new
+   global flag, a transport-layer hardening that every command opts
+   into). v1.35 OUT2 (91 files) is the cleanest exemplar; an accidental
+   91-file PR without a stated rolling-refactor rationale is a BLOCKER
+   at §5. The intent is to force the bundle-vs-split decision into the
+   PRD where reviewers can see it, not bury it in the diff.
 4. File it as a GitHub issue: `gh issue create --title "<scope>" --body
    "<prd>" --label prd`.
 5. **Capture the issue number** — every later phase references it
@@ -403,7 +412,22 @@ updated docs.
    reachable from `main`, which is normal for squash-merge — `-D` works
    only if Safety Net allows it).
 
-2. **Compact** — if the iteration ran inside a long agent session
+2. **Append to `docs/auto-iter/metrics.csv`** — one row per cycle:
+
+   ```
+   cycle,version,scope,pr,merged_at_utc,wall_minutes,ci_seconds,loc_added,loc_deleted,files_touched,subagent_tokens_k
+   ```
+
+   Pull from `gh release view`, `gh pr view <N> --json
+   mergedAt,additions,deletions,changedFiles`, and `gh run view <run-id>
+   --json createdAt,updatedAt`. `subagent_tokens_k` is optional (leave
+   empty if you weren't tracking it). Commit the row on the chore branch
+   that ships the next iteration's backlog updates — never on the
+   feature branch. The series is the source of truth for "is the
+   pipeline trending faster or slower"; we stopped relying on memory
+   after the v1.29–v1.31 post-mortem.
+
+3. **Compact** — if the iteration ran inside a long agent session
    (Claude Code, Cursor, etc.), use the agent's compact / clear command
    (`/compact` on Claude Code) so the next iteration starts with clean
    context. Everything important survives in: the merged PR, the
