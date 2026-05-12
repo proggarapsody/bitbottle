@@ -349,7 +349,7 @@ Current state of every command area against gh feature parity:
 | CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | ✅ |
 | DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | ✅ |
 | SEC | **Secret Store & Config Security** | (infrastructure) + `auth migrate` | N/A | DX | ✅ |
-| HTTPH | **HTTP Client Hardening** | (infrastructure) | N/A | DX | 🔲 |
+| HTTPH | **HTTP Client Hardening** | (infrastructure) | N/A | DX | ✅ |
 | OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | 🔲 |
 | CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | 🔲 |
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | ✅ |

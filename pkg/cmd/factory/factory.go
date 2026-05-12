@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	bitbottleapi "github.com/proggarapsody/bitbottle/api"
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/cloud"
 	"github.com/proggarapsody/bitbottle/api/server"
@@ -202,7 +203,7 @@ func newHTTPClient(skipTLSVerify bool) *http.Client {
 	if skipTLSVerify {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
 	}
-	return &http.Client{Transport: transport}
+	return &http.Client{Transport: bitbottleapi.WrapTransport(transport)}
 }
 
 func newBackendClient(hc *http.Client, hostname string, hostCfg config.HostConfig, dcBaseURL func(string) string) backend.Client {
