@@ -1,5 +1,5 @@
-// Package cmdtest holds shared test fixtures for pipeline subcommand tests.
-// It is not in `_test.go` so subpackages under pkg/cmd/pipeline/* can import it.
+// Package cmdtest holds shared test fixtures for pkg/cmd subcommand tests.
+// Lives outside _test.go so subpackages anywhere under pkg/cmd can import it.
 package cmdtest
 
 import (
@@ -13,7 +13,7 @@ import (
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
-// Config is the shared single-host Cloud config for pipeline tests.
+// Config is the shared single-host Cloud config used by command tests.
 const Config = "bitbucket.org:\n  oauth_token: tok\n  user: alice\n  git_protocol: https\n"
 
 // NewRunner returns a FakeRunner pre-seeded with a remote URL response.
@@ -32,10 +32,22 @@ func NewFactory(t *testing.T, fake backend.Client, runner *testhelpers.FakeRunne
 	return f, out, errOut
 }
 
-// NoPipelineFake wraps backend.Client but does NOT implement
-// backend.PipelineClient, simulating a Bitbucket Server backend. Embedding the
-// interface rather than the concrete FakeClient prevents pipeline-method
-// promotion.
+// NoPipelineFake wraps backend.Client without implementing
+// backend.PipelineClient — simulates a Bitbucket Server backend.
+// Embedding the interface (not the concrete FakeClient) prevents
+// pipeline-method promotion.
 type NoPipelineFake struct {
+	backend.Client
+}
+
+// NoWorkspaceVarFake wraps backend.Client without implementing
+// backend.WorkspaceVariableClient.
+type NoWorkspaceVarFake struct {
+	backend.Client
+}
+
+// NoDeploymentFake wraps backend.Client without implementing
+// backend.DeploymentClient — simulates a Bitbucket Server backend.
+type NoDeploymentFake struct {
 	backend.Client
 }

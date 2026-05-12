@@ -8,7 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/deployment/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/deployment/view"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )

@@ -11,7 +11,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/view"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )

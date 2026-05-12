@@ -11,7 +11,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	cmdCreate "github.com/proggarapsody/bitbottle/pkg/cmd/webhook/create"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
