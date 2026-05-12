@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.0](https://github.com/proggarapsody/bitbottle/compare/v1.30.0...v1.31.0) (2026-05-12)
+
+
+### Features
+
+* **var:** variable list/set/delete with --scope repository|workspace|deployment ([#164](https://github.com/proggarapsody/bitbottle/issues/164)) ([8c21b56](https://github.com/proggarapsody/bitbottle/commit/8c21b56762f247649034db2b14f20ebe1d5145a4))
+
 ## [1.30.0](https://github.com/proggarapsody/bitbottle/compare/v1.29.0...v1.30.0) (2026-05-12)
 
 
