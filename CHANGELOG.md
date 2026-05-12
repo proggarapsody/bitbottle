@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.0](https://github.com/proggarapsody/bitbottle/compare/v1.32.0...v1.33.0) (2026-05-12)
+
+
+### Features
+
+* **sec:** token-never-in-config, keyring hardening, auth migrate ([#171](https://github.com/proggarapsody/bitbottle/issues/171)) ([b4b1b47](https://github.com/proggarapsody/bitbottle/commit/b4b1b47cea5ca980624f6fb819fcfb375e6b335e))
+
 ## [1.32.0](https://github.com/proggarapsody/bitbottle/compare/v1.31.0...v1.32.0) (2026-05-12)
 
 
