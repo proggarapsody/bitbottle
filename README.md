@@ -68,6 +68,8 @@ bitbottle auth status
 
 Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo with a Bitbucket remote the host and project/repo are detected automatically. Outside a repo, use `-R HOST/PROJECT/REPO`.
 
+Tokens are intentionally stripped from `hosts.yml` on every save. If you have an existing `oauth_token` in `hosts.yml` (from an older version), run `bitbottle auth migrate` to move it to the OS keyring.
+
 ---
 
 ## Commands

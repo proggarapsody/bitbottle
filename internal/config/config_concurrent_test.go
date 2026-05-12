@@ -68,6 +68,8 @@ func TestConfig_ConcurrentHosts(t *testing.T) {
 
 // TestConfig_ConcurrentSave verifies that concurrent Save calls do not corrupt
 // the config file (last write wins, but no partial writes).
+// Note: tokens are intentionally stripped from the serialised file (MarshalYAML);
+// the test checks file integrity and that the in-memory token is not affected.
 func TestConfig_ConcurrentSave(t *testing.T) {
 	t.Parallel()
 
@@ -85,10 +87,16 @@ func TestConfig_ConcurrentSave(t *testing.T) {
 	}
 	wg.Wait()
 
-	// File must be loadable and uncorrupted after concurrent saves.
+	// In-memory config still holds the token.
+	hcMem, ok := c.Get("host.example.com")
+	assert.True(t, ok)
+	assert.Equal(t, "tok", hcMem.OAuthToken)
+
+	// File must be loadable and uncorrupted — token is stripped per MarshalYAML.
 	c2 := config.New(dir)
 	require.NoError(t, c2.Load())
 	hc, ok := c2.Get("host.example.com")
 	assert.True(t, ok)
-	assert.Equal(t, "tok", hc.OAuthToken)
+	assert.Equal(t, "", hc.OAuthToken, "token must not persist to disk")
+	assert.Equal(t, "u", hc.User)
 }
