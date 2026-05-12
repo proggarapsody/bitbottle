@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.0](https://github.com/proggarapsody/bitbottle/compare/v1.29.0...v1.30.0) (2026-05-12)
+
+
+### Features
+
+* **automerge:** pr merge --auto / --auto-off and pr view auto-merge status ([#162](https://github.com/proggarapsody/bitbottle/issues/162)) ([8a0034a](https://github.com/proggarapsody/bitbottle/commit/8a0034a3b5049212011f4421aa4861218cd08221))
+
 ## [1.29.0](https://github.com/proggarapsody/bitbottle/compare/v1.28.0...v1.29.0) (2026-05-12)
 
 
