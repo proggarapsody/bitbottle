@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/delete"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 

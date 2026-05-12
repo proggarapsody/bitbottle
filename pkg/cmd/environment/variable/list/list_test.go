@@ -8,8 +8,8 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/variable/list"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 

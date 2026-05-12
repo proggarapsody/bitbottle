@@ -9,7 +9,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/variable/list"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )

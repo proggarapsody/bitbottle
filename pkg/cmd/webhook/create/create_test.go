@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	cmdCreate "github.com/proggarapsody/bitbottle/pkg/cmd/webhook/create"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 

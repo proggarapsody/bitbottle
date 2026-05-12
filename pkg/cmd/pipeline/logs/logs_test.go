@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
