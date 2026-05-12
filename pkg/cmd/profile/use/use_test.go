@@ -10,6 +10,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/profiles"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/profile/use"
+	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func prepareStore(t *testing.T) *profiles.Store {
@@ -30,6 +31,8 @@ func prepareStore(t *testing.T) *profiles.Store {
 
 func TestUseRun_Happy(t *testing.T) {
 	f, out, _ := factorytest.New(t, factorytest.Opts{})
+	kr := testhelpers.NewFakeKeyring()
+	f.Keyring = kr
 	store := prepareStore(t)
 	factorytest.UseProfiles(f, store)
 
@@ -39,17 +42,23 @@ func TestUseRun_Happy(t *testing.T) {
 
 	assert.Contains(t, out.String(), "Switched to profile work (git.work.com)")
 
-	// Verify that the host config was written.
+	// Token is stored in keyring, not in hosts.yml.
+	stored, err := kr.Get("bitbottle", "git.work.com")
+	require.NoError(t, err)
+	assert.Equal(t, "work-token", stored)
+
+	// Verify non-secret host config fields were written.
 	cfg, err := f.Config()
 	require.NoError(t, err)
 	hc, ok := cfg.Get("git.work.com")
 	require.True(t, ok)
-	assert.Equal(t, "work-token", hc.OAuthToken)
 	assert.Equal(t, "alice", hc.User)
 	assert.Equal(t, "alice@work.com", hc.AuthUser)
 	assert.True(t, hc.SkipTLSVerify)
 	assert.Equal(t, "server", hc.BackendType)
 	assert.Equal(t, "https", hc.GitProtocol)
+	// Token must not be persisted to disk.
+	assert.Empty(t, hc.OAuthToken, "token must not appear in hosts.yml after profile use")
 }
 
 func TestUseRun_ProfileNotFound(t *testing.T) {
@@ -66,6 +75,8 @@ func TestUseRun_ProfileNotFound(t *testing.T) {
 
 func TestUseRun_AppliesMinimalProfile(t *testing.T) {
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	kr := testhelpers.NewFakeKeyring()
+	f.Keyring = kr
 	store := profiles.New(t.TempDir())
 	require.NoError(t, store.Load())
 	store.Set("minimal", profiles.Profile{
@@ -84,12 +95,17 @@ func TestUseRun_AppliesMinimalProfile(t *testing.T) {
 	cmd.SetArgs([]string{"minimal"})
 	require.NoError(t, cmd.Execute())
 
+	// Profile token is stored in keyring, not hosts.yml.
+	stored, err := kr.Get("bitbottle", "bitbucket.org")
+	require.NoError(t, err)
+	assert.Equal(t, "bb-tok", stored)
+
 	cfg, err = f.Config()
 	require.NoError(t, err)
 	hc, ok := cfg.Get("bitbucket.org")
 	require.True(t, ok)
-	// Profile token is applied.
-	assert.Equal(t, "bb-tok", hc.OAuthToken)
+	// Token must not be persisted to disk.
+	assert.Empty(t, hc.OAuthToken, "token must not appear in hosts.yml")
 	// Pre-existing user is preserved (merge, not replace).
 	assert.Equal(t, "preserved-user", hc.User)
 }

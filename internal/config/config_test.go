@@ -1,8 +1,10 @@
 package config_test
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -217,4 +219,53 @@ func TestHostConfig_BackendType_RoundTrip_Cloud(t *testing.T) {
 	got, ok := c2.Get("a.example.com")
 	require.True(t, ok)
 	assert.Equal(t, "cloud", got.BackendType)
+}
+
+// TestMarshalYAML_stripsToken verifies that saving a config with a token
+// does not write the token to the YAML file on disk.
+func TestMarshalYAML_stripsToken(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	c := config.New(dir)
+	c.Set("h.example.com", config.HostConfig{
+		User:        "alice",
+		OAuthToken:  "super-secret-token",
+		GitProtocol: "https",
+	})
+	require.NoError(t, c.Save())
+
+	raw, err := os.ReadFile(filepath.Join(dir, "hosts.yml"))
+	require.NoError(t, err)
+	assert.NotContains(t, string(raw), "super-secret-token", "token must not appear in hosts.yml")
+	assert.NotContains(t, string(raw), "oauth_token", "oauth_token key must not appear in hosts.yml")
+}
+
+// TestLoad_warnsMigration verifies that loading a hosts.yml that contains an
+// oauth_token prints a migration warning to stderr.
+func TestLoad_warnsMigration(t *testing.T) {
+	// Not parallel — redirects os.Stderr.
+	dir := t.TempDir()
+	writeHostsFile(t, dir, "h.example.com:\n  user: alice\n  git_protocol: https\n  oauth_token: tok\n")
+
+	// Redirect os.Stderr so we can capture the warning.
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	origStderr := os.Stderr
+	os.Stderr = w
+
+	c := config.New(dir)
+	loadErr := c.Load()
+
+	require.NoError(t, w.Close())
+	os.Stderr = origStderr
+
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+
+	require.NoError(t, loadErr)
+	assert.True(t, strings.Contains(buf.String(), "auth migrate"),
+		"expected migration hint in stderr, got: %q", buf.String())
+	assert.True(t, strings.Contains(buf.String(), "h.example.com"),
+		"expected hostname in warning, got: %q", buf.String())
 }

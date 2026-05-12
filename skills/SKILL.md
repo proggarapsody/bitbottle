@@ -19,7 +19,7 @@ not sure about.**
 
 | Task | Open |
 |---|---|
-| Auth, hosts.yml, env vars, multi-host setup | `references/auth.md` |
+| Auth, hosts.yml, env vars, multi-host setup, auth migrate | `references/auth.md` |
 | PR lifecycle (list/view/create/merge/approve/comment/pr activity/review/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
 | commit comment list/add/edit/delete | list, add, edit, and delete commit comments | `references/commit.md` |

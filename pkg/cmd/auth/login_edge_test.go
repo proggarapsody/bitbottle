@@ -58,5 +58,6 @@ func TestAuthLogin_NonTTY_StoredToken_Revalidates(t *testing.T) {
 	hc, ok := cfg.Get("bb.example.com")
 	require.True(t, ok, "host must remain persisted")
 	assert.Equal(t, "alice", hc.User)
-	assert.Equal(t, "existing-token", hc.OAuthToken)
+	// Token is stripped from hosts.yml on save (MarshalYAML); the keyring holds it.
+	assert.Empty(t, hc.OAuthToken, "token must not be written back to hosts.yml")
 }

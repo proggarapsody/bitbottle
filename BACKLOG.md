@@ -51,7 +51,7 @@ Current state of every command area against gh feature parity:
 | `auth status` | ✅ | |
 | `auth token` | ✅ | Print raw stored token (gh has this) |
 | `auth refresh` | ✅ | Re-validate token + update stored user |
-| `auth migrate` | 🔲 | Move config-file tokens into the keyring; strip from `hosts.yml`. Non-interactive (CI-safe). — scope **SEC** |
+| `auth migrate` | ✅ | Move config-file tokens into the keyring; strip from `hosts.yml`. Non-interactive (CI-safe). — scope **SEC** |
 
 ### Repo
 
@@ -348,7 +348,7 @@ Current state of every command area against gh feature parity:
 | OF | **Issues Finish** | `issue edit`, `issue reopen`, `issue assign`, `issue comment {list\|add\|edit\|delete}` | Cloud | 3 | ✅ |
 | CI | **Code Insights** | `code-insights report *`, `code-insights annotation *`, `code-insights merge-check *` | Server/DC | 2 | ✅ |
 | DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | ✅ |
-| SEC | **Secret Store & Config Security** | (infrastructure) + `auth migrate` | N/A | DX | 🔲 |
+| SEC | **Secret Store & Config Security** | (infrastructure) + `auth migrate` | N/A | DX | ✅ |
 | HTTPH | **HTTP Client Hardening** | (infrastructure) | N/A | DX | 🔲 |
 | OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | 🔲 |
 | CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | 🔲 |

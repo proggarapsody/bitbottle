@@ -65,10 +65,11 @@ func TestAuthLogin_WithToken_StoresCredentials(t *testing.T) {
 	require.NoError(t, err)
 	hc, ok := cfg.Get("bb.example.com")
 	require.True(t, ok, "expected host to be persisted in config")
-	assert.Equal(t, "new-token", hc.OAuthToken)
+	// Token must NOT appear in hosts.yml (stripped by MarshalYAML).
+	assert.Empty(t, hc.OAuthToken, "token must not be written to hosts.yml")
 	assert.Equal(t, "alice", hc.User)
 
-	// keyring entry should also be set (best-effort).
+	// Token must be stored in keyring instead.
 	got, err := kr.Get("bitbottle", "alice")
 	require.NoError(t, err)
 	assert.Equal(t, "new-token", got)
@@ -105,7 +106,8 @@ func TestAuthLogin_Cloud_WithEmail_StoresAuthUser(t *testing.T) {
 	require.True(t, ok, "host must be persisted")
 	assert.Equal(t, "alice@example.com", hc.AuthUser,
 		"email must be stored as AuthUser for Cloud Basic auth")
-	assert.Equal(t, "my-api-token", hc.OAuthToken)
+	// Token must NOT appear in hosts.yml (stripped by MarshalYAML).
+	assert.Empty(t, hc.OAuthToken, "token must not be written to hosts.yml")
 }
 
 func TestAuthLogin_Cloud_MissingEmail_Errors(t *testing.T) {
@@ -379,9 +381,11 @@ func TestAuthLogin_KeyringError_IsNonFatal(t *testing.T) {
 	err := cmd.Execute()
 	require.NoError(t, err, "keyring failures must not fail the login command")
 
+	// Even when the keyring fails, the host entry must be persisted in config
+	// (but without the token, which is stripped by MarshalYAML).
 	cfg, cerr := f.Config()
 	require.NoError(t, cerr)
 	hc, ok := cfg.Get("bb.example.com")
 	require.True(t, ok)
-	assert.Equal(t, "tok", hc.OAuthToken)
+	assert.Empty(t, hc.OAuthToken, "token must not be written to hosts.yml even on keyring error")
 }

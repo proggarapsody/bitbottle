@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -22,6 +23,15 @@ type HostConfig struct {
 	Version       string `yaml:"version,omitempty"`
 	SkipTLSVerify bool   `yaml:"skip_tls_verify,omitempty"`
 	BackendType   string `yaml:"backend_type,omitempty"`
+}
+
+// MarshalYAML strips the OAuthToken before serialisation so that tokens are
+// never written to hosts.yml. Credentials should live in the OS keyring only.
+func (h HostConfig) MarshalYAML() (any, error) {
+	type plain HostConfig
+	safe := plain(h)
+	safe.OAuthToken = ""
+	return safe, nil
 }
 
 // Config reads/writes hosts.yml.
@@ -50,6 +60,11 @@ func (c *Config) Load() error {
 	}
 	if m == nil {
 		m = map[string]HostConfig{}
+	}
+	for hostname, hc := range m {
+		if hc.OAuthToken != "" {
+			fmt.Fprintf(os.Stderr, "! warning: token found in hosts.yml for %s — run `bitbottle auth migrate` to move it to the keyring\n", hostname)
+		}
 	}
 	c.data = m
 	return nil

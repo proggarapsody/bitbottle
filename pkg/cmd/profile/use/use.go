@@ -48,6 +48,12 @@ func useRun(f *factory.Factory, opts *Options) error {
 	// Merge: preserve existing host fields not specified by the profile.
 	existing, _ := cfg.Get(p.Hostname)
 	if p.Token != "" {
+		// Store the token in the keyring; do NOT write it to hosts.yml.
+		if krErr := f.Keyring.Set("bitbottle", p.Hostname, p.Token); krErr != nil {
+			fmt.Fprintf(f.IOStreams.ErrOut, "warning: could not store token in keyring: %v\n", krErr)
+		}
+		// Keep the in-memory config token so callers that read it
+		// before the next disk load still see the right value.
 		existing.OAuthToken = p.Token
 	}
 	if p.User != "" {

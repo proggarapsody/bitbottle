@@ -31,7 +31,23 @@ bitbottle auth status
 bitbottle auth token   [--hostname HOST]   # print stored token to stdout
 bitbottle auth refresh [--hostname HOST]   # re-validate, refresh user slug
 bitbottle auth logout  --hostname HOST
+bitbottle auth migrate [--hostname HOST]   # move config-file token into the OS keyring
 ```
+
+## Migrating tokens from hosts.yml to the keyring
+
+If `bitbottle auth login` was run on an older version, the token may be stored
+in plain text inside `hosts.yml`. Run `auth migrate` once to move it into the
+OS keyring (macOS Keychain, GNOME Keyring, Windows Credential Manager):
+
+```bash
+bitbottle auth migrate                  # all configured hosts
+bitbottle auth migrate --hostname HOST  # single host only
+```
+
+After migration the token is removed from `hosts.yml`. In headless environments
+(CI, Docker, SSH) set `BITBOTTLE_ALLOW_INSECURE_STORE=1` to fall back to an
+AES-256-GCM encrypted file store instead of the OS keyring.
 
 ## hosts.yml reference
 
