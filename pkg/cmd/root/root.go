@@ -1,6 +1,8 @@
 package root
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/alias"
@@ -46,11 +48,39 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 		// applied state is only visible during real command execution.
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			cmdutil.ApplyNoColorFlag(c, f.IOStreams)
+
+			jsonMode, _ := c.Flags().GetBool("json")
+			yamlMode, _ := c.Flags().GetBool("yaml")
+			jqExpr, _ := c.Flags().GetString("jq")
+			tmpl, _ := c.Flags().GetString("template")
+
+			// Mutual-exclusion: pick exactly one output format.
+			if jsonMode && yamlMode {
+				return fmt.Errorf("--json and --yaml are mutually exclusive")
+			}
+			if jsonMode && tmpl != "" {
+				return fmt.Errorf("--json and --template are mutually exclusive")
+			}
+			if yamlMode && tmpl != "" {
+				return fmt.Errorf("--yaml and --template are mutually exclusive")
+			}
+			if jqExpr != "" && !jsonMode {
+				return fmt.Errorf("--jq requires --json")
+			}
+
+			// Structured output: disable color so consumers get raw values.
+			if jsonMode || yamlMode || tmpl != "" {
+				f.IOStreams.SetColorEnabled(false)
+			}
 			return nil
 		},
 	}
 
 	cmd.PersistentFlags().String("hostname", "", "Bitbucket hostname (overrides git remote)")
+	cmd.PersistentFlags().Bool("json", false, "Output as JSON")
+	cmd.PersistentFlags().Bool("yaml", false, "Output as YAML")
+	cmd.PersistentFlags().String("jq", "", "Filter JSON output with a jq expression")
+	cmd.PersistentFlags().String("template", "", "Format output with a Go template")
 	cmdutil.RegisterNoColorFlag(cmd)
 
 	cmd.AddCommand(completion.NewCmdCompletion(f))
