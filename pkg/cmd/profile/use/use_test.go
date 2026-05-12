@@ -74,14 +74,22 @@ func TestUseRun_AppliesMinimalProfile(t *testing.T) {
 	})
 	factorytest.UseProfiles(f, store)
 
+	// Pre-configure the host with an existing user to prove merge semantics.
+	cfg, err := f.Config()
+	require.NoError(t, err)
+	cfg.Set("bitbucket.org", config.HostConfig{User: "preserved-user"})
+	require.NoError(t, cfg.Save())
+
 	cmd := use.NewCmdUse(f, nil)
 	cmd.SetArgs([]string{"minimal"})
 	require.NoError(t, cmd.Execute())
 
-	cfg, err := f.Config()
+	cfg, err = f.Config()
 	require.NoError(t, err)
 	hc, ok := cfg.Get("bitbucket.org")
 	require.True(t, ok)
+	// Profile token is applied.
 	assert.Equal(t, "bb-tok", hc.OAuthToken)
-	assert.Equal(t, config.HostConfig{OAuthToken: "bb-tok"}, hc)
+	// Pre-existing user is preserved (merge, not replace).
+	assert.Equal(t, "preserved-user", hc.User)
 }

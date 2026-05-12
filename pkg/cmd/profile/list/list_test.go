@@ -105,8 +105,6 @@ func TestListRun_SortedOutput(t *testing.T) {
 	require.NoError(t, cmd.Execute())
 
 	output := out.String()
-	alphaIdx := assert.ObjectsAreEqual("", "") // placeholder
-	_ = alphaIdx
 	// alpha should appear before zebra in the output
 	aPos := len(output) - len(output[indexStr(output, "alpha"):])
 	zPos := len(output) - len(output[indexStr(output, "zebra"):])

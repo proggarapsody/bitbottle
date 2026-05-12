@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/internal/config"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -46,14 +45,27 @@ func useRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	cfg.Set(p.Hostname, config.HostConfig{
-		OAuthToken:    p.Token,
-		User:          p.User,
-		AuthUser:      p.AuthUser,
-		SkipTLSVerify: p.SkipTLSVerify,
-		BackendType:   p.BackendType,
-		GitProtocol:   p.GitProtocol,
-	})
+	// Merge: preserve existing host fields not specified by the profile.
+	existing, _ := cfg.Get(p.Hostname)
+	if p.Token != "" {
+		existing.OAuthToken = p.Token
+	}
+	if p.User != "" {
+		existing.User = p.User
+	}
+	if p.AuthUser != "" {
+		existing.AuthUser = p.AuthUser
+	}
+	if p.SkipTLSVerify {
+		existing.SkipTLSVerify = true
+	}
+	if p.BackendType != "" {
+		existing.BackendType = p.BackendType
+	}
+	if p.GitProtocol != "" {
+		existing.GitProtocol = p.GitProtocol
+	}
+	cfg.Set(p.Hostname, existing)
 	if err := cfg.Save(); err != nil {
 		return err
 	}
