@@ -185,20 +185,49 @@ func (c *Client) ListEnvVariables(ns, slug, envUUID string) ([]backend.EnvVariab
 	}, 0)
 }
 
-// SetEnvVariable creates or updates an environment variable.
+// SetEnvVariable upserts an environment variable by Key. If a variable with
+// the same Key already exists it is updated via PUT; otherwise it is created
+// via POST.
 func (c *Client) SetEnvVariable(ns, slug, envUUID string, in backend.EnvVariableInput) (backend.EnvVariable, error) {
+	existing, err := c.findEnvVariable(ns, slug, envUUID, in.Key)
+	if err != nil {
+		return backend.EnvVariable{}, err
+	}
 	body := setEnvVariableBody{
 		Key:     in.Key,
 		Value:   in.Value,
 		Secured: in.Secured,
 	}
 	var w wireCloudEnvVariable
-	path := fmt.Sprintf("/repositories/%s/%s/deployments_config/environments/%s/variables",
-		url.PathEscape(ns), url.PathEscape(slug), url.PathEscape(braceUUID(envUUID)))
-	if err := c.postJSON(path, body, &w); err != nil {
-		return backend.EnvVariable{}, err
+	if existing != nil {
+		path := fmt.Sprintf("/repositories/%s/%s/deployments_config/environments/%s/variables/%s",
+			url.PathEscape(ns), url.PathEscape(slug),
+			url.PathEscape(braceUUID(envUUID)), url.PathEscape(braceUUID(existing.UUID)))
+		if err := c.putJSON(path, body, &w); err != nil {
+			return backend.EnvVariable{}, err
+		}
+	} else {
+		path := fmt.Sprintf("/repositories/%s/%s/deployments_config/environments/%s/variables",
+			url.PathEscape(ns), url.PathEscape(slug), url.PathEscape(braceUUID(envUUID)))
+		if err := c.postJSON(path, body, &w); err != nil {
+			return backend.EnvVariable{}, err
+		}
 	}
 	return w.toDomain(), nil
+}
+
+// findEnvVariable returns the variable matching key, or nil if none.
+func (c *Client) findEnvVariable(ns, slug, envUUID, key string) (*backend.EnvVariable, error) {
+	vars, err := c.ListEnvVariables(ns, slug, envUUID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range vars {
+		if vars[i].Key == key {
+			return &vars[i], nil
+		}
+	}
+	return nil, nil
 }
 
 // DeleteEnvVariable deletes an environment variable by its UUID.

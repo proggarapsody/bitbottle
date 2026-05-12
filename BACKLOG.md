@@ -271,9 +271,9 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `variable list PROJECT/REPO` | 🔲 | List variables; `--scope repository\|workspace\|deployment` — scope **VAR** |
-| `variable set PROJECT/REPO KEY VALUE` | 🔲 | Upsert; `--secured`, `--scope` — scope **VAR** |
-| `variable delete PROJECT/REPO KEY` | 🔲 | Delete; `--scope` — scope **VAR** |
+| `variable list PROJECT/REPO` | ✅ | List variables; `--scope repository\|workspace\|deployment` — scope **VAR** |
+| `variable set PROJECT/REPO KEY VALUE` | ✅ | Upsert; `--secured`, `--scope` — scope **VAR** |
+| `variable delete PROJECT/REPO KEY` | ✅ | Delete; `--scope` — scope **VAR** |
 
 ### Extensions _(missing)_
 
@@ -349,7 +349,7 @@ Current state of every command area against gh feature parity:
 | HTTPH | **HTTP Client Hardening** | (infrastructure) | N/A | DX | 🔲 |
 | OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | 🔲 |
 | CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | 🔲 |
-| VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | 🔲 |
+| VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | ✅ |
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |

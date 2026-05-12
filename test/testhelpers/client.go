@@ -135,6 +135,11 @@ type FakeClient struct {
 	SetEnvVariableFn    func(ns, slug, envUUID string, in backend.EnvVariableInput) (backend.EnvVariable, error)
 	DeleteEnvVariableFn func(ns, slug, envUUID, varUUID string) error
 
+	// Workspace variable methods (Cloud-only; satisfies backend.WorkspaceVariableClient when set)
+	ListWorkspaceVariablesFn  func(ns string) ([]backend.PipelineVariable, error)
+	SetWorkspaceVariableFn    func(ns string, in backend.PipelineVariableInput) (backend.PipelineVariable, error)
+	DeleteWorkspaceVariableFn func(ns, key string) error
+
 	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
 	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
 	GetReportFn         func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
@@ -961,6 +966,38 @@ func (c *FakeClient) DeleteMergeCheck(project, slug, key string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteMergeCheck; set DeleteMergeCheckFn in your test")
+	}
+	return nil
+}
+
+// ── WorkspaceVariableClient ──────────────────────────────────────────────────
+
+func (c *FakeClient) ListWorkspaceVariables(ns string) ([]backend.PipelineVariable, error) {
+	if c.ListWorkspaceVariablesFn != nil {
+		return c.ListWorkspaceVariablesFn(ns)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaceVariables; set ListWorkspaceVariablesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) SetWorkspaceVariable(ns string, in backend.PipelineVariableInput) (backend.PipelineVariable, error) {
+	if c.SetWorkspaceVariableFn != nil {
+		return c.SetWorkspaceVariableFn(ns, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetWorkspaceVariable; set SetWorkspaceVariableFn in your test")
+	}
+	return backend.PipelineVariable{}, nil
+}
+
+func (c *FakeClient) DeleteWorkspaceVariable(ns, key string) error {
+	if c.DeleteWorkspaceVariableFn != nil {
+		return c.DeleteWorkspaceVariableFn(ns, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteWorkspaceVariable; set DeleteWorkspaceVariableFn in your test")
 	}
 	return nil
 }
