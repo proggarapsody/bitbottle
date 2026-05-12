@@ -943,6 +943,20 @@ type DomainError struct {
 | `network.tls_unknown_authority` | TLS error | Add `-k` (or `skip_tls_verify: true` in config) for self-signed CAs. |
 | `transport.timeout` | request timeout | Network slow or VPN down. Retry with `--debug` for details. |
 
+**New codes needed by upcoming scopes** (add when the originating scope lands):
+
+| Code | Originating scope | Trigger | Hint |
+|---|---|---|---|
+| `pr.automerge.beta_disabled` | **AUTOMERGE** | Cloud-specific 404 body when workspace beta is off | Ask your workspace admin to enable auto-merge in workspace settings. |
+| `perms.admin_required` | **PERMS** | 403 on `perms project\|repo grant/revoke` | You need PROJECT_ADMIN on this project to manage permissions. |
+| `admin.sys_admin_required` | **ADMIN** | 403 on `admin secrets rotate` / `admin logging set` | Standard admin tokens do not include SYS_ADMIN; ask a system administrator to perform this action. |
+| `variable.system_managed` | **VAR** | 400 on writing a `system=true` variable | This variable is managed by Bitbucket and cannot be modified. |
+| `task.unsupported_server_version` | **TASK** | Server < 7.2 detected via `SRVVER` | Severity-BLOCKER comments require Bitbucket Server 7.2 or newer. |
+| `keyring.unavailable` | **SEC** | Keyring `Set` times out / no backend | Keyring not available in this environment. Set BITBOTTLE_ALLOW_INSECURE_STORE=1 to use the file fallback, or run `bitbottle auth migrate` on a desktop. |
+| `keyring.token_too_large` | **SEC** | Windows 2048-byte limit hit | Token exceeds Credential Manager's size limit. Falling back to encrypted file store. |
+| `extension.binary_changed` | **EXT** | Installed binary SHA differs from lockfile | The extension binary has changed since install. Run `bitbottle extension upgrade NAME` to refresh. |
+| `extension.no_arch_binary` | **EXT** | No matching `<os>-<arch>` asset in release | No `bitbottle-NAME` binary available for your OS/arch. Check the extension's release assets. |
+
 **Migration**:
 
 - One PR per cluster of codes (auth, repo, pr, branch, network) — each is a thin error-mapping change with snapshot-style tests.
