@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.29.0](https://github.com/proggarapsody/bitbottle/compare/v1.28.0...v1.29.0) (2026-05-12)
+
+
+### Features
+
+* **dep:** deployment list/view, environment CRUD, environment variable CRUD ([#159](https://github.com/proggarapsody/bitbottle/issues/159)) ([0da519a](https://github.com/proggarapsody/bitbottle/commit/0da519a906cee99dcd933f4e49ad328effd94963))
+
 ## [1.28.0](https://github.com/proggarapsody/bitbottle/compare/v1.27.0...v1.28.0) (2026-05-11)
 
 
