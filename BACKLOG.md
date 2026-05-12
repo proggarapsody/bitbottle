@@ -226,12 +226,12 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `perms project list PROJECT` | 🔲 | List all permission grants for a project — scope **PERMS** |
-| `perms project grant PROJECT USER PERM` | 🔲 | Grant `PROJECT_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
-| `perms project revoke PROJECT USER PERM` | 🔲 | Revoke a project permission grant — scope **PERMS** |
-| `perms repo list PROJECT/REPO` | 🔲 | List all permission grants for a repo — scope **PERMS** |
-| `perms repo grant PROJECT/REPO USER PERM` | 🔲 | Grant `REPO_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
-| `perms repo revoke PROJECT/REPO USER PERM` | 🔲 | Revoke a repo permission grant — scope **PERMS** |
+| `perms project list PROJECT` | 🔲 | List all permission grants (users + groups) for a project — scope **PERMS** |
+| `perms project grant PROJECT [--user SLUG \| --group NAME] PERM` | 🔲 | Grant `PROJECT_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
+| `perms project revoke PROJECT [--user SLUG \| --group NAME]` | 🔲 | Revoke a project permission grant — scope **PERMS** |
+| `perms repo list PROJECT/REPO` | 🔲 | List all permission grants (users + groups) for a repo — scope **PERMS** |
+| `perms repo grant PROJECT/REPO [--user SLUG \| --group NAME] PERM` | 🔲 | Grant `REPO_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
+| `perms repo revoke PROJECT/REPO [--user SLUG \| --group NAME]` | 🔲 | Revoke a repo permission grant — scope **PERMS** |
 
 ### Admin _(Server / DC only — missing)_
 
@@ -241,13 +241,13 @@ Current state of every command area against gh feature parity:
 | `admin logging get` | 🔲 | Show current log level + async flag — scope **ADMIN** |
 | `admin logging set` | 🔲 | `--level DEBUG\|INFO\|WARN\|ERROR`, `--async` — scope **ADMIN** |
 
-### PR Auto-Merge _(Server / DC only — missing)_
+### PR Auto-Merge _(both backends — missing)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `pr auto-merge enable PR_ID` | 🔲 | Enable auto-merge when all conditions pass — scope **AUTOMERGE** |
-| `pr auto-merge disable PR_ID` | 🔲 | Disable auto-merge — scope **AUTOMERGE** |
-| `pr auto-merge status PR_ID` | 🔲 | Show current auto-merge configuration — scope **AUTOMERGE** |
+| `pr merge --auto PR_ID` | 🔲 | Queue PR for auto-merge once all checks pass. DC: stable API. Cloud: beta endpoint, gated. — scope **AUTOMERGE** |
+| `pr merge --auto=off PR_ID` | 🔲 | Cancel a queued auto-merge — scope **AUTOMERGE** |
+| `pr view PR_ID` | (extend) | Existing command grows an `Auto-merge: enabled (squash)` line in its output — scope **AUTOMERGE** |
 
 ### PR Tasks _(Server / DC only — missing)_
 
@@ -283,14 +283,14 @@ Current state of every command area against gh feature parity:
 | `extension remove NAME` | 🔲 | Remove an installed extension — scope **EXT** |
 | `extension exec NAME [args...]` | 🔲 | Run an installed extension (BKT_TOKEN / credentials filtered from env) — scope **EXT** |
 
-### Named Context Profiles _(missing)_
+### Named Profiles _(missing)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `context create NAME --hostname HOST --token TOKEN` | 🔲 | Create a named credential profile (like kubectl contexts) — scope **MCTX** |
-| `context use NAME` | 🔲 | Switch the active context — scope **MCTX** |
-| `context list` | 🔲 | List all defined context profiles — scope **MCTX** |
-| `context delete NAME` | 🔲 | Delete a context profile — scope **MCTX** |
+| `profile create NAME --hostname HOST --token TOKEN` | 🔲 | Create a named credential profile (kubectl-context-like) — scope **PROF** |
+| `profile use NAME` | 🔲 | Switch the active profile — scope **PROF** |
+| `profile list` | 🔲 | List all defined profiles — scope **PROF** |
+| `profile delete NAME` | 🔲 | Delete a profile — scope **PROF** |
 
 ### Code Insights _(Server / DC only)_
 
@@ -351,10 +351,10 @@ Current state of every command area against gh feature parity:
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | 🔲 |
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
-| AUTOMERGE | **PR Auto-Merge** | `pr auto-merge enable/disable/status` | Server/DC | 3 | 🔲 |
+| AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | 🔲 |
 | TASK | **PR Tasks** | `pr task list/create/complete/reopen` | Server/DC | 3 | 🔲 |
 | REACT | **PR Reactions** | `pr reaction list/add/remove` | Server/DC | 3 | 🔲 |
-| MCTX | **Named Context Profiles** | `context create/use/list/delete` | N/A | 3 | 🔲 |
+| PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | 🔲 |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
 | EXT | **Extension System** | `extension install/list/remove/exec` | N/A | 4 | 🔲 |
 
@@ -1482,10 +1482,29 @@ type RetryPolicy struct {
     MaxBackoff     time.Duration // default 2s
     Jitter         bool          // default true
 }
-// Retry on: 5xx, 429. Never retry: 4xx (except 429), POST mutations.
 ```
-`Transport.Do` wraps the inner `http.RoundTripper` with `retryRoundTripper`
-that applies exponential backoff with full jitter.
+
+**Retry is opt-in per call-site, not method-based**. HTTP method is not a
+reliable signal for "is this safe to retry" — Bitbucket exposes some idempotent
+operations under POST (search, deploy-key-by-fingerprint) and some genuinely
+mutating operations under PUT. A method-based retry policy would either
+duplicate `POST /pullrequests` (creating duplicate PRs) or fail to retry safe
+POST queries.
+
+The call-site signals retry-safety via context:
+```go
+ctx := httpx.WithRetry(ctx, retryPolicy) // opt-in
+resp, err := tr.Do(req.WithContext(ctx))
+```
+`Transport.Do` checks for the retry policy on the request context. If absent,
+it executes once. If present, it wraps in `retryRoundTripper` with exponential
+backoff + full jitter on 5xx and 429 responses (4xx other than 429 are never
+retried, regardless of opt-in).
+
+Call-sites that are unambiguously safe to retry (all `GET *`, list operations,
+diff fetches, source reads) attach the retry policy in the adapter layer. Write
+operations (create/update/delete/merge) do not attach retry and must succeed
+or fail on a single attempt.
 
 **Rate-limit tracking** (`httpx/ratelimit.go`):
 ```go
@@ -1571,8 +1590,16 @@ rootCmd.PersistentFlags().String("template", "", "Format output with a Go templa
 
 Surface a clean user error (not a panic) when combinations are invalid.
 
-**Migration**: Per-command `--json`/`--jq` flags become deprecated shims that
-forward to the global flags; remove them in the next major version.
+**Migration**: cobra's persistent flags are inherited by every subcommand
+automatically — there is no shim layer to write. Existing per-command `--json` /
+`--jq` declarations should be **deleted** in the same PR that adds the root
+declarations, because once a flag is declared persistently on root, redeclaring
+it on a child causes a "flag redefined" panic at command construction time.
+
+Audit pass before the PR lands:
+1. List every `pflag` declaration for `--json`, `--jq` across `pkg/cmd/**`.
+2. Confirm none of them depend on per-command defaults or required-on-this-command-only behaviour. (Spot-check `pr list --json` — does it validate against a per-command field list? If yes, that validation moves to the formatter, not the flag.)
+3. Delete the per-command declarations in the same PR as the root declarations.
 
 **No new backend interfaces. No new types. No new commands.**
 
@@ -1638,104 +1665,131 @@ Scorecard badge. These are table-stakes supply-chain controls for a published CL
 
 ### VAR — Variable Command Promotion
 
-**Problem**: Today `pipeline variable` is nested under `pipeline` and is
-Cloud-only. Bitbucket has workspace-level and repository-level variables too,
-plus deployment-environment variables (scope DEP). A top-level `variable` command
-with `--scope` mirrors the bkt `variable` pattern and consolidates all variable
-management in one place.
+**Problem**: Today `pipeline variable` is nested under `pipeline` and operates only
+on **repository-scoped** pipeline variables. Bitbucket Cloud has the same primitive
+at three scopes: repository, workspace, and deployment-environment (the third lives
+under scope **DEP**). The CLI should expose all three through one consistent
+verb-noun pair, matching `gh variable`.
 
-**New optional interface** (`api/backend/client.go`):
+**Reuse the existing `PipelineClient` interface, do NOT duplicate `PipelineVariable`.**
+
+The shipped `PipelineClient` (`api/backend/client_pipeline.go`) already has
+`ListPipelineVariables` / `SetPipelineVariable` / `DeletePipelineVariable` plus
+the `PipelineVariable` + `PipelineVariableInput` types. VAR extends that interface
+with workspace + deployment scopes; the existing repo-scoped methods stay as-is.
+
+**Extend `PipelineClient`** (`api/backend/client_pipeline.go`):
 ```go
-type VariableClient interface {
-    ListVariables(ns, slug, scope string) ([]Variable, error)
-    SetVariable(ns, slug, scope string, in VariableInput) (Variable, error)
-    DeleteVariable(ns, slug, scope, key string) error
+type PipelineClient interface {
+    // existing (unchanged):
+    ListPipelineVariables(ns, slug string) ([]PipelineVariable, error)
+    SetPipelineVariable(ns, slug string, in PipelineVariableInput) (PipelineVariable, error)
+    DeletePipelineVariable(ns, slug, uuid string) error
+    // ... other pipeline methods unchanged ...
+
+    // new:
+    ListWorkspaceVariables(workspace string) ([]PipelineVariable, error)
+    SetWorkspaceVariable(workspace string, in PipelineVariableInput) (PipelineVariable, error)
+    DeleteWorkspaceVariable(workspace, uuid string) error
+
+    ListDeploymentVariables(ns, slug, envUUID string) ([]PipelineVariable, error)
+    SetDeploymentVariable(ns, slug, envUUID string, in PipelineVariableInput) (PipelineVariable, error)
+    DeleteDeploymentVariable(ns, slug, envUUID, uuid string) error
 }
 ```
-Cloud-only optional; `ErrUnsupportedOnHost` on Server.
 
-`scope` is one of `"repository"` | `"workspace"` | `"deployment"`.
-For `"deployment"` scope an additional `--env UUID` flag is required to identify
-the environment.
+The deployment methods overlap with scope **DEP**'s `EnvVariable` / `EnvVariableInput`.
+**Resolve before shipping**: DEP should use `PipelineVariable` too — collapse the
+duplicate types as part of VAR. Update DEP's interface to call into the same methods.
 
-**New types**:
-```go
-type Variable struct {
-    UUID    string
-    Key     string
-    Value   string // empty when Secured
-    Secured bool
-    Scope   string
-}
-
-type VariableInput struct {
-    Key     string
-    Value   string
-    Secured bool
-}
-```
+**No new domain types.** `PipelineVariable` already has `UUID`, `Key`, `Value`,
+`Secured`. (If a `Scope` field is wanted on read responses, add it as an
+optional string — does not affect existing call-sites.)
 
 **Commands**:
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
-| `variable list PROJECT/REPO` | 1 | — | `--scope repository\|workspace\|deployment`, `--env UUID`, `--json`, `--jq`, `--hostname` |
+| `variable list PROJECT/REPO` | 1 | — | `--scope repository\|workspace\|deployment` (default `repository`), `--env UUID` (required for deployment), `--json`, `--jq`, `--hostname` |
 | `variable set PROJECT/REPO KEY VALUE` | 3 | — | `--scope`, `--env UUID`, `--secured`, `--hostname` |
 | `variable delete PROJECT/REPO KEY` | 2 | — | `--scope`, `--env UUID`, `--hostname` |
 
-**Migration**: `pipeline variable *` commands become deprecated aliases pointing
-to `variable * --scope repository`. Remove in next major version.
+For workspace scope, `PROJECT/REPO` becomes `WORKSPACE/-` (the slug is ignored).
+For deployment scope, `--env UUID` is required.
 
-**MCP tools**: `list_variables`, `set_variable`, `delete_variable`
+**Migration**: `pipeline variable *` keeps working unchanged — both command paths
+hit the same backend methods. No deprecation shim; the nesting just becomes a
+specialised view of the more general command.
+
+**MCP tools**: extend existing `set_pipeline_variable` / `list_pipeline_variables`
+/ `delete_pipeline_variable` schemas with optional `scope` + `env_uuid` fields.
+No new MCP tools needed.
 
 ---
 
 ### PERMS — Permissions Management _(Server / DC only)_
 
-Bitbucket Server/DC exposes permission management via
-`/rest/api/1.0/projects/{key}/permissions` and
-`/rest/api/1.0/projects/{key}/repos/{slug}/permissions`. Cloud has no equivalent
-REST API (managed via workspace membership) — surface `ErrUnsupportedOnHost`.
+Bitbucket Server/DC exposes permission management via separate
+user-grant and group-grant endpoints:
+- `/rest/api/1.0/projects/{key}/permissions/users` and `.../groups`
+- `/rest/api/1.0/projects/{key}/repos/{slug}/permissions/users` and `.../groups`
+
+Cloud has no equivalent REST API (managed via workspace membership) — surface
+`ErrUnsupportedOnHost`.
 
 **New optional interface** (`api/backend/client.go`):
 ```go
 type PermissionsClient interface {
     ListProjectPermissions(project string) ([]PermissionGrant, error)
-    GrantProjectPermission(project, user, perm string) error
-    RevokeProjectPermission(project, user, perm string) error
+    GrantProjectPermission(project string, subject PermissionSubject, perm string) error
+    RevokeProjectPermission(project string, subject PermissionSubject) error
 
     ListRepoPermissions(project, slug string) ([]PermissionGrant, error)
-    GrantRepoPermission(project, slug, user, perm string) error
-    RevokeRepoPermission(project, slug, user, perm string) error
+    GrantRepoPermission(project, slug string, subject PermissionSubject, perm string) error
+    RevokeRepoPermission(project, slug string, subject PermissionSubject) error
 }
 ```
 
+The list methods union user-grants and group-grants from the two separate
+endpoints. Grant/revoke dispatch to `/users` or `/groups` based on
+`PermissionSubject.Kind`.
+
 **New types**:
 ```go
+type PermissionSubject struct {
+    Kind        string // "user" | "group"
+    Slug        string // user slug (Kind=user) — empty for groups
+    Name        string // group name (Kind=group) — empty for users
+    DisplayName string // populated on read; ignored on write
+}
+
 type PermissionGrant struct {
-    User       User
+    Subject    PermissionSubject
     Permission string // PROJECT_READ | PROJECT_WRITE | PROJECT_ADMIN
                       // REPO_READ   | REPO_WRITE   | REPO_ADMIN
 }
 ```
 
-**Commands**:
+Revoke does not take `perm` — Bitbucket Server allows only one permission level
+per subject, so revoke is "remove whatever grant they have."
+
+**Commands** (mutually exclusive `--user` / `--group`):
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
 | `perms project list PROJECT` | 1 | — | `--json`, `--jq`, `--hostname` |
-| `perms project grant PROJECT USER PERM` | 3 | — | `--hostname` |
-| `perms project revoke PROJECT USER PERM` | 3 | — | `--hostname` |
+| `perms project grant PROJECT PERM` | 2 | `--user SLUG` \| `--group NAME` | `--hostname` |
+| `perms project revoke PROJECT` | 1 | `--user SLUG` \| `--group NAME` | `--hostname` |
 | `perms repo list PROJECT/REPO` | 1 | — | `--json`, `--jq`, `--hostname` |
-| `perms repo grant PROJECT/REPO USER PERM` | 3 | — | `--hostname` |
-| `perms repo revoke PROJECT/REPO USER PERM` | 3 | — | `--hostname` |
+| `perms repo grant PROJECT/REPO PERM` | 2 | `--user SLUG` \| `--group NAME` | `--hostname` |
+| `perms repo revoke PROJECT/REPO` | 1 | `--user SLUG` \| `--group NAME` | `--hostname` |
 
 `PERM` values: `PROJECT_READ` / `PROJECT_WRITE` / `PROJECT_ADMIN` for project;
 `REPO_READ` / `REPO_WRITE` / `REPO_ADMIN` for repo.
 
 **MCP tools**: `list_project_permissions`, `grant_project_permission`,
 `revoke_project_permission`, `list_repo_permissions`, `grant_repo_permission`,
-`revoke_repo_permission`
+`revoke_repo_permission` — each takes `{subject_kind, subject_slug_or_name, permission}`.
 
 ---
 
@@ -1775,37 +1829,57 @@ type LoggingConfigInput = LoggingConfig
 
 ---
 
-### AUTOMERGE — PR Auto-Merge _(Server / DC only)_
+### AUTOMERGE — PR Auto-Merge _(both backends)_
 
-Bitbucket Server/DC allows a PR to be queued for automatic merge once all merge
-checks pass. Cloud does not expose this API — surface `ErrUnsupportedOnHost`.
+Queues a PR to merge automatically once all merge checks (builds, approvals,
+required reviewers) pass.
 
-**New optional interface** (`api/backend/client.go`):
+**Backend coverage**:
+- **Bitbucket Server / DC**: stable `/rest/api/1.0/.../pull-requests/{id}/auto-merge` endpoint.
+- **Bitbucket Cloud**: beta `/2.0/repositories/{ws}/{slug}/pullrequests/{id}/auto-merge` endpoint (currently behind workspace beta flag). Treat as available; surface a clean error if the workspace hasn't opted in.
+
+**Extend `PRMerger`** (do not add a new optional interface):
 ```go
-type PRAutoMerger interface {
-    EnableAutoMerge(ns, slug string, id int, strategy string) error   // strategy: merge|squash|rebase
+type PRMerger interface {
+    // existing:
+    MergePR(ns, slug string, id int, in MergePRInput) (PullRequest, error)
+    // new:
+    EnableAutoMerge(ns, slug string, id int, strategy string) error // merge|squash|rebase
     DisableAutoMerge(ns, slug string, id int) error
-    GetAutoMergeStatus(ns, slug string, id int) (AutoMergeStatus, error)
 }
 ```
+`PRMerger` is already in the composite `Client`, so both backends gain these
+methods. Adding to an existing interface keeps the optional-interface count flat
+(see review note 6).
 
-**New types**:
+**No new domain types.** Auto-merge state is surfaced via an additional field on
+the existing `PullRequest` type:
 ```go
-type AutoMergeStatus struct {
+type PullRequest struct {
+    // ... existing fields ...
+    AutoMerge *AutoMergeState // nil when not enabled
+}
+
+type AutoMergeState struct {
     Enabled  bool
     Strategy string // merge | squash | rebase
 }
 ```
 
-**Commands**:
+**Command surface**: extend the existing `pr merge` command with a single flag,
+matching `gh pr merge --auto` ergonomics. No new subcommands.
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
-| `pr auto-merge enable PR_ID` | 1 | — | `--strategy merge\|squash\|rebase`, `--hostname` |
-| `pr auto-merge disable PR_ID` | 1 | — | `--hostname` |
-| `pr auto-merge status PR_ID` | 1 | — | `--json`, `--hostname` |
+| `pr merge PR_ID --auto` | 1 | — | `--squash` \| `--rebase` (strategy; default `merge`), `--hostname` |
+| `pr merge PR_ID --auto=off` | 1 | — | `--hostname` (cancels a queued auto-merge) |
 
-**MCP tools**: `enable_auto_merge`, `disable_auto_merge`, `get_auto_merge_status`
+Auto-merge **status** is read from the existing `pr view` output — when
+`AutoMerge != nil` the view formatter prints `Auto-merge: enabled (squash)`.
+No new `status` command needed; status is data, not an action.
+
+**MCP tools**: extend existing `merge_pr` schema with `auto bool` + `auto_strategy string`.
+No new MCP tools.
 
 ---
 
@@ -1888,50 +1962,53 @@ type PRReaction struct {
 
 ---
 
-### MCTX — Named Context Profiles
+### PROF — Named Profiles
 
 **Problem**: users with access to multiple Bitbucket instances (e.g. company
-Server + personal Cloud) must pass `--hostname` on every command. Named contexts
-(à la kubectl) let them switch the active credential profile globally.
+Server + personal Cloud) must pass `--hostname` on every command. Named profiles
+(à la kubectl contexts) let them switch the active credential profile globally.
+
+**Why `profile` and not `context`**: scope **CTX** already owns the `bitbottle context`
+command — it prints orientation JSON (host + repo + branch + user). Reusing the
+same top-level verb for credential selection would force a default-when-bare
+subcommand and confuse `bitbottle context` (info) with `bitbottle context use`
+(action). `profile` is the more common term outside k8s anyway (`aws --profile`,
+`gh auth switch` works on profiles internally).
 
 **Config change** (`internal/config/`):
 
-Add a two-level config: `ActiveContext string` + `Contexts map[string]*Context`.
-Each context references a host + stores the credential indirectly (token in
-keyring under `bitbottle/<context-name>`).
+Add `ActiveProfile string` + `Profiles map[string]*Profile`. Each profile points
+at a host; the token lives in the keyring under `bitbottle/<profile-name>`
+(not in the config file — aligns with scope **SEC**).
 
 ```go
-type Context struct {
-    Hostname string
-    Username string // stored in config; token goes to keyring
-    BackendType string // cloud | server
+type Profile struct {
+    Hostname      string
+    Username      string  // stored in config; token goes to keyring
+    BackendType   string  // cloud | server
     SkipTLSVerify bool
 }
 ```
 
-Backward compat: if `ActiveContext` is empty, fall back to the existing
-flat `Hosts` map so existing configs continue to work.
+Backward compat: if `ActiveProfile` is empty, fall back to the existing
+flat `Hosts` map so existing configs continue to work unchanged.
 
 **Factory change** (`pkg/cmd/factory/`):
 
-`f.Backend(hostname)` reads `ActiveContext` when `hostname` is empty, resolving
-the `Context` to a `HostConfig`.
+`f.Backend(hostname)` reads `ActiveProfile` when `hostname` is empty, resolves
+the `Profile` to a `HostConfig`. Explicit `--hostname` always wins.
 
-**Commands** (`pkg/cmd/context/`):
+**Commands** (`pkg/cmd/profile/`):
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
-| `context create NAME` | 1 | `--hostname HOST` | `--token`, `--username`, `--skip-tls-verify` |
-| `context use NAME` | 1 | — | — |
-| `context list` | 0 | — | `--json`, `--jq` |
-| `context delete NAME` | 1 | — | — |
+| `profile create NAME` | 1 | `--hostname HOST` | `--token`, `--username`, `--skip-tls-verify` |
+| `profile use NAME` | 1 | — | — |
+| `profile list` | 0 | — | `--json`, `--jq` |
+| `profile delete NAME` | 1 | — | — |
 
-**Note**: `bitbottle context` (no subcommand) remains the orientation primitive
-from scope **CTX** — that command is unaffected. The new `context create/use/list/delete`
-subcommands are additions to the same command group.
-
-**MCP tools**: none (context selection is CLI-session state, not suitable for
-stateless MCP calls)
+**MCP tools**: none (profile selection is CLI-session state, not suitable for
+stateless MCP calls).
 
 ---
 
@@ -2017,23 +2094,43 @@ func Exec(name string, args []string, env []string) error
 | `extension remove NAME` | 1 | — | — |
 | `extension exec NAME [args...]` | 1+ | — | — |
 
-**Security**:
-- Verify SHA256 checksums against a `checksums.txt` in the release assets before
-  installing.
-- Warn and require `--force` if the extension binary is not signed.
-- Strip `BITBOTTLE_TOKEN`, `BITBOTTLE_KEYRING_PASSPHRASE`, `GITHUB_TOKEN` from
-  the subprocess env; inject only `BITBOTTLE_TOKEN` (read from config/keyring)
-  for the active host.
+**Security model — be honest**:
 
-**MCP tools**: none (extension management is CLI-only)
+Extensions run with the user's Bitbucket credentials. An installed extension
+binary can do anything the user can do via the API: read private repos, merge
+PRs, delete branches, exfiltrate tokens. This is the same trust model as
+`gh extension` and the same model as installing any third-party binary.
+
+We do NOT promise integrity verification we cannot actually provide:
+- A SHA256 in the same GitHub release the binary lives in is **not** a security
+  control — an attacker who can publish a malicious binary can publish a matching
+  checksum. We will compute and store the SHA on install for *change detection*
+  on subsequent runs (so a swapped binary triggers a warning), not as a trust
+  anchor.
+- Code signing (sigstore/cosign) is a real control but a separate scope —
+  defer until we have a signing pipeline.
+
+**What we DO do**:
+- Print the extension author, source URL, and a "this will run as you" warning on
+  `extension install`. Require explicit `--yes` (or an interactive confirmation)
+  to proceed.
+- Record the install-time SHA in `~/.config/bitbottle/extensions/<name>.lock`.
+  On `extension exec`, verify the binary SHA matches; if not, refuse to run and
+  tell the user the binary changed.
+- Strip `BITBOTTLE_KEYRING_PASSPHRASE` and `GITHUB_TOKEN` from the subprocess
+  env. Inject `BITBOTTLE_HOST`, `BITBOTTLE_USER`, and `BITBOTTLE_TOKEN` (read
+  fresh from keyring for the active host) so the extension doesn't need its own
+  auth flow.
+
+**MCP tools**: none (extension management is CLI-only).
 
 **Definition of Done**:
-- [ ] `extension install` downloads + verifies checksum + makes executable
+- [ ] `extension install` downloads, prompts for confirmation, records install-time SHA
 - [ ] `extension list` shows installed extensions
-- [ ] `extension remove` deletes the binary
-- [ ] `extension exec` forks with clean env (secret vars stripped, credential vars injected)
+- [ ] `extension remove` deletes the binary + lockfile
+- [ ] `extension exec` verifies SHA matches lockfile, forks with sanitised env
 - [ ] Root dispatch resolves unknown first arg to installed extension binary
-- [ ] Security: SHA256 verification test with mock release assets
+- [ ] README documents the trust model in plain language ("extensions run as you")
 
 ---
 
@@ -2066,16 +2163,16 @@ func Exec(name string, args []string, env []string) error
 | 23 | **OF** Issues Finish | Closes the gap left by scope O; Cloud-only; APIs all exist |
 | 24 | **CI** Code Insights | Server/DC only; separate REST namespace; required for CI-integration story on Server |
 | 25 | **DEP** Deployments | Cloud-only operational scope; lowest priority unless requested |
-| 26 | **SEC** Secret Store & Config Security | Token-never-in-file + keyring hardening; high security ROI, small scope |
-| 27 | **HTTPH** HTTP Client Hardening | Retry + rate limiting + ETag cache; improves resilience for all commands |
-| 28 | **CIS** CI Supply Chain Hardening | SHA-pin actions, SBOM, Scorecard, gitleaks, Codecov; ship before next public announcement |
-| 29 | **OUT2** Extended Output Formats | YAML + template output + global flags; unblocks scripting use-cases |
-| 30 | **VAR** Variable Command Promotion | Consolidate variable management under top-level `variable`; quick win |
-| 31 | **PERMS** Permissions Management | Server/DC ACL surface; needed for enterprise onboarding workflows |
-| 32 | **ADMIN** Admin Commands | Server/DC only; small scope, high ops value |
-| 33 | **AUTOMERGE** PR Auto-Merge | Server/DC only; frequent request from DC users |
-| 34 | **TASK** PR Tasks | Server/DC only; completes the PR collaboration surface |
-| 35 | **REACT** PR Reactions | Server/DC only; low effort, nice-to-have parity |
-| 36 | **MCTX** Named Context Profiles | Multi-instance UX; needed once users run both Cloud + Server |
-| 37 | **NIX** Nix Flake Packaging | Distribution; no code change; unblocks Nix users |
-| 38 | **EXT** Extension System | Large scope; deferred until core surface is stable |
+| 26 | **OUT2** Extended Output Formats | gh-parity: `--template`, global `--json`/`--jq`/`--yaml` on every command. Scripts written against gh muscle memory port directly. |
+| 27 | **AUTOMERGE** PR Auto-Merge | gh-parity: `gh pr merge --auto` is core gh muscle memory. Bitbucket DC has the primitive — expose it cleanly. |
+| 28 | **VAR** Variable Command Promotion | gh-parity: `gh variable` is top-level. Mirror with `--scope repository\|workspace\|deployment`. |
+| 29 | **PROF** Named Profiles | gh-parity: `gh auth switch` + multi-account. Real user pain for anyone running work Server + personal Cloud. |
+| 30 | **EXT** Extension System | gh-parity: signature gh feature — `gh-dash`, `gh-copilot` show what an ecosystem looks like. Offloads the long tail of features to the community. |
+| 31 | **REACT** PR Reactions | gh-parity: `gh pr comment --reaction`. Low effort, completes the comment surface. |
+| 32 | **TASK** PR Tasks | gh-adjacent: gh has no tasks (GitHub lacks the primitive) but tasks fit gh philosophy of exposing platform-native verbs cleanly. DC only. |
+| 33 | **SEC** Secret Store & Config Security | Hygiene: token-never-in-file + keyring hardening. gh ships this; you should too. |
+| 34 | **HTTPH** HTTP Client Hardening | Hygiene: retry + rate limiting + ETag cache. gh has all three. |
+| 35 | **CIS** CI Supply Chain Hardening | Hygiene: SHA-pin actions, SBOM, Scorecard, gitleaks, Codecov. gh ships SBOMs and has a Scorecard badge. |
+| 36 | **NIX** Nix Flake Packaging | Distribution: tiny scope, unblocks Nix users. Optional. |
+| 37 | **PERMS** Permissions Management | DC-only extra (gh has no equivalent — covered by `gh api`). Bitbucket-native, not parity-driven. |
+| 38 | **ADMIN** Admin Commands | DC-only ops extra (no gh analogue). Ship only if a real ops user asks. |
