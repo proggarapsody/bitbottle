@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.0](https://github.com/proggarapsody/bitbottle/compare/v1.34.0...v1.35.0) (2026-05-12)
+
+
+### Features
+
+* **out2:** extended output formats — YAML, Go templates, global flags ([#177](https://github.com/proggarapsody/bitbottle/issues/177)) ([9084c59](https://github.com/proggarapsody/bitbottle/commit/9084c5985c9dd2c7c7e22120510f31f9b821e26b))
+
 ## [1.34.0](https://github.com/proggarapsody/bitbottle/compare/v1.33.0...v1.34.0) (2026-05-12)
 
 
