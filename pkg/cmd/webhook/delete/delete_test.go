@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	cmdDelete "github.com/proggarapsody/bitbottle/pkg/cmd/webhook/delete"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
+	cmdDelete "github.com/proggarapsody/bitbottle/pkg/cmd/webhook/delete"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
