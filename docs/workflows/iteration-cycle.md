@@ -65,9 +65,29 @@ the same sections.
    address up front than during a rolling rebase.
 6. Read `BACKLOG.md` headings so the rest of the loop has accurate
    context.
+7. **Smell scan** (≤60 seconds). Surface any structural debt the recent
+   ship loop has accumulated, so the next mode pick is informed rather
+   than blind:
+
+   ```bash
+   # Duplicate test-helper packages — should be one shared package
+   find pkg/cmd -path '*/internal/cmdtest/cmdtest.go' | wc -l
+
+   # N-way capability switches in cmd layer (≥9 = ≥3 files of triplets)
+   grep -rEo 'As[A-Z][a-zA-Z]+Client\(\)' pkg/cmd | wc -l
+
+   # Translation-table pairs in api/backend/types.go
+   grep -cE '^func (To|.*ToCLI)' api/backend/types.go
+
+   # Unused exported interfaces (cheap heuristic — symbol declared in
+   # api/backend but referenced only in its own _test.go file)
+   ```
+
+   If two or more counters jump materially since the last iteration, the
+   next §1 mode pick should favour `architecture` over `iteration`.
 
 **Exit**: clean tree on `main`, up to date with `origin/main`, workspace
-inventory acknowledged.
+inventory + smell scan acknowledged.
 
 ## Section 1 — Pick the scope
 
@@ -139,16 +159,29 @@ scope and only that scope.
    API surface, test plan. (The `to-prd` skill on Claude Code automates
    this; on other tooling, write the markdown by hand or via your
    equivalent.)
-2. File it as a GitHub issue: `gh issue create --title "<scope>" --body
+2. **Obsolescence check.** Before filing, scan `BACKLOG.md` for any 🔲
+   row whose command surface would supersede or duplicate this one
+   (e.g. `environment variable …` would have been superseded by a
+   later `variable --scope deployment`). If found, either widen this
+   scope to ship the unified form, or note in the PRD the older surface
+   stays only as an alias and will be deprecated in the same PR. Two
+   wired-in command trees doing the same job is a BLOCKER at §5.
+3. **Expected files list.** The PRD MUST end with a `## Expected files`
+   section listing every file the implementation is expected to touch
+   (new + modified). This becomes the TDD subagent's contract in §3 —
+   passing it to the agent up front saves the discovery round that
+   ballooned cycle 9 to 47 minutes / 210k tokens. Use the §1 estimation
+   cheatsheet as a starting point.
+4. File it as a GitHub issue: `gh issue create --title "<scope>" --body
    "<prd>" --label prd`.
-3. **Capture the issue number** — every later phase references it
+5. **Capture the issue number** — every later phase references it
    (`refs #NNN`, `Closes #NNN`).
-4. Sanity-check the PRD against `BACKLOG.md` → "Architecture Contract
+6. Sanity-check the PRD against `BACKLOG.md` → "Architecture Contract
    (per scope)" and "Definition of Done". Those rows are non-negotiable
    and must appear in the PRD's checklist.
 
-**Exit**: GitHub issue created, issue number captured, DoD checklist
-embedded in the PRD.
+**Exit**: GitHub issue created, issue number captured, DoD checklist +
+expected-files list embedded in the PRD.
 
 ## Section 3 — Implement (TDD)
 
@@ -177,6 +210,16 @@ worktree.
   One logical change per commit.
 - Conventional Commit subjects: `feat(scope): ...`, `fix(scope): ...`,
   `docs(scope): ...`.
+
+**Subagent brief (required when delegating TDD)**
+- Pass the PRD's **Expected files** list verbatim. The subagent treats
+  it as the touch boundary — additions are allowed, but if it needs to
+  edit a file outside the list it must surface that as a finding before
+  proceeding, not discover it silently. This caps the
+  re-discovery cost that bloated cycle 9 (210k subagent tokens, 47 min)
+  versus a typical 100–120k.
+- Include the layer order below as a one-line ordering hint; do not
+  re-list architecture. Point at `docs/agent-primer.md` instead.
 
 **Layer order** (per `BACKLOG.md` Architecture Contract)
 1. `api/backend/client.go` — new interface(s), or extend the composite
@@ -231,13 +274,21 @@ issues before they touch `main`.
 
 Run `docs/workflows/pre-merge-check.md` end-to-end (branch hygiene,
 Conventional Commits, no build artifacts in `dist/`, `make lint` +
-`go test`, the doc-sync table, release-please boundaries, and the
-secret scan).
+`go test`, the doc-sync table, the **design-judge** scan, release-please
+boundaries, and the secret scan).
+
+**Order matters.** Design-judge (pre-merge-check §6) runs **locally on
+the feature branch before §6 push**, not after the PR is open and CI is
+green. Discovering BLOCKERs after `pr_open` forces a fix-agent round +
+a second CI cycle (≈5–10 min wall + ≈80k extra subagent tokens, measured
+across cycles 8 and 9). If you find yourself running design-judge in
+§6, the gate ran out of order — finish it here.
 
 Do **not** proceed past this section if any check fails. Fix the
 underlying issue and re-run; never bypass.
 
-**Exit**: pre-merge-check returns green.
+**Exit**: pre-merge-check returns green, including design-judge BLOCKERs
+resolved on the local branch.
 
 ## Section 6 — Open the PR
 
@@ -254,7 +305,10 @@ underlying issue and re-run; never bypass.
      test plan checklist mirroring the manual tests touched in Section
      9.
 3. Wait for CI to go green. Do not request review or push more commits
-   while CI is running unless something is actually broken.
+   while CI is running unless something is actually broken. **Running
+   design-judge here is a workflow violation** — it belongs in §5,
+   before push. Catching it now means paying for a fix-agent round and
+   a second CI cycle that the local gate would have prevented.
 
 **Halt point**: report the PR URL to the author and wait for explicit
 "merge it". The author may want to review the diff first.
