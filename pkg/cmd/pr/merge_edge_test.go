@@ -23,6 +23,9 @@ func TestPRMerge_DeleteBranchFailure_WrapsError(t *testing.T) {
 	deleteErr := errors.New("403 forbidden")
 	fake := &testhelpers.FakeClient{
 		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(), nil // no auto-merge queued
+		},
 		MergePRFn: func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
 			return testhelpers.BackendPRFactory(
 				testhelpers.BackendPRWithState("MERGED"),

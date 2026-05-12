@@ -160,6 +160,42 @@ func TestPRView_NoDraftIndicator_WhenNotDraft(t *testing.T) {
 	assert.NotContains(t, out.String(), "draft")
 }
 
+func TestPRView_ShowsAutoMergeLine(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			p := testhelpers.BackendPRFactory(testhelpers.BackendPRWithID(7))
+			p.AutoMerge = &backend.AutoMergeState{Enabled: true, Strategy: "squash"}
+			return p, nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRView(f)
+	cmd.SetArgs([]string{"7"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Contains(t, out.String(), "Auto-merge: enabled (squash)")
+}
+
+func TestPRView_NoAutoMergeLine_WhenNil(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(testhelpers.BackendPRWithID(7)), nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRView(f)
+	cmd.SetArgs([]string{"7"})
+	require.NoError(t, cmd.Execute())
+
+	assert.NotContains(t, out.String(), "Auto-merge")
+}
+
 func TestNewCmdPRView_HasJSONAndJQFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})

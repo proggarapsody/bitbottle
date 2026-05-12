@@ -44,10 +44,16 @@ type wireCloudPR struct {
 	Reviewers []struct {
 		AccountID string `json:"account_id"`
 	} `json:"reviewers"`
+	AutoMerge *wireCloudAutoMerge `json:"auto_merge"`
+}
+
+// wireCloudAutoMerge is the Cloud wire shape for the auto_merge field on a PR.
+type wireCloudAutoMerge struct {
+	MergeStrategy string `json:"merge_strategy"`
 }
 
 func (w wireCloudPR) toDomain() backend.PullRequest {
-	return backend.PullRequest{
+	pr := backend.PullRequest{
 		ID:          w.ID,
 		Title:       w.Title,
 		Description: w.Description,
@@ -61,6 +67,25 @@ func (w wireCloudPR) toDomain() backend.PullRequest {
 		ToBranch:       w.Destination.Branch.Name,
 		WebURL:         w.Links.HTML.Href,
 		HeadCommitHash: w.Source.Commit.Hash,
+	}
+	if w.AutoMerge != nil {
+		pr.AutoMerge = &backend.AutoMergeState{
+			Enabled:  true,
+			Strategy: cloudStrategyToCLI(w.AutoMerge.MergeStrategy),
+		}
+	}
+	return pr
+}
+
+// cloudStrategyToCLI maps Cloud API strategy values back to CLI vocabulary.
+func cloudStrategyToCLI(s string) string {
+	switch s {
+	case "squash":
+		return "squash"
+	case "fast_forward":
+		return "rebase"
+	default:
+		return "merge"
 	}
 }
 
@@ -161,6 +186,44 @@ func (c *Client) ApprovePR(ns, slug string, id int) error {
 func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/diff", ns, slug, id)
 	return c.getText(path)
+}
+
+// EnableAutoMerge queues a PR for automatic merge on Bitbucket Cloud.
+// The auto-merge endpoint is currently in beta; workspaces must have opted in.
+// A 404 response whose message mentions "auto-merge" or "auto_merge" surfaces as
+// a dedicated error rather than a generic pr.not_found.
+func (c *Client) EnableAutoMerge(ns, slug string, id int, strategy string) error {
+	body := struct {
+		MergeStrategy string `json:"merge_strategy"`
+	}{
+		MergeStrategy: backend.ToCloudMergeStrategy(strategy),
+	}
+	var result struct{}
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/auto-merge", ns, slug, id)
+	if err := c.postJSON(path, body, &result); err != nil {
+		return stampAutoMergeBeta(err)
+	}
+	return nil
+}
+
+// DisableAutoMerge cancels a queued auto-merge on Bitbucket Cloud.
+func (c *Client) DisableAutoMerge(ns, slug string, id int) error {
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/auto-merge", ns, slug, id)
+	return c.delete(path)
+}
+
+// stampAutoMergeBeta maps a 404 on the auto-merge endpoint to a
+// user-friendly error when the workspace hasn't enabled the beta feature.
+func stampAutoMergeBeta(err error) error {
+	var de *backend.DomainError
+	if !errors.As(err, &de) || de.HTTPStatus() != 404 {
+		return err
+	}
+	msg := strings.ToLower(de.Message)
+	if strings.Contains(msg, "auto-merge") || strings.Contains(msg, "auto_merge") {
+		return backend.StampCode(err, backend.CodePRAutoMergeBetaDisabled, "", "", "")
+	}
+	return err
 }
 
 func (c *Client) DeleteBranch(ns, slug, branch string) error {

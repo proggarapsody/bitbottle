@@ -179,7 +179,7 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 
 	s.AddTool(
 		mcplib.NewTool("merge_pr",
-			mcplib.WithDescription("Merge a pull request (destructive)"),
+			mcplib.WithDescription("Merge a pull request (destructive), or queue it for auto-merge"),
 			optHostname,
 			reqProject,
 			reqSlug,
@@ -188,7 +188,13 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 				mcplib.Required(),
 			),
 			mcplib.WithString("strategy",
-				mcplib.Description("Merge strategy: merge, squash, rebase (default: server default)"),
+				mcplib.Description("Merge strategy for immediate merge: merge, squash, rebase (default: server default)"),
+			),
+			mcplib.WithBoolean("auto",
+				mcplib.Description("Queue PR for auto-merge when all checks pass instead of merging immediately"),
+			),
+			mcplib.WithString("auto_strategy",
+				mcplib.Description("Merge strategy for auto-merge: merge, squash, rebase (default: merge)"),
 			),
 		),
 		h.mergePR,

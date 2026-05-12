@@ -53,6 +53,10 @@ const (
 	CodePRMergeBehind           ErrorCode = "pr.merge.behind"
 	CodePRCreateDuplicateBranch ErrorCode = "pr.create.duplicate_branch"
 	CodePRReviewerUnknown       ErrorCode = "pr.reviewer.unknown"
+	// CodePRAutoMergeBetaDisabled is returned by Bitbucket Cloud when the
+	// auto-merge beta endpoint is unavailable because the workspace has not
+	// opted into the feature.
+	CodePRAutoMergeBetaDisabled ErrorCode = "pr.automerge.beta_disabled"
 
 	// branch cluster — branch-protection / write-side failures
 	CodeBranchProtected ErrorCode = "branch.protected"
@@ -85,6 +89,7 @@ var AllCodes = []ErrorCode{
 	CodePRMergeBehind,
 	CodePRCreateDuplicateBranch,
 	CodePRReviewerUnknown,
+	CodePRAutoMergeBetaDisabled,
 	CodeBranchProtected,
 	CodeHostUnsupported,
 	CodeNetworkTLSUnknownAuthority,

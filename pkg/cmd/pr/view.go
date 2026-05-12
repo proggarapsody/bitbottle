@@ -64,6 +64,9 @@ func NewCmdPRView(f *factory.Factory) *cobra.Command {
 			fmt.Fprintf(out, "Author: %s\n", author)
 			fmt.Fprintf(out, "From:   %s\n", p.FromBranch)
 			fmt.Fprintf(out, "To:     %s\n", p.ToBranch)
+			if p.AutoMerge != nil && p.AutoMerge.Enabled {
+				fmt.Fprintf(out, "Auto-merge: enabled (%s)\n", p.AutoMerge.Strategy)
+			}
 			if p.WebURL != "" {
 				fmt.Fprintf(out, "URL:    %s\n", p.WebURL)
 			}

@@ -245,9 +245,9 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `pr merge --auto PR_ID` | 🔲 | Queue PR for auto-merge once all checks pass. DC: stable API. Cloud: beta endpoint, gated. — scope **AUTOMERGE** |
-| `pr merge --auto=off PR_ID` | 🔲 | Cancel a queued auto-merge — scope **AUTOMERGE** |
-| `pr view PR_ID` | (extend) | Existing command grows an `Auto-merge: enabled (squash)` line in its output — scope **AUTOMERGE** |
+| `pr merge --auto PR_ID` | ✅ | Queue PR for auto-merge once all checks pass. DC: stable API. Cloud: beta endpoint, gated. — scope **AUTOMERGE** |
+| `pr merge --auto-off PR_ID` | ✅ | Cancel a queued auto-merge — scope **AUTOMERGE** |
+| `pr view PR_ID` | ✅ (extended) | Command shows `Auto-merge: enabled (squash)` line in its output — scope **AUTOMERGE** |
 
 ### PR Tasks _(Server / DC only — missing)_
 
@@ -352,7 +352,7 @@ Current state of every command area against gh feature parity:
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | 🔲 |
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
-| AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | 🔲 |
+| AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/complete/reopen` | Server/DC | 3 | 🔲 |
 | REACT | **PR Reactions** | `pr reaction list/add/remove` | Server/DC | 3 | 🔲 |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | 🔲 |

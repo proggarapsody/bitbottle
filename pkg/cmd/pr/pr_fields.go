@@ -49,5 +49,6 @@ func prFields(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[bac
 func prFieldsWithDescription(f *factory.Factory, jsonFields, jqExpr string) *format.Printer[backend.PullRequest] {
 	p := prFields(f, jsonFields, jqExpr)
 	p.AddField(format.Field[backend.PullRequest]{Name: "description", Header: "DESCRIPTION", Extract: func(pr backend.PullRequest) any { return pr.Description }})
+	p.AddField(format.Field[backend.PullRequest]{Name: "autoMerge", Header: "AUTO_MERGE", Extract: func(pr backend.PullRequest) any { return pr.AutoMerge }})
 	return p
 }

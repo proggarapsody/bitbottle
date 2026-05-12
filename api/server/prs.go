@@ -38,6 +38,12 @@ type wirePR struct {
 			Href string `json:"href"`
 		} `json:"self"`
 	} `json:"links"`
+	AutoMerge *wireServerAutoMerge `json:"autoMerge"`
+}
+
+// wireServerAutoMerge is the Server/DC wire shape for the autoMerge field.
+type wireServerAutoMerge struct {
+	MergeStrategy string `json:"mergeStrategy"`
 }
 
 func (w wirePR) toDomain() backend.PullRequest {
@@ -45,7 +51,7 @@ func (w wirePR) toDomain() backend.PullRequest {
 	if len(w.Links.Self) > 0 {
 		webURL = w.Links.Self[0].Href
 	}
-	return backend.PullRequest{
+	pr := backend.PullRequest{
 		ID:          w.ID,
 		Title:       w.Title,
 		Description: w.Description,
@@ -59,6 +65,25 @@ func (w wirePR) toDomain() backend.PullRequest {
 		ToBranch:       w.ToRef.DisplayID,
 		WebURL:         webURL,
 		HeadCommitHash: w.FromRef.LatestCommit,
+	}
+	if w.AutoMerge != nil {
+		pr.AutoMerge = &backend.AutoMergeState{
+			Enabled:  true,
+			Strategy: serverStrategyToCLI(w.AutoMerge.MergeStrategy),
+		}
+	}
+	return pr
+}
+
+// serverStrategyToCLI maps Server/DC API strategy values back to CLI vocabulary.
+func serverStrategyToCLI(s string) string {
+	switch s {
+	case "squash":
+		return "squash"
+	case "fast-forward":
+		return "rebase"
+	default:
+		return "merge"
 	}
 }
 
@@ -176,6 +201,24 @@ func (c *Client) ApprovePR(ns, slug string, id int) error {
 func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/diff", ns, slug, id)
 	return c.getText(path)
+}
+
+// EnableAutoMerge queues a PR for automatic merge on Bitbucket Server / DC.
+func (c *Client) EnableAutoMerge(ns, slug string, id int, strategy string) error {
+	body := struct {
+		MergeStrategy string `json:"mergeStrategy"`
+	}{
+		MergeStrategy: backend.ToServerMergeStrategy(strategy),
+	}
+	var result struct{}
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/auto-merge", ns, slug, id)
+	return c.putJSON(path, body, &result)
+}
+
+// DisableAutoMerge cancels a queued auto-merge on Bitbucket Server / DC.
+func (c *Client) DisableAutoMerge(ns, slug string, id int) error {
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/auto-merge", ns, slug, id)
+	return c.delete(path, nil)
 }
 
 func (c *Client) DeleteBranch(ns, slug, branch string) error {

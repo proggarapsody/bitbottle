@@ -39,6 +39,9 @@ func TestPRMerge_MergeStrategy_CallsAPI(t *testing.T) {
 	var captured backend.MergePRInput
 	fake := &testhelpers.FakeClient{
 		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(), nil // no auto-merge queued
+		},
 		MergePRFn: func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
 			captured = in
 			return testhelpers.BackendPRFactory(testhelpers.BackendPRWithState("MERGED")), nil
@@ -58,6 +61,9 @@ func TestPRMerge_SquashStrategy_CallsAPI(t *testing.T) {
 	var captured backend.MergePRInput
 	fake := &testhelpers.FakeClient{
 		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(), nil // no auto-merge queued
+		},
 		MergePRFn: func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
 			captured = in
 			return testhelpers.BackendPRFactory(testhelpers.BackendPRWithState("MERGED")), nil
@@ -93,6 +99,9 @@ func TestPRMerge_DeleteBranch_CallsDeleteBranchAfterMerge(t *testing.T) {
 
 	fake := &testhelpers.FakeClient{
 		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(), nil // no auto-merge queued
+		},
 		MergePRFn: func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
 			mergeCalled = true
 			return testhelpers.BackendPRFactory(
@@ -122,6 +131,9 @@ func TestPRMerge_APIError_PropagatesError(t *testing.T) {
 	apiErr := errors.New("500 internal error")
 	fake := &testhelpers.FakeClient{
 		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return testhelpers.BackendPRFactory(), nil // no auto-merge queued
+		},
 		MergePRFn: func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
 			return backend.PullRequest{}, apiErr
 		},
