@@ -350,7 +350,7 @@ Current state of every command area against gh feature parity:
 | DEP | **Deployments** | `deployment list/view`, `environment list/create/delete`, `environment variable {list\|set\|delete}` | Cloud | 3 | ✅ |
 | SEC | **Secret Store & Config Security** | (infrastructure) + `auth migrate` | N/A | DX | ✅ |
 | HTTPH | **HTTP Client Hardening** | (infrastructure) | N/A | DX | ✅ |
-| OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | 🔲 |
+| OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | ✅ |
 | CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | 🔲 |
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | ✅ |
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
