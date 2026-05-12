@@ -11,3 +11,6 @@ var (
 	_ backend.Client = (*server.Client)(nil)
 	_ backend.Client = (*cloud.Client)(nil)
 )
+
+// Compile-time assertion: cloud.Client satisfies backend.DeploymentClient.
+var _ backend.DeploymentClient = (*cloud.Client)(nil)

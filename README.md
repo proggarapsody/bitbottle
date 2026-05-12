@@ -82,6 +82,8 @@ Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo wit
 | `webhook` | `list` `view` `create` `delete` |
 | `commit` | `log` `view` `status` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
+| `deployment` | `list` `view` _(Cloud only)_ |
+| `environment` | `list` `create` `delete` `variable {list\|set\|delete}` _(Cloud only)_ |
 | `workspace` | `list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
@@ -204,6 +206,40 @@ bitbottle pipeline variable delete MYWORKSPACE/my-service DEPLOY_ENV --confirm
 Secured variables redact their value on read (TTY column shows
 `<secured>`, JSON `value` shows `"<secured>"`). Use `--body=-` to read
 the value from stdin so the secret never touches shell history.
+
+### Deployments & Environments _(Cloud only)_
+
+```bash
+# List recent deployments
+bitbottle deployment list  MYWORKSPACE/my-service
+bitbottle deployment list  MYWORKSPACE/my-service --limit 25
+
+# View a single deployment
+bitbottle deployment view  MYWORKSPACE/my-service {deployment-uuid}
+
+# List environments
+bitbottle environment list MYWORKSPACE/my-service
+
+# Create an environment (type must be Test, Staging, or Production)
+bitbottle environment create MYWORKSPACE/my-service --name "QA" --type Test
+bitbottle environment create MYWORKSPACE/my-service --name "Prod" --type Production --rank 10
+
+# Delete an environment (destructive — --confirm required on non-TTY)
+bitbottle environment delete MYWORKSPACE/my-service {env-uuid} --confirm
+
+# Environment variables (secured values show as <secured>)
+bitbottle environment variable list   MYWORKSPACE/my-service {env-uuid}
+bitbottle environment variable set    MYWORKSPACE/my-service {env-uuid} DEPLOY_KEY prod-val
+bitbottle environment variable set    MYWORKSPACE/my-service {env-uuid} API_TOKEN secret --secured
+bitbottle environment variable delete MYWORKSPACE/my-service {env-uuid} {var-uuid}
+```
+
+All commands support `--json fields` and `--jq expr`. Variable `delete` takes
+the variable UUID (not the key) — run `environment variable list --json uuid,key`
+to find it. Secured variable values are never returned by the API once set.
+
+These commands return a typed unsupported-capability error on Bitbucket Server /
+Data Center — deployments and environments are a Cloud-only feature.
 
 ### Webhooks
 
