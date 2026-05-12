@@ -211,16 +211,16 @@ Current state of every command area against gh feature parity:
 | `bitbottle search code QUERY [--workspace W]` | ✅ | Cloud `GET /workspaces/{ws}/search/code?search_query=...` — content + path matches. — scope **SR** |
 | `bitbottle search code QUERY` _(Server)_ | 🔲 | Optional. Server has no first-class code-search REST API; defer. |
 
-### Deployments _(Cloud only — missing)_
+### Deployments _(Cloud only)_
 
 | Command | Status | Notes |
 |---|---|---|
-| `deployment list` | 🔲 | `GET /repositories/{ws}/{slug}/deployments` — scope **DEP** |
-| `deployment view UUID` | 🔲 | `GET .../deployments/{uuid}` — scope **DEP** |
-| `environment list` | 🔲 | `GET .../environments` — scope **DEP** |
-| `environment create` | 🔲 | `POST .../environments` (body: type/uuid/name) — scope **DEP** |
-| `environment delete UUID` | 🔲 | `DELETE .../environments/{uuid}` — scope **DEP** |
-| `environment variable list / set / delete` | 🔲 | `/deployments_config/environments/{uuid}/variables` (CRUD) — scope **DEP** |
+| `deployment list` | ✅ | `GET /repositories/{ws}/{slug}/deployments` — scope **DEP** |
+| `deployment view UUID` | ✅ | `GET .../deployments/{uuid}` — scope **DEP** |
+| `environment list` | ✅ | `GET .../environments` — scope **DEP** |
+| `environment create` | ✅ | `POST .../environments` (body: type/uuid/name) — scope **DEP** |
+| `environment delete UUID` | ✅ | `DELETE .../environments/{uuid}` — scope **DEP** |
+| `environment variable list / set / delete` | ✅ | `/deployments_config/environments/{uuid}/variables` (CRUD) — scope **DEP** |
 
 ### Permissions _(Server / DC only — missing)_
 

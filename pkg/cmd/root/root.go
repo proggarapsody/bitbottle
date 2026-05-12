@@ -11,7 +11,9 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
 	configcmd "github.com/proggarapsody/bitbottle/pkg/cmd/config"
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/context" // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/context"    // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/deployment"  // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/environment" // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/issue"
 	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"

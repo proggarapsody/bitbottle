@@ -123,6 +123,16 @@ type FakeClient struct {
 	GetFileContentFn func(ns, slug, ref, path string) ([]byte, error)
 	ListTreeFn       func(ns, slug, ref, path string) ([]backend.TreeEntry, error)
 
+	// Deployment methods (Cloud-only; satisfies backend.DeploymentClient when set)
+	ListDeploymentsFn   func(ns, slug string, limit int) ([]backend.Deployment, error)
+	GetDeploymentFn     func(ns, slug, uuid string) (backend.Deployment, error)
+	ListEnvironmentsFn  func(ns, slug string) ([]backend.Environment, error)
+	CreateEnvironmentFn func(ns, slug string, in backend.CreateEnvironmentInput) (backend.Environment, error)
+	DeleteEnvironmentFn func(ns, slug, uuid string) error
+	ListEnvVariablesFn  func(ns, slug, envUUID string) ([]backend.EnvVariable, error)
+	SetEnvVariableFn    func(ns, slug, envUUID string, in backend.EnvVariableInput) (backend.EnvVariable, error)
+	DeleteEnvVariableFn func(ns, slug, envUUID, varUUID string) error
+
 	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
 	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
 	GetReportFn         func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
@@ -929,6 +939,88 @@ func (c *FakeClient) DeleteMergeCheck(project, slug, key string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteMergeCheck; set DeleteMergeCheckFn in your test")
+	}
+	return nil
+}
+
+// ── DeploymentClient ─────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListDeployments(ns, slug string, limit int) ([]backend.Deployment, error) {
+	if c.ListDeploymentsFn != nil {
+		return c.ListDeploymentsFn(ns, slug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListDeployments; set ListDeploymentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetDeployment(ns, slug, uuid string) (backend.Deployment, error) {
+	if c.GetDeploymentFn != nil {
+		return c.GetDeploymentFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetDeployment; set GetDeploymentFn in your test")
+	}
+	return backend.Deployment{}, nil
+}
+
+func (c *FakeClient) ListEnvironments(ns, slug string) ([]backend.Environment, error) {
+	if c.ListEnvironmentsFn != nil {
+		return c.ListEnvironmentsFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListEnvironments; set ListEnvironmentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateEnvironment(ns, slug string, in backend.CreateEnvironmentInput) (backend.Environment, error) {
+	if c.CreateEnvironmentFn != nil {
+		return c.CreateEnvironmentFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateEnvironment; set CreateEnvironmentFn in your test")
+	}
+	return backend.Environment{}, nil
+}
+
+func (c *FakeClient) DeleteEnvironment(ns, slug, uuid string) error {
+	if c.DeleteEnvironmentFn != nil {
+		return c.DeleteEnvironmentFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteEnvironment; set DeleteEnvironmentFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListEnvVariables(ns, slug, envUUID string) ([]backend.EnvVariable, error) {
+	if c.ListEnvVariablesFn != nil {
+		return c.ListEnvVariablesFn(ns, slug, envUUID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListEnvVariables; set ListEnvVariablesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) SetEnvVariable(ns, slug, envUUID string, in backend.EnvVariableInput) (backend.EnvVariable, error) {
+	if c.SetEnvVariableFn != nil {
+		return c.SetEnvVariableFn(ns, slug, envUUID, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetEnvVariable; set SetEnvVariableFn in your test")
+	}
+	return backend.EnvVariable{}, nil
+}
+
+func (c *FakeClient) DeleteEnvVariable(ns, slug, envUUID, varUUID string) error {
+	if c.DeleteEnvVariableFn != nil {
+		return c.DeleteEnvVariableFn(ns, slug, envUUID, varUUID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteEnvVariable; set DeleteEnvVariableFn in your test")
 	}
 	return nil
 }

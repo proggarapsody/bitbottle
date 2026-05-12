@@ -25,6 +25,8 @@ not sure about.**
 | commit comment list/add/edit/delete | list, add, edit, and delete commit comments | `references/commit.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
+| Deployments (list/view) — Cloud only | `references/deployment.md` |
+| Environments (list/create/delete) + variables (list/set/delete) — Cloud only | `references/deployment.md` |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.
@@ -138,6 +140,8 @@ bitbottle pipeline watch PROJECT/REPO UUID [--interval 5]
 ```
 
 MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`.
+
+Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployment`, `list_environments`, `create_environment`, `delete_environment`, `list_env_variables`, `set_env_variable`, `delete_env_variable`. See `references/deployment.md`.
 
 ## PR review quick-reference
 
