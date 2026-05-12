@@ -284,14 +284,14 @@ Current state of every command area against gh feature parity:
 | `extension remove NAME` | 🔲 | Remove an installed extension — scope **EXT** |
 | `extension exec NAME [args...]` | 🔲 | Run an installed extension (BKT_TOKEN / credentials filtered from env) — scope **EXT** |
 
-### Named Profiles _(missing)_
+### Named Profiles
 
 | Command | Status | Notes |
 |---|---|---|
-| `profile create NAME --hostname HOST --token TOKEN` | 🔲 | Create a named credential profile (kubectl-context-like) — scope **PROF** |
-| `profile use NAME` | 🔲 | Switch the active profile — scope **PROF** |
-| `profile list` | 🔲 | List all defined profiles — scope **PROF** |
-| `profile delete NAME` | 🔲 | Delete a profile — scope **PROF** |
+| `profile create NAME --hostname HOST --token TOKEN` | ✅ | Create a named credential profile (kubectl-context-like) — scope **PROF** |
+| `profile use NAME` | ✅ | Switch the active profile — scope **PROF** |
+| `profile list` | ✅ | List all defined profiles — scope **PROF** |
+| `profile delete NAME` | ✅ | Delete a profile — scope **PROF** |
 
 ### Code Insights _(Server / DC only)_
 
