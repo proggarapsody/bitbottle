@@ -72,6 +72,10 @@ var catalogue = map[backend.ErrorCode]entry{
 		title: "One or more reviewers are not members of {{.Host}}.",
 		hints: []string{"Check the slug spelling; users must already exist on the host."},
 	},
+	backend.CodePRAutoMergeBetaDisabled: {
+		title: "Auto-merge is not enabled for this workspace on {{.Host}}.",
+		hints: []string{"Ask your workspace admin to enable auto-merge in workspace settings."},
+	},
 	backend.CodeBranchProtected: {
 		title: "Branch is protected on {{.Host}}.",
 		hints: []string{"Ask an admin, or run `bitbottle branch protect list` to inspect the rules."},

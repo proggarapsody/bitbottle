@@ -22,12 +22,14 @@ type FakeClient struct {
 	ForkRepoFn   func(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error)
 
 	// PR methods
-	ListPRsFn   func(ns, slug, state string, limit int) ([]backend.PullRequest, error)
-	GetPRFn     func(ns, slug string, id int) (backend.PullRequest, error)
-	CreatePRFn  func(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error)
-	MergePRFn   func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error)
-	ApprovePRFn func(ns, slug string, id int) error
-	GetPRDiffFn func(ns, slug string, id int) (string, error)
+	ListPRsFn          func(ns, slug, state string, limit int) ([]backend.PullRequest, error)
+	GetPRFn            func(ns, slug string, id int) (backend.PullRequest, error)
+	CreatePRFn         func(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error)
+	MergePRFn          func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error)
+	EnableAutoMergeFn  func(ns, slug string, id int, strategy string) error
+	DisableAutoMergeFn func(ns, slug string, id int) error
+	ApprovePRFn        func(ns, slug string, id int) error
+	GetPRDiffFn        func(ns, slug string, id int) (string, error)
 
 	// Branch / user methods
 	ListBranchesFn   func(ns, slug string, limit int) ([]backend.Branch, error)
@@ -241,6 +243,26 @@ func (c *FakeClient) MergePR(ns, slug string, id int, in backend.MergePRInput) (
 		c.T.Fatalf("unexpected call to FakeClient.MergePR; set MergePRFn in your test")
 	}
 	return backend.PullRequest{}, nil
+}
+
+func (c *FakeClient) EnableAutoMerge(ns, slug string, id int, strategy string) error {
+	if c.EnableAutoMergeFn != nil {
+		return c.EnableAutoMergeFn(ns, slug, id, strategy)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.EnableAutoMerge; set EnableAutoMergeFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) DisableAutoMerge(ns, slug string, id int) error {
+	if c.DisableAutoMergeFn != nil {
+		return c.DisableAutoMergeFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DisableAutoMerge; set DisableAutoMergeFn in your test")
+	}
+	return nil
 }
 
 func (c *FakeClient) ApprovePR(ns, slug string, id int) error {

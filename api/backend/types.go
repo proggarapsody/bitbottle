@@ -45,6 +45,40 @@ type PullRequest struct {
 	ToBranch       string
 	WebURL         string
 	HeadCommitHash string
+	AutoMerge      *AutoMergeState // nil when auto-merge is not enabled
+}
+
+// AutoMergeState records the auto-merge configuration for a pull request.
+// Strategy is one of "merge", "squash", or "rebase" (the CLI vocabulary).
+type AutoMergeState struct {
+	Enabled  bool
+	Strategy string // "merge" | "squash" | "rebase"
+}
+
+// ToCloudMergeStrategy translates CLI strategy names to Bitbucket Cloud API
+// values used on the auto-merge endpoint.
+func ToCloudMergeStrategy(s string) string {
+	switch s {
+	case "squash":
+		return "squash"
+	case "rebase":
+		return "fast_forward"
+	default:
+		return "merge_commit"
+	}
+}
+
+// ToServerMergeStrategy translates CLI strategy names to Bitbucket Server /
+// Data Center API values used on the auto-merge endpoint.
+func ToServerMergeStrategy(s string) string {
+	switch s {
+	case "squash":
+		return "squash"
+	case "rebase":
+		return "fast-forward"
+	default:
+		return "merge-commit"
+	}
 }
 
 // MyPREntry is a cross-repo PR summary for the status dashboard.

@@ -398,11 +398,21 @@ func (h *handlers) mergePR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 		return errResult("missing required parameter: id"), nil
 	}
 	strategy := req.GetString("strategy", "")
+	auto := req.GetBool("auto", false)
+	autoStrategy := req.GetString("auto_strategy", "merge")
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
 		return errResultErr(err), nil
 	}
+
+	if auto {
+		if err := client.EnableAutoMerge(project, slug, id, autoStrategy); err != nil {
+			return errResultErr(err), nil
+		}
+		return mcplib.NewToolResultText(fmt.Sprintf(`{"queued":true,"strategy":%q}`, autoStrategy)), nil
+	}
+
 	pr, err := client.MergePR(project, slug, id, backend.MergePRInput{Strategy: strategy})
 	if err != nil {
 		return errResultErr(err), nil

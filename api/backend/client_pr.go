@@ -17,9 +17,14 @@ type PRCreator interface {
 	CreatePR(ns, slug string, in CreatePRInput) (PullRequest, error)
 }
 
-// PRMerger merges a pull request.
+// PRMerger merges a pull request and manages auto-merge queuing.
 type PRMerger interface {
 	MergePR(ns, slug string, id int, in MergePRInput) (PullRequest, error)
+	// EnableAutoMerge queues a PR for automatic merge once all checks pass.
+	// strategy is the CLI vocabulary value: "merge" | "squash" | "rebase".
+	EnableAutoMerge(ns, slug string, id int, strategy string) error
+	// DisableAutoMerge cancels a queued auto-merge for the given PR.
+	DisableAutoMerge(ns, slug string, id int) error
 }
 
 // PRApprover approves a pull request.
