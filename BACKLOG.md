@@ -288,10 +288,10 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `profile create NAME --hostname HOST --token TOKEN` | 🔲 | Create a named credential profile (kubectl-context-like) — scope **PROF** |
-| `profile use NAME` | 🔲 | Switch the active profile — scope **PROF** |
-| `profile list` | 🔲 | List all defined profiles — scope **PROF** |
-| `profile delete NAME` | 🔲 | Delete a profile — scope **PROF** |
+| `profile create NAME --hostname HOST --token TOKEN` | ✅ | Create a named credential profile (kubectl-context-like) — scope **PROF** |
+| `profile use NAME` | ✅ | Switch the active profile — scope **PROF** |
+| `profile list` | ✅ | List all defined profiles — scope **PROF** |
+| `profile delete NAME` | ✅ | Delete a profile — scope **PROF** |
 
 ### Code Insights _(Server / DC only)_
 
@@ -355,7 +355,7 @@ Current state of every command area against gh feature parity:
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/complete/reopen` | Server/DC | 3 | 🔲 |
 | REACT | **PR Reactions** | `pr reaction list/add/remove` | Server/DC | 3 | 🔲 |
-| PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | 🔲 |
+| PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
 | EXT | **Extension System** | `extension install/list/remove/exec` | N/A | 4 | 🔲 |
 | VAROPS | **Variable scope-ops strategy** | Collapse the three near-identical `As<X>Client` scope switches in `pkg/cmd/variable/{list,set,delete}/*.go` (and the MCP handler) into one `resolveVariableOps(scope)` helper returning a `VariableOps` interface. Pre-empts OCP debt before the 4th scope lands. Move deployment delete-by-key lookup from cmd/MCP into the cloud adapter. Cite v1.31.0 design-judge findings. | N/A | DX | 🔲 |
