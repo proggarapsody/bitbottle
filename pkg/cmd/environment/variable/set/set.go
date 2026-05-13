@@ -19,12 +19,15 @@ type Options struct {
 }
 
 // NewCmdSet builds the `environment variable set` cobra command.
+//
+// Deprecated: use `bitbottle variable set --scope deployment --env ENV-UUID` instead.
 func NewCmdSet(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "set PROJECT/REPO ENV-UUID KEY VALUE",
-		Short: "Set an environment variable",
-		Args:  cobra.ExactArgs(4),
+		Use:        "set PROJECT/REPO ENV-UUID KEY VALUE",
+		Short:      "Set an environment variable",
+		Deprecated: "use `bitbottle variable set --scope deployment --env ENV-UUID` instead",
+		Args:       cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {

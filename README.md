@@ -231,16 +231,17 @@ bitbottle environment create MYWORKSPACE/my-service --name "Prod" --type Product
 # Delete an environment (destructive — --confirm required on non-TTY)
 bitbottle environment delete MYWORKSPACE/my-service {env-uuid} --confirm
 
-# Environment variables (secured values show as <secured>)
-bitbottle environment variable list   MYWORKSPACE/my-service {env-uuid}
-bitbottle environment variable set    MYWORKSPACE/my-service {env-uuid} DEPLOY_KEY prod-val
-bitbottle environment variable set    MYWORKSPACE/my-service {env-uuid} API_TOKEN secret --secured
-bitbottle environment variable delete MYWORKSPACE/my-service {env-uuid} {var-uuid}
+# Environment variables — use variable --scope deployment (see deprecation note below)
+bitbottle variable list   MYWORKSPACE/my-service --scope deployment --env {env-uuid}
+bitbottle variable set    MYWORKSPACE/my-service DEPLOY_KEY prod-val --scope deployment --env {env-uuid}
+bitbottle variable set    MYWORKSPACE/my-service API_TOKEN secret --scope deployment --env {env-uuid} --secured
+bitbottle variable delete MYWORKSPACE/my-service DEPLOY_KEY --scope deployment --env {env-uuid} --confirm
 ```
 
-All commands support `--json fields` and `--jq expr`. Variable `delete` takes
-the variable UUID (not the key) — run `environment variable list --json uuid,key`
-to find it. Secured variable values are never returned by the API once set.
+All commands support `--json fields` and `--jq expr`. Secured variable values
+are never returned by the API once set.
+
+**`environment variable *` is deprecated.** Use `bitbottle variable --scope deployment --env ENV-UUID` instead. The old commands still work but print a deprecation warning.
 
 These commands return a typed unsupported-capability error on Bitbucket Server /
 Data Center — deployments and environments are a Cloud-only feature.
