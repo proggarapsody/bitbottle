@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.0](https://github.com/proggarapsody/bitbottle/compare/v1.39.0...v1.40.0) (2026-05-13)
+
+
+### Features
+
+* **react-pr:** pr comment react/unreact + reactions column (Server/DC) ([#205](https://github.com/proggarapsody/bitbottle/issues/205)) ([94172f6](https://github.com/proggarapsody/bitbottle/commit/94172f653c0211bffab12b9bc76d9a864cc41c3f))
+
 ## [1.39.0](https://github.com/proggarapsody/bitbottle/compare/v1.38.0...v1.39.0) (2026-05-13)
 
 
