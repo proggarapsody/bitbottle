@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.39.0](https://github.com/proggarapsody/bitbottle/compare/v1.38.0...v1.39.0) (2026-05-13)
+
+
+### Features
+
+* **task:** pr task list/create/resolve/reopen (Server/DC) ([1768fbf](https://github.com/proggarapsody/bitbottle/commit/1768fbf66abb259e218a6649b958ebefb0250dd2))
+
+
+### Bug Fixes
+
+* **task:** fix Cloud interface gate, add MCP handler tests, update skills docs ([#202](https://github.com/proggarapsody/bitbottle/issues/202)) ([da54fb9](https://github.com/proggarapsody/bitbottle/commit/da54fb998fb513fdb8d55545310ec921ed9cd88a))
+
 ## [1.38.0](https://github.com/proggarapsody/bitbottle/compare/v1.37.0...v1.38.0) (2026-05-13)
 
 
