@@ -254,10 +254,10 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `pr task list PR_ID` | 🔲 | List blocker-comments on a PR (modern API: comments with `severity=BLOCKER`) — scope **TASK** |
-| `pr task create PR_ID` | 🔲 | Post a blocker-comment (anchors to a comment or stands alone) — scope **TASK** |
-| `pr task resolve PR_ID TASK_ID` | 🔲 | Set comment `state=RESOLVED` — scope **TASK** |
-| `pr task reopen PR_ID TASK_ID` | 🔲 | Set comment `state=OPEN` — scope **TASK** |
+| `pr task list PR_ID` | ✅ | List blocker-comments on a PR (modern API: comments with `severity=BLOCKER`) — scope **TASK** |
+| `pr task create PR_ID` | ✅ | Post a blocker-comment (anchors to a comment or stands alone) — scope **TASK** |
+| `pr task resolve PR_ID TASK_ID` | ✅ | Set comment `state=RESOLVED` — scope **TASK** |
+| `pr task reopen PR_ID TASK_ID` | ✅ | Set comment `state=OPEN` — scope **TASK** |
 
 ### Comment Reactions _(Server / DC only — missing)_
 
@@ -356,7 +356,7 @@ Current state of every command area against gh feature parity:
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | ✅ |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | ✅ |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
-| TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | 🔲 |
+| TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | ✅ |
 | REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | 🔲 |
 | REACT-COMMIT | **Commit Comment Reactions** | `commit comment react/unreact`; reuses `CommentReactor` from REACT-PR (depends on REACT-PR) | Server/DC | 3 | 🔲 |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
