@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.54.0](https://github.com/proggarapsody/bitbottle/compare/v1.53.0...v1.54.0) (2026-05-13)
+
+
+### Features
+
+* **pipeline:** add pipeline schedule list/create/delete ([88bd006](https://github.com/proggarapsody/bitbottle/commit/88bd006960a605c9345733010f86425d5b98f530))
+
 ## [1.53.0](https://github.com/proggarapsody/bitbottle/compare/v1.52.0...v1.53.0) (2026-05-13)
 
 
