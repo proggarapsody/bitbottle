@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.1](https://github.com/proggarapsody/bitbottle/compare/v1.56.0...v1.56.1) (2026-05-13)
+
+
+### Bug Fixes
+
+* **api/cloud:** paginate ListWebhooks, ListPipelineSteps, ListPipelineVariables ([f888e97](https://github.com/proggarapsody/bitbottle/commit/f888e9792eb0a3fb13ce89e0502f1de2f2c148e9))
+
 ## [1.56.0](https://github.com/proggarapsody/bitbottle/compare/v1.55.0...v1.56.0) (2026-05-13)
 
 
