@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.53.0](https://github.com/proggarapsody/bitbottle/compare/v1.52.0...v1.53.0) (2026-05-13)
+
+
+### Features
+
+* **branch-rule:** add branch-rule list/add/delete commands ([7581354](https://github.com/proggarapsody/bitbottle/commit/758135423a0a3ed799dcd0971f1ef0e1093a72e3))
+
 ## [1.52.0](https://github.com/proggarapsody/bitbottle/compare/v1.51.0...v1.52.0) (2026-05-13)
 
 
