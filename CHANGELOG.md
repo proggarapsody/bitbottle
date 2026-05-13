@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.0](https://github.com/proggarapsody/bitbottle/compare/v1.36.0...v1.37.0) (2026-05-13)
+
+
+### Features
+
+* **perms:** add perms project/repo list/grant/revoke (Server/DC) ([#196](https://github.com/proggarapsody/bitbottle/issues/196)) ([62ee06d](https://github.com/proggarapsody/bitbottle/commit/62ee06d22f7837e3ae0ea904924f1e29af233587))
+
 ## [1.36.0](https://github.com/proggarapsody/bitbottle/compare/v1.35.0...v1.36.0) (2026-05-12)
 
 
