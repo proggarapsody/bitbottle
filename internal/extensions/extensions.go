@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -44,6 +45,17 @@ type Extension struct {
 type Manager struct {
 	dir    string // root extensions dir, e.g. ~/.config/bitbottle/extensions
 	client Doer
+	runner func(bin string, args []string, env []string) error // nil = defaultRunner
+}
+
+// defaultRunner executes bin with args and env, inheriting stdio.
+func defaultRunner(bin string, args []string, env []string) error {
+	cmd := exec.CommandContext(context.Background(), bin, args...)
+	cmd.Env = env
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 // New returns a Manager rooted at dir using client for HTTP requests.
@@ -51,7 +63,14 @@ func New(dir string, client Doer) *Manager {
 	if client == nil {
 		client = &http.Client{}
 	}
-	return &Manager{dir: dir, client: client}
+	return &Manager{dir: dir, client: client, runner: defaultRunner}
+}
+
+// WithRunner returns a copy of m with a custom runner (for testing).
+func (m *Manager) WithRunner(r func(bin string, args []string, env []string) error) *Manager {
+	cp := *m
+	cp.runner = r
+	return &cp
 }
 
 // extDir returns the directory for a single extension.
@@ -297,6 +316,47 @@ func (m *Manager) List() ([]Extension, error) {
 		})
 	}
 	return exts, nil
+}
+
+// Exec runs the named extension binary with args.
+// It strips env vars whose name (before "=") contains "KEYRING_PASSPHRASE" or
+// "KEYRING_PASSWORD" (case-insensitive), injects BB_TOKEN and
+// BITBOTTLE_VERSION, then delegates to the manager's runner.
+//
+// Exit-code propagation: callers should check whether the returned error is
+// *exec.ExitError and call os.Exit(ee.ExitCode()) so the shell sees the
+// extension's exit code.
+func (m *Manager) Exec(name string, args []string, token, version string) error {
+	if !m.isInstalled(name) {
+		return fmt.Errorf("extension %q is not installed", name)
+	}
+	binPath := m.binPath(name)
+	if _, err := os.Stat(binPath); err != nil {
+		return fmt.Errorf("extension binary not found at %s: %w", binPath, err)
+	}
+
+	// Build env: filter secrets, then inject bitbottle vars.
+	raw := os.Environ()
+	env := make([]string, 0, len(raw)+2)
+	for _, kv := range raw {
+		key := kv
+		if idx := strings.IndexByte(kv, '='); idx >= 0 {
+			key = kv[:idx]
+		}
+		upper := strings.ToUpper(key)
+		if strings.Contains(upper, "KEYRING_PASSPHRASE") || strings.Contains(upper, "KEYRING_PASSWORD") {
+			continue
+		}
+		env = append(env, kv)
+	}
+	env = append(env, "BB_TOKEN="+token)
+	env = append(env, "BITBOTTLE_VERSION="+version)
+
+	runner := m.runner
+	if runner == nil {
+		runner = defaultRunner
+	}
+	return runner(binPath, args, env)
 }
 
 // --- GitHub release API types ---

@@ -357,6 +357,7 @@ See `references/profile.md` for full flag reference.
 - `extension upgrade NAME [--force]` — upgrade single extension to latest release; prints "local install — skipping" for local installs
 - `extension upgrade --all [--force]` — upgrade all non-local extensions
 - `extension remove NAME` — delete extension directory entirely
+- `extension exec NAME [args...]` — run an installed extension; strips `*KEYRING_PASSPHRASE*`/`*KEYRING_PASSWORD*` from env, injects `BB_TOKEN` (from `$BB_TOKEN`) and `BITBOTTLE_VERSION`; exit code propagated
 
 ## Install / version
 

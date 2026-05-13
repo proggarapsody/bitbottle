@@ -23,5 +23,6 @@ func NewCmdExtension(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewCmdList(f))
 	cmd.AddCommand(NewCmdUpgrade(f))
 	cmd.AddCommand(NewCmdRemove(f))
+	cmd.AddCommand(NewCmdExec(f))
 	return cmd
 }

@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/proggarapsody/bitbottle/internal/extensions"
@@ -462,6 +464,103 @@ func TestUpgradeAll(t *testing.T) {
 	}
 	if mf["version"] != "v2.0.0" {
 		t.Errorf("manifest version = %v; want v2.0.0", mf["version"])
+	}
+}
+
+// --- Exec tests ---
+
+// installFakeExtension writes a minimal manifest and a stub binary so Exec
+// believes the extension is installed.
+func installFakeExtension(t *testing.T, extRoot, name string) {
+	t.Helper()
+	binDir := filepath.Join(extRoot, name, "bin")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	binPath := filepath.Join(binDir, name)
+	if err := os.WriteFile(binPath, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	mf := map[string]any{"name": name, "local": true}
+	writeMF(t, filepath.Join(extRoot, name, "manifest.json"), mf)
+}
+
+func TestExec_NotInstalled(t *testing.T) {
+	mgr := extensions.New(t.TempDir(), nil)
+	err := mgr.Exec("nonexistent", nil, "tok", "v0")
+	if err == nil {
+		t.Fatal("expected error for non-installed extension; got nil")
+	}
+}
+
+func TestExec_RunnerCalledWithCorrectEnv(t *testing.T) {
+	extRoot := t.TempDir()
+	installFakeExtension(t, extRoot, "hello")
+
+	// Inject a keyring secret into the current process env so the filter is
+	// exercised without mutating os.Environ permanently.
+	t.Setenv("MY_KEYRING_PASSPHRASE", "secret")
+	t.Setenv("BB_TOKEN", "old-token") // should be overwritten
+
+	var gotBin string
+	var gotArgs []string
+	var gotEnv []string
+
+	stub := func(bin string, args []string, env []string) error {
+		gotBin = bin
+		gotArgs = args
+		gotEnv = env
+		return nil
+	}
+
+	mgr := extensions.New(extRoot, nil).WithRunner(stub)
+	if err := mgr.Exec("hello", []string{"--verbose"}, "new-token", "v1.2.3"); err != nil {
+		t.Fatalf("Exec: %v", err)
+	}
+
+	// Binary path must end with the extension name.
+	if !strings.HasSuffix(gotBin, filepath.Join("hello", "bin", "hello")) {
+		t.Errorf("runner bin = %q; want path ending in hello/bin/hello", gotBin)
+	}
+
+	// Args forwarded.
+	if len(gotArgs) != 1 || gotArgs[0] != "--verbose" {
+		t.Errorf("runner args = %v; want [--verbose]", gotArgs)
+	}
+
+	// BB_TOKEN must be the injected value.
+	var foundToken, foundVersion bool
+	for _, kv := range gotEnv {
+		if kv == "BB_TOKEN=new-token" {
+			foundToken = true
+		}
+		if kv == "BITBOTTLE_VERSION=v1.2.3" {
+			foundVersion = true
+		}
+		// KEYRING_PASSPHRASE must be stripped.
+		if strings.Contains(strings.ToUpper(kv), "KEYRING_PASSPHRASE") {
+			t.Errorf("keyring passphrase leaked into env: %q", kv)
+		}
+	}
+	if !foundToken {
+		t.Errorf("BB_TOKEN=new-token not found in runner env: %v", gotEnv)
+	}
+	if !foundVersion {
+		t.Errorf("BITBOTTLE_VERSION=v1.2.3 not found in runner env: %v", gotEnv)
+	}
+}
+
+func TestExec_RunnerExitErrorPropagated(t *testing.T) {
+	extRoot := t.TempDir()
+	installFakeExtension(t, extRoot, "hello")
+
+	wantErr := &exec.ExitError{}
+	stub := func(_ string, _ []string, _ []string) error { return wantErr }
+
+	mgr := extensions.New(extRoot, nil).WithRunner(stub)
+	err := mgr.Exec("hello", nil, "", "v0")
+	if err != wantErr {
+		t.Errorf("Exec error = %v; want the stub ExitError", err)
 	}
 }
 

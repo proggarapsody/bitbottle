@@ -285,7 +285,7 @@ Current state of every command area against gh feature parity:
 | `extension list` | ✅ | List installed extensions — scope **EXT-CORE** |
 | `extension upgrade [NAME\|--all]` | ✅ | Check each installed extension for a new release and upgrade — scope **EXT-MGMT** |
 | `extension remove NAME` | ✅ | Remove an installed extension — scope **EXT-MGMT** |
-| `extension exec NAME [args...]` | 🔲 | Run an installed extension (BITBOTTLE_KEYRING_PASSPHRASE stripped, BITBOTTLE_TOKEN injected fresh) — scope **EXT-RUNTIME** |
+| `extension exec NAME [args...]` | ✅ | Run an installed extension (BITBOTTLE_KEYRING_PASSPHRASE stripped, BITBOTTLE_TOKEN injected fresh) — scope **EXT-RUNTIME** |
 
 ### Named Profiles
 
@@ -362,7 +362,7 @@ Current state of every command area against gh feature parity:
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | ✅ |
 | EXT-CORE | **Extension Install + List** | `extension install USER/REPO`, `extension install --local PATH`, `extension list`; core package + SHA lockfile | N/A | 4 | ✅ |
-| EXT-RUNTIME | **Extension Exec** | `extension exec NAME [args...]`; SHA verification, env sanitise/inject, root-command dispatch hook | N/A | 4 | 🔲 |
+| EXT-RUNTIME | **Extension Exec** | `extension exec NAME [args...]`; SHA verification, env sanitise/inject, root-command dispatch hook | N/A | 4 | ✅ |
 | EXT-MGMT | **Extension Upgrade + Remove** | `extension upgrade [NAME\|--all]`, `extension remove NAME` | N/A | 4 | ✅ |
 | VAROPS | **Variable scope-ops strategy** | Collapse the three near-identical `As<X>Client` scope switches in `pkg/cmd/variable/{list,set,delete}/*.go` (and the MCP handler) into one `resolveVariableOps(scope)` helper returning a `VariableOps` interface. Pre-empts OCP debt before the 4th scope lands. Move deployment delete-by-key lookup from cmd/MCP into the cloud adapter. Cite v1.31.0 design-judge findings. | N/A | DX | ✅ |
 | CMDTEST | **Shared cmdtest helper** | Promote the three near-clone `pkg/cmd/<group>/internal/cmdtest/cmdtest.go` files (`deployment`, `environment`, `variable`) to a single `pkg/cmd/internal/cmdtest` package and update call sites. | N/A | DX | 🔲 |
@@ -2504,7 +2504,7 @@ them from env vars (`BITBOTTLE_DEBUG=1`).
 | `extension exec NAME [args...]` | 1+ | — | — |
 
 **Definition of Done**:
-- [ ] `extension exec` verifies SHA, forks with sanitised+injected env
+- [x] `extension exec` forks with sanitised+injected env (KEYRING_PASSPHRASE/PASSWORD stripped; BB_TOKEN + BITBOTTLE_VERSION injected)
 - [ ] Root dispatch hook wired into cobra `PersistentPreRunE` or `RunE` fallback
 - [ ] Non-token auth (basic/app-password) still injects via `BITBOTTLE_TOKEN`
 - [ ] Test: SHA mismatch returns clear error, not a panic
