@@ -49,6 +49,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRDefaultReviewer(f))
 	cmd.AddCommand(NewCmdPRCommits(f))
 	cmd.AddCommand(NewCmdPRFiles(f))
+	cmd.AddCommand(NewCmdPRParticipants(f))
 	return cmd
 }
 

@@ -42,8 +42,10 @@ bitbottle pr checks    42                                      # list CI statuse
 bitbottle pr checks    42 --watch [--interval 10]             # poll until all checks settle
 bitbottle pr commits   42                                      # list commits in a pull request
 bitbottle pr commits   42 --json hash,message,author,date     # structured output
-bitbottle pr files     42                                      # list files changed in a pull request
-bitbottle pr files     42 --json status,path,additions,deletions # structured output
+bitbottle pr files        42                                         # list files changed in a pull request
+bitbottle pr files        42 --json status,path,additions,deletions  # structured output
+bitbottle pr participants 42                                         # list participants (author, reviewers, observers)
+bitbottle pr participants 42 --json role,display_name,username,approved # structured output
 bitbottle pr update-branch 42                                  # rebase/sync PR branch onto target (Cloud merge commit; Server rebase)
 bitbottle pr status [PROJ/repo]                               # show your open PRs split by role (AUTHOR / REVIEWER)
 bitbottle pr reopen 42                                        # reopen a declined/closed PR
@@ -99,6 +101,14 @@ backends. Cloud uses `GET /repositories/{ws}/{slug}/pullrequests/{id}/diffstat`;
 Server/DC uses `GET /rest/api/1.0/projects/{ns}/repos/{slug}/pull-requests/{id}/changes`.
 Output table: STATUS | PATH | +ADDITIONS | -DELETIONS. Supports
 `--json status,path,additions,deletions`. MCP tool: `list_pr_files`.
+
+`pr participants` lists all users involved in a pull request (author, reviewers,
+observers) from both backends. Cloud uses `GET /repositories/{ws}/{slug}/pullrequests/{id}/participants`;
+Server/DC uses `GET /rest/api/1.0/projects/{ns}/repos/{slug}/pull-requests/{id}/participants`.
+Output table: ROLE | DISPLAY_NAME | USERNAME | APPROVED. Cloud `state` values
+(`approved`, `changes_requested`) are normalised to uppercase; Server `status`
+`NEEDS_WORK` maps to `CHANGES_REQUESTED`, `UNAPPROVED` maps to `""`. Supports
+`--json role,display_name,username,approved`. MCP tool: `list_pr_participants`.
 
 ## Flag reality check
 
