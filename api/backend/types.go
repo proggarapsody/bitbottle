@@ -199,6 +199,23 @@ type PipelineTriggerResult struct {
 	Link  string `json:"link"`
 }
 
+// PipelineSchedule is the domain representation of a Bitbucket Cloud pipeline
+// schedule.
+type PipelineSchedule struct {
+	UUID           string `json:"uuid"`
+	Enabled        bool   `json:"enabled"`
+	CronExpression string `json:"cronExpression"`
+	Branch         string `json:"branch"`
+}
+
+// PipelineScheduleInput carries the parameters for creating a pipeline
+// schedule.
+type PipelineScheduleInput struct {
+	CronExpression string
+	Branch         string
+	Enabled        bool
+}
+
 // Tag is the domain representation of a repository tag.
 type Tag struct {
 	Name    string

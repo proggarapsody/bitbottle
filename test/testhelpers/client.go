@@ -195,6 +195,11 @@ type FakeClient struct {
 	// Pipeline trigger methods (Cloud-only; satisfies backend.PipelineTriggerClient when set)
 	TriggerPipelineFn func(ns, slug string, input backend.PipelineTriggerInput) (backend.PipelineTriggerResult, error)
 
+	// Pipeline schedule methods (Cloud-only; satisfies backend.PipelineScheduleClient when set)
+	ListPipelineSchedulesFn  func(ns, slug string) ([]backend.PipelineSchedule, error)
+	CreatePipelineScheduleFn func(ns, slug string, input backend.PipelineScheduleInput) (backend.PipelineSchedule, error)
+	DeletePipelineScheduleFn func(ns, slug, uuid string) error
+
 	// Diff methods (both backends; satisfies backend.DiffClient when set)
 	GetDiffFn     func(ns, slug, from, to string) (string, error)
 	GetDiffStatFn func(ns, slug, from, to string) (backend.DiffStat, error)
@@ -1307,6 +1312,38 @@ func (c *FakeClient) TriggerPipeline(ns, slug string, input backend.PipelineTrig
 		c.T.Fatalf("unexpected call to FakeClient.TriggerPipeline; set TriggerPipelineFn in your test")
 	}
 	return backend.PipelineTriggerResult{}, nil
+}
+
+// ── PipelineScheduleClient ───────────────────────────────────────────────────
+
+func (c *FakeClient) ListPipelineSchedules(ns, slug string) ([]backend.PipelineSchedule, error) {
+	if c.ListPipelineSchedulesFn != nil {
+		return c.ListPipelineSchedulesFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelineSchedules; set ListPipelineSchedulesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreatePipelineSchedule(ns, slug string, input backend.PipelineScheduleInput) (backend.PipelineSchedule, error) {
+	if c.CreatePipelineScheduleFn != nil {
+		return c.CreatePipelineScheduleFn(ns, slug, input)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreatePipelineSchedule; set CreatePipelineScheduleFn in your test")
+	}
+	return backend.PipelineSchedule{}, nil
+}
+
+func (c *FakeClient) DeletePipelineSchedule(ns, slug, uuid string) error {
+	if c.DeletePipelineScheduleFn != nil {
+		return c.DeletePipelineScheduleFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeletePipelineSchedule; set DeletePipelineScheduleFn in your test")
+	}
+	return nil
 }
 
 // ── DiffClient ───────────────────────────────────────────────────────────────
