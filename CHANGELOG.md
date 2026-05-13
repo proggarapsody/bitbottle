@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.50.0](https://github.com/proggarapsody/bitbottle/compare/v1.49.1...v1.50.0) (2026-05-13)
+
+
+### Features
+
+* **pr:** add default-reviewer list/add/remove commands ([2981ef4](https://github.com/proggarapsody/bitbottle/commit/2981ef4ab0d28cdf1c67c47792947880dc6ffe81))
+
 ## [1.49.1](https://github.com/proggarapsody/bitbottle/compare/v1.49.0...v1.49.1) (2026-05-13)
 
 
