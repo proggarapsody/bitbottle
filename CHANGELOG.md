@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.47.0](https://github.com/proggarapsody/bitbottle/compare/v1.46.0...v1.47.0) (2026-05-13)
+
+
+### Features
+
+* **deploy-key:** add deploy-key list/add/delete for Cloud and Server/DC ([5ee450b](https://github.com/proggarapsody/bitbottle/commit/5ee450be8b3ab2f440175dd708b57ed6d338289c))
+
 ## [1.46.0](https://github.com/proggarapsody/bitbottle/compare/v1.45.0...v1.46.0) (2026-05-13)
 
 
