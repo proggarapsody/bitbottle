@@ -46,20 +46,12 @@ the command errors out. Confirm in interactive sessions when prompted.
 
 ## Environment Variables
 
-**`environment variable *` is deprecated.** Use `bitbottle variable --scope deployment --env ENV-UUID` instead:
+Use `bitbottle variable --scope deployment --env ENV-UUID` for deployment environment variables:
 
 ```bash
 bitbottle variable list   WORKSPACE/REPO --scope deployment --env ENV-UUID
 bitbottle variable set    WORKSPACE/REPO KEY [VALUE] --scope deployment --env ENV-UUID [--secured]
 bitbottle variable delete WORKSPACE/REPO KEY --scope deployment --env ENV-UUID --confirm
-```
-
-The old commands still work but print a deprecation warning:
-
-```bash
-bitbottle environment variable list   WORKSPACE/REPO ENV-UUID
-bitbottle environment variable set    WORKSPACE/REPO ENV-UUID KEY VALUE [--secured]
-bitbottle environment variable delete WORKSPACE/REPO ENV-UUID VAR-UUID
 ```
 
 **JSON fields**: `uuid`, `key`, `value`, `secured`
