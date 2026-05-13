@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.58.0](https://github.com/proggarapsody/bitbottle/compare/v1.57.0...v1.58.0) (2026-05-13)
+
+
+### Features
+
+* **repo:** add repo watcher list command ([0b9160f](https://github.com/proggarapsody/bitbottle/commit/0b9160f1c095435030ca3ad1495be6f115c89d6a))
+
 ## [1.57.0](https://github.com/proggarapsody/bitbottle/compare/v1.56.1...v1.57.0) (2026-05-13)
 
 
