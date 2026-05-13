@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.52.0](https://github.com/proggarapsody/bitbottle/compare/v1.51.0...v1.52.0) (2026-05-13)
+
+
+### Features
+
+* **repo:** add repo transfer command ([cfdc0ab](https://github.com/proggarapsody/bitbottle/commit/cfdc0ab36b51a81c961ff2b7b518fae6fa5cde39))
+
 ## [1.51.0](https://github.com/proggarapsody/bitbottle/compare/v1.50.0...v1.51.0) (2026-05-13)
 
 
