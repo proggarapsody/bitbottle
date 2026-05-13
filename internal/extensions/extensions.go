@@ -205,6 +205,71 @@ func (m *Manager) InstallLocal(path string, force bool) error {
 	return m.writeManifest(name, mf)
 }
 
+// Remove deletes the named extension entirely.
+func (m *Manager) Remove(name string) error {
+	if !m.isInstalled(name) {
+		return fmt.Errorf("extension %q is not installed", name)
+	}
+	return os.RemoveAll(m.extDir(name))
+}
+
+// Upgrade upgrades one named extension to the latest GitHub release.
+// Returns (oldVersion, newVersion, nil) on success.
+// If local: returns ("", "", nil) — skipped.
+// If already at latest and !force: returns (v, v, nil).
+func (m *Manager) Upgrade(name string, force bool) (oldVer, newVer string, err error) {
+	if !m.isInstalled(name) {
+		return "", "", fmt.Errorf("extension %q is not installed", name)
+	}
+	mf, err := m.readManifest(name)
+	if err != nil {
+		return "", "", err
+	}
+	if mf.Local {
+		return "", "", nil
+	}
+
+	parts := strings.SplitN(mf.Repo, "/", 2)
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid repo in manifest: %q", mf.Repo)
+	}
+	owner, repo := parts[0], parts[1]
+
+	rel, err := m.fetchLatestRelease(owner, repo)
+	if err != nil {
+		return "", "", fmt.Errorf("fetching release for %s: %w", mf.Repo, err)
+	}
+
+	oldVer = mf.Version
+	if rel.TagName == oldVer && !force {
+		return oldVer, oldVer, nil
+	}
+
+	if err := m.InstallFromGitHub(mf.Repo, true); err != nil {
+		return "", "", err
+	}
+	return oldVer, rel.TagName, nil
+}
+
+// UpgradeAll upgrades every non-local installed extension.
+// Returns map[name]error — nil error means upgraded or already up to date.
+func (m *Manager) UpgradeAll(force bool) map[string]error {
+	exts, err := m.List()
+	if err != nil {
+		return map[string]error{"": err}
+	}
+	results := make(map[string]error, len(exts))
+	for _, e := range exts {
+		if e.Local {
+			results[e.Name] = nil
+			continue
+		}
+		_, _, upgradeErr := m.Upgrade(e.Name, force)
+		results[e.Name] = upgradeErr
+	}
+	return results
+}
+
 // List returns all installed extensions in alphabetical order.
 func (m *Manager) List() ([]Extension, error) {
 	entries, err := os.ReadDir(m.dir)

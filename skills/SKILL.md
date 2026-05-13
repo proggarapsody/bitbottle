@@ -356,6 +356,9 @@ See `references/profile.md` for full flag reference.
 - `extension install USER/REPO` — install from GitHub (repo must be named bitbottle-<name>)
 - `extension install --local PATH` — symlink local extension dir
 - `extension list` — show installed extensions (name, version, source)
+- `extension upgrade NAME [--force]` — upgrade single extension to latest release; prints "local install — skipping" for local installs
+- `extension upgrade --all [--force]` — upgrade all non-local extensions
+- `extension remove NAME` — delete extension directory entirely
 
 ## Install / version
 

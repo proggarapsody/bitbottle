@@ -301,6 +301,170 @@ func TestList_OneRemoteOneLocal(t *testing.T) {
 	}
 }
 
+// --- Remove tests ---
+
+func TestRemove_HappyPath(t *testing.T) {
+	srv := newTestServer(t, "v1.0.0", []byte("binary"))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	mgr := newManagerWithDir(dir, srv)
+
+	if err := mgr.InstallFromGitHub("owner/bitbottle-hello", false); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+
+	if err := mgr.Remove("hello"); err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, "hello")); !os.IsNotExist(err) {
+		t.Errorf("extension dir still exists after Remove")
+	}
+}
+
+func TestRemove_NotInstalled(t *testing.T) {
+	mgr := extensions.New(t.TempDir(), nil)
+	if err := mgr.Remove("nonexistent"); err == nil {
+		t.Fatal("expected error removing non-existent extension; got nil")
+	}
+}
+
+// --- Upgrade tests ---
+
+// newUpgradeServer serves two releases: one at /v1 and one at /v2.
+// The release endpoint returns whichever tag is set at call time.
+func newUpgradeServer(t *testing.T, tag string, binaryContent []byte) (*httptest.Server, func(newTag string)) {
+	t.Helper()
+	mux := http.NewServeMux()
+	srv := httptest.NewServer(mux)
+
+	currentTag := tag
+	setTag := func(newTag string) { currentTag = newTag }
+
+	mux.HandleFunc("/repos/owner/bitbottle-hello/releases/latest", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(makeRelease(currentTag, srv.URL+"/download"))
+	})
+	mux.HandleFunc("/download", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(binaryContent)
+	})
+	return srv, setTag
+}
+
+func TestUpgrade_AlreadyUpToDate(t *testing.T) {
+	srv, _ := newUpgradeServer(t, "v1.0.0", []byte("binary"))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	mgr := newManagerWithDir(dir, srv)
+
+	if err := mgr.InstallFromGitHub("owner/bitbottle-hello", false); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+
+	old, newV, err := mgr.Upgrade("hello", false)
+	if err != nil {
+		t.Fatalf("Upgrade: %v", err)
+	}
+	if old != "v1.0.0" || newV != "v1.0.0" {
+		t.Errorf("Upgrade = (%q, %q); want (v1.0.0, v1.0.0)", old, newV)
+	}
+}
+
+func TestUpgrade_UpgradeAvailable(t *testing.T) {
+	srv, setTag := newUpgradeServer(t, "v1.0.0", []byte("binary"))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	mgr := newManagerWithDir(dir, srv)
+
+	if err := mgr.InstallFromGitHub("owner/bitbottle-hello", false); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+
+	// Bump the tag so the server now reports v2.0.0.
+	setTag("v2.0.0")
+
+	old, newV, err := mgr.Upgrade("hello", false)
+	if err != nil {
+		t.Fatalf("Upgrade: %v", err)
+	}
+	if old != "v1.0.0" || newV != "v2.0.0" {
+		t.Errorf("Upgrade = (%q, %q); want (v1.0.0, v2.0.0)", old, newV)
+	}
+}
+
+func TestUpgrade_LocalSkipped(t *testing.T) {
+	// Build a local extension.
+	srcBase := t.TempDir()
+	extName := "bitbottle-hello"
+	srcDir := filepath.Join(srcBase, extName)
+	if err := os.MkdirAll(filepath.Join(srcDir, "bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	srcBin := filepath.Join(srcDir, "bin", extName)
+	if err := os.WriteFile(srcBin, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	extRoot := t.TempDir()
+	mgr := extensions.New(extRoot, nil)
+	if err := mgr.InstallLocal(srcDir, false); err != nil {
+		t.Fatalf("InstallLocal: %v", err)
+	}
+
+	old, newV, err := mgr.Upgrade("hello", false)
+	if err != nil {
+		t.Fatalf("Upgrade of local: %v", err)
+	}
+	if old != "" || newV != "" {
+		t.Errorf("Upgrade local = (%q, %q); want ('', '')", old, newV)
+	}
+}
+
+func TestUpgrade_NotInstalled(t *testing.T) {
+	mgr := extensions.New(t.TempDir(), nil)
+	_, _, err := mgr.Upgrade("nonexistent", false)
+	if err == nil {
+		t.Fatal("expected error upgrading non-existent extension; got nil")
+	}
+}
+
+// --- UpgradeAll tests ---
+
+func TestUpgradeAll(t *testing.T) {
+	srv, setTag := newUpgradeServer(t, "v1.0.0", []byte("binary"))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	mgr := newManagerWithDir(dir, srv)
+
+	if err := mgr.InstallFromGitHub("owner/bitbottle-hello", false); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	setTag("v2.0.0")
+
+	results := mgr.UpgradeAll(false)
+	if err := results["hello"]; err != nil {
+		t.Errorf("UpgradeAll[hello]: %v", err)
+	}
+
+	// Verify manifest was updated.
+	mfPath := filepath.Join(dir, "hello", "manifest.json")
+	data, err := os.ReadFile(mfPath)
+	if err != nil {
+		t.Fatalf("manifest not found: %v", err)
+	}
+	var mf map[string]any
+	if err := json.Unmarshal(data, &mf); err != nil {
+		t.Fatalf("corrupt manifest: %v", err)
+	}
+	if mf["version"] != "v2.0.0" {
+		t.Errorf("manifest version = %v; want v2.0.0", mf["version"])
+	}
+}
+
 func writeMF(t *testing.T, path string, v any) {
 	t.Helper()
 	data, err := json.Marshal(v)
