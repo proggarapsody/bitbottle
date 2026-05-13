@@ -1,10 +1,12 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 // GetDiff returns the unified diff between two refs for a repository.
@@ -52,7 +54,7 @@ func (w wireDiffStatEntry) toDomain() backend.DiffStatEntry {
 }
 
 // GetDiffStat returns the diff summary between two refs for a repository.
-// Cloud endpoint: GET /repositories/{ws}/{slug}/diffstat/{from}..{to}
+// Cloud endpoint: GET /repositories/{ws}/{slug}/diffstat/{from}..{to} (paginated)
 func (c *Client) GetDiffStat(ns, slug, from, to string) (backend.DiffStat, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/diffstat/%s..%s",
 		url.PathEscape(ns),
@@ -60,21 +62,27 @@ func (c *Client) GetDiffStat(ns, slug, from, to string) (backend.DiffStat, error
 		url.PathEscape(from),
 		url.PathEscape(to),
 	)
-	var page struct {
-		Values []wireDiffStatEntry `json:"values"`
-	}
-	if err := c.getJSON(path, &page); err != nil {
+	entries, err := paging.Collect(c.http, path, func(body []byte) ([]backend.DiffStatEntry, error) {
+		var page cloudPagedResponse[wireDiffStatEntry]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.DiffStatEntry, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, w.toDomain())
+		}
+		return out, nil
+	}, 0)
+	if err != nil {
 		return backend.DiffStat{}, err
 	}
 	stat := backend.DiffStat{
-		FilesChanged: len(page.Values),
+		FilesChanged: len(entries),
+		Files:        entries,
 	}
-	stat.Files = make([]backend.DiffStatEntry, 0, len(page.Values))
-	for _, v := range page.Values {
-		entry := v.toDomain()
-		stat.Additions += entry.Additions
-		stat.Deletions += entry.Deletions
-		stat.Files = append(stat.Files, entry)
+	for _, e := range entries {
+		stat.Additions += e.Additions
+		stat.Deletions += e.Deletions
 	}
 	return stat, nil
 }
