@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.46.0](https://github.com/proggarapsody/bitbottle/compare/v1.45.0...v1.46.0) (2026-05-13)
+
+
+### Features
+
+* **srvver:** server version detection helper with AtLeast and per-client caching ([fa44d89](https://github.com/proggarapsody/bitbottle/commit/fa44d899525ff679167b416e4f6a2b4119dbd7cf))
+
 ## [1.45.0](https://github.com/proggarapsody/bitbottle/compare/v1.44.0...v1.45.0) (2026-05-13)
 
 
