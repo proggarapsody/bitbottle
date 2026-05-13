@@ -626,6 +626,18 @@ when stdout is a TTY (default `less -FRX`). Set `PAGER=cat` to disable.
 
 ---
 
+## Extensions
+
+bitbottle supports third-party extensions. Extension repositories must be named `bitbottle-<name>`.
+
+```bash
+bitbottle extension install USER/bitbottle-<name>  # install from GitHub
+bitbottle extension install --local PATH           # install from local dir
+bitbottle extension list                           # list installed
+```
+
+---
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Run `go test ./...` before sending a PR.

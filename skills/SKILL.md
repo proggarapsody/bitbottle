@@ -352,6 +352,11 @@ bitbottle profile delete work --confirm
 
 See `references/profile.md` for full flag reference.
 
+## extension
+- `extension install USER/REPO` — install from GitHub (repo must be named bitbottle-<name>)
+- `extension install --local PATH` — symlink local extension dir
+- `extension list` — show installed extensions (name, version, source)
+
 ## Install / version
 
 `npm install -g @proggarapsody/bitbottle` installs the CLI and

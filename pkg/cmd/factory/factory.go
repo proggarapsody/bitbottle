@@ -49,6 +49,9 @@ type Factory struct {
 	// by probing which URL format the instance accepts. Injected here so tests
 	// can stub it without real network calls. nil → default HEAD probe.
 	ServerPATURLProber func(hostname, username string, skipTLS bool) string
+	// ConfigDir is the root config directory (e.g. ~/.config/bitbottle).
+	// Used by extension commands to locate the extensions subdirectory.
+	ConfigDir func() string
 }
 
 func New() *Factory {
@@ -148,6 +151,7 @@ func New() *Factory {
 		BaseURL:    baseURL,
 		BaseRepo:   DefaultBaseRepo(gitRunner(), configFn),
 		Now:        time.Now,
+		ConfigDir:  func() string { return configDir },
 	}
 }
 
