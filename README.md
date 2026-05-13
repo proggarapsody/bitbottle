@@ -476,6 +476,11 @@ bitbottle commit comment delete MYPROJ/my-service abc1234 1234
 # Structured output
 bitbottle commit comment list MYPROJ/my-service abc1234 --json id,author,body
 bitbottle commit comment list MYPROJ/my-service abc1234 --jq '.[].body'
+
+# Emoji reactions (Bitbucket Server / DC only)
+bitbottle commit comment list MYPROJ/my-service abc1234 --reactions   # adds REACTIONS column
+bitbottle commit comment react   MYPROJ/my-service abc1234 1234 --emoji thumbs_up
+bitbottle commit comment unreact MYPROJ/my-service abc1234 1234 --emoji thumbs_up
 ```
 
 On Bitbucket Server / Data Center, `edit` and `delete` use optimistic

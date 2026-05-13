@@ -266,7 +266,7 @@ Current state of every command area against gh feature parity:
 | `pr comment react PR_ID COMMENT_ID --emoji E` | ✅ | Add an emoji reaction to a PR comment — scope **REACT-PR** |
 | `pr comment unreact PR_ID COMMENT_ID --emoji E` | ✅ | Remove own reaction from a comment — scope **REACT-PR** |
 | `pr comment list --reactions` | ✅ | Existing command grows a reactions column when flag is set — scope **REACT-PR** |
-| `commit comment react / unreact` | 🔲 | Same pattern for commit comments — scope **REACT-COMMIT** |
+| `commit comment react / unreact` | ✅ | Same pattern for commit comments — scope **REACT-COMMIT** |
 
 ### Variable _(standalone promotion — missing)_
 
@@ -358,7 +358,7 @@ Current state of every command area against gh feature parity:
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | ✅ |
 | REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | ✅ |
-| REACT-COMMIT | **Commit Comment Reactions** | `commit comment react/unreact`; reuses `CommentReactor` from REACT-PR (depends on REACT-PR) | Server/DC | 3 | 🔲 |
+| REACT-COMMIT | **Commit Comment Reactions** | `commit comment react/unreact`, `commit comment list --reactions`; `CommitCommentReactor` interface + Server impl + MCP tools | Server/DC | 3 | ✅ |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
 | EXT-CORE | **Extension Install + List** | `extension install USER/REPO`, `extension install --local PATH`, `extension list`; core package + SHA lockfile | N/A | 4 | 🔲 |

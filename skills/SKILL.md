@@ -22,7 +22,7 @@ not sure about.**
 | Auth, hosts.yml, env vars, multi-host setup, auth migrate | `references/auth.md` |
 | PR lifecycle (list/view/create/merge/approve/comment/pr activity/review/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
-| commit comment list/add/edit/delete | list, add, edit, and delete commit comments | `references/commit.md` |
+| commit comment list/add/edit/delete/react/unreact | list, add, edit, delete commit comments; react/unreact (Server/DC only) | `references/commit.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
 | Deployments (list/view) — Cloud only | `references/deployment.md` |
@@ -84,7 +84,7 @@ command in that checkout runs without `-R`.
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only commands | `pipeline *`, `pr request-changes`, `pr comment resolve` | — |
-| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *`, `pr task resolve/reopen`, `pr comment react/unreact`, `pr comment list --reactions` |
+| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *`, `pr task resolve/reopen`, `pr comment react/unreact`, `pr comment list --reactions`, `commit comment react/unreact`, `commit comment list --reactions` |
 
 Custom-hostname Cloud Data Center? Force routing in `hosts.yml`:
 `backend_type: cloud` (or `server`). See `references/auth.md`.
@@ -216,6 +216,29 @@ MCP tools: `list_comment_reactions` (`{project, repo, pr_id, comment_id}`),
 `add_comment_reaction` (`{project, repo, pr_id, comment_id, emoji}`),
 `remove_comment_reaction` (`{project, repo, pr_id, comment_id, emoji}`).
 `list_pr_comments` also accepts `include_reactions: true` to fetch reactions
+in a single call.
+
+## Commit comment reactions _(Server / DC only)_
+
+Emoji reactions on individual commit comments.
+
+```bash
+# Add or remove a reaction
+bitbottle commit comment react   PROJ/REPO HASH COMMENT_ID --emoji thumbs_up
+bitbottle commit comment unreact PROJ/REPO HASH COMMENT_ID --emoji thumbs_up
+
+# List comments with their reactions (fetched concurrently, up to 4 workers)
+bitbottle commit comment list PROJ/REPO HASH --reactions
+```
+
+The `--reactions` flag adds a REACTIONS column rendered as emoji glyphs
+(`👍×2 ❤️×1`). With `--json reactions` the field is a typed array of
+`{emoji, users:[slug,...]}` objects.
+
+MCP tools: `list_commit_comment_reactions` (`{project, slug, hash, comment_id}`),
+`add_commit_comment_reaction` (`{project, slug, hash, comment_id, emoji}`),
+`remove_commit_comment_reaction` (`{project, slug, hash, comment_id, emoji}`).
+`list_commit_comments` also accepts `include_reactions: true` to fetch reactions
 in a single call.
 
 ## Code Insights quick-reference _(Server / DC only)_

@@ -16,5 +16,7 @@ func NewCmdCommitComment(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewCmdCommitCommentAdd(f))
 	cmd.AddCommand(NewCmdCommitCommentEdit(f))
 	cmd.AddCommand(NewCmdCommitCommentDelete(f))
+	cmd.AddCommand(NewCmdCommitCommentReact(f))
+	cmd.AddCommand(NewCmdCommitCommentUnreact(f))
 	return cmd
 }
