@@ -70,3 +70,9 @@ type NoDefaultReviewerFake struct {
 type NoSSHKeyFake struct {
 	backend.Client
 }
+
+// NoBranchRuleFake wraps backend.Client without implementing
+// backend.BranchRuleClient — simulates a Bitbucket Server backend.
+type NoBranchRuleFake struct {
+	backend.Client
+}

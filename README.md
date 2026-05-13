@@ -90,6 +90,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
 | `deploy-key` | `list` `add` `delete` |
+| `branch-rule` | `list` `add` `delete` _(Cloud only)_ |
 | `ssh-key` | `list` `add` `delete` _(Cloud only)_ |
 | `commit` | `log` `view` `status` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
@@ -295,6 +296,24 @@ bitbottle deploy-key delete MYPROJ/my-service 42
 
 All three subcommands work on both Bitbucket Cloud and Server/DC. `list` and
 `add` support `--json` / `--jq` / `--yaml` for structured output.
+
+### Branch restriction rules (Cloud only)
+
+```bash
+# List branch restriction rules
+bitbottle branch-rule list myworkspace/my-service
+
+# Add a rule requiring 2 approvals before merging to main
+bitbottle branch-rule add myworkspace/my-service --kind require_approvals_to_merge --pattern main --value 2
+
+# Add a push restriction (no direct pushes to main)
+bitbottle branch-rule add myworkspace/my-service --kind push --pattern main
+
+# Delete a rule by ID
+bitbottle branch-rule delete myworkspace/my-service 7
+```
+
+Cloud only. `list` and `add` support `--json` / `--jq` / `--yaml` for structured output.
 
 ### SSH keys (Cloud only)
 

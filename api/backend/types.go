@@ -781,6 +781,21 @@ type DeployKeyInput struct {
 	Key   string
 }
 
+// BranchRule is the domain representation of a Bitbucket Cloud branch restriction rule.
+type BranchRule struct {
+	ID      int    `json:"id"`
+	Kind    string `json:"kind"`
+	Pattern string `json:"pattern"`
+	Value   int    `json:"value,omitempty"`
+}
+
+// BranchRuleInput carries the parameters for adding a branch restriction rule.
+type BranchRuleInput struct {
+	Kind    string
+	Pattern string
+	Value   int
+}
+
 // SSHKey is the domain representation of a user SSH key on Bitbucket Cloud.
 type SSHKey struct {
 	ID    int    `json:"id"`

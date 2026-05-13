@@ -30,6 +30,7 @@ not sure about.**
 | Top-level variable command (repository/workspace/deployment scope) — Cloud only | `references/variable.md` |
 | Named credential profiles (create/use/list/delete) | `references/profile.md` |
 | Deploy keys (list/add/delete) — Cloud and Server/DC | `references/deploy-key.md` |
+| Branch restriction rules (list/add/delete) — Cloud only | `references/branch-rule.md` |
 | SSH keys for current user (list/add/delete) — Cloud only | `references/ssh-key.md` |
 | PR default reviewers (list/add/remove) — Cloud and Server/DC | `references/pr.md` |
 | Diff between refs (`diff REF1..REF2 [--stat]`) — Cloud and Server/DC | `references/diff.md` |
@@ -156,6 +157,8 @@ Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployme
 Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `variable_delete` — each accepts `scope` (repository/workspace/deployment) and `env_uuid` (required for deployment scope). See `references/variable.md`.
 
 Deploy key MCP tools (both backends): `list_deploy_keys`, `add_deploy_key`, `delete_deploy_key`. See `references/deploy-key.md`.
+
+Branch rule MCP tools (Cloud only): `list_branch_rules`, `add_branch_rule`, `delete_branch_rule`. See `references/branch-rule.md`.
 
 Repo transfer MCP tool (both backends): `transfer_repo` — accepts `repo` (PROJECT/REPO or WORKSPACE/REPO) and `target` (project key or workspace slug). See `references/repo.md`.
 
