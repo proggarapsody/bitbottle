@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.0](https://github.com/proggarapsody/bitbottle/compare/v1.55.0...v1.56.0) (2026-05-13)
+
+
+### Features
+
+* **pr:** add pr commits command (list commits in a PR) ([8f77d91](https://github.com/proggarapsody/bitbottle/commit/8f77d918bea9c09bb2a75f685ba0fe1b36386ca7))
+
 ## [1.55.0](https://github.com/proggarapsody/bitbottle/compare/v1.54.0...v1.55.0) (2026-05-13)
 
 
