@@ -16,12 +16,6 @@ import (
 
 const serverConfig = "bitbucket.org:\n  oauth_token: tok\n  user: alice\n  git_protocol: https\n  backend_type: server\n"
 
-func newFakePermsClient(fn func(ctx context.Context, project string) ([]backend.PermissionGrant, error)) *testhelpers.FakeClient {
-	return &testhelpers.FakeClient{
-		ListProjectPermissionsFn: fn,
-	}
-}
-
 func TestProjectList_PrintsRows(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{

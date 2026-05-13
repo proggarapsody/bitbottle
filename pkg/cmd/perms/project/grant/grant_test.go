@@ -71,8 +71,8 @@ func TestProjectGrant_HappyPath_Group(t *testing.T) {
 func TestProjectGrant_RequiresExactlyOneSubjectFlag(t *testing.T) {
 	t.Parallel()
 	cases := [][]string{
-		{"MYPROJ", "PROJECT_READ"},                                   // neither
-		{"MYPROJ", "PROJECT_READ", "--user", "a", "--group", "g"},   // both
+		{"MYPROJ", "PROJECT_READ"},                                // neither
+		{"MYPROJ", "PROJECT_READ", "--user", "a", "--group", "g"}, // both
 	}
 	for _, args := range cases {
 		f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: serverConfig, BackendType: "server"})
