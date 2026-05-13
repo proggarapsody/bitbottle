@@ -21,5 +21,6 @@ directory.`,
 	cmd.AddCommand(NewCmdCommitView(f))
 	cmd.AddCommand(NewCmdCommitStatus(f))
 	cmd.AddCommand(NewCmdCommitComment(f))
+	cmd.AddCommand(NewCmdCommitFiles(f))
 	return cmd
 }

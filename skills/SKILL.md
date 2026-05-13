@@ -23,6 +23,7 @@ not sure about.**
 | PR lifecycle (list/view/create/merge/approve/comment/pr activity/review/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks | `references/repos.md` |
 | commit comment list/add/edit/delete/react/unreact | list, add, edit, delete commit comments; react/unreact (Server/DC only) | `references/commit.md` |
+| commit files HASH [PROJECT/REPO] | list files changed in a commit — both Cloud and Server/DC | `references/commit.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
 | Deployments (list/view) — Cloud only | `references/deployment.md` |
