@@ -263,10 +263,10 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `pr comment react PR_ID COMMENT_ID --emoji E` | 🔲 | Add an emoji reaction to a PR comment — scope **REACT** |
-| `pr comment unreact PR_ID COMMENT_ID --emoji E` | 🔲 | Remove own reaction from a comment — scope **REACT** |
-| `pr comment list --reactions` | 🔲 | Existing command grows a reactions column when flag is set — scope **REACT** |
-| `commit comment react / unreact` | 🔲 | Same pattern for commit comments — scope **REACT** |
+| `pr comment react PR_ID COMMENT_ID --emoji E` | 🔲 | Add an emoji reaction to a PR comment — scope **REACT-PR** |
+| `pr comment unreact PR_ID COMMENT_ID --emoji E` | 🔲 | Remove own reaction from a comment — scope **REACT-PR** |
+| `pr comment list --reactions` | 🔲 | Existing command grows a reactions column when flag is set — scope **REACT-PR** |
+| `commit comment react / unreact` | 🔲 | Same pattern for commit comments — scope **REACT-COMMIT** |
 
 ### Variable _(standalone promotion — missing)_
 
@@ -280,12 +280,12 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `extension install REPO` | 🔲 | Install a third-party bitbottle extension from a GitHub/Bitbucket repo — scope **EXT** |
-| `extension install --local PATH` | 🔲 | Symlink a local directory as an extension (for extension authors) — scope **EXT** |
-| `extension list` | 🔲 | List installed extensions — scope **EXT** |
-| `extension upgrade [NAME\|--all]` | 🔲 | Check each installed extension for a new release and upgrade — scope **EXT** |
-| `extension remove NAME` | 🔲 | Remove an installed extension — scope **EXT** |
-| `extension exec NAME [args...]` | 🔲 | Run an installed extension (BITBOTTLE_KEYRING_PASSPHRASE stripped, BITBOTTLE_TOKEN injected fresh) — scope **EXT** |
+| `extension install REPO` | 🔲 | Install a third-party bitbottle extension from a GitHub/Bitbucket repo — scope **EXT-CORE** |
+| `extension install --local PATH` | 🔲 | Symlink a local directory as an extension (for extension authors) — scope **EXT-CORE** |
+| `extension list` | 🔲 | List installed extensions — scope **EXT-CORE** |
+| `extension upgrade [NAME\|--all]` | 🔲 | Check each installed extension for a new release and upgrade — scope **EXT-MGMT** |
+| `extension remove NAME` | 🔲 | Remove an installed extension — scope **EXT-MGMT** |
+| `extension exec NAME [args...]` | 🔲 | Run an installed extension (BITBOTTLE_KEYRING_PASSPHRASE stripped, BITBOTTLE_TOKEN injected fresh) — scope **EXT-RUNTIME** |
 
 ### Named Profiles
 
@@ -357,10 +357,13 @@ Current state of every command area against gh feature parity:
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | 🔲 |
-| REACT | **Comment Reactions** | `pr comment react/unreact`, `commit comment react/unreact`, `pr comment list --reactions` | Server/DC | 3 | 🔲 |
+| REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | 🔲 |
+| REACT-COMMIT | **Commit Comment Reactions** | `commit comment react/unreact`; reuses `CommentReactor` from REACT-PR (depends on REACT-PR) | Server/DC | 3 | 🔲 |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
-| EXT | **Extension System** | `extension install/upgrade/list/remove/exec`, `--local` for dev | N/A | 4 | 🔲 |
+| EXT-CORE | **Extension Install + List** | `extension install USER/REPO`, `extension install --local PATH`, `extension list`; core package + SHA lockfile | N/A | 4 | 🔲 |
+| EXT-RUNTIME | **Extension Exec** | `extension exec NAME [args...]`; SHA verification, env sanitise/inject, root-command dispatch hook | N/A | 4 | 🔲 |
+| EXT-MGMT | **Extension Upgrade + Remove** | `extension upgrade [NAME\|--all]`, `extension remove NAME` | N/A | 4 | 🔲 |
 | VAROPS | **Variable scope-ops strategy** | Collapse the three near-identical `As<X>Client` scope switches in `pkg/cmd/variable/{list,set,delete}/*.go` (and the MCP handler) into one `resolveVariableOps(scope)` helper returning a `VariableOps` interface. Pre-empts OCP debt before the 4th scope lands. Move deployment delete-by-key lookup from cmd/MCP into the cloud adapter. Cite v1.31.0 design-judge findings. | N/A | DX | ✅ |
 | CMDTEST | **Shared cmdtest helper** | Promote the three near-clone `pkg/cmd/<group>/internal/cmdtest/cmdtest.go` files (`deployment`, `environment`, `variable`) to a single `pkg/cmd/internal/cmdtest` package and update call sites. | N/A | DX | 🔲 |
 | ENVVAR-DEPREC | **Deprecate `environment variable` tree** | `environment variable {list,set,delete}` (shipped v1.29.0) is structurally a subset of `variable --scope deployment` (shipped v1.31.0). Mark the old tree as deprecated in `pkg/cmd/environment/variable/` with a `Deprecated:` cobra field, route to the new commands, and document the migration in README + skills/SKILL.md. Remove after one minor release. | N/A | DX | 🔲 |
@@ -2198,12 +2201,12 @@ each implemented as a thin filter over the existing comment tools.
 
 ---
 
-### REACT — Comment Reactions _(Server / DC only)_
+### REACT-PR — PR Comment Reactions _(Server / DC only)_
 
 **Important**: Bitbucket reactions exist at the **comment** level, not the PR
 level. The endpoint is `/comments/{commentId}/reactions` — there is no
-PR-level or commit-level "reactions" primitive. Cloud has no documented REST API
-for reactions — surface `host.unsupported`.
+PR-level reactions primitive. Cloud has no documented REST API for reactions —
+surface `host.unsupported`.
 
 **New optional interface** (`api/backend/client.go`):
 ```go
@@ -2214,10 +2217,9 @@ type CommentReactor interface {
 }
 ```
 Server/DC reactions are keyed only by `commentID` — the PR / commit context is
-not part of the URL. Reuse the same interface for both PR comments and commit
-comments.
+not part of the URL. The same interface is reused by REACT-COMMIT.
 
-**New types**:
+**New types** (`api/backend/types.go`):
 ```go
 type CommentReaction struct {
     Emoji string  // canonical shortcode: "thumbs_up" | "thumbs_down" | "heart" | etc.
@@ -2225,7 +2227,7 @@ type CommentReaction struct {
 }
 ```
 List returns one row per emoji with the deduplicated user list (the API returns
-one row per (emoji, user) pair; we group in the adapter for ergonomic output).
+one row per (emoji, user) pair; group in the adapter for ergonomic output).
 
 **Implementation notes**:
 1. **Emoji shortcode normalisation.** Server accepts `:thumbsup:` and `thumbs_up`
@@ -2234,23 +2236,39 @@ one row per (emoji, user) pair; we group in the adapter for ergonomic output).
    README so users know what to pass.
 2. **No batch API.** Listing reactions for many comments requires N calls. For
    `pr comment list --reactions`, batch-resolve reactions concurrently with a
-   small worker pool (4-8); don't serialize.
+   small worker pool (4-8); don't serialise.
 3. **Permission semantics.** Adding/removing requires write access to the
    comment's repo. Anonymous users can read reactions but not write.
 
-**Commands** (extend existing comment commands; no new top-level surface):
+**Commands** (extend existing `pr comment` surface only):
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
 | `pr comment react PR_ID COMMENT_ID` | 2 | `--emoji E` | `--hostname` |
 | `pr comment unreact PR_ID COMMENT_ID` | 2 | `--emoji E` | `--hostname` |
 | `pr comment list PR_ID` | 1 | — | `--reactions` (existing command grows a column), `--json`, `--jq`, `--hostname` |
+
+**MCP tools**: `add_comment_reaction`, `remove_comment_reaction`,
+`list_comment_reactions`. Extend the existing `list_pr_comments` schema with an
+optional `include_reactions bool` field.
+
+---
+
+### REACT-COMMIT — Commit Comment Reactions _(Server / DC only)_
+
+**Depends on**: REACT-PR (reuses `CommentReactor` interface and Server/Cloud
+implementations — do not re-implement).
+
+**Commands** (extend existing `commit comment` surface only):
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
 | `commit comment react PROJECT/REPO HASH COMMENT_ID` | 3 | `--emoji E` | `--hostname` |
 | `commit comment unreact PROJECT/REPO HASH COMMENT_ID` | 3 | `--emoji E` | `--hostname` |
 
-**MCP tools**: `add_comment_reaction`, `remove_comment_reaction`,
-`list_comment_reactions`. Extend the existing `list_pr_comments` /
-`list_commit_comments` schemas with an optional `include_reactions bool` field.
+**MCP tools**: extend `list_commit_comments` schema with `include_reactions bool`.
+No new standalone tools needed — `add_comment_reaction` / `remove_comment_reaction`
+from REACT-PR work for any `commentID` regardless of context.
 
 ---
 
@@ -2401,26 +2419,21 @@ Add a `nix build` test job to CI (runs on `ubuntu-latest` with Nix installed via
 
 ---
 
-### EXT — Extension System
+### EXT-CORE — Extension Install + List
 
-A plugin mechanism that lets the community add `bitbottle <ext-name>` subcommands
-without forking the core. Modelled on bkt's `extension` subsystem.
+A plugin mechanism letting the community add `bitbottle <ext-name>` subcommands
+without forking core. Modelled on `gh extension`.
 
-**Design**:
-- Extensions are single-file executables (any language) named `bitbottle-<name>`
-  stored in `~/.config/bitbottle/extensions/`.
-- `bitbottle extension install USER/REPO` downloads the matching binary from
-  GitHub Releases and makes it executable.
-- `bitbottle extension exec NAME [args...]` forks the binary, injecting
-  `BITBOTTLE_TOKEN`, `BITBOTTLE_HOST`, `BITBOTTLE_REPO` as env vars, but
-  stripping any secret env vars from the parent process environment (e.g.
-  `BITBOTTLE_KEYRING_PASSPHRASE`).
-- Root command resolution: before Cobra parses args, if `os.Args[1]` is not a
-  known command and `~/.config/bitbottle/extensions/bitbottle-<name>` exists,
-  exec that binary. This makes extensions first-class subcommands.
+**Core design**:
+- Extensions are single-file executables named `bitbottle-<name>` stored in
+  `~/.config/bitbottle/extensions/`.
+- `extension install USER/REPO` downloads the OS/arch-matched binary from GitHub
+  Releases. Binary naming convention: `bitbottle-<name>-<os>-<arch>[.exe]`.
+- Records install-time SHA256 in `~/.config/bitbottle/extensions/<name>.lock`
+  for change detection (not a trust anchor — attacker who can publish a binary
+  can publish a matching checksum; see EXT-RUNTIME for enforcement).
 
 **New package** (`pkg/cmd/extension/`):
-
 ```go
 type Extension struct {
     Name    string
@@ -2429,93 +2442,96 @@ type Extension struct {
 }
 
 func List() ([]Extension, error)
-func Install(repo string) error
-func Remove(name string) error
-func Exec(name string, args []string, env []string) error
+func Install(repo, version string) error        // version="" → latest
+func InstallLocal(path string) error            // symlink for extension authors
 ```
 
 **Commands**:
 
 | Command | Args | Required flags | Optional flags |
 |---|---|---|---|
-| `extension install USER/REPO` | 1 | — | `--hostname` (for private repos), `--pin VERSION` |
+| `extension install USER/REPO` | 1 | — | `--hostname` (private repos), `--pin VERSION` |
+| `extension install --local PATH` | 0 | `--local PATH` | — |
 | `extension list` | 0 | — | `--json` |
-| `extension remove NAME` | 1 | — | — |
-| `extension exec NAME [args...]` | 1+ | — | — |
 
-**Security model — be honest**:
+**Security model**: print extension author + source URL + "this will run as you"
+warning on install. Require `--confirm` or interactive y/N to proceed.
 
-Extensions run with the user's Bitbucket credentials. An installed extension
-binary can do anything the user can do via the API: read private repos, merge
-PRs, delete branches, exfiltrate tokens. This is the same trust model as
-`gh extension` and the same model as installing any third-party binary.
+**macOS Gatekeeper**: strip `com.apple.quarantine` xattr during install with a
+printed warning. Better UX than right-click→Open; documents the bypass.
 
-We do NOT promise integrity verification we cannot actually provide:
-- A SHA256 in the same GitHub release the binary lives in is **not** a security
-  control — an attacker who can publish a malicious binary can publish a matching
-  checksum. We will compute and store the SHA on install for *change detection*
-  on subsequent runs (so a swapped binary triggers a warning), not as a trust
-  anchor.
-- Code signing (sigstore/cosign) is a real control but a separate scope —
-  defer until we have a signing pipeline.
-
-**What we DO do**:
-- Print the extension author, source URL, and a "this will run as you" warning on
-  `extension install`. Require explicit `--yes` (or an interactive confirmation)
-  to proceed.
-- Record the install-time SHA in `~/.config/bitbottle/extensions/<name>.lock`.
-  On `extension exec`, verify the binary SHA matches; if not, refuse to run and
-  tell the user the binary changed.
-- Strip `BITBOTTLE_KEYRING_PASSPHRASE` and `GITHUB_TOKEN` from the subprocess
-  env. Inject `BITBOTTLE_HOST`, `BITBOTTLE_USER`, and `BITBOTTLE_TOKEN` (read
-  fresh from keyring for the active host) so the extension doesn't need its own
-  auth flow.
+**Implementation notes**:
+- If no asset matches `runtime.GOOS`+`runtime.GOARCH`, surface a clean error:
+  `"no binary for darwin/arm64 in USER/REPO@VERSION"` — don't silently download wrong-arch.
+- `--local PATH` symlinks instead of copying; SHA lockfile records the symlink
+  target's hash at link time.
 
 **MCP tools**: none (extension management is CLI-only).
 
-**Implementation notes** (operational):
-1. **Binary naming convention.** Adopt gh's convention:
-   `bitbottle-<extname>-<os>-<arch>[.exe]`. The installer matches against
-   `runtime.GOOS` + `runtime.GOARCH`. If no matching asset exists in the
-   release, surface a clean "no binary for darwin/arm64" message — don't
-   silently install a wrong-arch binary.
-2. **macOS Gatekeeper quarantine.** Binaries downloaded by us inherit the
-   `com.apple.quarantine` xattr. On first run, macOS prompts the user. Two
-   options:
-   - **Strip the xattr** during `extension install` via
-     `xattr -d com.apple.quarantine <binary>` (subprocess call). Simple but
-     bypasses an OS security control.
-   - **Document the failure mode** and tell the user to right-click → Open
-     once. Honest but worse UX.
-   Recommend option 1 with a warning printed at install time: "Removed macOS
-   quarantine attribute — extension will run without Gatekeeper review."
-3. **Update flow.** `extension upgrade [NAME|--all]` checks installed
-   extensions for new GitHub releases. Without this, users have no way to
-   stay current short of `remove` + `install`. Include in the initial scope.
-4. **Argv passthrough rules.** Extensions receive `os.Args[2:]`
-   (everything after `bitbottle <extname>`). Global flags like
-   `--debug`, `--hostname`, `--no-color` are NOT auto-injected — extensions
-   read them from env (`BITBOTTLE_DEBUG=1`). Pick one rule and document it.
-5. **Auth env injection — non-token auth.** If the active host uses basic
-   auth or app password, we still inject `BITBOTTLE_TOKEN` with that value
-   (the API server doesn't distinguish). For OAuth tokens with short TTL,
-   inject the current valid token, not the refresh token — extensions don't
-   refresh.
-6. **Local-dev mode.** `extension install --local /path/to/dir` symlinks a
-   local directory instead of downloading. Essential for extension authors;
-   adds <50 LOC.
+**Definition of Done**:
+- [ ] `extension install` downloads correct OS/arch binary, confirms with user, records SHA
+- [ ] macOS quarantine xattr stripped at install with visible warning
+- [ ] `extension list` shows installed extensions with version + path
+- [ ] `extension install --local PATH` symlinks for development
+- [ ] README section: trust model, install flow, binary naming convention
+
+---
+
+### EXT-RUNTIME — Extension Exec _(depends on EXT-CORE)_
+
+**`extension exec`** and the root-level dispatch hook that makes installed
+extensions first-class subcommands.
+
+**Root dispatch**: before Cobra parses args, if `os.Args[1]` is not a known
+command and `~/.config/bitbottle/extensions/bitbottle-<name>` exists, exec that
+binary. This makes `bitbottle <extname> [args...]` work without `extension exec`.
+
+**Security enforcement**:
+- Verify binary SHA256 matches the lockfile from install. If mismatch: refuse to
+  run, print `"extension binary has changed since install — re-install to continue"`.
+- Strip `BITBOTTLE_KEYRING_PASSPHRASE` and `GITHUB_TOKEN` from subprocess env.
+- Inject `BITBOTTLE_HOST`, `BITBOTTLE_USER`, `BITBOTTLE_TOKEN` (read fresh from
+  keyring for the active host).
+
+**Argv passthrough**: extensions receive `os.Args[2:]`. Global flags
+(`--debug`, `--hostname`, `--no-color`) are NOT auto-injected — extensions read
+them from env vars (`BITBOTTLE_DEBUG=1`).
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `extension exec NAME [args...]` | 1+ | — | — |
 
 **Definition of Done**:
-- [ ] `extension install` downloads correct OS/arch binary, prompts for confirmation, records install-time SHA
-- [ ] macOS quarantine xattr stripped at install with user-visible warning
-- [ ] `extension list` shows installed extensions
-- [ ] `extension remove` deletes the binary + lockfile
-- [ ] `extension upgrade [NAME|--all]` implemented
-- [ ] `extension exec` verifies SHA matches lockfile, forks with sanitised env (BITBOTTLE_KEYRING_PASSPHRASE stripped, BITBOTTLE_TOKEN injected fresh)
-- [ ] `extension install --local PATH` for development
-- [ ] Root dispatch resolves unknown first arg to installed extension binary
-- [ ] README documents the trust model in plain language ("extensions run as you")
-- [ ] Cross-platform CI matrix verifies install works on linux/darwin/windows
+- [ ] `extension exec` verifies SHA, forks with sanitised+injected env
+- [ ] Root dispatch hook wired into cobra `PersistentPreRunE` or `RunE` fallback
+- [ ] Non-token auth (basic/app-password) still injects via `BITBOTTLE_TOKEN`
+- [ ] Test: SHA mismatch returns clear error, not a panic
+
+---
+
+### EXT-MGMT — Extension Upgrade + Remove _(depends on EXT-CORE)_
+
+**Commands**:
+
+| Command | Args | Required flags | Optional flags |
+|---|---|---|---|
+| `extension upgrade NAME` | 1 | — | — |
+| `extension upgrade --all` | 0 | `--all` | — |
+| `extension remove NAME` | 1 | — | — |
+
+**Upgrade flow**: check installed extension's recorded version against the latest
+GitHub Release tag. If newer: download, replace binary, update lockfile SHA.
+Print `"already up to date"` if version matches.
+
+**Remove flow**: delete binary + lockfile. Print confirmation.
+
+**Definition of Done**:
+- [ ] `extension upgrade NAME` upgrades single extension
+- [ ] `extension upgrade --all` upgrades all installed extensions
+- [ ] `extension remove` deletes binary + lockfile cleanly
+- [ ] `extension upgrade` on a `--local` extension prints `"local install — skipping"`
 
 ---
 

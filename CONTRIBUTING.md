@@ -96,7 +96,7 @@ go version
 # Fetch dependencies
 go mod tidy
 
-# Install git hooks (golangci-lint pre-commit)
+# Install git hooks (gofmt pre-commit + golangci-lint pre-push)
 make setup
 
 # Build
@@ -113,8 +113,8 @@ make lint
 
 ## Code style
 
-- Format with `gofmt` (enforced by CI).
-- Lint with `golangci-lint` — see `.golangci.yml` for enabled linters.
+- Format with `gofmt` (enforced on every `git commit` by the pre-commit hook).
+- Lint with `golangci-lint` (enforced on every `git push` by the pre-push hook) — see `.golangci.yml` for enabled linters.
 - Error messages: **lowercase**, no trailing punctuation, wrap cause with `%w`.
   ```go
   // good
