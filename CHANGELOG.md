@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.44.0](https://github.com/proggarapsody/bitbottle/compare/v1.43.0...v1.44.0) (2026-05-13)
+
+
+### Features
+
+* **ext-mgmt:** extension upgrade and remove commands ([0e4bb6c](https://github.com/proggarapsody/bitbottle/commit/0e4bb6cbc7a0e7beab283cf12e1e1ecec2693644))
+
 ## [1.43.0](https://github.com/proggarapsody/bitbottle/compare/v1.42.0...v1.43.0) (2026-05-13)
 
 
