@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.41.0](https://github.com/proggarapsody/bitbottle/compare/v1.40.0...v1.41.0) (2026-05-13)
+
+
+### Features
+
+* **react-commit:** commit comment emoji reactions (Server/DC only) ([d3e5597](https://github.com/proggarapsody/bitbottle/commit/d3e5597b2faa7c6bb3fc28130db93e39f69db120))
+
+
+### Bug Fixes
+
+* **pipeline:** preserve required status checks; pin actions/cache ([88ec7b7](https://github.com/proggarapsody/bitbottle/commit/88ec7b7f3b66942c694d78d392166ae81a0b8f77))
+
 ## [1.40.0](https://github.com/proggarapsody/bitbottle/compare/v1.39.0...v1.40.0) (2026-05-13)
 
 
