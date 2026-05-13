@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.43.0](https://github.com/proggarapsody/bitbottle/compare/v1.42.0...v1.43.0) (2026-05-13)
+
+
+### Features
+
+* **ext-core:** extension install and list commands ([b81a445](https://github.com/proggarapsody/bitbottle/commit/b81a44585714c8efbeca4e43143f897062da20f7))
+
+
+### Bug Fixes
+
+* **nix:** open PR for flake SHA update instead of direct push to main ([eb9ba0b](https://github.com/proggarapsody/bitbottle/commit/eb9ba0b88f2e866f27513a234302de9c87f1156d))
+
 ## [1.42.0](https://github.com/proggarapsody/bitbottle/compare/v1.41.0...v1.42.0) (2026-05-13)
 
 
