@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.49.1](https://github.com/proggarapsody/bitbottle/compare/v1.49.0...v1.49.1) (2026-05-13)
+
+
+### Bug Fixes
+
+* **api/cloud:** paginate GetDiffStat via paging.Collect ([c36ec4f](https://github.com/proggarapsody/bitbottle/commit/c36ec4fe430c878358090f6d3e72cd1917bc901d))
+
 ## [1.49.0](https://github.com/proggarapsody/bitbottle/compare/v1.48.0...v1.49.0) (2026-05-13)
 
 
