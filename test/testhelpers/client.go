@@ -149,6 +149,11 @@ type FakeClient struct {
 	GrantRepoPermissionFn     func(ctx context.Context, project, slug string, subject backend.PermissionSubject, perm string) error
 	RevokeRepoPermissionFn    func(ctx context.Context, project, slug string, subject backend.PermissionSubject) error
 
+	// Admin methods (Server-only; satisfies backend.AdminClient when set)
+	RotateSecretsFn    func() error
+	GetLoggingConfigFn func() (backend.LoggingConfig, error)
+	SetLoggingConfigFn func(in backend.LoggingConfigInput) error
+
 	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
 	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
 	GetReportFn         func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
@@ -1089,6 +1094,38 @@ func (c *FakeClient) DeleteEnvVariable(ns, slug, envUUID, varUUID string) error 
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteEnvVariable; set DeleteEnvVariableFn in your test")
+	}
+	return nil
+}
+
+// ── AdminClient ──────────────────────────────────────────────────────────────
+
+func (c *FakeClient) RotateSecrets() error {
+	if c.RotateSecretsFn != nil {
+		return c.RotateSecretsFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RotateSecrets; set RotateSecretsFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) GetLoggingConfig() (backend.LoggingConfig, error) {
+	if c.GetLoggingConfigFn != nil {
+		return c.GetLoggingConfigFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetLoggingConfig; set GetLoggingConfigFn in your test")
+	}
+	return backend.LoggingConfig{}, nil
+}
+
+func (c *FakeClient) SetLoggingConfig(in backend.LoggingConfigInput) error {
+	if c.SetLoggingConfigFn != nil {
+		return c.SetLoggingConfigFn(in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetLoggingConfig; set SetLoggingConfigFn in your test")
 	}
 	return nil
 }
