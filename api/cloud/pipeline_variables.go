@@ -1,9 +1,11 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 const variablesPath = "/repositories/%s/%s/pipelines_config/variables/"
@@ -29,15 +31,17 @@ func (w wireCloudPipelineVariable) toDomain() backend.PipelineVariable {
 // The Bitbucket Cloud API never includes the value of secured variables in the
 // response, so PipelineVariable.Value is empty when Secured is true.
 func (c *Client) ListPipelineVariables(ns, slug string) ([]backend.PipelineVariable, error) {
-	var page cloudPagedResponse[wireCloudPipelineVariable]
-	if err := c.getJSON(fmt.Sprintf(variablesPath, ns, slug), &page); err != nil {
-		return nil, err
-	}
-	out := make([]backend.PipelineVariable, 0, len(page.Values))
-	for _, w := range page.Values {
-		out = append(out, w.toDomain())
-	}
-	return out, nil
+	return paging.Collect(c.http, fmt.Sprintf(variablesPath, ns, slug), func(body []byte) ([]backend.PipelineVariable, error) {
+		var page cloudPagedResponse[wireCloudPipelineVariable]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.PipelineVariable, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, w.toDomain())
+		}
+		return out, nil
+	}, 0)
 }
 
 // SetPipelineVariable upserts a pipeline variable by Key. If a variable with

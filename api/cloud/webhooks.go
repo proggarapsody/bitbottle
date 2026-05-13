@@ -1,9 +1,11 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 const (
@@ -39,15 +41,17 @@ type wireCloudCreateWebhook struct {
 }
 
 func (c *Client) ListWebhooks(ns, slug string) ([]backend.Webhook, error) {
-	var page cloudPagedResponse[wireCloudWebhook]
-	if err := c.getJSON(fmt.Sprintf(webhooksPath, ns, slug), &page); err != nil {
-		return nil, err
-	}
-	out := make([]backend.Webhook, 0, len(page.Values))
-	for _, w := range page.Values {
-		out = append(out, w.toDomain())
-	}
-	return out, nil
+	return paging.Collect(c.http, fmt.Sprintf(webhooksPath, ns, slug), func(body []byte) ([]backend.Webhook, error) {
+		var page cloudPagedResponse[wireCloudWebhook]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.Webhook, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, w.toDomain())
+		}
+		return out, nil
+	}, 0)
 }
 
 func (c *Client) GetWebhook(ns, slug, id string) (backend.Webhook, error) {
