@@ -209,6 +209,9 @@ type FakeClient struct {
 
 	// PR commit methods (both backends; satisfies backend.PRCommitClient when set)
 	ListPRCommitsFn func(ns, slug string, prID int) ([]backend.Commit, error)
+
+	// PR file methods (both backends; satisfies backend.PRFileClient when set)
+	ListPRFilesFn func(ns, slug string, prID int) ([]backend.DiffStatEntry, error)
 }
 
 // Compile-time interface check.
@@ -1454,6 +1457,18 @@ func (c *FakeClient) ListPRCommits(ns, slug string, prID int) ([]backend.Commit,
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListPRCommits; set ListPRCommitsFn in your test")
+	}
+	return nil, nil
+}
+
+// ── PRFileClient ─────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListPRFiles(ns, slug string, prID int) ([]backend.DiffStatEntry, error) {
+	if c.ListPRFilesFn != nil {
+		return c.ListPRFilesFn(ns, slug, prID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPRFiles; set ListPRFilesFn in your test")
 	}
 	return nil, nil
 }

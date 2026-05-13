@@ -42,6 +42,8 @@ bitbottle pr checks    42                                      # list CI statuse
 bitbottle pr checks    42 --watch [--interval 10]             # poll until all checks settle
 bitbottle pr commits   42                                      # list commits in a pull request
 bitbottle pr commits   42 --json hash,message,author,date     # structured output
+bitbottle pr files     42                                      # list files changed in a pull request
+bitbottle pr files     42 --json status,path,additions,deletions # structured output
 bitbottle pr update-branch 42                                  # rebase/sync PR branch onto target (Cloud merge commit; Server rebase)
 bitbottle pr status [PROJ/repo]                               # show your open PRs split by role (AUTHOR / REVIEWER)
 bitbottle pr reopen 42                                        # reopen a declined/closed PR
@@ -91,6 +93,12 @@ for structured output; `detail` carries the raw backend sub-object.
 `pr commits` lists all commits included in a pull request, paginated from both
 backends. Output table: HASH (first 8 chars on TTY) | MESSAGE | AUTHOR | DATE.
 Supports `--json hash,message,author,date`. MCP tool: `list_pr_commits`.
+
+`pr files` lists all files changed in a pull request, paginated from both
+backends. Cloud uses `GET /repositories/{ws}/{slug}/pullrequests/{id}/diffstat`;
+Server/DC uses `GET /rest/api/1.0/projects/{ns}/repos/{slug}/pull-requests/{id}/changes`.
+Output table: STATUS | PATH | +ADDITIONS | -DELETIONS. Supports
+`--json status,path,additions,deletions`. MCP tool: `list_pr_files`.
 
 ## Flag reality check
 
