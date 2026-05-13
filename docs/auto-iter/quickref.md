@@ -54,7 +54,7 @@ Default to **Sonnet**. Escalate to **Opus** only for genuinely judgment-heavy ph
 | §2 pre-merge gate | Sonnet | Reads CI status, runs grep checks |
 | §6 design-judge | **Sonnet** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Returns findings; runs in parallel with CI. |
 | §2 PR open + CI wait | Sonnet | Polling |
-| §2 halts (HALT 1, HALT 2) | Sonnet | Frame the question, wait for tap |
+| §2 halt (ship) | Sonnet | Frame the question, wait for tap |
 | §2 fix-after-CI-red | **Sonnet** (subagent) | Targeted code change against existing branch |
 | §7 merge feature + release PRs | Sonnet | `gh pr merge` mechanical |
 | §7 release publish wait | Sonnet | Polling `gh release view` + `npm view` |
@@ -72,14 +72,15 @@ Two phases legitimately need Opus: brainstorm and architecture-audit. Everything
 
 Two categories — **mid-cycle** (pause-and-continue) and **chain-breaking** (exit).
 
-### Mid-cycle halts (every successful `feat:` cycle has 2 of these)
+### Mid-cycle halt (every successful `feat:` cycle has exactly 1)
 
 | Halt | Phone format | Required reply |
 |---|---|---|
-| HALT 1 — Feature merge | `✅ PR #N <scope> ready. ship?` | tap `ship` / `hold` |
-| HALT 2 — Release merge | `🚀 v<X.Y.Z> ready. ship?` | tap `ship` / `hold` |
+| HALT — Ship | `🚀 PR #N <scope> merged. v<X.Y.Z> ready to publish. ship?` | tap `ship` / `hold` |
 
-Tap → cycle resumes. Tap "hold" → exit, cycle outcome `halt_feature_merge` / `halt_release`.
+The feature PR is **auto-merged** once CI is green AND all gates pass (no halt — gates already vetted content). The only mid-cycle halt is at the irreversible release-publish step. Tap → release PR merges, GoReleaser publishes async. Tap "hold" → exit, cycle outcome `halt_release`.
+
+For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trigger release-please, cycle ends after feature merge.
 
 ### Chain-breaking halts (rare — exit and wait for human)
 
@@ -126,8 +127,7 @@ One line per cycle, append-only:
 | `halt_merge_conflict` | Step 0B "resolve" hit a non-union conflict |
 | `halt_pre_merge_blocker` | Pre-merge gate found a BLOCKER finding |
 | `halt_ci_red` | CI failed |
-| `halt_feature_merge` | User replied non-ship to feature halt |
-| `halt_release` | User replied non-ship to release halt |
+| `halt_release` | User replied non-ship to the single ship halt (feature is auto-merged before this halt) |
 | `halt_no_response` | Phone halt timed out (4 hr default) |
 | `halt_cycle_timeout` | Cycle exceeded wall-clock cap |
 | `skip_in_progress` | Step 0a found a recent lock; another `/auto-iter` is running. **Do NOT increment cycle counter.** |
@@ -226,5 +226,5 @@ jq -s 'map(select(.step | startswith("step2_halt")) | .duration_ms / 1000)' \
 - **Manual review of every diff** — design-judge + pre-merge gate are the firewall. If those gates pass, the loop trusts and ships. (Tighten the gates if drift appears.)
 - **Auto-resolution of merge conflicts beyond the union rule** — if a real conflict surfaces (during `resolve` of an overlapping PR), the cycle halts.
 - **Brainstorming on autopilot** — brainstorm mode requires phone interaction.
-- **Auto-release without halt** — every release goes through HALT 2.
+- **Auto-release without halt** — every release goes through the ship halt (the only halt left in the clean path).
 - **Compaction inside the cycle** — Claude's automatic context management handles this; the cycle doesn't force `/compact`.

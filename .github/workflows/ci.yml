@@ -13,6 +13,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    if: github.head_ref != 'release-please--branches--main'
     steps:
       - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
         with:
@@ -38,6 +39,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    if: github.head_ref != 'release-please--branches--main'
     steps:
       - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
         with:
@@ -50,6 +52,15 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Cache golangci-lint
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/golangci-lint
+          key: golangci-lint-${{ runner.os }}-${{ hashFiles('.golangci.yml', '.golangci.yaml') }}-v2.11.4
+          restore-keys: |
+            golangci-lint-${{ runner.os }}-
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9
         with:
@@ -59,6 +70,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    if: github.head_ref != 'release-please--branches--main'
     steps:
       - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
         with:
