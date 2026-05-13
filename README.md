@@ -205,11 +205,11 @@ bitbottle pipeline steps MYWORKSPACE/my-service {pipeline-uuid}
 bitbottle pipeline logs  MYWORKSPACE/my-service {pipeline-uuid} {step-uuid}
 
 # Repository-level pipeline variables (upsert by KEY):
-bitbottle pipeline variable list   MYWORKSPACE/my-service
-bitbottle pipeline variable set    MYWORKSPACE/my-service DEPLOY_ENV prod
-echo "$TOKEN" | bitbottle pipeline variable set MYWORKSPACE/my-service \
+bitbottle variable list   MYWORKSPACE/my-service
+bitbottle variable set    MYWORKSPACE/my-service DEPLOY_ENV prod
+echo "$TOKEN" | bitbottle variable set MYWORKSPACE/my-service \
   API_TOKEN --body=- --secured
-bitbottle pipeline variable delete MYWORKSPACE/my-service DEPLOY_ENV --confirm
+bitbottle variable delete MYWORKSPACE/my-service DEPLOY_ENV --confirm
 ```
 
 Secured variables redact their value on read (TTY column shows
