@@ -168,6 +168,10 @@ bitbottle pr activity 42 --json type,actor,createdAt,detail
 # PR commits
 bitbottle pr commits 42
 bitbottle pr commits 42 --json hash,message,author,date
+
+# PR files changed
+bitbottle pr files 42
+bitbottle pr files 42 --json status,path,additions,deletions
 ```
 
 ### Repos & Branches
