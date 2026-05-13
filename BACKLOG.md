@@ -376,6 +376,9 @@ Current state of every command area against gh feature parity:
 | BRANCH-RULE | **Cloud Branch Restriction Rules** | `branch-rule list [PROJECT/REPO]`, `branch-rule add [PROJECT/REPO] --kind KIND --pattern PATTERN`, `branch-rule delete [PROJECT/REPO] ID` — manage Cloud branch restrictions (require PR, prevent force-push, require approvals). Cloud: `GET/POST/DELETE /repositories/{ws}/{slug}/branch-restrictions`. Cloud only (Server has `branch protect` ✅). | Cloud | 2 | ✅ |
 | PIPELINE-SCHEDULE | **Pipeline Schedules** | `pipeline schedule list [PROJECT/REPO]`, `pipeline schedule create [PROJECT/REPO] --cron EXPR --branch BRANCH [--enabled]`, `pipeline schedule delete [PROJECT/REPO] ID` — manage scheduled pipeline triggers. Cloud: `GET/POST/DELETE /repositories/{ws}/{slug}/pipelines_config/schedules`. Cloud only. | Cloud | 2 | ✅ |
 | COMMIT-FILE | **Files Changed in a Commit** | `commit files HASH [PROJECT/REPO]` — list files added/modified/deleted in a specific commit. Cloud: `GET /repositories/{ws}/{slug}/diffstat/{node}~1..{node}`. Server: `GET /rest/api/1.0/projects/{ns}/repos/{slug}/commits/{commitId}/changes`. Both backends. Useful for agents inspecting specific commits. | Both | 2 | ✅ |
+| PR-COMMITS | **PR Commit List** | `pr commits PR_ID [PROJECT/REPO]` — list commits included in a pull request. Cloud: `GET /repositories/{ws}/{slug}/pullrequests/{id}/commits` (paginated). Server: `GET /rest/api/1.0/projects/{ns}/repos/{slug}/pull-requests/{id}/commits` (paginated). Both backends. Useful for automation and code review bots. | Both | 2 | 🔲 |
+| PR-FILES | **PR Changed Files** | `pr files PR_ID [PROJECT/REPO]` — list files changed in a pull request. Cloud: `GET /repositories/{ws}/{slug}/pullrequests/{id}/diffstat` (paginated). Server: `GET /rest/api/1.0/projects/{ns}/repos/{slug}/pull-requests/{id}/changes` (paginated). Reuses `DiffStatEntry` domain type. Both backends. | Both | 2 | 🔲 |
+| REPO-WATCHER | **Repository Watchers** | `repo watcher list [PROJECT/REPO]` — list users watching a repository. Cloud: `GET /repositories/{ws}/{slug}/watchers` (paginated). Server: `GET /rest/api/1.0/projects/{ns}/repos/{slug}/watchers` (paginated). Both backends. | Both | 2 | 🔲 |
 
 ---
 
@@ -2589,3 +2592,6 @@ Print `"already up to date"` if version matches.
 | 46 | **BRANCH-RULE** Cloud Branch Restriction Rules | DevOps: automate branch protection rules. Cloud only (Server uses `branch protect`). |
 | 47 | **PIPELINE-SCHEDULE** Pipeline Schedules | CI automation: manage scheduled pipeline runs. Cloud only. |
 | 48 | **COMMIT-FILE** Files Changed in a Commit | Agent primitive: list changed files per commit. Both backends. |
+| 49 | **PR-COMMITS** PR Commit List | Agent primitive: list commits in a PR. Both backends. Complements `pr view` and diff tools. |
+| 50 | **PR-FILES** PR Changed Files | Agent primitive: list files changed in a PR. Both backends. Enables agent code-review workflows. |
+| 51 | **REPO-WATCHER** Repository Watchers | Discovery: list who's watching a repo. Both backends. |
