@@ -19,8 +19,8 @@ func NewCmdVariable(f *factory.Factory) *cobra.Command {
 		Short:      "Manage repository-level pipeline variables (Cloud only)",
 		Deprecated: "use `bitbottle variable --scope repository` instead",
 	}
-	cmd.AddCommand(cmdList.NewCmdList(f, nil))    //nolint:staticcheck
-	cmd.AddCommand(cmdSet.NewCmdSet(f, nil))     //nolint:staticcheck
+	cmd.AddCommand(cmdList.NewCmdList(f, nil))     //nolint:staticcheck
+	cmd.AddCommand(cmdSet.NewCmdSet(f, nil))       //nolint:staticcheck
 	cmd.AddCommand(cmdDelete.NewCmdDelete(f, nil)) //nolint:staticcheck
 	return cmd
 }
