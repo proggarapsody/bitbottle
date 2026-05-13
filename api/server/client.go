@@ -7,7 +7,9 @@ import (
 	"io"
 	"net/url"
 	"strconv"
+	"sync"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
 
@@ -39,6 +41,10 @@ type Client struct {
 	// GetCurrentUser to call GET /users/{slug} instead of GET /users/~ because
 	// Bitbucket Server does not recognise "~" as a self-reference.
 	userSlug string
+	// versionOnce guards the one-time fetch of the server version.
+	versionOnce sync.Once
+	// cachedVersion holds the parsed server version after the first successful fetch.
+	cachedVersion backend.ServerVersion
 }
 
 // NewClient constructs a Client.
