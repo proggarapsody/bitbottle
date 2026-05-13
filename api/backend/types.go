@@ -690,6 +690,21 @@ type PermissionSubject struct {
 	DisplayName string // populated on read; ignored on write
 }
 
+// LoggingConfig is the domain representation of the Bitbucket Server / Data
+// Center logging configuration. Level is one of DEBUG, INFO, WARN, ERROR.
+// Async controls whether log events are written asynchronously.
+// Persistent, when true, directs SetLoggingConfig to write to
+// log4j.properties so the change survives restarts; false = runtime-only.
+type LoggingConfig struct {
+	Level      string // DEBUG | INFO | WARN | ERROR
+	Async      bool
+	Persistent bool // write-only flag; ignored in GetLoggingConfig response
+}
+
+// LoggingConfigInput is the upsert payload for SetLoggingConfig. It mirrors
+// LoggingConfig; the alias exists so the interface signature stays explicit.
+type LoggingConfigInput = LoggingConfig
+
 // PermissionGrant pairs a subject (user or group) with a permission level.
 // Permission values:
 //
