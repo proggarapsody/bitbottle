@@ -175,6 +175,9 @@ type FakeClient struct {
 	ListDeployKeysFn  func(ns, slug string) ([]backend.DeployKey, error)
 	AddDeployKeyFn    func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error)
 	DeleteDeployKeyFn func(ns, slug string, id int) error
+
+	// Pipeline trigger methods (Cloud-only; satisfies backend.PipelineTriggerClient when set)
+	TriggerPipelineFn func(ns, slug string, input backend.PipelineTriggerInput) (backend.PipelineTriggerResult, error)
 }
 
 // Compile-time interface check.
@@ -1230,4 +1233,16 @@ func (c *FakeClient) DeleteDeployKey(ns, slug string, id int) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteDeployKey; set DeleteDeployKeyFn in your test")
 	}
 	return nil
+}
+
+// ── PipelineTriggerClient ────────────────────────────────────────────────────
+
+func (c *FakeClient) TriggerPipeline(ns, slug string, input backend.PipelineTriggerInput) (backend.PipelineTriggerResult, error) {
+	if c.TriggerPipelineFn != nil {
+		return c.TriggerPipelineFn(ns, slug, input)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.TriggerPipeline; set TriggerPipelineFn in your test")
+	}
+	return backend.PipelineTriggerResult{}, nil
 }

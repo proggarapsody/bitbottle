@@ -140,15 +140,21 @@ bitbottle browse [PROJECT/REPO] src/main.go      # file in current branch
 
 # Watch a Cloud pipeline until it completes (exits 0) or fails (exits 1)
 bitbottle pipeline watch PROJECT/REPO UUID [--interval 5]
+
+# Trigger a Bitbucket Cloud pipeline on a branch (Cloud only)
+bitbottle pipeline trigger [PROJECT/REPO] --branch BRANCH [--variable KEY=VALUE ...]
+# --variable is repeatable; omit --branch to use the current git branch
 ```
 
-MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`.
+MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`, `trigger_pipeline`.
 
 Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployment`, `list_environments`, `create_environment`, `delete_environment`. See `references/deployment.md`.
 
 Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `variable_delete` — each accepts `scope` (repository/workspace/deployment) and `env_uuid` (required for deployment scope). See `references/variable.md`.
 
 Deploy key MCP tools (both backends): `list_deploy_keys`, `add_deploy_key`, `delete_deploy_key`. See `references/deploy-key.md`.
+
+Pipeline trigger MCP tool (Cloud only): `trigger_pipeline` — accepts `repo` (WORKSPACE/REPO), `branch`, and optional `variables` (comma-separated `key=value` pairs).
 
 ## PR review quick-reference
 
