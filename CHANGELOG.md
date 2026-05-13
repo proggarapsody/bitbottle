@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.57.0](https://github.com/proggarapsody/bitbottle/compare/v1.56.1...v1.57.0) (2026-05-13)
+
+
+### Features
+
+* **pr:** add pr files command ([983862d](https://github.com/proggarapsody/bitbottle/commit/983862dccd7e16ba73f6e36c3701668b09013973))
+
 ## [1.56.1](https://github.com/proggarapsody/bitbottle/compare/v1.56.0...v1.56.1) (2026-05-13)
 
 
