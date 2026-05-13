@@ -21,12 +21,15 @@ type Options struct {
 }
 
 // NewCmdDelete builds the `pipeline variable delete` cobra command.
+//
+// Deprecated: use `bitbottle variable delete --scope repository` instead.
 func NewCmdDelete(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "delete PROJECT/REPO KEY",
-		Short: "Delete a pipeline variable",
-		Args:  cobra.ExactArgs(2),
+		Use:        "delete PROJECT/REPO KEY",
+		Short:      "Delete a pipeline variable",
+		Deprecated: "use `bitbottle variable delete --scope repository` instead",
+		Args:       cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {

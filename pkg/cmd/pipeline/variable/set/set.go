@@ -26,13 +26,18 @@ type Options struct {
 }
 
 // NewCmdSet builds the `pipeline variable set` cobra command.
+//
+// Deprecated: use `bitbottle variable set --scope repository` instead.
 func NewCmdSet(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "set PROJECT/REPO KEY [VALUE]",
-		Short: "Create or update a pipeline variable (upsert by KEY)",
+		Use:        "set PROJECT/REPO KEY [VALUE]",
+		Short:      "Create or update a pipeline variable (upsert by KEY)",
+		Deprecated: "use `bitbottle variable set --scope repository` instead",
 		Long: `Set a repository-level pipeline variable. The variable is upserted by KEY:
 created if absent, updated if present.
+
+DEPRECATED: use ` + "`bitbottle variable set --scope repository`" + ` instead.
 
 The value can be supplied as the third positional argument, via --body, or by
 passing --body=- to read the value from standard input. Reading from stdin is
