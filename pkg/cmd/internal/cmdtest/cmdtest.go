@@ -64,3 +64,9 @@ type NoDeployKeyFake struct {
 type NoDefaultReviewerFake struct {
 	backend.Client
 }
+
+// NoSSHKeyFake wraps backend.Client without implementing
+// backend.SSHKeyClient — simulates a Bitbucket Server backend.
+type NoSSHKeyFake struct {
+	backend.Client
+}

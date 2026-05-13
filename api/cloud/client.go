@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/url"
 	"regexp"
+	"sync"
 
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
@@ -25,7 +26,9 @@ type HTTPClient = httpx.Doer
 
 // Client is the Bitbucket Cloud HTTP client.
 type Client struct {
-	http *httpx.Transport
+	http             *httpx.Transport
+	cachedUsername   string
+	cachedUsernameMu sync.Mutex
 }
 
 // NewClient constructs a Cloud Client.
