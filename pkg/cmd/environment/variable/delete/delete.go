@@ -18,12 +18,15 @@ type Options struct {
 }
 
 // NewCmdDelete builds the `environment variable delete` cobra command.
+//
+// Deprecated: use `bitbottle variable delete --scope deployment --env ENV-UUID` instead.
 func NewCmdDelete(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "delete PROJECT/REPO ENV-UUID VAR-UUID",
-		Short: "Delete an environment variable",
-		Args:  cobra.ExactArgs(3),
+		Use:        "delete PROJECT/REPO ENV-UUID VAR-UUID",
+		Short:      "Delete an environment variable",
+		Deprecated: "use `bitbottle variable delete --scope deployment --env ENV-UUID` instead",
+		Args:       cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {

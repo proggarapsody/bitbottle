@@ -5,8 +5,8 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/deployment/shared"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	varshared "github.com/proggarapsody/bitbottle/pkg/cmd/variable/shared"
 )
 
 // Options holds parsed flags for `environment variable list`.
@@ -19,12 +19,15 @@ type Options struct {
 }
 
 // NewCmdList builds the `environment variable list` cobra command.
+//
+// Deprecated: use `bitbottle variable list --scope deployment --env ENV-UUID` instead.
 func NewCmdList(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "list PROJECT/REPO ENV-UUID",
-		Short: "List environment variables",
-		Args:  cobra.ExactArgs(2),
+		Use:        "list PROJECT/REPO ENV-UUID",
+		Short:      "List environment variables",
+		Deprecated: "use `bitbottle variable list --scope deployment --env ENV-UUID` instead",
+		Args:       cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
@@ -47,17 +50,17 @@ func listRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	dc, err := backend.AsDeploymentClient(client, ref.Host)
+	ops, err := varshared.ResolveVariableOps("deployment", client, ref.Host, ref.Project, ref.Slug, opts.Args[1])
 	if err != nil {
 		return err
 	}
-	vars, err := dc.ListEnvVariables(ref.Project, ref.Slug, opts.Args[1])
+	vars, err := ops.ListVariables()
 	if err != nil {
 		return err
 	}
-	p := shared.EnvVariableFields(f, opts.Output)
+	p := varshared.VariableFields(f, opts.Output)
 	for _, v := range vars {
-		p.AddItem(v)
+		p.AddItem(backend.PipelineVariable{UUID: v.UUID, Key: v.Key, Value: v.Value, Secured: v.Secured})
 	}
 	return p.Render()
 }

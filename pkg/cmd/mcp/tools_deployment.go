@@ -86,48 +86,4 @@ func registerDeploymentTools(s *mcpserver.MCPServer, h *handlers) {
 		h.deleteEnvironment,
 	)
 
-	s.AddTool(
-		mcplib.NewTool("list_env_variables",
-			mcplib.WithDescription("List variables for a deployment environment (Bitbucket Cloud only)"),
-			optHostname,
-			reqRepo,
-			reqEnvUUID,
-		),
-		h.listEnvVariables,
-	)
-
-	s.AddTool(
-		mcplib.NewTool("set_env_variable",
-			mcplib.WithDescription("Create or update a deployment environment variable (Bitbucket Cloud only)"),
-			optHostname,
-			reqRepo,
-			reqEnvUUID,
-			mcplib.WithString("key",
-				mcplib.Description("Variable key"),
-				mcplib.Required(),
-			),
-			mcplib.WithString("value",
-				mcplib.Description("Variable value"),
-				mcplib.Required(),
-			),
-			mcplib.WithBoolean("secured",
-				mcplib.Description("Mark as secured (value redacted on read)"),
-			),
-		),
-		h.setEnvVariable,
-	)
-
-	s.AddTool(
-		mcplib.NewTool("delete_env_variable",
-			mcplib.WithDescription("Delete a deployment environment variable by UUID (destructive; Bitbucket Cloud only)"),
-			optHostname,
-			reqRepo,
-			reqEnvUUID,
-			mcplib.WithString("key",
-				mcplib.Description("Variable UUID to delete"),
-				mcplib.Required(),
-			),
-		),
-		h.deleteEnvVariable,
-	)
 }

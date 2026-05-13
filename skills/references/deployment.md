@@ -46,21 +46,21 @@ the command errors out. Confirm in interactive sessions when prompted.
 
 ## Environment Variables
 
+**`environment variable *` is deprecated.** Use `bitbottle variable --scope deployment --env ENV-UUID` instead:
+
+```bash
+bitbottle variable list   WORKSPACE/REPO --scope deployment --env ENV-UUID
+bitbottle variable set    WORKSPACE/REPO KEY [VALUE] --scope deployment --env ENV-UUID [--secured]
+bitbottle variable delete WORKSPACE/REPO KEY --scope deployment --env ENV-UUID --confirm
+```
+
+The old commands still work but print a deprecation warning:
+
 ```bash
 bitbottle environment variable list   WORKSPACE/REPO ENV-UUID
 bitbottle environment variable set    WORKSPACE/REPO ENV-UUID KEY VALUE [--secured]
 bitbottle environment variable delete WORKSPACE/REPO ENV-UUID VAR-UUID
 ```
-
-`environment variable list` shows variables for an environment. Secured
-variable values are shown as `<secured>`.
-
-`environment variable set` creates or updates a variable by key. Pass
-`--secured` to mark the value as secured (it will be redacted on
-subsequent reads).
-
-`environment variable delete` removes a variable by UUID (not by key).
-Obtain the UUID first with `environment variable list --json uuid,key`.
 
 **JSON fields**: `uuid`, `key`, `value`, `secured`
 
@@ -73,9 +73,6 @@ Obtain the UUID first with `environment variable list --json uuid,key`.
 | `list_environments` | List environments; `repo` |
 | `create_environment` | Create environment; `repo`, `name`, `type`, optional `rank` |
 | `delete_environment` | Delete environment; `repo`, `env_uuid` |
-| `list_env_variables` | List variables (secured values blanked); `repo`, `env_uuid` |
-| `set_env_variable` | Upsert variable; `repo`, `env_uuid`, `key`, `value`, optional `secured` |
-| `delete_env_variable` | Delete variable by UUID; `repo`, `env_uuid`, `key` (the variable UUID) |
+Use the unified `variable_list`, `variable_set`, `variable_delete` MCP tools with `scope=deployment` and `env_uuid` for deployment environment variables. See `variable.md`.
 
-Secured variable values are **never returned** by `list_env_variables` or
-`set_env_variable` — the value field is always blank for secured vars.
+Secured variable values are **never returned** — the value field is always blank for secured vars.
