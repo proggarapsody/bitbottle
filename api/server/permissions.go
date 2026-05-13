@@ -96,36 +96,14 @@ func (c *Client) ListProjectPermissions(_ context.Context, project string) ([]ba
 	userPath := fmt.Sprintf("/projects/%s/permissions/users", url.PathEscape(project))
 	groupPath := fmt.Sprintf("/projects/%s/permissions/groups", url.PathEscape(project))
 
-	userGrants, err := paging.Collect(c.http, userPath, func(body []byte) ([]backend.PermissionGrant, error) {
-		var page PagedResponse[wirePermUser]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		out := make([]backend.PermissionGrant, 0, len(page.Values))
-		for _, w := range page.Values {
-			out = append(out, w.toGrant())
-		}
-		return out, nil
-	}, 0)
+	userGrants, err := c.collectUserGrants(userPath)
 	if err != nil {
 		return nil, err
 	}
-
-	groupGrants, err := paging.Collect(c.http, groupPath, func(body []byte) ([]backend.PermissionGrant, error) {
-		var page PagedResponse[wirePermGroup]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		out := make([]backend.PermissionGrant, 0, len(page.Values))
-		for _, w := range page.Values {
-			out = append(out, w.toGrant())
-		}
-		return out, nil
-	}, 0)
+	groupGrants, err := c.collectGroupGrants(groupPath)
 	if err != nil {
 		return nil, err
 	}
-
 	return mergeAndSort(userGrants, groupGrants), nil
 }
 
@@ -156,36 +134,14 @@ func (c *Client) ListRepoPermissions(_ context.Context, project, slug string) ([
 	userPath := fmt.Sprintf("/projects/%s/repos/%s/permissions/users", url.PathEscape(project), url.PathEscape(slug))
 	groupPath := fmt.Sprintf("/projects/%s/repos/%s/permissions/groups", url.PathEscape(project), url.PathEscape(slug))
 
-	userGrants, err := paging.Collect(c.http, userPath, func(body []byte) ([]backend.PermissionGrant, error) {
-		var page PagedResponse[wirePermUser]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		out := make([]backend.PermissionGrant, 0, len(page.Values))
-		for _, w := range page.Values {
-			out = append(out, w.toGrant())
-		}
-		return out, nil
-	}, 0)
+	userGrants, err := c.collectUserGrants(userPath)
 	if err != nil {
 		return nil, err
 	}
-
-	groupGrants, err := paging.Collect(c.http, groupPath, func(body []byte) ([]backend.PermissionGrant, error) {
-		var page PagedResponse[wirePermGroup]
-		if err := json.Unmarshal(body, &page); err != nil {
-			return nil, err
-		}
-		out := make([]backend.PermissionGrant, 0, len(page.Values))
-		for _, w := range page.Values {
-			out = append(out, w.toGrant())
-		}
-		return out, nil
-	}, 0)
+	groupGrants, err := c.collectGroupGrants(groupPath)
 	if err != nil {
 		return nil, err
 	}
-
 	return mergeAndSort(userGrants, groupGrants), nil
 }
 
@@ -209,6 +165,38 @@ func (c *Client) RevokeRepoPermission(_ context.Context, project, slug string, s
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+
+// collectUserGrants pages through a users-permissions endpoint and returns
+// all grants as a []backend.PermissionGrant slice.
+func (c *Client) collectUserGrants(path string) ([]backend.PermissionGrant, error) {
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.PermissionGrant, error) {
+		var page PagedResponse[wirePermUser]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.PermissionGrant, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, w.toGrant())
+		}
+		return out, nil
+	}, 0)
+}
+
+// collectGroupGrants pages through a groups-permissions endpoint and returns
+// all grants as a []backend.PermissionGrant slice.
+func (c *Client) collectGroupGrants(path string) ([]backend.PermissionGrant, error) {
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.PermissionGrant, error) {
+		var page PagedResponse[wirePermGroup]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.PermissionGrant, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, w.toGrant())
+		}
+		return out, nil
+	}, 0)
+}
 
 func subjectEndpoint(s backend.PermissionSubject) string {
 	if s.Kind == "group" {

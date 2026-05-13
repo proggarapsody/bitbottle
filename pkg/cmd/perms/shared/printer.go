@@ -64,5 +64,5 @@ func SubjectFromFlags(userSlug, groupName string) (backend.PermissionSubject, er
 type subjectFlagError struct{}
 
 func (*subjectFlagError) Error() string {
-	return "specify exactly one of --user or --group"
+	return "specify exactly one of --user or --group (e.g. --user alice or --group devs)"
 }

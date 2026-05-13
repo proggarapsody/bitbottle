@@ -140,7 +140,7 @@ func TestProjectGrant_DowngradeWarning_Rejected(t *testing.T) {
 	assert.Contains(t, out.String(), "Aborted")
 }
 
-func TestProjectGrant_Force_SkipsDowngradePrompt(t *testing.T) {
+func TestProjectGrant_Confirm_SkipsDowngradePrompt(t *testing.T) {
 	t.Parallel()
 	var grantCalled bool
 	fake := &testhelpers.FakeClient{
@@ -158,8 +158,32 @@ func TestProjectGrant_Force_SkipsDowngradePrompt(t *testing.T) {
 	factorytest.UseBackend(f, fake)
 
 	cmd := grant.NewCmdGrant(f, nil)
-	cmd.SetArgs([]string{"MYPROJ", "PROJECT_READ", "--user", "alice", "--force"})
+	cmd.SetArgs([]string{"MYPROJ", "PROJECT_READ", "--user", "alice", "--confirm"})
 	require.NoError(t, cmd.Execute())
 
 	assert.True(t, grantCalled)
+}
+
+func TestProjectGrant_NonTTY_DowngradeReturnsError(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListProjectPermissionsFn: func(_ context.Context, _ string) ([]backend.PermissionGrant, error) {
+			return []backend.PermissionGrant{
+				{Subject: backend.PermissionSubject{Kind: "user", Slug: "alice"}, Permission: "PROJECT_ADMIN"},
+			}, nil
+		},
+		GrantProjectPermissionFn: func(_ context.Context, _ string, _ backend.PermissionSubject, _ string) error {
+			return nil
+		},
+	}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: serverConfig, BackendType: "server"})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams.IsStdoutTTY = func() bool { return false }
+
+	cmd := grant.NewCmdGrant(f, nil)
+	cmd.SetArgs([]string{"MYPROJ", "PROJECT_READ", "--user", "alice"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "downgrade detected")
+	assert.Contains(t, err.Error(), "--confirm")
 }

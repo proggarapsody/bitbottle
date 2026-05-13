@@ -92,3 +92,27 @@ func TestRepoGrant_InvalidRepoArg(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "PROJECT/REPO")
 }
+
+func TestRepoGrant_NonTTY_DowngradeReturnsError(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		ListRepoPermissionsFn: func(_ context.Context, _, _ string) ([]backend.PermissionGrant, error) {
+			return []backend.PermissionGrant{
+				{Subject: backend.PermissionSubject{Kind: "user", Slug: "carol"}, Permission: "REPO_ADMIN"},
+			}, nil
+		},
+		GrantRepoPermissionFn: func(_ context.Context, _, _ string, _ backend.PermissionSubject, _ string) error {
+			return nil
+		},
+	}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: serverConfig, BackendType: "server"})
+	factorytest.UseBackend(f, fake)
+	f.IOStreams.IsStdoutTTY = func() bool { return false }
+
+	cmd := grant.NewCmdGrant(f, nil)
+	cmd.SetArgs([]string{"MYPROJ/my-repo", "REPO_READ", "--user", "carol"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "downgrade detected")
+	assert.Contains(t, err.Error(), "--confirm")
+}

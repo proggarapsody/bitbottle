@@ -18,7 +18,7 @@ type Options struct {
 	Hostname  string
 	UserSlug  string
 	GroupName string
-	Force     bool
+	Confirm   bool
 	// Args[0] = PROJECT/REPO, Args[1] = PERM
 	Args []string
 }
@@ -34,7 +34,7 @@ func NewCmdGrant(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 PERM must be one of: REPO_READ, REPO_WRITE, REPO_ADMIN.
 
 If the subject already has a higher permission, a downgrade warning is printed
-and confirmation is requested (--force or non-TTY skips the prompt).`,
+and confirmation is requested (pass --confirm to skip the prompt in non-interactive mode).`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
@@ -47,7 +47,7 @@ and confirmation is requested (--force or non-TTY skips the prompt).`,
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	cmd.Flags().StringVar(&opts.UserSlug, "user", "", "User slug to grant the permission to")
 	cmd.Flags().StringVar(&opts.GroupName, "group", "", "Group name to grant the permission to")
-	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip downgrade confirmation prompt")
+	cmd.Flags().BoolVar(&opts.Confirm, "confirm", false, "Skip downgrade confirmation prompt")
 	return cmd
 }
 
@@ -76,11 +76,14 @@ func grantRun(f *factory.Factory, opts *Options) error {
 	}
 
 	// Downgrade warning.
-	if !opts.Force && f.IOStreams.IsStdoutTTY() {
+	if !opts.Confirm {
 		existing, listErr := pc.ListRepoPermissions(context.Background(), project, slug)
 		if listErr == nil {
 			if current, found := findGrant(existing, subject); found {
 				if isDowngrade(current, perm) {
+					if !f.IOStreams.IsStdoutTTY() {
+						return fmt.Errorf("downgrade detected; pass --confirm to proceed")
+					}
 					fmt.Fprintf(f.IOStreams.Out,
 						"Warning: %s %s currently has %s; granting %s will downgrade. Continue? [y/N]: ",
 						subject.Kind, subjectLabel(subject), current, perm,

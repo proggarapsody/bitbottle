@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 
+	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -175,26 +177,31 @@ func TestMCP_RevokeRepoPermission_OK(t *testing.T) {
 
 // ── noPermsClient returns unsupported ────────────────────────────────────────
 
-// noPermsClient wraps backend.Client without satisfying PermissionsClient,
+// noPermsClientWrapper wraps backend.Client without satisfying PermissionsClient,
 // simulating a Cloud backend invocation.
 type noPermsClientWrapper struct{ backend.Client }
 
 func TestMCP_ListProjectPermissions_Unsupported(t *testing.T) {
 	t.Parallel()
-	type noPermsClient struct{ backend.Client }
-	h := newHandlersWithFake(t, singleHostConfig, nil)
-	// Swap backend to one that doesn't satisfy PermissionsClient.
-	from := noPermsClientWrapper{Client: &testhelpers.FakeClient{T: t}}
-	from.Client = &testhelpers.FakeClient{T: t}
-	// We can't easily replace the backend at the MCP layer without a full
-	// factory override, but we can verify the AsPermissionsClient type check
-	// rejects the wrapper. This test doubles as a compile-time assertion that
-	// noPermsClientWrapper does NOT implement PermissionsClient.
-	_, err := backend.AsPermissionsClient(from, "git.example.com")
-	require.Error(t, err)
+	// Build a handlers instance whose backend does NOT implement PermissionsClient.
+	// noPermsClientWrapper embeds backend.Client (interface), which excludes the
+	// PermissionsClient methods — so AsPermissionsClient will return ErrUnsupportedOnHost.
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	wrapper := noPermsClientWrapper{Client: &testhelpers.FakeClient{T: t}}
+	factorytest.UseBackend(f, wrapper)
+	h := newHandlers(f)
 
-	var de *backend.DomainError
-	require.ErrorAs(t, err, &de)
-	assert.ErrorIs(t, de.Kind, backend.ErrUnsupportedOnHost)
-	_ = h
+	result, err := h.listProjectPermissions(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+	}))
+	require.NoError(t, err) // handler returns nil error; wraps in error result
+	require.NotNil(t, result)
+	assert.True(t, result.IsError, "expected error result for unsupported backend")
+	// The error envelope should contain the host.unsupported code and
+	// a mention of "permissions" (the feature name).
+	require.Len(t, result.Content, 1)
+	text, ok := result.Content[0].(mcplib.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, text.Text, "host.unsupported")
+	assert.Contains(t, text.Text, "permissions")
 }
