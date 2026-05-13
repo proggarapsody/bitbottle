@@ -5,7 +5,7 @@ description: >
   and Cloud. Load when the user asks about bitbottle commands, auth setup, PRs,
   repos, branches, tags, commits, pipelines, or why a command failed. Load even
   if the user just says "bitbottle", mentions "Bitbucket", or pastes a bitbottle
-  error message. Verified against bitbottle 1.54.0. <!-- x-release-please-version -->
+  error message. Verified against bitbottle 1.55.0. <!-- x-release-please-version -->
 ---
 
 # bitbottle CLI
@@ -65,7 +65,7 @@ them speculatively.
    bogus value: `bitbottle <cmd> --json X` — the error lists them.
 5. **Check the version on behavior mismatches.** If a command behaves
    differently from this file, run `bitbottle --version`. This skill
-   was last verified against **1.54.0**. <!-- x-release-please-version -->
+   was last verified against **1.55.0**. <!-- x-release-please-version -->
 
 ## Repo targeting (high-frequency)
 

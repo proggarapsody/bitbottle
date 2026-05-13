@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.55.0](https://github.com/proggarapsody/bitbottle/compare/v1.54.0...v1.55.0) (2026-05-13)
+
+
+### Features
+
+* **commit:** add commit files command (list changed files) ([71f5001](https://github.com/proggarapsody/bitbottle/commit/71f500168eedd4e50d1b4cdaa63ee3d4fa245e75))
+
 ## [1.54.0](https://github.com/proggarapsody/bitbottle/compare/v1.53.0...v1.54.0) (2026-05-13)
 
 
