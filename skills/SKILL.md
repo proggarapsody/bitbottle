@@ -84,7 +84,7 @@ command in that checkout runs without `-R`.
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only commands | `pipeline *`, `pr request-changes`, `pr comment resolve` | — |
-| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *`, `pr task resolve/reopen` |
+| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *`, `pr task resolve/reopen`, `pr comment react/unreact`, `pr comment list --reactions` |
 
 Custom-hostname Cloud Data Center? Force routing in `hosts.yml`:
 `backend_type: cloud` (or `server`). See `references/auth.md`.
@@ -190,6 +190,31 @@ bitbottle pr task reopen  42 TASK_ID
 MCP tools: `list_pr_tasks` (`{pr_id, state}`), `create_pr_task`
 (`{pr_id, body, parent_comment_id}`), `resolve_pr_task` (`{pr_id, task_id}`),
 `reopen_pr_task` (`{pr_id, task_id}`).
+
+## PR comment reactions _(Server / DC only)_
+
+Emoji reactions on individual PR comments. Supported shortcodes: `thumbs_up`,
+`thumbs_down`, `heart`, `laugh`, `hooray`, `confused`. Colon-wrapped GitHub
+forms (`:thumbsup:`, `:heart:`) are normalised automatically.
+
+```bash
+# Add or remove a reaction
+bitbottle pr comment react   42 COMMENT_ID --emoji thumbs_up
+bitbottle pr comment unreact 42 COMMENT_ID --emoji thumbs_up
+
+# List comments with their reactions (fetched concurrently, up to 4 workers)
+bitbottle pr comment list 42 --reactions
+```
+
+The `--reactions` flag adds a REACTIONS column rendered as emoji glyphs
+(`👍×2 ❤️×1`). With `--json reactions` the field is a typed array of
+`{emoji, users[]}`. Cloud returns `host.unsupported` for all three commands.
+
+MCP tools: `list_comment_reactions` (`{project, repo, pr_id, comment_id}`),
+`add_comment_reaction` (`{project, repo, pr_id, comment_id, emoji}`),
+`remove_comment_reaction` (`{project, repo, pr_id, comment_id, emoji}`).
+`list_pr_comments` also accepts `include_reactions: true` to fetch reactions
+in a single call.
 
 ## Code Insights quick-reference _(Server / DC only)_
 

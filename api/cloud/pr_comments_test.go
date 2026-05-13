@@ -291,6 +291,27 @@ func TestCloudClient_AddPRComment_IgnoresSeverity(t *testing.T) {
 	assert.False(t, hasSeverity, "Cloud must not forward Severity to the API")
 }
 
+// TestCloudClient_DoesNotImplementCommentReactor verifies that the Cloud client
+// does NOT satisfy CommentReactor, so AsCommentReactor returns
+// ErrUnsupportedOnHost instead of succeeding silently.
+func TestCloudClient_DoesNotImplementCommentReactor(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("no HTTP call expected; got %s %s", r.Method, r.URL.Path)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	_, err := backend.AsCommentReactor(client, "bitbucket.org")
+	require.Error(t, err)
+
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.ErrorIs(t, de, backend.ErrUnsupportedOnHost)
+	assert.Equal(t, backend.CodeHostUnsupported, de.Code)
+}
+
 // TestCloudClient_DoesNotImplementPRCommentStateSetter verifies that the Cloud
 // client does NOT satisfy PRCommentStateSetter, so AsPRCommentStateSetter
 // returns ErrUnsupportedOnHost instead of succeeding silently.

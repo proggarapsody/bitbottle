@@ -28,6 +28,9 @@ bitbottle pr comment add  42 --body "agreed" --parent 1234     # reply to thread
 bitbottle pr comment edit 42 1234 --body "..."
 bitbottle pr comment delete 42 1234
 bitbottle pr comment resolve 42 1234                          # Cloud only
+bitbottle pr comment react   42 1234 --emoji thumbs_up        # Server/DC only; add emoji reaction
+bitbottle pr comment unreact 42 1234 --emoji thumbs_up        # Server/DC only; remove emoji reaction
+bitbottle pr comment list 42 --reactions                      # Server/DC only; fetch & show reactions column
 bitbottle pr task list   42 [--state open|resolved|all]      # Server/DC only; BLOCKER comments
 bitbottle pr task create 42 --body "TEXT" [--parent COMMENT_ID]
 bitbottle pr task resolve 42 TASK_ID
@@ -56,6 +59,15 @@ pass `--side old` to comment on the removed/old side of the diff.
 `pr comment resolve` is Cloud-only — Server/DC returns a typed
 `host.unsupported` because resolution lives on tasks, not regular
 comments.
+
+`pr comment react` / `pr comment unreact` are Server/DC-only. Supported
+emoji shortcodes: `thumbs_up`, `thumbs_down`, `heart`, `laugh`, `hooray`,
+`confused`. Colon-wrapped forms (`:thumbsup:`, `:heart:`) are automatically
+normalised. `pr comment list --reactions` fetches each comment's reactions
+concurrently (worker pool of 4) and renders them as emoji glyphs in the
+REACTIONS column (`👍×2 ❤️×1`). MCP tools: `list_comment_reactions`,
+`add_comment_reaction`, `remove_comment_reaction`; `list_pr_comments` also
+accepts `include_reactions: true`.
 
 `pr task` is Server/DC-only — Bitbucket Cloud has no task (BLOCKER comment)
 primitive. `pr task list` returns BLOCKER-severity comments and accepts

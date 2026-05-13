@@ -375,3 +375,220 @@ func TestPRCommentAdd_PropagatesAPIError(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "403")
 }
+
+// ── fakeReactorClient embeds FakeClient + CommentReactor ────────────────────
+
+type fakeReactorClient struct {
+	*testhelpers.FakeClient
+}
+
+var _ backend.CommentReactor = (*fakeReactorClient)(nil)
+
+func (c *fakeReactorClient) ListCommentReactions(ns, slug string, prID, commentID int) ([]backend.CommentReaction, error) {
+	if c.ListCommentReactionsFn != nil {
+		return c.ListCommentReactionsFn(ns, slug, prID, commentID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to fakeReactorClient.ListCommentReactions; set ListCommentReactionsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *fakeReactorClient) AddCommentReaction(ns, slug string, prID, commentID int, emoji string) error {
+	if c.AddCommentReactionFn != nil {
+		return c.AddCommentReactionFn(ns, slug, prID, commentID, emoji)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to fakeReactorClient.AddCommentReaction; set AddCommentReactionFn in your test")
+	}
+	return nil
+}
+
+func (c *fakeReactorClient) RemoveCommentReaction(ns, slug string, prID, commentID int, emoji string) error {
+	if c.RemoveCommentReactionFn != nil {
+		return c.RemoveCommentReactionFn(ns, slug, prID, commentID, emoji)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to fakeReactorClient.RemoveCommentReaction; set RemoveCommentReactionFn in your test")
+	}
+	return nil
+}
+
+// ── pr comment react ─────────────────────────────────────────────────────────
+
+func TestPRCommentReact_NormalisesAndCallsAPI(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug, gotEmoji string
+	var gotPRID, gotCommentID int
+	fake := &fakeReactorClient{
+		FakeClient: &testhelpers.FakeClient{
+			T: t,
+			AddCommentReactionFn: func(ns, slug string, prID, commentID int, emoji string) error {
+				gotNS, gotSlug, gotEmoji = ns, slug, emoji
+				gotPRID, gotCommentID = prID, commentID
+				return nil
+			},
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentReact(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "99", "--emoji", ":thumbsup:"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "thumbs_up", gotEmoji, "emoji should be normalised to underscore form")
+	assert.Equal(t, 42, gotPRID)
+	assert.Equal(t, 99, gotCommentID)
+	assert.NotEmpty(t, gotNS)
+	assert.NotEmpty(t, gotSlug)
+	assert.Empty(t, out.String(), "no output on success")
+}
+
+func TestPRCommentReact_RequiresEmoji(t *testing.T) {
+	t.Parallel()
+	fake := &fakeReactorClient{FakeClient: &testhelpers.FakeClient{T: t}}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentReact(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "99"})
+	err := cmd.Execute()
+	require.Error(t, err)
+}
+
+func TestPRCommentReact_UnsupportedOnCloud(t *testing.T) {
+	t.Parallel()
+	// Plain FakeClient does NOT implement CommentReactor.
+	fake := &testhelpers.FakeClient{T: t}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentReact(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "99", "--emoji", "heart"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not supported")
+}
+
+// ── pr comment unreact ───────────────────────────────────────────────────────
+
+func TestPRCommentUnreact_NormalisesAndCallsAPI(t *testing.T) {
+	t.Parallel()
+	var gotEmoji string
+	var gotPRID, gotCommentID int
+	fake := &fakeReactorClient{
+		FakeClient: &testhelpers.FakeClient{
+			T: t,
+			RemoveCommentReactionFn: func(ns, slug string, prID, commentID int, emoji string) error {
+				gotEmoji = emoji
+				gotPRID, gotCommentID = prID, commentID
+				return nil
+			},
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentUnreact(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "99", "--emoji", "thumbs_up"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "thumbs_up", gotEmoji)
+	assert.Equal(t, 42, gotPRID)
+	assert.Equal(t, 99, gotCommentID)
+	assert.Empty(t, out.String(), "no output on success")
+}
+
+func TestPRCommentUnreact_RequiresEmoji(t *testing.T) {
+	t.Parallel()
+	fake := &fakeReactorClient{FakeClient: &testhelpers.FakeClient{T: t}}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentUnreact(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "99"})
+	err := cmd.Execute()
+	require.Error(t, err)
+}
+
+// ── pr comment list --reactions ───────────────────────────────────────────────
+
+func TestPRCommentList_ReactionsFlag_FetchesAndRendersReactions(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 4, 24, 10, 0, 0, 0, time.UTC)
+	fake := &fakeReactorClient{
+		FakeClient: &testhelpers.FakeClient{
+			T: t,
+			ListPRCommentsFn: func(ns, slug string, id int) ([]backend.PRComment, error) {
+				return []backend.PRComment{
+					{ID: 1, Author: backend.User{Slug: "alice"}, Text: "LGTM", CreatedAt: now},
+					{ID: 2, Author: backend.User{Slug: "bob"}, Text: "nice", CreatedAt: now},
+				}, nil
+			},
+			ListCommentReactionsFn: func(ns, slug string, prID, commentID int) ([]backend.CommentReaction, error) {
+				if commentID == 1 {
+					return []backend.CommentReaction{
+						{Emoji: "thumbs_up", Users: []backend.User{{Slug: "bob"}}},
+					}, nil
+				}
+				return nil, nil
+			},
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--reactions"})
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	// In non-TTY mode the header row is suppressed, but the emoji glyph is always rendered.
+	assert.Contains(t, got, "👍", "thumbs_up should render as emoji glyph")
+}
+
+func TestPRCommentList_ReactionsFlag_JSONIncludesReactions(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 4, 24, 10, 0, 0, 0, time.UTC)
+	fake := &fakeReactorClient{
+		FakeClient: &testhelpers.FakeClient{
+			T: t,
+			ListPRCommentsFn: func(ns, slug string, id int) ([]backend.PRComment, error) {
+				return []backend.PRComment{
+					{ID: 1, Author: backend.User{Slug: "alice"}, Text: "LGTM", CreatedAt: now},
+				}, nil
+			},
+			ListCommentReactionsFn: func(ns, slug string, prID, commentID int) ([]backend.CommentReaction, error) {
+				return []backend.CommentReaction{
+					{Emoji: "heart", Users: []backend.User{{Slug: "carol"}}},
+				}, nil
+			},
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--reactions", "--json"})
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	assert.Contains(t, got, `"reactions"`)
+	assert.Contains(t, got, `"heart"`)
+	assert.Contains(t, got, `"carol"`)
+}
+
+func TestPRCommentList_ReactionsFlag_UnsupportedOnCloud(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 4, 24, 10, 0, 0, 0, time.UTC)
+	// Plain FakeClient does NOT implement CommentReactor.
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPRCommentsFn: func(ns, slug string, id int) ([]backend.PRComment, error) {
+			return []backend.PRComment{
+				{ID: 1, Author: backend.User{Slug: "alice"}, Text: "LGTM", CreatedAt: now},
+			}, nil
+		},
+	}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRCommentList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--reactions"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not supported")
+}

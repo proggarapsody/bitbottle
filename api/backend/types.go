@@ -220,6 +220,15 @@ type Commit struct {
 	WebURL    string
 }
 
+// CommentReaction is the domain representation of an emoji reaction on a
+// pull-request comment. Emoji is the canonical shortcode (underscore form):
+// "thumbs_up", "thumbs_down", "heart", "laugh", "hooray", "confused".
+// Users lists every user who reacted with that emoji.
+type CommentReaction struct {
+	Emoji string // canonical shortcode: thumbs_up | thumbs_down | heart | laugh | hooray | confused
+	Users []User // all users who reacted with this emoji
+}
+
 // PRComment is the domain representation of a comment on a pull request.
 // Inline is non-nil for inline (file:line) review comments and nil for
 // general PR comments. ParentID is 0 for top-level comments and the parent
@@ -232,6 +241,9 @@ type Commit struct {
 // "BLOCKER" for tasks and "" for regular comments. State is "OPEN" or
 // "RESOLVED" for tasks and "" for regular comments. Version is the
 // optimistic-lock token required by SetPRCommentState on Server.
+//
+// Reactions is only populated when explicitly requested (e.g. --reactions flag
+// or include_reactions MCP parameter). Server/DC only.
 type PRComment struct {
 	ID        int
 	Author    User
@@ -241,9 +253,10 @@ type PRComment struct {
 	Inline    *PRCommentInline
 	ParentID  int
 	Resolved  bool
-	Severity  string // "" | "BLOCKER" (Server task comments)
-	State     string // "" | "OPEN" | "RESOLVED" (Server task comments)
-	Version   int    // optimistic-lock token (Server only)
+	Severity  string            // "" | "BLOCKER" (Server task comments)
+	State     string            // "" | "OPEN" | "RESOLVED" (Server task comments)
+	Version   int               // optimistic-lock token (Server only)
+	Reactions []CommentReaction // only populated when explicitly requested; Server/DC only
 }
 
 // PRCommentInline anchors a PR comment to a file and line range in the diff.
