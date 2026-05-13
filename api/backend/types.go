@@ -184,6 +184,21 @@ type PipelineVariableInput struct {
 	Secured bool
 }
 
+// PipelineTriggerInput carries the parameters for triggering a pipeline via
+// the PipelineTriggerClient interface. Variables supplements the per-run
+// environment; each entry maps to a Bitbucket pipeline variable object.
+type PipelineTriggerInput struct {
+	Branch    string
+	Variables []PipelineVariable
+}
+
+// PipelineTriggerResult is returned by TriggerPipeline on success.
+type PipelineTriggerResult struct {
+	UUID  string `json:"uuid"`
+	State string `json:"state"`
+	Link  string `json:"link"`
+}
+
 // Tag is the domain representation of a repository tag.
 type Tag struct {
 	Name    string

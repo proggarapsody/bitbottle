@@ -8,6 +8,7 @@ import (
 	cmdLogs "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
 	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
 	cmdSteps "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/steps"
+	cmdTrigger "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/trigger"
 	cmdView "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/view"
 	cmdWatch "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/watch"
 )
@@ -30,6 +31,7 @@ directory.`,
 	cmd.AddCommand(cmdView.NewCmdView(f, nil))
 	cmd.AddCommand(cmdRun.NewCmdRun(f, nil))
 	cmd.AddCommand(cmdSteps.NewCmdSteps(f, nil))
+	cmd.AddCommand(cmdTrigger.NewCmdTrigger(f, nil))
 	cmd.AddCommand(cmdLogs.NewCmdLogs(f, nil))
 	cmd.AddCommand(cmdWatch.NewCmdWatch(f, nil))
 	return cmd
