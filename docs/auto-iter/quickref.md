@@ -52,7 +52,7 @@ Default to **Sonnet**. Escalate to **Opus** only for genuinely judgment-heavy ph
 | §2 TDD implementation | **Sonnet** (subagent) | Code generation. Dispatch via `Task` tool with `isolation: "worktree"` — keeps orchestrator context light. Opus only if scope is genuinely complex (rare). |
 | §2 doc sync | Sonnet | Mechanical doc updates per §5 doc-sync table |
 | §2 pre-merge gate | Sonnet | Reads CI status, runs grep checks |
-| §6 design-judge | **Opus** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Returns findings; runs in parallel with CI. |
+| §6 design-judge | **Sonnet** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Returns findings; runs in parallel with CI. |
 | §2 PR open + CI wait | Sonnet | Polling |
 | §2 halts (HALT 1, HALT 2) | Sonnet | Frame the question, wait for tap |
 | §2 fix-after-CI-red | **Sonnet** (subagent) | Targeted code change against existing branch |
@@ -64,7 +64,7 @@ Default to **Sonnet**. Escalate to **Opus** only for genuinely judgment-heavy ph
 | **§2 architecture audit** (every 5th cycle) | **Opus** | Architectural reasoning, pattern recognition |
 | §5 release lock | Sonnet | File removal |
 
-Two phases legitimately need Opus: brainstorm and architecture-audit. Everything else is mechanical or a routed halt where Sonnet is fine.
+Two phases legitimately need Opus: brainstorm and architecture-audit. Everything else — including design-judge — is pattern-matching against a concrete checklist where Sonnet is equally effective.
 
 ---
 

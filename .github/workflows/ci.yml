@@ -26,7 +26,7 @@ jobs:
           cache: true
 
       - name: Run tests
-        run: go test -coverprofile=coverage.out -race -count=1 ./...
+        run: go test -coverprofile=coverage.out -race -shuffle=on ./...
 
       - name: Upload coverage
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
@@ -84,7 +84,7 @@ jobs:
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          fetch-depth: 0  # needed for git diff origin/main...HEAD
+          fetch-depth: 50
 
       - name: Architecture smell scan
         run: bash scripts/smell-scan.sh
