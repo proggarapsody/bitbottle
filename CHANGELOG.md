@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.60.0](https://github.com/proggarapsody/bitbottle/compare/v1.59.0...v1.60.0) (2026-05-13)
+
+
+### Features
+
+* **pr:** add pr participant list command ([8ba3366](https://github.com/proggarapsody/bitbottle/commit/8ba336651b417aa197b61b33763cdaf9e5389e6d))
+
 ## [1.59.0](https://github.com/proggarapsody/bitbottle/compare/v1.58.0...v1.59.0) (2026-05-13)
 
 
