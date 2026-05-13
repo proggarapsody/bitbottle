@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.0](https://github.com/proggarapsody/bitbottle/compare/v1.37.0...v1.38.0) (2026-05-13)
+
+
+### Features
+
+* **admin:** add admin secrets rotate / logging get/set (Server/DC) ([9f62e44](https://github.com/proggarapsody/bitbottle/commit/9f62e4474665a5f38328f9c430897e55a72dc18d))
+
 ## [1.37.0](https://github.com/proggarapsody/bitbottle/compare/v1.36.0...v1.37.0) (2026-05-13)
 
 
