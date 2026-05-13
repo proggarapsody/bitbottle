@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.45.0](https://github.com/proggarapsody/bitbottle/compare/v1.44.0...v1.45.0) (2026-05-13)
+
+
+### Features
+
+* **ext-runtime:** extension exec command with env sanitization ([f51d123](https://github.com/proggarapsody/bitbottle/commit/f51d123722ebe398d31d47e8a19ade7b57f10554))
+
 ## [1.44.0](https://github.com/proggarapsody/bitbottle/compare/v1.43.0...v1.44.0) (2026-05-13)
 
 
