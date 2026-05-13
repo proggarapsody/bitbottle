@@ -157,6 +157,8 @@ Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `v
 
 Deploy key MCP tools (both backends): `list_deploy_keys`, `add_deploy_key`, `delete_deploy_key`. See `references/deploy-key.md`.
 
+Repo transfer MCP tool (both backends): `transfer_repo` — accepts `repo` (PROJECT/REPO or WORKSPACE/REPO) and `target` (project key or workspace slug). See `references/repo.md`.
+
 SSH key MCP tools (Cloud only): `list_ssh_keys`, `add_ssh_key`, `delete_ssh_key`. See `references/ssh-key.md`.
 
 PR default reviewer MCP tools (both backends): `list_default_reviewers`, `add_default_reviewer`, `remove_default_reviewer`. See `references/pr.md`.

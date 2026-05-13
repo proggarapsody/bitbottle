@@ -337,11 +337,16 @@ bitbottle repo rename MYPROJ/my-service my-service-v2 --confirm
 # Fork into another workspace (Bitbucket Cloud only)
 bitbottle repo fork myworkspace/my-service --into otherws
 bitbottle repo fork myworkspace/my-service --into otherws --name my-fork
+
+# Transfer to another project (Server) or workspace (Cloud)
+bitbottle repo transfer MYPROJ/my-service --to NEWPROJ
+bitbottle repo transfer myworkspace/my-service --to otherws
 ```
 
 `repo fork` returns a typed unsupported-capability error on Bitbucket Server /
 Data Center, which has no fork primitive in its REST API. Both `rename` and
 `fork` accept `--json fields` and `--jq expr` for structured output.
+`repo transfer` works on both backends and also accepts `--json`/`--jq`.
 
 ### Reading source at a ref
 
