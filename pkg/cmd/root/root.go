@@ -9,6 +9,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/api"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/branchrule" // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmd/codeinsights"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
