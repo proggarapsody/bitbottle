@@ -83,8 +83,8 @@ command in that checkout runs without `-R`.
 | Auth context flag | `--email you@…` | `--username your.user` |
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
-| Cloud-only commands | `pipeline *`, `pr request-changes` | — |
-| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *` |
+| Cloud-only commands | `pipeline *`, `pr request-changes`, `pr comment resolve` | — |
+| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *`, `pr task resolve/reopen` |
 
 Custom-hostname Cloud Data Center? Force routing in `hosts.yml`:
 `backend_type: cloud` (or `server`). See `references/auth.md`.
@@ -169,6 +169,27 @@ bitbottle pr review 42 --request-changes --body "see comments"
 If `--body` or `--inline` is given without an explicit action flag the
 review defaults to `--comment`. MCP tool: `submit_pr_review`
 (`{action, body, inline_comments[]}`).
+
+## PR task quick-reference _(Server / DC only)_
+
+Tasks are BLOCKER-severity comments with an OPEN/RESOLVED state. Cloud has no
+equivalent — resolve/reopen return `host.unsupported` on Cloud.
+
+```bash
+# List open tasks on PR 42 (default: --state open)
+bitbottle pr task list 42 [--state open|resolved|all]
+
+# Create a task (optionally threaded under an existing comment)
+bitbottle pr task create 42 --body "Fix the null check" [--parent COMMENT_ID]
+
+# Mark a task resolved or reopen it
+bitbottle pr task resolve 42 TASK_ID
+bitbottle pr task reopen  42 TASK_ID
+```
+
+MCP tools: `list_pr_tasks` (`{pr_id, state}`), `create_pr_task`
+(`{pr_id, body, parent_comment_id}`), `resolve_pr_task` (`{pr_id, task_id}`),
+`reopen_pr_task` (`{pr_id, task_id}`).
 
 ## Code Insights quick-reference _(Server / DC only)_
 

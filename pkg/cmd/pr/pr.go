@@ -10,6 +10,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/task"
 )
 
 func NewCmdPR(f *factory.Factory) *cobra.Command {
@@ -40,6 +41,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRRequestChanges(f))
 	cmd.AddCommand(NewCmdPRReview(f))
 	cmd.AddCommand(NewCmdPRComment(f))
+	cmd.AddCommand(task.NewCmdPRTask(f))
 	cmd.AddCommand(NewCmdPRActivity(f))
 	cmd.AddCommand(NewCmdPRChecks(f))
 	cmd.AddCommand(NewCmdPRUpdateBranch(f))

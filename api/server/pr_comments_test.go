@@ -248,6 +248,100 @@ func TestServerClient_DeletePRComment_FetchesVersionThenDeletes(t *testing.T) {
 	assert.Equal(t, "version=5", gotDeleteQuery)
 }
 
+// ── Task (BLOCKER comment) tests ─────────────────────────────────────────────
+
+func TestServerClient_ListPRComments_SeverityAndStatePopulated(t *testing.T) {
+	t.Parallel()
+	const body = `{"values":[{"action":"COMMENTED","comment":{"id":10,"text":"fix this","severity":"BLOCKER","state":"OPEN","version":2,"author":{"slug":"alice","displayName":"Alice"},"createdDate":1714000000000}}],"isLastPage":true,"size":1}`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	cmts, err := client.ListPRComments("MYPROJ", "my-svc", 42)
+	require.NoError(t, err)
+	require.Len(t, cmts, 1)
+	assert.Equal(t, "BLOCKER", cmts[0].Severity)
+	assert.Equal(t, "OPEN", cmts[0].State)
+	assert.Equal(t, 2, cmts[0].Version)
+}
+
+func TestServerClient_AddPRComment_SeverityBlockerIncludedInBody(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":200,"text":"must fix","severity":"BLOCKER","state":"OPEN","version":0,"author":{"slug":"alice"},"createdDate":1714000000000}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	c, err := client.AddPRComment("MYPROJ", "my-svc", 42, backend.AddPRCommentInput{
+		Text:     "must fix",
+		Severity: "BLOCKER",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "must fix", gotBody["text"])
+	assert.Equal(t, "BLOCKER", gotBody["severity"])
+	assert.Equal(t, "BLOCKER", c.Severity)
+}
+
+func TestServerClient_AddPRComment_NoSeverityOmitsField(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":201,"text":"hi","author":{"slug":"alice"},"createdDate":1714000000000}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	_, err := client.AddPRComment("MYPROJ", "my-svc", 42, backend.AddPRCommentInput{Text: "hi"})
+	require.NoError(t, err)
+	_, hasSeverity := gotBody["severity"]
+	assert.False(t, hasSeverity, "severity should be omitted when empty")
+}
+
+func TestServerClient_SetPRCommentState_GetsThenPuts(t *testing.T) {
+	t.Parallel()
+	var gotPaths []string
+	var gotPutBody map[string]any
+	var gotPutQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPaths = append(gotPaths, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case http.MethodGet:
+			_, _ = w.Write([]byte(`{"id":77,"version":4,"text":"task","severity":"BLOCKER","state":"OPEN"}`))
+		case http.MethodPut:
+			gotPutQuery = r.URL.RawQuery
+			b, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(b, &gotPutBody)
+			_, _ = w.Write([]byte(`{"id":77,"version":5,"text":"task","severity":"BLOCKER","state":"RESOLVED"}`))
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	client := server.NewClient(srv.Client(), srv.URL+"/rest/api/1.0", "tok", "alice")
+
+	err := client.SetPRCommentState("MYPROJ", "my-svc", 42, 77, "RESOLVED")
+	require.NoError(t, err)
+
+	require.Len(t, gotPaths, 2, "expected GET-then-PUT, got %v", gotPaths)
+	assert.Equal(t, "GET /rest/api/1.0/projects/MYPROJ/repos/my-svc/pull-requests/42/comments/77", gotPaths[0])
+	assert.Equal(t, "PUT /rest/api/1.0/projects/MYPROJ/repos/my-svc/pull-requests/42/comments/77", gotPaths[1])
+	assert.Equal(t, "version=4", gotPutQuery)
+	assert.Equal(t, "RESOLVED", gotPutBody["state"])
+	assert.EqualValues(t, 4, gotPutBody["version"])
+}
+
 func TestServerClient_AddPRComment(t *testing.T) {
 	t.Parallel()
 	var gotPath, gotMethod string

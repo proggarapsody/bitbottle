@@ -101,6 +101,35 @@ type PRCommentEditor interface {
 	EditPRComment(ns, slug string, id, commentID int, body string) (PRComment, error)
 }
 
+// PRCommentStateSetterFeature names the PR task (comment-state) capability.
+const FeaturePRCommentStateSet Feature = "pr-task"
+
+// PRCommentStateSetter sets the state of a PR comment (task). Implemented only
+// by Bitbucket Server / Data Center (where tasks are BLOCKER comments with an
+// OPEN/RESOLVED state). Bitbucket Cloud has no equivalent concept, so callers
+// route through AsPRCommentStateSetter to surface the constraint as a typed
+// ErrUnsupportedOnHost.
+type PRCommentStateSetter interface {
+	SetPRCommentState(ns, slug string, id, commentID int, state string) error
+}
+
+// AsPRCommentStateSetter returns the PRCommentStateSetter view of c, or a typed
+// *DomainError (Kind=ErrUnsupportedOnHost) when the backend has no task-state
+// primitive (currently Bitbucket Cloud).
+func AsPRCommentStateSetter(c Client, host string) (PRCommentStateSetter, error) {
+	r, ok := c.(PRCommentStateSetter)
+	if !ok {
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
+			Host:    host,
+			Feature: string(FeaturePRCommentStateSet),
+			Message: fmt.Sprintf("pr task resolve/reopen is not supported on %s (Bitbucket Server / Data Center only)", host),
+		}
+	}
+	return r, nil
+}
+
 // PRCommentDeleter removes a comment from a pull request.
 type PRCommentDeleter interface {
 	DeletePRComment(ns, slug string, id, commentID int) error

@@ -226,6 +226,12 @@ type Commit struct {
 // comment's ID for replies. Resolved reflects backend-native resolution
 // state (Cloud `resolution`); on Server it is always false because the
 // equivalent concept lives on tasks (RV3 scope).
+//
+// Severity, State, and Version are populated on Bitbucket Server / Data Center
+// for task-like comments (comments with severity="BLOCKER"). Severity is
+// "BLOCKER" for tasks and "" for regular comments. State is "OPEN" or
+// "RESOLVED" for tasks and "" for regular comments. Version is the
+// optimistic-lock token required by SetPRCommentState on Server.
 type PRComment struct {
 	ID        int
 	Author    User
@@ -235,6 +241,9 @@ type PRComment struct {
 	Inline    *PRCommentInline
 	ParentID  int
 	Resolved  bool
+	Severity  string // "" | "BLOCKER" (Server task comments)
+	State     string // "" | "OPEN" | "RESOLVED" (Server task comments)
+	Version   int    // optimistic-lock token (Server only)
 }
 
 // PRCommentInline anchors a PR comment to a file and line range in the diff.
@@ -252,10 +261,15 @@ type PRCommentInline struct {
 // Inline is non-nil for inline (file:line) review comments and nil for
 // general PR comments. Parent is non-nil to post a reply nested under an
 // existing comment thread.
+//
+// Severity controls the comment type on Bitbucket Server / Data Center:
+// set to "BLOCKER" to create a task comment. Cloud ignores this field and
+// always creates a regular comment.
 type AddPRCommentInput struct {
-	Text   string
-	Inline *PRCommentInline
-	Parent *int
+	Text     string
+	Inline   *PRCommentInline
+	Parent   *int
+	Severity string // "BLOCKER" to create a task; "" for normal comment (Server only)
 }
 
 // SubmitReviewInput bundles the review action, optional top-level body, and

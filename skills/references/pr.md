@@ -28,6 +28,10 @@ bitbottle pr comment add  42 --body "agreed" --parent 1234     # reply to thread
 bitbottle pr comment edit 42 1234 --body "..."
 bitbottle pr comment delete 42 1234
 bitbottle pr comment resolve 42 1234                          # Cloud only
+bitbottle pr task list   42 [--state open|resolved|all]      # Server/DC only; BLOCKER comments
+bitbottle pr task create 42 --body "TEXT" [--parent COMMENT_ID]
+bitbottle pr task resolve 42 TASK_ID
+bitbottle pr task reopen  42 TASK_ID
 bitbottle pr activity 42                                      # PR event stream
 bitbottle pr activity 42 --limit 20
 bitbottle pr activity 42 --json type,actor,createdAt,detail   # structured output
@@ -52,6 +56,14 @@ pass `--side old` to comment on the removed/old side of the diff.
 `pr comment resolve` is Cloud-only — Server/DC returns a typed
 `host.unsupported` because resolution lives on tasks, not regular
 comments.
+
+`pr task` is Server/DC-only — Bitbucket Cloud has no task (BLOCKER comment)
+primitive. `pr task list` returns BLOCKER-severity comments and accepts
+`--state open` (default), `resolved`, or `all`. `pr task create` creates a
+BLOCKER comment (optionally threaded under `--parent`). `pr task resolve` and
+`pr task reopen` toggle the comment state between RESOLVED and OPEN.
+Cloud returns a typed `host.unsupported` error for resolve/reopen. MCP tools:
+`list_pr_tasks`, `create_pr_task`, `resolve_pr_task`, `reopen_pr_task`.
 
 `pr activity` streams all PR events (approvals, unapprovals, comments,
 updates, merges, declines, rescopes) from both backends. The TTY table

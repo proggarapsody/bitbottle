@@ -266,3 +266,48 @@ func TestCloudClient_AddPRComment(t *testing.T) {
 	assert.Equal(t, 99, got.ID)
 	assert.Equal(t, "hello", got.Text)
 }
+
+// TestCloudClient_AddPRComment_IgnoresSeverity verifies that Cloud silently
+// ignores Severity (Cloud has no task concept) and creates a normal comment.
+func TestCloudClient_AddPRComment_IgnoresSeverity(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":300,"content":{"raw":"task body"},"user":{"display_name":"Alice","nickname":"alice"},"created_on":"2026-04-24T12:00:00Z"}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	_, err := client.AddPRComment("myws", "my-svc", 42, backend.AddPRCommentInput{
+		Text:     "task body",
+		Severity: "BLOCKER",
+	})
+	require.NoError(t, err)
+	// Cloud wire body has no "severity" key.
+	_, hasSeverity := gotBody["severity"]
+	assert.False(t, hasSeverity, "Cloud must not forward Severity to the API")
+}
+
+// TestCloudClient_DoesNotImplementPRCommentStateSetter verifies that the Cloud
+// client does NOT satisfy PRCommentStateSetter, so AsPRCommentStateSetter
+// returns ErrUnsupportedOnHost instead of succeeding silently.
+func TestCloudClient_DoesNotImplementPRCommentStateSetter(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("no HTTP call expected; got %s %s", r.Method, r.URL.Path)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	_, err := backend.AsPRCommentStateSetter(client, "bitbucket.org")
+	require.Error(t, err)
+
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.ErrorIs(t, de, backend.ErrUnsupportedOnHost)
+	assert.Equal(t, backend.CodeHostUnsupported, de.Code)
+}
