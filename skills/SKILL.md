@@ -29,6 +29,7 @@ not sure about.**
 | Environments (list/create/delete) + variables (list/set/delete) — Cloud only | `references/deployment.md` |
 | Top-level variable command (repository/workspace/deployment scope) — Cloud only | `references/variable.md` |
 | Named credential profiles (create/use/list/delete) | `references/profile.md` |
+| Deploy keys (list/add/delete) — Cloud and Server/DC | `references/deploy-key.md` |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.
@@ -146,6 +147,8 @@ MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_
 Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployment`, `list_environments`, `create_environment`, `delete_environment`. See `references/deployment.md`.
 
 Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `variable_delete` — each accepts `scope` (repository/workspace/deployment) and `env_uuid` (required for deployment scope). See `references/variable.md`.
+
+Deploy key MCP tools (both backends): `list_deploy_keys`, `add_deploy_key`, `delete_deploy_key`. See `references/deploy-key.md`.
 
 ## PR review quick-reference
 
