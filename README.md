@@ -172,6 +172,10 @@ bitbottle pr commits 42 --json hash,message,author,date
 # PR files changed
 bitbottle pr files 42
 bitbottle pr files 42 --json status,path,additions,deletions
+
+# PR participants (author, reviewers, observers)
+bitbottle pr participants 42
+bitbottle pr participants 42 --json role,display_name,username,approved
 ```
 
 ### Repos & Branches

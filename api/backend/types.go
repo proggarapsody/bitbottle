@@ -94,6 +94,14 @@ type User struct {
 	DisplayName string
 }
 
+// PRParticipant is a user involved in a pull request.
+type PRParticipant struct {
+	User     User
+	Role     string // AUTHOR | REVIEWER | PARTICIPANT
+	Approved bool
+	State    string // APPROVED | CHANGES_REQUESTED | "" (empty = unapproved)
+}
+
 // CreateRepoInput carries the parameters for creating a repository.
 type CreateRepoInput struct {
 	Name        string

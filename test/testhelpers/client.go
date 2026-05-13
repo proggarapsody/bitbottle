@@ -214,6 +214,9 @@ type FakeClient struct {
 	// PR file methods (both backends; satisfies backend.PRFileClient when set)
 	ListPRFilesFn func(ns, slug string, prID int) ([]backend.DiffStatEntry, error)
 
+	// PR participant methods (both backends; satisfies backend.PRParticipantClient when set)
+	ListPRParticipantsFn func(ns, slug string, prID int) ([]backend.PRParticipant, error)
+
 	// Repo watcher methods (both backends; satisfies backend.RepoWatcherClient when set)
 	ListRepoWatchersFn func(ns, slug string) ([]backend.User, error)
 }
@@ -1483,6 +1486,18 @@ func (c *FakeClient) ListPRFiles(ns, slug string, prID int) ([]backend.DiffStatE
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListPRFiles; set ListPRFilesFn in your test")
+	}
+	return nil, nil
+}
+
+// ── PRParticipantClient ───────────────────────────────────────────────────────
+
+func (c *FakeClient) ListPRParticipants(ns, slug string, prID int) ([]backend.PRParticipant, error) {
+	if c.ListPRParticipantsFn != nil {
+		return c.ListPRParticipantsFn(ns, slug, prID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPRParticipants; set ListPRParticipantsFn in your test")
 	}
 	return nil, nil
 }
