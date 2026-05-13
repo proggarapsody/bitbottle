@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.0](https://github.com/proggarapsody/bitbottle/compare/v1.41.0...v1.42.0) (2026-05-13)
+
+
+### Features
+
+* **nix:** Nix flake packaging for nix run github:proggarapsody/bitbottle ([a31a40d](https://github.com/proggarapsody/bitbottle/commit/a31a40d4ea9d7509932e610d62f3da09626600a3)), closes [#211](https://github.com/proggarapsody/bitbottle/issues/211)
+
 ## [1.41.0](https://github.com/proggarapsody/bitbottle/compare/v1.40.0...v1.41.0) (2026-05-13)
 
 
