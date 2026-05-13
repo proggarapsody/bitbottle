@@ -147,8 +147,6 @@ Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployme
 
 Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `variable_delete` — each accepts `scope` (repository/workspace/deployment) and `env_uuid` (required for deployment scope). See `references/variable.md`.
 
-**`pipeline variable *` is deprecated.** Use `bitbottle variable --scope repository` for repository-level pipeline variables. The old commands still work but print a deprecation warning. See `references/repos.md` §Pipelines.
-
 ## PR review quick-reference
 
 `pr review` bundles a body + inline comments + an action into one call:

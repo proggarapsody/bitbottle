@@ -83,10 +83,6 @@ bitbottle pipeline run   WORKSPACE/repo --branch BRANCH
 bitbottle pipeline steps WORKSPACE/repo PIPELINE-UUID
 bitbottle pipeline logs  WORKSPACE/repo PIPELINE-UUID STEP-UUID
 
-# Repository-level variables — DEPRECATED (use `variable --scope repository` instead):
-bitbottle pipeline variable list   WORKSPACE/repo
-bitbottle pipeline variable set    WORKSPACE/repo KEY [VALUE] [--body=-] [--secured]
-bitbottle pipeline variable delete WORKSPACE/repo KEY --confirm
 ```
 
 Pipeline / step UUIDs are returned by `--json uuid`.
@@ -96,7 +92,7 @@ error out with "unsupported on host" against any non-Cloud host.
 **Logs:** plain text, streams to stdout. Pipe to `less`, `grep`, redirect
 to a file. No `--json`.
 
-**`pipeline variable *` is deprecated.** Use `bitbottle variable --scope repository` instead:
+**Repository-level pipeline variables** — use `bitbottle variable --scope repository`:
 
 ```bash
 bitbottle variable list   WORKSPACE/repo

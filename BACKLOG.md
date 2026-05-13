@@ -116,9 +116,6 @@ Current state of every command area against gh feature parity:
 | `pipeline run` | ✅ | |
 | `pipeline steps` | ✅ | List steps in a pipeline |
 | `pipeline logs` | ✅ | Stream step log |
-| `pipeline variable list` | ✅ | |
-| `pipeline variable set` | ✅ | Upsert by KEY; `--body=-` reads stdin |
-| `pipeline variable delete` | ✅ | By KEY (UUID lookup is internal) |
 | `pipeline watch UUID` | ✅ | Poll until terminal state, stream step transitions — scope **GHP** |
 
 ### Commits
@@ -330,7 +327,7 @@ Current state of every command area against gh feature parity:
 | P | **Auth Extras** | `auth token`, `auth refresh` | N/A | DX | ✅ |
 | Q | **Repo Extras** | `repo rename`, `repo fork`, `repo set-default` _(`archive` dropped — no Bitbucket primitive)_ | Both / Cloud | 2 | ✅ |
 | F | **Commits** | `commit log`, `commit view` | Both | 1 | ✅ |
-| H | **Pipeline Depth** | `pipeline steps`, `pipeline logs`, `pipeline variable *` | Cloud | 1 | ✅ |
+| H | **Pipeline Depth** | `pipeline steps`, `pipeline logs` | Cloud | 1 | ✅ |
 | I | **Webhooks** | `webhook list`, `webhook view`, `webhook create`, `webhook delete` | Both | 2 | ✅ |
 | J | **PR Comments** | `pr comment list`, `pr comment add` | Both | 2 | ✅ |
 | K | **Commit Statuses** | `commit status` | Both | 2 | ✅ |
@@ -367,7 +364,7 @@ Current state of every command area against gh feature parity:
 | VAROPS | **Variable scope-ops strategy** | Collapse the three near-identical `As<X>Client` scope switches in `pkg/cmd/variable/{list,set,delete}/*.go` (and the MCP handler) into one `resolveVariableOps(scope)` helper returning a `VariableOps` interface. Pre-empts OCP debt before the 4th scope lands. Move deployment delete-by-key lookup from cmd/MCP into the cloud adapter. Cite v1.31.0 design-judge findings. | N/A | DX | ✅ |
 | CMDTEST | **Shared cmdtest helper** | Already done — `pkg/cmd/internal/cmdtest` exists and is used widely. | N/A | DX | ✅ |
 | ENVVAR-DEPREC | **Deprecate `environment variable` tree** | `environment variable {list,set,delete}` (shipped v1.29.0) is structurally a subset of `variable --scope deployment` (shipped v1.31.0). Mark the old tree as deprecated in `pkg/cmd/environment/variable/` with a `Deprecated:` cobra field, route to the new commands, and document the migration in README + skills/SKILL.md. Remove after one minor release. | N/A | DX | ✅ |
-| PIPEVAR-DEPREC | **Remove deprecated `pipeline variable` tree** | `pipeline variable {list,set,delete}` was marked deprecated in favour of `variable {list,set,delete} --scope repository` (scope **VAR**, shipped v1.31.0). The commands carry Cobra `Deprecated:` notices and route through `variable/shared.ResolveVariableOps`. Remove `pkg/cmd/pipeline/variable/` entirely after one minor release. | N/A | DX | 🔲 |
+| PIPEVAR-DEPREC | **Remove deprecated `pipeline variable` tree** | `pipeline variable {list,set,delete}` was marked deprecated in favour of `variable {list,set,delete} --scope repository` (scope **VAR**, shipped v1.31.0). The commands carry Cobra `Deprecated:` notices and route through `variable/shared.ResolveVariableOps`. Remove `pkg/cmd/pipeline/variable/` entirely after one minor release. | N/A | DX | ✅ |
 | SRVVER | **Server version detection helper** | `api/server/version.go` parsing `ServerCapabilities.GetApplicationProperties()` into a `semver.Version` + `(v Version) AtLeast(major, minor int) bool` helper. Cached per-host for the process lifetime. Required by **TASK** (comments-with-severity dispatch for Server >= 7.2) and any future Server-version-conditional behaviour. Ship as part of TASK's first PR or as a standalone precursor. | Server/DC | DX | 🔲 |
 
 ---
@@ -634,10 +631,6 @@ type PipelineVariableInput struct {
 |---|---|---|
 | `pipeline steps PROJECT/REPO UUID` | 2 | `--json`, `--jq`, `--hostname` |
 | `pipeline logs PROJECT/REPO PIPELINE-UUID STEP-UUID` | 3 | `--hostname` |
-| `pipeline variable list PROJECT/REPO` | 1 | `--json`, `--jq`, `--hostname` |
-| `pipeline variable set PROJECT/REPO KEY VALUE` | 3 | `--secured`, `--hostname` |
-| `pipeline variable delete PROJECT/REPO KEY` | 2 | `--hostname` |
-
 **MCP tools**: `list_pipeline_steps`, `get_pipeline_step_log`, `list_pipeline_variables`, `set_pipeline_variable`, `delete_pipeline_variable`
 
 ---
@@ -1811,11 +1804,11 @@ Scorecard badge. These are table-stakes supply-chain controls for a published CL
 
 ### VAR — Variable Command Promotion
 
-**Problem**: Today `pipeline variable` is nested under `pipeline` and operates only
+**Problem** _(historical, shipped)_: `pipeline variable` was nested under `pipeline` and operated only
 on **repository-scoped** pipeline variables. Bitbucket Cloud has the same primitive
 at three scopes: repository, workspace, and deployment-environment (the third lives
-under scope **DEP**). The CLI should expose all three through one consistent
-verb-noun pair, matching `gh variable`.
+under scope **DEP**). The CLI exposes all three through one consistent
+verb-noun pair via `variable {list,set,delete} --scope`, matching `gh variable`.
 
 **Reuse the existing `PipelineClient` interface, do NOT duplicate `PipelineVariable`.**
 
@@ -1863,9 +1856,8 @@ optional string — does not affect existing call-sites.)
 For workspace scope, `PROJECT/REPO` becomes `WORKSPACE/-` (the slug is ignored).
 For deployment scope, `--env UUID` is required.
 
-**Migration**: `pipeline variable *` keeps working unchanged — both command paths
-hit the same backend methods. No deprecation shim; the nesting just becomes a
-specialised view of the more general command.
+**Migration**: `pipeline variable *` was deprecated (v1.31.0) and removed (v1.40.x+).
+Use `variable {list,set,delete} --scope repository` instead.
 
 **MCP tools**: extend existing `set_pipeline_variable` / `list_pipeline_variables`
 / `delete_pipeline_variable` schemas with optional `scope` + `env_uuid` fields.
