@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.0](https://github.com/proggarapsody/bitbottle/compare/v1.47.0...v1.48.0) (2026-05-13)
+
+
+### Features
+
+* **pipe-trigger:** add pipeline trigger command (Cloud only) ([561a46c](https://github.com/proggarapsody/bitbottle/commit/561a46c407dfb9b6293cf00810e13682e892d5cc))
+
 ## [1.47.0](https://github.com/proggarapsody/bitbottle/compare/v1.46.0...v1.47.0) (2026-05-13)
 
 
