@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.59.0](https://github.com/proggarapsody/bitbottle/compare/v1.58.0...v1.59.0) (2026-05-13)
+
+
+### Features
+
+* **commit:** add commit status report command ([dc4ca70](https://github.com/proggarapsody/bitbottle/commit/dc4ca7035ba3db45eddbdf9c529fc78423cbd727))
+
 ## [1.58.0](https://github.com/proggarapsody/bitbottle/compare/v1.57.0...v1.58.0) (2026-05-13)
 
 
