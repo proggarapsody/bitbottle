@@ -8,9 +8,6 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
 
-// Note: variable formatting helpers (VariableFields, DisplayVariableValue,
-// SecuredPlaceholder) were removed — use pkg/cmd/variable/shared instead.
-
 // PipelineStateColor maps Bitbucket Cloud pipeline / step state strings to
 // colors. Both Pipeline and PipelineStep share the same state vocabulary, so
 // they share this helper. SUCCESSFUL is green; FAILED / ERROR / STOPPED are
@@ -66,4 +63,3 @@ func StepFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[bac
 	p.AddField(format.Field[backend.PipelineStep]{Name: "duration", Header: "DURATION", Extract: func(s backend.PipelineStep) any { return s.Duration }})
 	return p
 }
-

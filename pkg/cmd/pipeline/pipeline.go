@@ -8,7 +8,7 @@ import (
 	cmdLogs "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
 	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
 	cmdSteps "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/steps"
-	cmdVariable "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/variable"
+	cmdVariable "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/variable" //nolint:staticcheck
 	cmdView "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/view"
 	cmdWatch "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/watch"
 )
