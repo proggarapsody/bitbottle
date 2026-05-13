@@ -84,7 +84,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | Group | Commands |
 |---|---|
 | `auth` | `login` `logout` `status` `token` `refresh` |
-| `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `request-review` `comment` |
+| `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `request-review` `comment` `default-reviewer {list\|add\|remove}` |
 | `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` |
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
@@ -294,6 +294,21 @@ bitbottle deploy-key delete MYPROJ/my-service 42
 
 All three subcommands work on both Bitbucket Cloud and Server/DC. `list` and
 `add` support `--json` / `--jq` / `--yaml` for structured output.
+
+### PR default reviewers
+
+```bash
+# List default reviewers
+bitbottle pr default-reviewer list MYPROJ/my-service
+
+# Add a default reviewer (Server: user slug; Cloud: account ID or nickname)
+bitbottle pr default-reviewer add MYPROJ/my-service jsmith
+
+# Remove a default reviewer
+bitbottle pr default-reviewer remove MYPROJ/my-service jsmith
+```
+
+Both Cloud and Server/DC are supported. `list` supports `--json` / `--jq` / `--yaml`.
 
 ### Repo extras
 

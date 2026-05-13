@@ -43,6 +43,9 @@ bitbottle pr checks    42 --watch [--interval 10]             # poll until all c
 bitbottle pr update-branch 42                                  # rebase/sync PR branch onto target (Cloud merge commit; Server rebase)
 bitbottle pr status [PROJ/repo]                               # show your open PRs split by role (AUTHOR / REVIEWER)
 bitbottle pr reopen 42                                        # reopen a declined/closed PR
+bitbottle pr default-reviewer list [PROJ/repo]               # list configured default reviewers
+bitbottle pr default-reviewer add  [PROJ/repo] USER          # add a default reviewer (slug on Server, account ID/nickname on Cloud)
+bitbottle pr default-reviewer remove [PROJ/repo] USER        # remove a default reviewer
 ```
 
 The `pr comment list` output includes inline review comments (file:line
@@ -131,6 +134,24 @@ safety rule 4 (pass a bogus `--json X` to list supported fields).
 in SKILL.md (safety rule 2). State the irreversible effect explicitly
 ("merges and deletes the source branch", "declines and cannot be
 undone via the API") before asking for confirmation.
+
+## PR default reviewers
+
+`pr default-reviewer` manages the per-repository list of users automatically
+added as reviewers when a PR is created. Both Cloud and Server/DC are
+supported.
+
+```bash
+bitbottle pr default-reviewer list MYPROJ/my-service
+bitbottle pr default-reviewer add  MYPROJ/my-service jsmith
+bitbottle pr default-reviewer remove MYPROJ/my-service jsmith
+```
+
+- **Server/DC**: USER is the user slug (e.g. `jsmith`).
+- **Cloud**: USER is the account ID (UUID) or nickname.
+
+MCP tools: `list_default_reviewers`, `add_default_reviewer`, `remove_default_reviewer`.
+Each accepts `repo` (required) and `hostname` (optional).
 
 ## Common failures
 

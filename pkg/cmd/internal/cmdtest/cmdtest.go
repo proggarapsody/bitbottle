@@ -57,3 +57,10 @@ type NoDeploymentFake struct {
 type NoDeployKeyFake struct {
 	backend.Client
 }
+
+// NoDefaultReviewerFake wraps backend.Client without implementing
+// backend.DefaultReviewerClient — simulates a backend that doesn't support
+// default reviewer management.
+type NoDefaultReviewerFake struct {
+	backend.Client
+}
