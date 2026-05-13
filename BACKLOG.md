@@ -373,6 +373,9 @@ Current state of every command area against gh feature parity:
 | DEFAULT-REVIEWERS | **PR Default Reviewers** | `pr default-reviewer list`, `pr default-reviewer add USER`, `pr default-reviewer remove USER` — manage per-repo default reviewers. Cloud: `GET/POST/DELETE /repositories/{ws}/{slug}/effective-default-reviewers`. Server: `GET/PUT/DELETE /rest/default-reviewers/1.0/projects/{ns}/repos/{slug}/reviewers/{userSlug}`. Both backends. | Both | 2 | ✅ |
 | SSH-KEYS | **User SSH Key Management** | `ssh-key list`, `ssh-key add --key "..." [--label "..."]`, `ssh-key delete ID` — user-level SSH keys (not repo deploy keys). Cloud: `GET/POST/DELETE /users/{username}/ssh-keys`. Cloud only initially. | Cloud | 2 | ✅ |
 | REPO-TRANSFER | **Repository Transfer** | `repo transfer PROJECT/REPO --to TARGET-PROJECT [--hostname H]` — move a repository to a different project/workspace. Cloud: `POST /repositories/{ws}/{slug}/transfer`. Server: `PUT /rest/api/1.0/projects/{ns}/repos/{slug}` updating `project.key`. Both backends. | Both | 3 | ✅ |
+| BRANCH-RULE | **Cloud Branch Restriction Rules** | `branch-rule list [PROJECT/REPO]`, `branch-rule add [PROJECT/REPO] --kind KIND --pattern PATTERN`, `branch-rule delete [PROJECT/REPO] ID` — manage Cloud branch restrictions (require PR, prevent force-push, require approvals). Cloud: `GET/POST/DELETE /repositories/{ws}/{slug}/branch-restrictions`. Cloud only (Server has `branch protect` ✅). | Cloud | 2 | 🔲 |
+| PIPELINE-SCHEDULE | **Pipeline Schedules** | `pipeline schedule list [PROJECT/REPO]`, `pipeline schedule create [PROJECT/REPO] --cron EXPR --branch BRANCH [--enabled]`, `pipeline schedule delete [PROJECT/REPO] ID` — manage scheduled pipeline triggers. Cloud: `GET/POST/DELETE /repositories/{ws}/{slug}/pipelines_config/schedules`. Cloud only. | Cloud | 2 | 🔲 |
+| COMMIT-FILE | **Files Changed in a Commit** | `commit files HASH [PROJECT/REPO]` — list files added/modified/deleted in a specific commit. Cloud: `GET /repositories/{ws}/{slug}/diffstat/{node}~1..{node}`. Server: `GET /rest/api/1.0/projects/{ns}/repos/{slug}/commits/{commitId}/changes`. Both backends. Useful for agents inspecting specific commits. | Both | 2 | 🔲 |
 
 ---
 
@@ -2580,3 +2583,9 @@ Print `"already up to date"` if version matches.
 | 40 | **PIPE-TRIGGER** Pipeline Trigger | Automation: manually trigger a Cloud pipeline with optional variables. Complements pipeline watch/view. |
 | 41 | **DIFF** Diff Between Refs | Script automation: compare two branches/commits/tags without checkout. Both backends. |
 | 42 | **PR-TEMPLATE** PR Description Templates | DX: manage PR templates per-repo. Cloud only initially. |
+| 43 | **DEFAULT-REVIEWERS** PR Default Reviewers | DevOps automation: set/list per-repo default PR reviewers. Both backends. |
+| 44 | **SSH-KEYS** User SSH Key Management | User onboarding: manage SSH keys for the current user. Cloud only. |
+| 45 | **REPO-TRANSFER** Repository Transfer | Admin: move a repo to another project/workspace. Both backends. |
+| 46 | **BRANCH-RULE** Cloud Branch Restriction Rules | DevOps: automate branch protection rules. Cloud only (Server uses `branch protect`). |
+| 47 | **PIPELINE-SCHEDULE** Pipeline Schedules | CI automation: manage scheduled pipeline runs. Cloud only. |
+| 48 | **COMMIT-FILE** Files Changed in a Commit | Agent primitive: list changed files per commit. Both backends. |
