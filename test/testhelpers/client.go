@@ -79,6 +79,11 @@ type FakeClient struct {
 	EditPRCommentFn   func(ns, slug string, id, commentID int, body string) (backend.PRComment, error)
 	DeletePRCommentFn func(ns, slug string, id, commentID int) error
 
+	// PR comment reaction methods (Server-only; satisfies backend.CommentReactor when set)
+	ListCommentReactionsFn  func(ns, slug string, prID, commentID int) ([]backend.CommentReaction, error)
+	AddCommentReactionFn    func(ns, slug string, prID, commentID int, emoji string) error
+	RemoveCommentReactionFn func(ns, slug string, prID, commentID int, emoji string) error
+
 	// PR activity
 	GetPRActivityFn func(ns, slug string, id int, limit int) ([]backend.PRActivityEvent, error)
 

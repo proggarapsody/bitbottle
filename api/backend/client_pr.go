@@ -171,6 +171,36 @@ func AsPRCommentResolver(c Client, host string) (PRCommentResolver, error) {
 	return r, nil
 }
 
+// CommentReactor manages emoji reactions on pull-request comments.
+// Implemented only by Bitbucket Server / Data Center. Bitbucket Cloud has no
+// equivalent API. Callers route through AsCommentReactor to surface the
+// constraint as a typed ErrUnsupportedOnHost.
+type CommentReactor interface {
+	ListCommentReactions(ns, slug string, prID, commentID int) ([]CommentReaction, error)
+	AddCommentReaction(ns, slug string, prID, commentID int, emoji string) error
+	RemoveCommentReaction(ns, slug string, prID, commentID int, emoji string) error
+}
+
+// FeatureCommentReactions names the PR comment reaction capability.
+const FeatureCommentReactions Feature = "pr-comment-reactions"
+
+// AsCommentReactor returns the CommentReactor view of c, or a typed
+// *DomainError (Kind=ErrUnsupportedOnHost) when the backend at host has no
+// reaction primitive (currently Bitbucket Cloud).
+func AsCommentReactor(c Client, host string) (CommentReactor, error) {
+	r, ok := c.(CommentReactor)
+	if !ok {
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
+			Host:    host,
+			Feature: string(FeatureCommentReactions),
+			Message: fmt.Sprintf("pr comment reactions are not supported on %s (Bitbucket Server / Data Center only)", host),
+		}
+	}
+	return r, nil
+}
+
 // PRBranchUpdater syncs a PR's source branch with its base branch.
 type PRBranchUpdater interface {
 	UpdatePRBranch(ns, slug string, prID int) error

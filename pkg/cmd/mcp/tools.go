@@ -514,6 +514,9 @@ func registerTools(s *mcpserver.MCPServer, h *handlers) {
 			mcplib.WithBoolean("inline_only",
 				mcplib.Description("Only return inline (file:line) review comments (default: false)"),
 			),
+			mcplib.WithBoolean("include_reactions",
+				mcplib.Description("Fetch and include emoji reactions for each comment (Bitbucket Server / DC only; default: false)"),
+			),
 		),
 		h.listPRComments,
 	)

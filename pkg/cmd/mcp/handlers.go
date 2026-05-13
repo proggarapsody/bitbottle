@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -1001,7 +1002,56 @@ func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest)
 		}
 		cmts = filtered
 	}
+	if req.GetBool("include_reactions", false) {
+		reactor, reactErr := backend.AsCommentReactor(client, hostname)
+		if reactErr != nil {
+			return errResultErr(reactErr), nil
+		}
+		cmts = fetchReactionsMCPConcurrent(reactor, project, slug, id, cmts)
+	}
 	return jsonResult(cmts)
+}
+
+// fetchReactionsMCPConcurrent fetches reactions for each comment concurrently
+// using a bounded worker pool of 4 goroutines. Errors per comment are silently
+// ignored so a single failure doesn't abort the listing.
+func fetchReactionsMCPConcurrent(reactor backend.CommentReactor, ns, slug string, prID int, cmts []backend.PRComment) []backend.PRComment {
+	const workers = 4
+	type job struct {
+		idx int
+		id  int
+	}
+	results := make([][]backend.CommentReaction, len(cmts))
+	jobs := make(chan job, len(cmts))
+	for i, c := range cmts {
+		jobs <- job{i, c.ID}
+	}
+	close(jobs)
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				rxns, err := reactor.ListCommentReactions(ns, slug, prID, j.id)
+				if err == nil && len(rxns) > 0 {
+					mu.Lock()
+					results[j.idx] = rxns
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	out := make([]backend.PRComment, len(cmts))
+	for i, c := range cmts {
+		c.Reactions = results[i]
+		out[i] = c
+	}
+	return out
 }
 
 func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {

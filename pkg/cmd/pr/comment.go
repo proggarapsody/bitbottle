@@ -3,6 +3,8 @@ package pr
 import (
 	"fmt"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -22,12 +24,15 @@ func NewCmdPRComment(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewCmdPRCommentEdit(f))
 	cmd.AddCommand(NewCmdPRCommentDelete(f))
 	cmd.AddCommand(NewCmdPRCommentResolve(f))
+	cmd.AddCommand(NewCmdPRCommentReact(f))
+	cmd.AddCommand(NewCmdPRCommentUnreact(f))
 	return cmd
 }
 
 func NewCmdPRCommentList(f *factory.Factory) *cobra.Command {
 	var hostname string
 	var inlineOnly bool
+	var withReactions bool
 
 	cmd := &cobra.Command{
 		Use:   "list PR_ID",
@@ -45,7 +50,14 @@ func NewCmdPRCommentList(f *factory.Factory) *cobra.Command {
 			if inlineOnly {
 				cmts = filterInlinePRComments(cmts)
 			}
-			p := prCommentFields(f, format.ConfigFromCmd(cmd), hasInline(cmts))
+			if withReactions {
+				reactor, reactErr := backend.AsCommentReactor(client, ref.Host)
+				if reactErr != nil {
+					return reactErr
+				}
+				cmts = fetchReactionsConcurrent(reactor, ref.Project, ref.Slug, prID, cmts)
+			}
+			p := prCommentFields(f, format.ConfigFromCmd(cmd), hasInline(cmts), withReactions)
 			for _, c := range cmts {
 				p.AddItem(c)
 			}
@@ -53,6 +65,7 @@ func NewCmdPRCommentList(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&inlineOnly, "inline", false, "Only show inline (file:line) review comments")
+	cmd.Flags().BoolVar(&withReactions, "reactions", false, "Fetch and display emoji reactions (Bitbucket Server / DC only)")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
 	return cmd
 }
@@ -236,7 +249,81 @@ func NewCmdPRCommentResolve(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-func prCommentFields(f *factory.Factory, cfg format.OutputConfig, showLocation bool) *format.Printer[backend.PRComment] {
+// fetchReactionsConcurrent fetches reactions for each comment concurrently
+// using a bounded worker pool of 4 goroutines. The returned slice has the
+// same order as the input; errors per-comment are silently ignored (reactions
+// will be nil for that comment) so a single failure doesn't abort the listing.
+func fetchReactionsConcurrent(reactor backend.CommentReactor, ns, slug string, prID int, cmts []backend.PRComment) []backend.PRComment {
+	const workers = 4
+	type job struct {
+		idx int
+		id  int
+	}
+	results := make([][]backend.CommentReaction, len(cmts))
+	jobs := make(chan job, len(cmts))
+	for i, c := range cmts {
+		jobs <- job{i, c.ID}
+	}
+	close(jobs)
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				rxns, err := reactor.ListCommentReactions(ns, slug, prID, j.id)
+				if err == nil && len(rxns) > 0 {
+					mu.Lock()
+					results[j.idx] = rxns
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	out := make([]backend.PRComment, len(cmts))
+	for i, c := range cmts {
+		c.Reactions = results[i]
+		out[i] = c
+	}
+	return out
+}
+
+// formatReactions renders a CommentReaction slice as a compact string like
+// "👍×3 ❤️×1". Returns "" when the slice is empty.
+func formatReactions(reactions []backend.CommentReaction) string {
+	if len(reactions) == 0 {
+		return ""
+	}
+	emojiGlyphs := map[string]string{
+		"thumbs_up":   "👍",
+		"thumbs_down": "👎",
+		"heart":       "❤️",
+		"laugh":       "😄",
+		"hooray":      "🎉",
+		"confused":    "😕",
+	}
+	parts := make([]string, 0, len(reactions))
+	for _, r := range reactions {
+		glyph := emojiGlyphs[r.Emoji]
+		if glyph == "" {
+			glyph = r.Emoji
+		}
+		parts = append(parts, fmt.Sprintf("%s×%d", glyph, len(r.Users)))
+	}
+	return strings.Join(parts, " ")
+}
+
+// normaliseEmojiArg normalises user-provided emoji input (colons, shortcodes,
+// etc.) to canonical underscore form.
+func normaliseEmojiArg(emoji string) string {
+	return backend.NormaliseEmoji(emoji)
+}
+
+func prCommentFields(f *factory.Factory, cfg format.OutputConfig, showLocation bool, showReactions bool) *format.Printer[backend.PRComment] {
 	isTTY := f.IOStreams.IsStdoutTTY()
 	structured := cfg.Format != format.FormatTable
 	p := format.New[backend.PRComment](f.IOStreams.Out, isTTY, cfg)
@@ -287,5 +374,101 @@ func prCommentFields(f *factory.Factory, cfg format.OutputConfig, showLocation b
 	p.AddField(format.Field[backend.PRComment]{Name: "resolved", Header: "RESOLVED", JSONOnly: true, Extract: func(c backend.PRComment) any {
 		return c.Resolved
 	}})
+	// reactions: shown as TTY column when --reactions is set, otherwise JSON-only.
+	// The TTY extract returns the compact glyph summary; the JSON extract returns the structured array.
+	p.AddField(format.Field[backend.PRComment]{
+		Name:     "reactions",
+		Header:   "REACTIONS",
+		JSONOnly: !showReactions,
+		Extract: func(c backend.PRComment) any {
+			if len(c.Reactions) == 0 {
+				return nil
+			}
+			if structured {
+				// Structured / JSON output: return the full typed array.
+				type reactionJSON struct {
+					Emoji string   `json:"emoji"`
+					Users []string `json:"users"`
+				}
+				out := make([]reactionJSON, 0, len(c.Reactions))
+				for _, r := range c.Reactions {
+					slugs := make([]string, 0, len(r.Users))
+					for _, u := range r.Users {
+						slugs = append(slugs, u.Slug)
+					}
+					out = append(out, reactionJSON{Emoji: r.Emoji, Users: slugs})
+				}
+				return out
+			}
+			// Tabular output (TTY or plain): compact "👍×3 ❤️×1" string.
+			return formatReactions(c.Reactions)
+		},
+	})
 	return p
+}
+
+// NewCmdPRCommentReact adds an emoji reaction to a PR comment.
+func NewCmdPRCommentReact(f *factory.Factory) *cobra.Command {
+	var emoji, hostname string
+
+	cmd := &cobra.Command{
+		Use:   "react PR_ID COMMENT_ID",
+		Short: "Add an emoji reaction to a PR comment (Bitbucket Server / DC only)",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if emoji == "" {
+				return fmt.Errorf("--emoji is required")
+			}
+			commentID, err := strconv.Atoi(args[1])
+			if err != nil || commentID <= 0 {
+				return fmt.Errorf("invalid COMMENT_ID %q: must be a positive integer", args[1])
+			}
+			ref, prID, client, err := resolvePRTarget(f, args[:1], hostname)
+			if err != nil {
+				return err
+			}
+			reactor, err := backend.AsCommentReactor(client, ref.Host)
+			if err != nil {
+				return err
+			}
+			return reactor.AddCommentReaction(ref.Project, ref.Slug, prID, commentID, normaliseEmojiArg(emoji))
+		},
+	}
+	cmd.Flags().StringVar(&emoji, "emoji", "", "Emoji shortcode to react with (e.g. thumbs_up, :thumbsup:, heart)")
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
+	_ = cmd.MarkFlagRequired("emoji")
+	return cmd
+}
+
+// NewCmdPRCommentUnreact removes an emoji reaction from a PR comment.
+func NewCmdPRCommentUnreact(f *factory.Factory) *cobra.Command {
+	var emoji, hostname string
+
+	cmd := &cobra.Command{
+		Use:   "unreact PR_ID COMMENT_ID",
+		Short: "Remove an emoji reaction from a PR comment (Bitbucket Server / DC only)",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if emoji == "" {
+				return fmt.Errorf("--emoji is required")
+			}
+			commentID, err := strconv.Atoi(args[1])
+			if err != nil || commentID <= 0 {
+				return fmt.Errorf("invalid COMMENT_ID %q: must be a positive integer", args[1])
+			}
+			ref, prID, client, err := resolvePRTarget(f, args[:1], hostname)
+			if err != nil {
+				return err
+			}
+			reactor, err := backend.AsCommentReactor(client, ref.Host)
+			if err != nil {
+				return err
+			}
+			return reactor.RemoveCommentReaction(ref.Project, ref.Slug, prID, commentID, normaliseEmojiArg(emoji))
+		},
+	}
+	cmd.Flags().StringVar(&emoji, "emoji", "", "Emoji shortcode to remove (e.g. thumbs_up, :thumbsup:, heart)")
+	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
+	_ = cmd.MarkFlagRequired("emoji")
+	return cmd
 }
