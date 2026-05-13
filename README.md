@@ -164,6 +164,10 @@ bitbottle pr review 42 --comment --inline pkg/foo.go:10-15:extract helper # comm
 bitbottle pr activity 42
 bitbottle pr activity 42 --limit 20
 bitbottle pr activity 42 --json type,actor,createdAt,detail
+
+# PR commits
+bitbottle pr commits 42
+bitbottle pr commits 42 --json hash,message,author,date
 ```
 
 ### Repos & Branches

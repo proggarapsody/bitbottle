@@ -47,6 +47,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRUpdateBranch(f))
 	cmd.AddCommand(NewCmdPRStatus(f))
 	cmd.AddCommand(NewCmdPRDefaultReviewer(f))
+	cmd.AddCommand(NewCmdPRCommits(f))
 	return cmd
 }
 
