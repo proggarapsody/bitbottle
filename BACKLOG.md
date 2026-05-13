@@ -360,7 +360,7 @@ Current state of every command area against gh feature parity:
 | REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | ✅ |
 | REACT-COMMIT | **Commit Comment Reactions** | `commit comment react/unreact`, `commit comment list --reactions`; `CommitCommentReactor` interface + Server impl + MCP tools | Server/DC | 3 | ✅ |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
-| NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
+| NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | ✅ |
 | EXT-CORE | **Extension Install + List** | `extension install USER/REPO`, `extension install --local PATH`, `extension list`; core package + SHA lockfile | N/A | 4 | 🔲 |
 | EXT-RUNTIME | **Extension Exec** | `extension exec NAME [args...]`; SHA verification, env sanitise/inject, root-command dispatch hook | N/A | 4 | 🔲 |
 | EXT-MGMT | **Extension Upgrade + Remove** | `extension upgrade [NAME\|--all]`, `extension remove NAME` | N/A | 4 | 🔲 |
