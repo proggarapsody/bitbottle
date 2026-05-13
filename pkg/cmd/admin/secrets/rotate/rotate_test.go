@@ -14,8 +14,6 @@ import (
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
-const serverConfig = "git.example.com:\n  oauth_token: tok\n  user: alice\n  git_protocol: https\n  backend_type: server\n"
-
 func TestRotate_WithConfirm_Succeeds(t *testing.T) {
 	t.Parallel()
 	var called bool
