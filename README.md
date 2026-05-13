@@ -92,7 +92,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `commit` | `log` `view` `status` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
-| `environment` | `list` `create` `delete` `variable {list\|set\|delete}` _(Cloud only)_ |
+| `environment` | `list` `create` `delete` _(Cloud only)_ |
 | `workspace` | `list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
@@ -245,8 +245,6 @@ bitbottle variable delete MYWORKSPACE/my-service DEPLOY_KEY --scope deployment -
 
 All commands support `--json fields` and `--jq expr`. Secured variable values
 are never returned by the API once set.
-
-**`environment variable *` is deprecated.** Use `bitbottle variable --scope deployment --env ENV-UUID` instead. The old commands still work but print a deprecation warning.
 
 These commands return a typed unsupported-capability error on Bitbucket Server /
 Data Center — deployments and environments are a Cloud-only feature.

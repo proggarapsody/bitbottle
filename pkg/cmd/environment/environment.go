@@ -6,7 +6,6 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/create"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/delete"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/list"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/environment/variable" //nolint:staticcheck
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmdregistry"
 )
@@ -30,6 +29,5 @@ directory.`,
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
 	cmd.AddCommand(delete.NewCmdDelete(f, nil))
-	cmd.AddCommand(variable.NewCmdVariable(f))
 	return cmd
 }

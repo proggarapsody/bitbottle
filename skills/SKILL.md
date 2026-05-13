@@ -149,8 +149,6 @@ Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `v
 
 **`pipeline variable *` is deprecated.** Use `bitbottle variable --scope repository` for repository-level pipeline variables. The old commands still work but print a deprecation warning. See `references/repos.md` §Pipelines.
 
-**`environment variable *` is deprecated.** Use `bitbottle variable --scope deployment --env ENV-UUID` instead. The old commands still work but print a deprecation warning. See `references/deployment.md` §Environment Variables.
-
 ## PR review quick-reference
 
 `pr review` bundles a body + inline comments + an action into one call:
