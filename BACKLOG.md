@@ -227,12 +227,12 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `perms project list PROJECT` | 🔲 | List all permission grants (users + groups) for a project — scope **PERMS** |
-| `perms project grant PROJECT [--user SLUG \| --group NAME] PERM` | 🔲 | Grant `PROJECT_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
-| `perms project revoke PROJECT [--user SLUG \| --group NAME]` | 🔲 | Revoke a project permission grant — scope **PERMS** |
-| `perms repo list PROJECT/REPO` | 🔲 | List all permission grants (users + groups) for a repo — scope **PERMS** |
-| `perms repo grant PROJECT/REPO [--user SLUG \| --group NAME] PERM` | 🔲 | Grant `REPO_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
-| `perms repo revoke PROJECT/REPO [--user SLUG \| --group NAME]` | 🔲 | Revoke a repo permission grant — scope **PERMS** |
+| `perms project list PROJECT` | ✅ | List all permission grants (users + groups) for a project — scope **PERMS** |
+| `perms project grant PROJECT [--user SLUG \| --group NAME] PERM` | ✅ | Grant `PROJECT_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
+| `perms project revoke PROJECT [--user SLUG \| --group NAME]` | ✅ | Revoke a project permission grant — scope **PERMS** |
+| `perms repo list PROJECT/REPO` | ✅ | List all permission grants (users + groups) for a repo — scope **PERMS** |
+| `perms repo grant PROJECT/REPO [--user SLUG \| --group NAME] PERM` | ✅ | Grant `REPO_READ`/`WRITE`/`ADMIN` — scope **PERMS** |
+| `perms repo revoke PROJECT/REPO [--user SLUG \| --group NAME]` | ✅ | Revoke a repo permission grant — scope **PERMS** |
 
 ### Admin _(Server / DC only — missing)_
 
@@ -353,7 +353,7 @@ Current state of every command area against gh feature parity:
 | OUT2 | **Extended Output Formats** | `--yaml` / `--template` global flags + validation | N/A | DX | ✅ |
 | CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | ✅ |
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | ✅ |
-| PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | 🔲 |
+| PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | ✅ |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | 🔲 |

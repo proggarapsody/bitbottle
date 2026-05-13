@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"context"
 	"io"
 	"testing"
 
@@ -139,6 +140,14 @@ type FakeClient struct {
 	ListWorkspaceVariablesFn  func(ns string) ([]backend.PipelineVariable, error)
 	SetWorkspaceVariableFn    func(ns string, in backend.PipelineVariableInput) (backend.PipelineVariable, error)
 	DeleteWorkspaceVariableFn func(ns, key string) error
+
+	// Permissions methods (Server-only; satisfies backend.PermissionsClient when set)
+	ListProjectPermissionsFn  func(ctx context.Context, project string) ([]backend.PermissionGrant, error)
+	GrantProjectPermissionFn  func(ctx context.Context, project string, subject backend.PermissionSubject, perm string) error
+	RevokeProjectPermissionFn func(ctx context.Context, project string, subject backend.PermissionSubject) error
+	ListRepoPermissionsFn     func(ctx context.Context, project, slug string) ([]backend.PermissionGrant, error)
+	GrantRepoPermissionFn     func(ctx context.Context, project, slug string, subject backend.PermissionSubject, perm string) error
+	RevokeRepoPermissionFn    func(ctx context.Context, project, slug string, subject backend.PermissionSubject) error
 
 	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
 	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
@@ -1080,6 +1089,68 @@ func (c *FakeClient) DeleteEnvVariable(ns, slug, envUUID, varUUID string) error 
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteEnvVariable; set DeleteEnvVariableFn in your test")
+	}
+	return nil
+}
+
+// ── PermissionsClient ────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListProjectPermissions(ctx context.Context, project string) ([]backend.PermissionGrant, error) {
+	if c.ListProjectPermissionsFn != nil {
+		return c.ListProjectPermissionsFn(ctx, project)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListProjectPermissions; set ListProjectPermissionsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GrantProjectPermission(ctx context.Context, project string, subject backend.PermissionSubject, perm string) error {
+	if c.GrantProjectPermissionFn != nil {
+		return c.GrantProjectPermissionFn(ctx, project, subject, perm)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GrantProjectPermission; set GrantProjectPermissionFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RevokeProjectPermission(ctx context.Context, project string, subject backend.PermissionSubject) error {
+	if c.RevokeProjectPermissionFn != nil {
+		return c.RevokeProjectPermissionFn(ctx, project, subject)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RevokeProjectPermission; set RevokeProjectPermissionFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListRepoPermissions(ctx context.Context, project, slug string) ([]backend.PermissionGrant, error) {
+	if c.ListRepoPermissionsFn != nil {
+		return c.ListRepoPermissionsFn(ctx, project, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListRepoPermissions; set ListRepoPermissionsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GrantRepoPermission(ctx context.Context, project, slug string, subject backend.PermissionSubject, perm string) error {
+	if c.GrantRepoPermissionFn != nil {
+		return c.GrantRepoPermissionFn(ctx, project, slug, subject, perm)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GrantRepoPermission; set GrantRepoPermissionFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RevokeRepoPermission(ctx context.Context, project, slug string, subject backend.PermissionSubject) error {
+	if c.RevokeRepoPermissionFn != nil {
+		return c.RevokeRepoPermissionFn(ctx, project, slug, subject)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RevokeRepoPermission; set RevokeRepoPermissionFn in your test")
 	}
 	return nil
 }

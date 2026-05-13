@@ -678,3 +678,24 @@ type EnvVariableInput struct {
 	Value   string
 	Secured bool
 }
+
+// PermissionSubject identifies a user or group in a permission grant.
+// Kind is "user" or "group". For users, Slug is the login slug. For groups,
+// Name is the group name (may contain spaces). DisplayName is populated on
+// read from the API and ignored on write.
+type PermissionSubject struct {
+	Kind        string // "user" | "group"
+	Slug        string // user slug (Kind=user)
+	Name        string // group name (Kind=group)
+	DisplayName string // populated on read; ignored on write
+}
+
+// PermissionGrant pairs a subject (user or group) with a permission level.
+// Permission values:
+//
+//	PROJECT_READ, PROJECT_WRITE, PROJECT_ADMIN
+//	REPO_READ, REPO_WRITE, REPO_ADMIN
+type PermissionGrant struct {
+	Subject    PermissionSubject
+	Permission string
+}

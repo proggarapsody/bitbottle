@@ -84,7 +84,7 @@ command in that checkout runs without `-R`.
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only commands | `pipeline *`, `pr request-changes` | — |
-| Server-only commands | — | `branch protect *`, `code-insights *` |
+| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *` |
 
 Custom-hostname Cloud Data Center? Force routing in `hosts.yml`:
 `backend_type: cloud` (or `server`). See `references/auth.md`.
@@ -193,6 +193,28 @@ bitbottle code-insights merge-check set PROJ/REPO CHECK_KEY \
 
 All subcommands support `--hostname` and `--json / --jq` where applicable.
 Merge-check verbs are marked experimental (partly undocumented API).
+
+## Permissions quick-reference _(Server / DC only)_
+
+```bash
+# List all grants for a project (ADMIN → WRITE → READ)
+bitbottle --hostname HOST perms project list MYPROJ [--json] [--jq EXPR]
+
+# Grant / revoke project permission
+bitbottle --hostname HOST perms project grant MYPROJ PERM --user SLUG
+bitbottle --hostname HOST perms project grant MYPROJ PERM --group "name"
+bitbottle --hostname HOST perms project revoke MYPROJ --user SLUG [--force]
+
+# List / grant / revoke repo permission
+bitbottle --hostname HOST perms repo list MYPROJ/REPO [--json] [--jq EXPR]
+bitbottle --hostname HOST perms repo grant MYPROJ/REPO PERM --user SLUG
+bitbottle --hostname HOST perms repo revoke MYPROJ/REPO --group "name"
+```
+
+Valid PERMs: `PROJECT_READ`, `PROJECT_WRITE`, `PROJECT_ADMIN`, `REPO_READ`,
+`REPO_WRITE`, `REPO_ADMIN`. Grant warns on TTY if new perm < current;
+pass `--force` to skip. MCP tools: `list/grant/revoke_project_permission`,
+`list/grant/revoke_repo_permission`.
 
 ## Issues (Cloud only)
 

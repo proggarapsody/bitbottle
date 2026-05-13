@@ -419,6 +419,41 @@ bitbottle --hostname git.example.com code-insights merge-check delete \
 Invoking any `code-insights` command against a Bitbucket Cloud host returns
 the typed `host.unsupported` error.
 
+### Permissions _(Bitbucket Server / DC only)_
+
+Manage user and group permissions for projects and repositories.
+Requires `PROJECT_ADMIN` on the target project.
+
+```bash
+# List all grants for a project (users + groups, sorted ADMIN → WRITE → READ)
+bitbottle --hostname git.example.com perms project list MYPROJ
+
+# Grant a user PROJECT_WRITE on a project
+bitbottle --hostname git.example.com perms project grant MYPROJ PROJECT_WRITE --user alice
+
+# Grant a group PROJECT_READ on a project
+bitbottle --hostname git.example.com perms project grant MYPROJ PROJECT_READ --group "qa team"
+
+# Revoke a user's permission on a project
+bitbottle --hostname git.example.com perms project revoke MYPROJ --user bob
+
+# List all grants for a repository
+bitbottle --hostname git.example.com perms repo list MYPROJ/my-service
+
+# Grant a user REPO_WRITE on a repository
+bitbottle --hostname git.example.com perms repo grant MYPROJ/my-service REPO_WRITE --user carol
+
+# Revoke a group's permission on a repository
+bitbottle --hostname git.example.com perms repo revoke MYPROJ/my-service --group "qa team"
+
+# Structured output
+bitbottle --hostname git.example.com perms project list MYPROJ --json permission,subject
+bitbottle --hostname git.example.com perms project list MYPROJ --jq '.[] | select(.permission == "PROJECT_ADMIN")'
+```
+
+If a grant call would **downgrade** an existing permission (e.g. ADMIN → READ),
+`grant` prompts for confirmation on a TTY. Pass `--force` to skip the prompt.
+
 ### Commit Comments
 
 Add and manage review-style comments on individual commits. Both Bitbucket
