@@ -5,17 +5,17 @@
 
   outputs = { self, nixpkgs }:
     let
-      version = "1.42.0";
+      version = "1.56.0";
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
 
       assetFor = system:
         let
           map = {
-            "x86_64-linux"   = { os = "linux";  arch = "amd64"; sha256 = "69054751b62cccbafe4caf408b8478f05a52ed66dfed6f45662bc8d1fad3665a"; };
-            "aarch64-linux"  = { os = "linux";  arch = "arm64"; sha256 = "90b59727940f37ac0c508064574cc2dd7ad3cc1b3d77f835f58e40c8f086e3b0"; };
-            "x86_64-darwin"  = { os = "darwin"; arch = "amd64"; sha256 = "99160cd233c9baa045545c8e586beb204b3a211922287180d12c44622d60fe8d"; };
-            "aarch64-darwin" = { os = "darwin"; arch = "arm64"; sha256 = "b5273747c72cace9711b5e34a41f76ffe5de28de116c4ec162d6ade049c6be11"; };
+            "x86_64-linux"   = { os = "linux";  arch = "amd64"; sha256 = "d8462305265783c46668be063f0f18b7ad3c900771715b38c8f410b762326952"; };
+            "aarch64-linux"  = { os = "linux";  arch = "arm64"; sha256 = "afbe4f386c38a64e8d59bcaac6dfc302c158d37297c786326d70df8c6d312d75"; };
+            "x86_64-darwin"  = { os = "darwin"; arch = "amd64"; sha256 = "55d94fcab5e2dcf81b86bbe02818c60a1315dd816acb51d97f4f34f434382eb0"; };
+            "aarch64-darwin" = { os = "darwin"; arch = "arm64"; sha256 = "d1b80c56c0ef17b08ec4615648832eb9891609f1327813b76103d87d2b9ac242"; };
           };
         in map.${system};
     in {
