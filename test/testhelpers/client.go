@@ -178,6 +178,10 @@ type FakeClient struct {
 
 	// Pipeline trigger methods (Cloud-only; satisfies backend.PipelineTriggerClient when set)
 	TriggerPipelineFn func(ns, slug string, input backend.PipelineTriggerInput) (backend.PipelineTriggerResult, error)
+
+	// Diff methods (both backends; satisfies backend.DiffClient when set)
+	GetDiffFn     func(ns, slug, from, to string) (string, error)
+	GetDiffStatFn func(ns, slug, from, to string) (backend.DiffStat, error)
 }
 
 // Compile-time interface check.
@@ -1245,4 +1249,26 @@ func (c *FakeClient) TriggerPipeline(ns, slug string, input backend.PipelineTrig
 		c.T.Fatalf("unexpected call to FakeClient.TriggerPipeline; set TriggerPipelineFn in your test")
 	}
 	return backend.PipelineTriggerResult{}, nil
+}
+
+// ── DiffClient ───────────────────────────────────────────────────────────────
+
+func (c *FakeClient) GetDiff(ns, slug, from, to string) (string, error) {
+	if c.GetDiffFn != nil {
+		return c.GetDiffFn(ns, slug, from, to)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetDiff; set GetDiffFn in your test")
+	}
+	return "", nil
+}
+
+func (c *FakeClient) GetDiffStat(ns, slug, from, to string) (backend.DiffStat, error) {
+	if c.GetDiffStatFn != nil {
+		return c.GetDiffStatFn(ns, slug, from, to)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetDiffStat; set GetDiffStatFn in your test")
+	}
+	return backend.DiffStat{}, nil
 }

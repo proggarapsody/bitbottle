@@ -30,6 +30,7 @@ not sure about.**
 | Top-level variable command (repository/workspace/deployment scope) — Cloud only | `references/variable.md` |
 | Named credential profiles (create/use/list/delete) | `references/profile.md` |
 | Deploy keys (list/add/delete) — Cloud and Server/DC | `references/deploy-key.md` |
+| Diff between refs (`diff REF1..REF2 [--stat]`) — Cloud and Server/DC | `references/diff.md` |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.

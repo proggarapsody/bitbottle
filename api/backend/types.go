@@ -773,3 +773,19 @@ type DeployKeyInput struct {
 	Label string
 	Key   string
 }
+
+// DiffStat is the domain representation of a repository diff summary.
+type DiffStat struct {
+	FilesChanged int
+	Additions    int
+	Deletions    int
+	Files        []DiffStatEntry
+}
+
+// DiffStatEntry is the domain representation of a single file's diff summary.
+type DiffStatEntry struct {
+	Path      string
+	Status    string // "added", "modified", "deleted", "renamed"
+	Additions int
+	Deletions int
+}
