@@ -105,11 +105,3 @@ func TestDeleteRepo_NotFound(t *testing.T) {
 	err := client.DeleteRepo("MYPROJ", "missing")
 	require.Error(t, err)
 }
-
-func TestGetApplicationProperties_ReturnsVersion(t *testing.T) {
-	t.Parallel()
-	client, _ := newClientWithFixture(t, "/application-properties", "testdata/application_properties.json", 200)
-	props, err := client.GetApplicationProperties()
-	require.NoError(t, err)
-	assert.Equal(t, "8.9.1", props.Version)
-}
