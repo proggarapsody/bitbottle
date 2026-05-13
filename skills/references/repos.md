@@ -17,6 +17,7 @@ bitbottle repo fork     WS/repo --into TARGET-WS [--name NAME]       # Cloud onl
 bitbottle repo transfer PROJ/repo --to TARGET-PROJ                   # both backends; moves repo to another project (Server) or workspace (Cloud)
 bitbottle repo file get PROJ/repo PATH --ref REF [--out FILE]        # read file content at a ref
 bitbottle repo tree PROJ/repo [PATH] --ref REF [--json fields]       # list directory at a ref
+bitbottle repo watcher list PROJ/repo                                 # list users watching a repo
 ```
 
 `repo rename`, `repo fork`, and `repo transfer` accept `--json fields` and
@@ -43,6 +44,10 @@ submodules surface as `dir` with the submodule pointer in `hash` so
 agents can recurse uniformly. PATH defaults to the repo root. Both
 commands require `--ref` (branch / tag / commit hash) and accept
 `--hostname`. MCP equivalents: `get_file_content` and `list_tree`.
+
+`repo watcher list` lists all users watching a repository. Works on
+both Cloud and Server/DC. Columns: DISPLAY_NAME, USERNAME. Supports
+`--json fields`, `--jq expr`, `--hostname`. MCP tool: `list_repo_watchers(repo)`.
 
 ## Branches
 

@@ -212,6 +212,9 @@ type FakeClient struct {
 
 	// PR file methods (both backends; satisfies backend.PRFileClient when set)
 	ListPRFilesFn func(ns, slug string, prID int) ([]backend.DiffStatEntry, error)
+
+	// Repo watcher methods (both backends; satisfies backend.RepoWatcherClient when set)
+	ListRepoWatchersFn func(ns, slug string) ([]backend.User, error)
 }
 
 // Compile-time interface check.
@@ -1469,6 +1472,18 @@ func (c *FakeClient) ListPRFiles(ns, slug string, prID int) ([]backend.DiffStatE
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListPRFiles; set ListPRFilesFn in your test")
+	}
+	return nil, nil
+}
+
+// ── RepoWatcherClient ─────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListRepoWatchers(ns, slug string) ([]backend.User, error) {
+	if c.ListRepoWatchersFn != nil {
+		return c.ListRepoWatchersFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListRepoWatchers; set ListRepoWatchersFn in your test")
 	}
 	return nil, nil
 }
