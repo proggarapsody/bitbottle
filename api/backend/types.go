@@ -744,3 +744,17 @@ type PermissionGrant struct {
 	Subject    PermissionSubject
 	Permission string
 }
+
+// DeployKey is the domain representation of a repository deploy key (SSH public key).
+type DeployKey struct {
+	ID       int    `json:"id"`
+	Label    string `json:"label"`
+	Key      string `json:"key"`
+	ReadOnly bool   `json:"readOnly,omitempty"`
+}
+
+// DeployKeyInput carries the parameters for adding a deploy key.
+type DeployKeyInput struct {
+	Label string
+	Key   string
+}

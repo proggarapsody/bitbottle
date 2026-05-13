@@ -51,3 +51,9 @@ type NoWorkspaceVarFake struct {
 type NoDeploymentFake struct {
 	backend.Client
 }
+
+// NoDeployKeyFake wraps backend.Client without implementing
+// backend.DeployKeyClient — simulates a backend that doesn't support deploy keys.
+type NoDeployKeyFake struct {
+	backend.Client
+}

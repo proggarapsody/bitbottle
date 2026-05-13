@@ -170,6 +170,11 @@ type FakeClient struct {
 	SetMergeCheckFn     func(project, slug, key string, in backend.MergeCheckInput) error
 	GetMergeCheckFn     func(project, slug, key string) (backend.MergeCheck, error)
 	DeleteMergeCheckFn  func(project, slug, key string) error
+
+	// Deploy key methods (both backends; satisfies backend.DeployKeyClient when set)
+	ListDeployKeysFn  func(ns, slug string) ([]backend.DeployKey, error)
+	AddDeployKeyFn    func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error)
+	DeleteDeployKeyFn func(ns, slug string, id int) error
 }
 
 // Compile-time interface check.
@@ -1193,6 +1198,36 @@ func (c *FakeClient) RevokeRepoPermission(ctx context.Context, project, slug str
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RevokeRepoPermission; set RevokeRepoPermissionFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListDeployKeys(ns, slug string) ([]backend.DeployKey, error) {
+	if c.ListDeployKeysFn != nil {
+		return c.ListDeployKeysFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListDeployKeys; set ListDeployKeysFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddDeployKey(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error) {
+	if c.AddDeployKeyFn != nil {
+		return c.AddDeployKeyFn(ns, slug, input)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddDeployKey; set AddDeployKeyFn in your test")
+	}
+	return backend.DeployKey{}, nil
+}
+
+func (c *FakeClient) DeleteDeployKey(ns, slug string, id int) error {
+	if c.DeleteDeployKeyFn != nil {
+		return c.DeleteDeployKeyFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteDeployKey; set DeleteDeployKeyFn in your test")
 	}
 	return nil
 }

@@ -89,6 +89,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
+| `deploy-key` | `list` `add` `delete` |
 | `commit` | `log` `view` `status` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
@@ -277,6 +278,22 @@ Event keys differ between backends:
 `--secret` accepts the raw value, `-` to read from stdin, or `@PATH` to read
 from a file. Trailing newlines from stdin / file are trimmed. Webhook
 secrets are write-only — neither backend returns them on read.
+
+### Deploy keys
+
+```bash
+# List deploy keys
+bitbottle deploy-key list MYPROJ/my-service
+
+# Add a deploy key
+bitbottle deploy-key add MYPROJ/my-service --key "ssh-rsa AAAA..." --label "CI server"
+
+# Delete a deploy key by ID
+bitbottle deploy-key delete MYPROJ/my-service 42
+```
+
+All three subcommands work on both Bitbucket Cloud and Server/DC. `list` and
+`add` support `--json` / `--jq` / `--yaml` for structured output.
 
 ### Repo extras
 
