@@ -148,9 +148,14 @@ bitbottle pipeline watch PROJECT/REPO UUID [--interval 5]
 # Trigger a Bitbucket Cloud pipeline on a branch (Cloud only)
 bitbottle pipeline trigger [PROJECT/REPO] --branch BRANCH [--variable KEY=VALUE ...]
 # --variable is repeatable; omit --branch to use the current git branch
+
+# Pipeline schedules (Cloud only)
+bitbottle pipeline schedule list [PROJECT/REPO]
+bitbottle pipeline schedule create [PROJECT/REPO] --cron "0 0 * * *" --branch BRANCH [--enabled=false]
+bitbottle pipeline schedule delete [PROJECT/REPO] UUID
 ```
 
-MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`, `trigger_pipeline`.
+MCP tools: `status` (top-level dashboard), `pr_status`, `pr_checks`, `pr_update_branch`, `pipeline_watch`, `trigger_pipeline`, `list_pipeline_schedules`, `create_pipeline_schedule`, `delete_pipeline_schedule`.
 
 Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployment`, `list_environments`, `create_environment`, `delete_environment`. See `references/deployment.md`.
 

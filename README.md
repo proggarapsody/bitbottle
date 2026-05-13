@@ -219,6 +219,24 @@ Secured variables redact their value on read (TTY column shows
 `<secured>`, JSON `value` shows `"<secured>"`). Use `--body=-` to read
 the value from stdin so the secret never touches shell history.
 
+### Pipeline Schedules _(Cloud only)_
+
+```bash
+# List all pipeline schedules for a repository
+bitbottle pipeline schedule list MYWORKSPACE/my-service
+
+# Create a schedule (runs daily at midnight on main)
+bitbottle pipeline schedule create MYWORKSPACE/my-service \
+  --cron "0 0 * * *" --branch main
+
+# Create a disabled schedule
+bitbottle pipeline schedule create MYWORKSPACE/my-service \
+  --cron "0 12 * * 1" --branch develop --enabled=false
+
+# Delete a schedule by UUID
+bitbottle pipeline schedule delete MYWORKSPACE/my-service {uuid}
+```
+
 ### Deployments & Environments _(Cloud only)_
 
 ```bash
