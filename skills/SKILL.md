@@ -24,6 +24,8 @@ not sure about.**
 | Repos, branches, tags, commits, pipelines, webhooks, repo watcher list | `references/repos.md` |
 | commit comment list/add/edit/delete/react/unreact | list, add, edit, delete commit comments; react/unreact (Server/DC only) | `references/commit.md` |
 | commit files HASH [PROJECT/REPO] | list files changed in a commit — both Cloud and Server/DC | `references/commit.md` |
+| commit status PROJECT/REPO HASH | list build/CI statuses for a commit — both Cloud and Server/DC | `references/commit.md` |
+| commit status report PROJECT/REPO HASH --key KEY --state STATE | post a build status against a commit hash — both Cloud and Server/DC | `references/commit.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Issues (list/view/create/close/edit/reopen/assign/comment) — Cloud only | see inline below |
 | Deployments (list/view) — Cloud only | `references/deployment.md` |

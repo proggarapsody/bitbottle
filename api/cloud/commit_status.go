@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 )
@@ -22,6 +23,25 @@ func (w wireCloudCommitStatus) toDomain() backend.CommitStatus {
 		Description: w.Description,
 		URL:         w.URL,
 	}
+}
+
+type wireCommitStatusBody struct {
+	Key         string `json:"key"`
+	State       string `json:"state"`
+	URL         string `json:"url,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+func (c *Client) ReportCommitStatus(ns, slug, hash string, input backend.CommitStatusInput) (backend.CommitStatus, error) {
+	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/statuses/build",
+		url.PathEscape(ns), url.PathEscape(slug), url.PathEscape(hash))
+	body := wireCommitStatusBody{Key: input.Key, State: input.State, URL: input.URL, Name: input.Name, Description: input.Description}
+	var w wireCloudCommitStatus
+	if err := c.postJSON(path, body, &w); err != nil {
+		return backend.CommitStatus{}, err
+	}
+	return w.toDomain(), nil
 }
 
 func (c *Client) ListCommitStatuses(ns, slug, hash string) ([]backend.CommitStatus, error) {

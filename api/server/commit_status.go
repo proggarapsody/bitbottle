@@ -24,6 +24,25 @@ func (w wireServerCommitStatus) toDomain() backend.CommitStatus {
 	}
 }
 
+// ReportCommitStatus posts a build status against a commit hash.
+// Bitbucket Server / Data Center exposes this on the separate REST root,
+// /rest/build-status/1.0. The ns/slug arguments are unused (statuses are
+// keyed only by commit hash) but are kept for interface symmetry.
+func (c *Client) ReportCommitStatus(_, _, hash string, input backend.CommitStatusInput) (backend.CommitStatus, error) {
+	body := struct {
+		Key         string `json:"key"`
+		State       string `json:"state"`
+		URL         string `json:"url,omitempty"`
+		Name        string `json:"name,omitempty"`
+		Description string `json:"description,omitempty"`
+	}{Key: input.Key, State: input.State, URL: input.URL, Name: input.Name, Description: input.Description}
+	path := fmt.Sprintf("/commits/%s", hash)
+	if err := c.buildStatusHTTP.PostJSON(path, body, nil); err != nil {
+		return backend.CommitStatus{}, err
+	}
+	return backend.CommitStatus{Key: input.Key, State: input.State, Name: input.Name, Description: input.Description, URL: input.URL}, nil
+}
+
 // ListCommitStatuses lists build / CI statuses reported against a commit hash.
 // Bitbucket Server / Data Center exposes these on a separate REST root,
 // /rest/build-status/1.0, rather than the regular /rest/api/1.0 base.

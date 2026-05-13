@@ -37,6 +37,7 @@ func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
+	cmd.AddCommand(NewCmdCommitStatusReport(f))
 	return cmd
 }
 
