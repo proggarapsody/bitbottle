@@ -80,4 +80,3 @@ func (c *Client) CreateRepo(project string, input CreateRepoInput) (Repository, 
 func (c *Client) DeleteRepo(project, slug string) error {
 	return c.Delete(fmt.Sprintf("/projects/%s/repos/%s", project, slug))
 }
-
