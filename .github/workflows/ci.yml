@@ -82,9 +82,37 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    # Build always runs — release PR's combined diff may include an auto-merged
-    # dep bump that landed between feature merge and release PR open; this is
-    # the last gate before GoReleaser tags + publishes.
+    # Plain `go build` is skipped on release PRs (diff is CHANGELOG/manifest only,
+    # already covered by feature-PR build). The actual pre-tag gate that catches
+    # GoReleaser-specific failures is the `release-config-check` job below.
+    steps:
+      - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        if: github.head_ref != 'release-please--branches--main'
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build
+        if: github.head_ref != 'release-please--branches--main'
+        run: go build ./cmd/bitbottle
+
+      - name: Skip notice (release-please PR)
+        if: github.head_ref == 'release-please--branches--main'
+        run: echo "Skipping plain build on release-please PR — release-config-check runs goreleaser snapshot as the pre-tag gate."
+
+  release-config-check:
+    name: Release config
+    runs-on: ubuntu-latest
+    # Pre-tag gate: validate .goreleaser.yml + snapshot build on release-please PRs.
+    # Catches GoReleaser-specific failures (build flags, matrix, hooks) that plain
+    # `go build` misses. Only runs on release PRs; cheap to add (~45s).
+    if: github.head_ref == 'release-please--branches--main'
     steps:
       - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
         with:
@@ -97,8 +125,17 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Build
-        run: go build ./cmd/bitbottle
+      - name: Validate goreleaser config
+        uses: goreleaser/goreleaser-action@1a80836c5c9d9e5755a25cb59ec6f45a3b5f41a8 # v7
+        with:
+          version: "~> v2"
+          args: check
+
+      - name: Snapshot build (current platform)
+        uses: goreleaser/goreleaser-action@1a80836c5c9d9e5755a25cb59ec6f45a3b5f41a8 # v7
+        with:
+          version: "~> v2"
+          args: build --snapshot --single-target --clean
 
   smell-scan:
     name: Smell scan

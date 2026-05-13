@@ -97,7 +97,8 @@ For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trig
 ### Halt protocol rules
 
 - **No diff in halt messages.** Reference PR URL, not embedded diff. Halt messages stay <500 chars so phone push notifications display cleanly.
-- **Halt-response timeout**: 4 hours. After that, log `halt_no_response`, exit. Don't poll forever.
+- **Halt-response timeout**: 2 hours. After that, log `halt_no_response`, exit. Matches the cycle wall-clock cap (see below) so there's a single ceiling.
+- **Cycle wall-clock cap**: 2 hours per cycle. Hard ceiling; orchestrator force-exits with `halt_cycle_timeout` if exceeded. Covers the historical worst-case (~90 min) with margin; anything longer is almost certainly stuck.
 - **Auto-confirm**: scope-pick (BACKLOG-driven), bundle-check (algorithm-driven), workspace-clean preflight, mechanical doc-sync, secret-leak scan, build-artifacts scan, lint+test-via-CI, PRD close confirmation, manual-test refresh decision, worktree removal.
 
 ---
@@ -128,8 +129,8 @@ One line per cycle, append-only:
 | `halt_pre_merge_blocker` | Pre-merge gate found a BLOCKER finding |
 | `halt_ci_red` | CI failed |
 | `halt_release` | User replied non-ship to the single ship halt (feature is auto-merged before this halt) |
-| `halt_no_response` | Phone halt timed out (4 hr default) |
-| `halt_cycle_timeout` | Cycle exceeded wall-clock cap |
+| `halt_no_response` | Phone halt timed out (2 hr default — matches cycle cap) |
+| `halt_cycle_timeout` | Cycle exceeded 2-hour wall-clock cap |
 | `skip_in_progress` | Step 0a found a recent lock; another `/auto-iter` is running. **Do NOT increment cycle counter.** |
 
 ---
