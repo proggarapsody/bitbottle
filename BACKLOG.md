@@ -263,9 +263,9 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `pr comment react PR_ID COMMENT_ID --emoji E` | 🔲 | Add an emoji reaction to a PR comment — scope **REACT-PR** |
-| `pr comment unreact PR_ID COMMENT_ID --emoji E` | 🔲 | Remove own reaction from a comment — scope **REACT-PR** |
-| `pr comment list --reactions` | 🔲 | Existing command grows a reactions column when flag is set — scope **REACT-PR** |
+| `pr comment react PR_ID COMMENT_ID --emoji E` | ✅ | Add an emoji reaction to a PR comment — scope **REACT-PR** |
+| `pr comment unreact PR_ID COMMENT_ID --emoji E` | ✅ | Remove own reaction from a comment — scope **REACT-PR** |
+| `pr comment list --reactions` | ✅ | Existing command grows a reactions column when flag is set — scope **REACT-PR** |
 | `commit comment react / unreact` | 🔲 | Same pattern for commit comments — scope **REACT-COMMIT** |
 
 ### Variable _(standalone promotion — missing)_
@@ -357,7 +357,7 @@ Current state of every command area against gh feature parity:
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | ✅ |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | ✅ |
-| REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | 🔲 |
+| REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | ✅ |
 | REACT-COMMIT | **Commit Comment Reactions** | `commit comment react/unreact`; reuses `CommentReactor` from REACT-PR (depends on REACT-PR) | Server/DC | 3 | 🔲 |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
 | NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | 🔲 |
