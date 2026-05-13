@@ -17,3 +17,5 @@ clean:
 
 setup:
 	git config core.hooksPath .githooks
+	chmod +x .githooks/pre-commit .githooks/pre-push
+	@echo "Git hooks active. pre-commit: gofmt. pre-push: golangci-lint."
