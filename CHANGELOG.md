@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.0](https://github.com/proggarapsody/bitbottle/compare/v1.50.0...v1.51.0) (2026-05-13)
+
+
+### Features
+
+* **ssh-key:** add user SSH key management (Cloud only) ([6418d9b](https://github.com/proggarapsody/bitbottle/commit/6418d9b44a3b8dc204a3fbc440bd2ec2cb1ca7cb))
+
 ## [1.50.0](https://github.com/proggarapsody/bitbottle/compare/v1.49.1...v1.50.0) (2026-05-13)
 
 
