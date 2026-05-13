@@ -40,6 +40,8 @@ bitbottle pr activity 42 --limit 20
 bitbottle pr activity 42 --json type,actor,createdAt,detail   # structured output
 bitbottle pr checks    42                                      # list CI statuses for the PR head commit
 bitbottle pr checks    42 --watch [--interval 10]             # poll until all checks settle
+bitbottle pr commits   42                                      # list commits in a pull request
+bitbottle pr commits   42 --json hash,message,author,date     # structured output
 bitbottle pr update-branch 42                                  # rebase/sync PR branch onto target (Cloud merge commit; Server rebase)
 bitbottle pr status [PROJ/repo]                               # show your open PRs split by role (AUTHOR / REVIEWER)
 bitbottle pr reopen 42                                        # reopen a declined/closed PR
@@ -85,6 +87,10 @@ updates, merges, declines, rescopes) from both backends. The TTY table
 shows TIME (relative), TYPE, ACTOR. Use `--json type,actor,createdAt,detail`
 for structured output; `detail` carries the raw backend sub-object.
 `--limit N` caps results (default: no limit). MCP tool: `get_pr_activity`.
+
+`pr commits` lists all commits included in a pull request, paginated from both
+backends. Output table: HASH (first 8 chars on TTY) | MESSAGE | AUTHOR | DATE.
+Supports `--json hash,message,author,date`. MCP tool: `list_pr_commits`.
 
 ## Flag reality check
 

@@ -206,6 +206,9 @@ type FakeClient struct {
 	// Diff methods (both backends; satisfies backend.DiffClient when set)
 	GetDiffFn     func(ns, slug, from, to string) (string, error)
 	GetDiffStatFn func(ns, slug, from, to string) (backend.DiffStat, error)
+
+	// PR commit methods (both backends; satisfies backend.PRCommitClient when set)
+	ListPRCommitsFn func(ns, slug string, prID int) ([]backend.Commit, error)
 }
 
 // Compile-time interface check.
@@ -1441,6 +1444,16 @@ func (c *FakeClient) ListCommitFiles(ns, slug, hash string) ([]backend.DiffStatE
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListCommitFiles; set ListCommitFilesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) ListPRCommits(ns, slug string, prID int) ([]backend.Commit, error) {
+	if c.ListPRCommitsFn != nil {
+		return c.ListPRCommitsFn(ns, slug, prID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPRCommits; set ListPRCommitsFn in your test")
 	}
 	return nil, nil
 }
