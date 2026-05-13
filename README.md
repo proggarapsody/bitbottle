@@ -85,7 +85,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 |---|---|
 | `auth` | `login` `logout` `status` `token` `refresh` |
 | `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `request-review` `comment` `default-reviewer {list\|add\|remove}` |
-| `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` |
+| `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` `watcher list` |
 | `branch` | `list` `create` `delete` `checkout` |
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
