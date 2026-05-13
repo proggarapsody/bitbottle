@@ -125,3 +125,47 @@ bare shortcodes are normalised automatically.
 
 All tools accept an optional `hostname` parameter (omit when only one host is
 configured). `comment_id` is an integer.
+
+---
+
+# bitbottle commit status — commit build status commands
+
+## Command matrix
+
+```bash
+bitbottle commit status PROJECT/REPO HASH                              # list build statuses
+bitbottle commit status report PROJECT/REPO HASH --key KEY --state STATE [--url URL] [--name NAME] [--description DESC]
+```
+
+Both Bitbucket Cloud and Server / Data Center are supported.
+
+## commit status (list)
+
+List build / CI statuses reported against a commit hash.
+
+```bash
+bitbottle commit status myproject/myrepo abc123
+bitbottle commit status myproject/myrepo abc123 --json key,state,name,url
+```
+
+TTY output columns: `KEY`, `STATE`, `NAME`, `DESCRIPTION`, `URL`.
+`STATE` is color-coded: green for `SUCCESSFUL`, red for `FAILED`.
+
+## commit status report
+
+Post a build status against a commit hash.
+
+```bash
+bitbottle commit status report myproject/myrepo abc123 --key my-build --state SUCCESSFUL
+bitbottle commit status report myproject/myrepo abc123 --key my-build --state FAILED --url https://ci.example.com --name "My Build"
+```
+
+`--key` and `--state` are required. Valid states: `SUCCESSFUL`, `FAILED`, `INPROGRESS`, `STOPPED`.
+
+On success, prints the reported status (KEY / STATE / NAME / URL).
+
+## MCP tools
+
+| Tool | Required params | Notes |
+|---|---|---|
+| `report_commit_status` | repo, hash, key, state | Optional: url, name, description; both backends |

@@ -90,6 +90,7 @@ type FakeClient struct {
 
 	// Commit status methods
 	ListCommitStatusesFn func(ns, slug, hash string) ([]backend.CommitStatus, error)
+	ReportCommitStatusFn func(ns, slug, hash string, input backend.CommitStatusInput) (backend.CommitStatus, error)
 
 	// Webhook methods
 	ListWebhooksFn  func(ns, slug string) ([]backend.Webhook, error)
@@ -686,6 +687,16 @@ func (c *FakeClient) ListCommitStatuses(ns, slug, hash string) ([]backend.Commit
 		c.T.Fatalf("unexpected call to FakeClient.ListCommitStatuses; set ListCommitStatusesFn in your test")
 	}
 	return nil, nil
+}
+
+func (c *FakeClient) ReportCommitStatus(ns, slug, hash string, input backend.CommitStatusInput) (backend.CommitStatus, error) {
+	if c.ReportCommitStatusFn != nil {
+		return c.ReportCommitStatusFn(ns, slug, hash, input)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ReportCommitStatus; set ReportCommitStatusFn in your test")
+	}
+	return backend.CommitStatus{}, nil
 }
 
 func (c *FakeClient) ListWebhooks(ns, slug string) ([]backend.Webhook, error) {

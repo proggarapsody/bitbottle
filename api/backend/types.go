@@ -355,6 +355,15 @@ type CommitStatus struct {
 	URL         string
 }
 
+// CommitStatusInput carries the parameters for reporting a build status.
+type CommitStatusInput struct {
+	Key         string
+	State       string // SUCCESSFUL | FAILED | INPROGRESS | STOPPED
+	Name        string
+	URL         string
+	Description string
+}
+
 // Webhook is the domain representation of a repository webhook.
 // Both Bitbucket Cloud and Server/DC expose a similar shape — a remote URL,
 // a list of subscribed events, and an active flag. ID is the backend's

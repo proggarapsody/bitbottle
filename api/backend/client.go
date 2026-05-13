@@ -45,6 +45,7 @@ type Client interface {
 	PRActivityReader
 	CommitCommenter
 	CommitStatusLister
+	CommitStatusReporter
 	WebhookLister
 	WebhookReader
 	WebhookCreator

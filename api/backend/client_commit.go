@@ -14,3 +14,8 @@ type CommitReader interface {
 type CommitStatusLister interface {
 	ListCommitStatuses(ns, slug, hash string) ([]CommitStatus, error)
 }
+
+// CommitStatusReporter posts a build status against a commit hash.
+type CommitStatusReporter interface {
+	ReportCommitStatus(ns, slug, hash string, input CommitStatusInput) (CommitStatus, error)
+}
