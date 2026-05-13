@@ -238,9 +238,9 @@ Current state of every command area against gh feature parity:
 
 | Command | Status | Notes |
 |---|---|---|
-| `admin secrets rotate` | 🔲 | Rotate application secrets (HTTP Strict Transport, etc.) — scope **ADMIN** |
-| `admin logging get` | 🔲 | Show current log level + async flag — scope **ADMIN** |
-| `admin logging set` | 🔲 | `--level DEBUG\|INFO\|WARN\|ERROR`, `--async` — scope **ADMIN** |
+| `admin secrets rotate` | ✅ | Rotate application secrets (HTTP Strict Transport, etc.) — scope **ADMIN** |
+| `admin logging get` | ✅ | Show current log level + async flag — scope **ADMIN** |
+| `admin logging set` | ✅ | `--level DEBUG\|INFO\|WARN\|ERROR`, `--async` — scope **ADMIN** |
 
 ### PR Auto-Merge _(both backends — missing)_
 
@@ -354,7 +354,7 @@ Current state of every command area against gh feature parity:
 | CIS | **CI Supply Chain Hardening** | (GitHub Actions) | N/A | DX | ✅ |
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | ✅ |
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | ✅ |
-| ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | 🔲 |
+| ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | ✅ |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | 🔲 |
 | REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | 🔲 |
