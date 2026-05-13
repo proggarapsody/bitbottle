@@ -15,12 +15,13 @@ type FakeClient struct {
 	T *testing.T
 
 	// Repo methods
-	ListReposFn  func(ns string, limit int) ([]backend.Repository, error)
-	GetRepoFn    func(ns, slug string) (backend.Repository, error)
-	CreateRepoFn func(ns string, in backend.CreateRepoInput) (backend.Repository, error)
-	DeleteRepoFn func(ns, slug string) error
-	RenameRepoFn func(ns, slug, newName string) (backend.Repository, error)
-	ForkRepoFn   func(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error)
+	ListReposFn    func(ns string, limit int) ([]backend.Repository, error)
+	GetRepoFn      func(ns, slug string) (backend.Repository, error)
+	CreateRepoFn   func(ns string, in backend.CreateRepoInput) (backend.Repository, error)
+	DeleteRepoFn   func(ns, slug string) error
+	RenameRepoFn   func(ns, slug, newName string) (backend.Repository, error)
+	ForkRepoFn     func(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error)
+	TransferRepoFn func(ns, slug, target string) (backend.Repository, error)
 
 	// PR methods
 	ListPRsFn          func(ns, slug, state string, limit int) ([]backend.PullRequest, error)
@@ -250,6 +251,16 @@ func (c *FakeClient) ForkRepo(ns, slug string, in backend.ForkRepoInput) (backen
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ForkRepo; set ForkRepoFn in your test")
+	}
+	return backend.Repository{}, nil
+}
+
+func (c *FakeClient) TransferRepo(ns, slug, target string) (backend.Repository, error) {
+	if c.TransferRepoFn != nil {
+		return c.TransferRepoFn(ns, slug, target)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.TransferRepo; set TransferRepoFn in your test")
 	}
 	return backend.Repository{}, nil
 }

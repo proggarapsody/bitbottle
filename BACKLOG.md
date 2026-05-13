@@ -372,7 +372,7 @@ Current state of every command area against gh feature parity:
 | PR-TEMPLATE | **PR Description Templates** | File-based templates (`.bitbucket/pull-request-template.md`) — no dedicated REST API; already readable via `repo file get`. Deferred: not a distinct API scope. | N/A | — | ✅ |
 | DEFAULT-REVIEWERS | **PR Default Reviewers** | `pr default-reviewer list`, `pr default-reviewer add USER`, `pr default-reviewer remove USER` — manage per-repo default reviewers. Cloud: `GET/POST/DELETE /repositories/{ws}/{slug}/effective-default-reviewers`. Server: `GET/PUT/DELETE /rest/default-reviewers/1.0/projects/{ns}/repos/{slug}/reviewers/{userSlug}`. Both backends. | Both | 2 | ✅ |
 | SSH-KEYS | **User SSH Key Management** | `ssh-key list`, `ssh-key add --key "..." [--label "..."]`, `ssh-key delete ID` — user-level SSH keys (not repo deploy keys). Cloud: `GET/POST/DELETE /users/{username}/ssh-keys`. Cloud only initially. | Cloud | 2 | ✅ |
-| REPO-TRANSFER | **Repository Transfer** | `repo transfer PROJECT/REPO --to TARGET-PROJECT [--hostname H]` — move a repository to a different project/workspace. Cloud: `POST /repositories/{ws}/{slug}/transfer`. Server: `PUT /rest/api/1.0/projects/{ns}/repos/{slug}` updating `project.key`. Both backends. | Both | 3 | 🔲 |
+| REPO-TRANSFER | **Repository Transfer** | `repo transfer PROJECT/REPO --to TARGET-PROJECT [--hostname H]` — move a repository to a different project/workspace. Cloud: `POST /repositories/{ws}/{slug}/transfer`. Server: `PUT /rest/api/1.0/projects/{ns}/repos/{slug}` updating `project.key`. Both backends. | Both | 3 | ✅ |
 
 ---
 
