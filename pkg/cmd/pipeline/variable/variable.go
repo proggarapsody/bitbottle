@@ -1,4 +1,6 @@
 // Package variable wires the `pipeline variable` command group.
+//
+// Deprecated: use `bitbottle variable --scope repository` instead.
 package variable
 
 import (
@@ -13,11 +15,12 @@ import (
 // NewCmdVariable builds the root `pipeline variable` command.
 func NewCmdVariable(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "variable",
-		Short: "Manage repository-level pipeline variables (Cloud only)",
+		Use:        "variable",
+		Short:      "Manage repository-level pipeline variables (Cloud only)",
+		Deprecated: "use `bitbottle variable --scope repository` instead",
 	}
-	cmd.AddCommand(cmdList.NewCmdList(f, nil))
-	cmd.AddCommand(cmdSet.NewCmdSet(f, nil))
-	cmd.AddCommand(cmdDelete.NewCmdDelete(f, nil))
+	cmd.AddCommand(cmdList.NewCmdList(f, nil))     //nolint:staticcheck
+	cmd.AddCommand(cmdSet.NewCmdSet(f, nil))       //nolint:staticcheck
+	cmd.AddCommand(cmdDelete.NewCmdDelete(f, nil)) //nolint:staticcheck
 	return cmd
 }

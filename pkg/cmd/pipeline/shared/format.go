@@ -63,35 +63,3 @@ func StepFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[bac
 	p.AddField(format.Field[backend.PipelineStep]{Name: "duration", Header: "DURATION", Extract: func(s backend.PipelineStep) any { return s.Duration }})
 	return p
 }
-
-// SecuredPlaceholder is rendered in TTY tables in place of a secured pipeline
-// variable's value. The JSON path emits the raw (empty) value so scripts get a
-// boolean `secured` field instead of a fake placeholder.
-const SecuredPlaceholder = "<secured>"
-
-// DisplayVariableValue is the TTY-only redaction helper. Pure: takes a domain
-// value, returns the string the column should print.
-func DisplayVariableValue(v backend.PipelineVariable) string {
-	if v.Secured {
-		return SecuredPlaceholder
-	}
-	return v.Value
-}
-
-// VariableFields constructs the formatter for `pipeline variable list`. The
-// TTY value column applies DisplayVariableValue so secured variables print the
-// placeholder; the JSON `value` field passes through the raw value (always
-// empty for secured variables, since the API never returns those).
-func VariableFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.PipelineVariable] {
-	p := format.New[backend.PipelineVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
-	p.AddField(format.Field[backend.PipelineVariable]{Name: "uuid", Header: "UUID", JSONOnly: true, Extract: func(v backend.PipelineVariable) any { return v.UUID }})
-	p.AddField(format.Field[backend.PipelineVariable]{Name: "key", Header: "KEY", Extract: func(v backend.PipelineVariable) any { return v.Key }})
-	// Both TTY and JSON paths route through DisplayVariableValue so secured
-	// values cannot be exfiltrated by switching output modes.
-	p.AddField(format.Field[backend.PipelineVariable]{
-		Name: "value", Header: "VALUE",
-		Extract: func(v backend.PipelineVariable) any { return DisplayVariableValue(v) },
-	})
-	p.AddField(format.Field[backend.PipelineVariable]{Name: "secured", Header: "SECURED", Extract: func(v backend.PipelineVariable) any { return v.Secured }})
-	return p
-}

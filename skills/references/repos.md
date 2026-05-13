@@ -83,7 +83,7 @@ bitbottle pipeline run   WORKSPACE/repo --branch BRANCH
 bitbottle pipeline steps WORKSPACE/repo PIPELINE-UUID
 bitbottle pipeline logs  WORKSPACE/repo PIPELINE-UUID STEP-UUID
 
-# Repository-level variables (upsert by KEY):
+# Repository-level variables — DEPRECATED (use `variable --scope repository` instead):
 bitbottle pipeline variable list   WORKSPACE/repo
 bitbottle pipeline variable set    WORKSPACE/repo KEY [VALUE] [--body=-] [--secured]
 bitbottle pipeline variable delete WORKSPACE/repo KEY --confirm
@@ -96,12 +96,20 @@ error out with "unsupported on host" against any non-Cloud host.
 **Logs:** plain text, streams to stdout. Pipe to `less`, `grep`, redirect
 to a file. No `--json`.
 
-**Variables:** secured values are redacted on read. The TTY column shows
-`<secured>` and `--json` shows `"value":"<secured>"` — *the same chokepoint*,
-so secrets cannot leak by switching output modes. Always use `--body=-`
-to feed a secret value via stdin; never put it on the command line.
+**`pipeline variable *` is deprecated.** Use `bitbottle variable --scope repository` instead:
 
-**`pipeline variable set` is upsert by KEY.** Existing → PUT, missing →
+```bash
+bitbottle variable list   WORKSPACE/repo
+bitbottle variable set    WORKSPACE/repo KEY [VALUE] [--body=-] [--secured]
+bitbottle variable delete WORKSPACE/repo KEY --confirm
+```
+
+Secured values are redacted on read. The TTY column shows `<secured>` and
+`--json` shows `"value":"<secured>"` — *the same chokepoint*, so secrets
+cannot leak by switching output modes. Always use `--body=-` to feed a
+secret value via stdin; never put it on the command line.
+
+**`variable set` is upsert by KEY.** Existing → PUT, missing →
 POST. No separate `update` command. Same for `delete`: takes the
 user-friendly KEY, looks up the UUID internally.
 
