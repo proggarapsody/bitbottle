@@ -1,3 +1,33 @@
+# bitbottle commit — commit commands
+
+## commit files
+
+List files added, modified, or deleted in a specific commit. Both Bitbucket
+Cloud and Server / Data Center are supported.
+
+```bash
+bitbottle commit files HASH [PROJECT/REPO] [--json [fields]] [--jq expr]
+```
+
+HASH is required. PROJECT/REPO is optional — if omitted, the repository is
+inferred from the git remote in the current directory.
+
+```bash
+bitbottle commit files abc1234
+bitbottle commit files abc1234 MYPROJ/my-service
+bitbottle commit files abc1234 MYPROJ/my-service --json
+bitbottle commit files abc1234 MYPROJ/my-service --jq '.[].path'
+```
+
+TTY output columns: `STATUS`, `PATH`, `+ADDITIONS`, `-DELETIONS`.
+Additions and deletions are always 0 on Bitbucket Server / Data Center
+(the changes endpoint does not return line counts).
+
+MCP tool: `list_commit_files(repo, hash)` — returns JSON array of
+`{status, path, additions, deletions}` objects.
+
+---
+
 # bitbottle commit comment — commit comment commands
 
 ## Command matrix
@@ -84,6 +114,7 @@ bare shortcodes are normalised automatically.
 
 | Tool | Required params | Notes |
 |---|---|---|
+| `list_commit_files` | repo, hash | Returns JSON array of `{status, path, additions, deletions}`; both backends |
 | `list_commit_comments` | project, slug, hash | Returns JSON array; accepts `include_reactions: true` (Server/DC) |
 | `add_commit_comment` | project, slug, hash, body | Returns `{id, author, body}` |
 | `edit_commit_comment` | project, slug, hash, comment_id, body | Returns `{id}` |

@@ -182,6 +182,9 @@ type FakeClient struct {
 	AddDeployKeyFn    func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error)
 	DeleteDeployKeyFn func(ns, slug string, id int) error
 
+	// Commit file methods (both backends; satisfies backend.CommitFileClient when set)
+	ListCommitFilesFn func(ns, slug, hash string) ([]backend.DiffStatEntry, error)
+
 	// SSH key methods (Cloud-only; satisfies backend.SSHKeyClient when set)
 	ListSSHKeysFn  func() ([]backend.SSHKey, error)
 	AddSSHKeyFn    func(input backend.SSHKeyInput) (backend.SSHKey, error)
@@ -1428,4 +1431,16 @@ func (c *FakeClient) DeleteSSHKey(id int) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteSSHKey; set DeleteSSHKeyFn in your test")
 	}
 	return nil
+}
+
+// ── CommitFileClient ─────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListCommitFiles(ns, slug, hash string) ([]backend.DiffStatEntry, error) {
+	if c.ListCommitFilesFn != nil {
+		return c.ListCommitFilesFn(ns, slug, hash)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListCommitFiles; set ListCommitFilesFn in your test")
+	}
+	return nil, nil
 }

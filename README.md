@@ -92,7 +92,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `deploy-key` | `list` `add` `delete` |
 | `branch-rule` | `list` `add` `delete` _(Cloud only)_ |
 | `ssh-key` | `list` `add` `delete` _(Cloud only)_ |
-| `commit` | `log` `view` `status` `comment {list\|add\|edit\|delete}` |
+| `commit` | `log` `view` `status` `files` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
@@ -547,6 +547,26 @@ bitbottle --hostname git.example.com perms project list MYPROJ --jq '.[] | selec
 
 If a grant call would **downgrade** an existing permission (e.g. ADMIN → READ),
 `grant` prompts for confirmation on a TTY. Pass `--force` to skip the prompt.
+
+### Commit Files
+
+List files added, modified, or deleted in a specific commit. Both Bitbucket
+Cloud and Server / Data Center are supported.
+
+```bash
+# List files changed in a commit (repo from git remote)
+bitbottle commit files abc1234
+
+# Explicit repo
+bitbottle commit files abc1234 MYPROJ/my-service
+
+# Structured output
+bitbottle commit files abc1234 MYPROJ/my-service --json
+bitbottle commit files abc1234 MYPROJ/my-service --jq '.[].path'
+```
+
+Output columns: `STATUS`, `PATH`, `+ADDITIONS`, `-DELETIONS`.
+Line counts are not available on Bitbucket Server / Data Center (always 0).
 
 ### Commit Comments
 
