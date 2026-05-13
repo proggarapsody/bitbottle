@@ -760,6 +760,13 @@ type PermissionGrant struct {
 	Permission string
 }
 
+// DefaultReviewer is the domain representation of a repository default reviewer.
+type DefaultReviewer struct {
+	UserSlug     string `json:"userSlug"`
+	DisplayName  string `json:"displayName"`
+	EmailAddress string `json:"emailAddress,omitempty"`
+}
+
 // DeployKey is the domain representation of a repository deploy key (SSH public key).
 type DeployKey struct {
 	ID       int    `json:"id"`

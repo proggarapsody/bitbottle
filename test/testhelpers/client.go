@@ -176,6 +176,11 @@ type FakeClient struct {
 	AddDeployKeyFn    func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error)
 	DeleteDeployKeyFn func(ns, slug string, id int) error
 
+	// Default reviewer CRUD methods (both backends; satisfies backend.DefaultReviewerClient when set)
+	ListDefaultReviewersFn  func(ns, slug string) ([]backend.DefaultReviewer, error)
+	AddDefaultReviewerFn    func(ns, slug, userSlug string) error
+	RemoveDefaultReviewerFn func(ns, slug, userSlug string) error
+
 	// Pipeline trigger methods (Cloud-only; satisfies backend.PipelineTriggerClient when set)
 	TriggerPipelineFn func(ns, slug string, input backend.PipelineTriggerInput) (backend.PipelineTriggerResult, error)
 
@@ -1271,4 +1276,34 @@ func (c *FakeClient) GetDiffStat(ns, slug, from, to string) (backend.DiffStat, e
 		c.T.Fatalf("unexpected call to FakeClient.GetDiffStat; set GetDiffStatFn in your test")
 	}
 	return backend.DiffStat{}, nil
+}
+
+func (c *FakeClient) ListDefaultReviewers(ns, slug string) ([]backend.DefaultReviewer, error) {
+	if c.ListDefaultReviewersFn != nil {
+		return c.ListDefaultReviewersFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListDefaultReviewers; set ListDefaultReviewersFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddDefaultReviewer(ns, slug, userSlug string) error {
+	if c.AddDefaultReviewerFn != nil {
+		return c.AddDefaultReviewerFn(ns, slug, userSlug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddDefaultReviewer; set AddDefaultReviewerFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RemoveDefaultReviewer(ns, slug, userSlug string) error {
+	if c.RemoveDefaultReviewerFn != nil {
+		return c.RemoveDefaultReviewerFn(ns, slug, userSlug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RemoveDefaultReviewer; set RemoveDefaultReviewerFn in your test")
+	}
+	return nil
 }

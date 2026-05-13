@@ -30,6 +30,7 @@ not sure about.**
 | Top-level variable command (repository/workspace/deployment scope) — Cloud only | `references/variable.md` |
 | Named credential profiles (create/use/list/delete) | `references/profile.md` |
 | Deploy keys (list/add/delete) — Cloud and Server/DC | `references/deploy-key.md` |
+| PR default reviewers (list/add/remove) — Cloud and Server/DC | `references/pr.md` |
 | Diff between refs (`diff REF1..REF2 [--stat]`) — Cloud and Server/DC | `references/diff.md` |
 
 When the user's task spans two areas, load both. Don't load all of
@@ -154,6 +155,8 @@ Deployment/environment MCP tools (Cloud only): `list_deployments`, `get_deployme
 Variable MCP tools (Cloud only, all scopes): `variable_list`, `variable_set`, `variable_delete` — each accepts `scope` (repository/workspace/deployment) and `env_uuid` (required for deployment scope). See `references/variable.md`.
 
 Deploy key MCP tools (both backends): `list_deploy_keys`, `add_deploy_key`, `delete_deploy_key`. See `references/deploy-key.md`.
+
+PR default reviewer MCP tools (both backends): `list_default_reviewers`, `add_default_reviewer`, `remove_default_reviewer`. See `references/pr.md`.
 
 Pipeline trigger MCP tool (Cloud only): `trigger_pipeline` — accepts `repo` (WORKSPACE/REPO), `branch`, and optional `variables` (comma-separated `key=value` pairs).
 
