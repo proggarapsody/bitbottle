@@ -90,6 +90,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
 | `deploy-key` | `list` `add` `delete` |
+| `ssh-key` | `list` `add` `delete` _(Cloud only)_ |
 | `commit` | `log` `view` `status` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
@@ -294,6 +295,21 @@ bitbottle deploy-key delete MYPROJ/my-service 42
 
 All three subcommands work on both Bitbucket Cloud and Server/DC. `list` and
 `add` support `--json` / `--jq` / `--yaml` for structured output.
+
+### SSH keys (Cloud only)
+
+```bash
+# List SSH keys for the current user
+bitbottle ssh-key list
+
+# Add an SSH key
+bitbottle ssh-key add --key "ssh-rsa AAAA..." --label "Laptop"
+
+# Delete an SSH key by ID
+bitbottle ssh-key delete 42
+```
+
+`list` and `add` support `--json` / `--jq` / `--yaml` for structured output.
 
 ### PR default reviewers
 

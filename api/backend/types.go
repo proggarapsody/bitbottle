@@ -781,6 +781,19 @@ type DeployKeyInput struct {
 	Key   string
 }
 
+// SSHKey is the domain representation of a user SSH key on Bitbucket Cloud.
+type SSHKey struct {
+	ID    int    `json:"id"`
+	Label string `json:"label"`
+	Key   string `json:"key"`
+}
+
+// SSHKeyInput carries the parameters for adding a user SSH key.
+type SSHKeyInput struct {
+	Label string
+	Key   string
+}
+
 // DiffStat is the domain representation of a repository diff summary.
 type DiffStat struct {
 	FilesChanged int

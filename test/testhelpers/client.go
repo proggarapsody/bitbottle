@@ -176,6 +176,11 @@ type FakeClient struct {
 	AddDeployKeyFn    func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error)
 	DeleteDeployKeyFn func(ns, slug string, id int) error
 
+	// SSH key methods (Cloud-only; satisfies backend.SSHKeyClient when set)
+	ListSSHKeysFn  func() ([]backend.SSHKey, error)
+	AddSSHKeyFn    func(input backend.SSHKeyInput) (backend.SSHKey, error)
+	DeleteSSHKeyFn func(id int) error
+
 	// Default reviewer CRUD methods (both backends; satisfies backend.DefaultReviewerClient when set)
 	ListDefaultReviewersFn  func(ns, slug string) ([]backend.DefaultReviewer, error)
 	AddDefaultReviewerFn    func(ns, slug, userSlug string) error
@@ -1304,6 +1309,38 @@ func (c *FakeClient) RemoveDefaultReviewer(ns, slug, userSlug string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RemoveDefaultReviewer; set RemoveDefaultReviewerFn in your test")
+	}
+	return nil
+}
+
+// ── SSHKeyClient ─────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListSSHKeys() ([]backend.SSHKey, error) {
+	if c.ListSSHKeysFn != nil {
+		return c.ListSSHKeysFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListSSHKeys; set ListSSHKeysFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddSSHKey(input backend.SSHKeyInput) (backend.SSHKey, error) {
+	if c.AddSSHKeyFn != nil {
+		return c.AddSSHKeyFn(input)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddSSHKey; set AddSSHKeyFn in your test")
+	}
+	return backend.SSHKey{}, nil
+}
+
+func (c *FakeClient) DeleteSSHKey(id int) error {
+	if c.DeleteSSHKeyFn != nil {
+		return c.DeleteSSHKeyFn(id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteSSHKey; set DeleteSSHKeyFn in your test")
 	}
 	return nil
 }
