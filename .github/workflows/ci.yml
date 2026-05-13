@@ -13,7 +13,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    if: github.head_ref != 'release-please--branches--main'
     steps:
       - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
         with:
@@ -22,24 +21,30 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Run tests
+        if: github.head_ref != 'release-please--branches--main'
         run: go test -coverprofile=coverage.out -race -shuffle=on ./...
 
       - name: Upload coverage
+        if: github.head_ref != 'release-please--branches--main'
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
           fail_ci_if_error: false
 
+      - name: Skip notice (release-please PR)
+        if: github.head_ref == 'release-please--branches--main'
+        run: echo "Skipping tests on release-please PR — diff is CHANGELOG/manifest only, feature CI already vetted main."
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    if: github.head_ref != 'release-please--branches--main'
     steps:
       - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
         with:
@@ -48,12 +53,14 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Cache golangci-lint
-        uses: actions/cache@v4
+        if: github.head_ref != 'release-please--branches--main'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/.cache/golangci-lint
@@ -62,15 +69,22 @@ jobs:
             golangci-lint-${{ runner.os }}-
 
       - name: golangci-lint
+        if: github.head_ref != 'release-please--branches--main'
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9
         with:
           version: v2.11.4
           args: --timeout=5m
 
+      - name: Skip notice (release-please PR)
+        if: github.head_ref == 'release-please--branches--main'
+        run: echo "Skipping lint on release-please PR — diff is CHANGELOG/manifest only, feature CI already vetted main."
+
   build:
     name: Build
     runs-on: ubuntu-latest
-    if: github.head_ref != 'release-please--branches--main'
+    # Build always runs — release PR's combined diff may include an auto-merged
+    # dep bump that landed between feature merge and release PR open; this is
+    # the last gate before GoReleaser tags + publishes.
     steps:
       - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
         with:
