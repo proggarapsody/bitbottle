@@ -37,13 +37,6 @@ type SelfLink struct {
 	Href string `json:"href"`
 }
 
-// AppProperties holds Bitbucket version info.
-type AppProperties struct {
-	Version     string `json:"version"`
-	BuildNumber string `json:"buildNumber"`
-	DisplayName string `json:"displayName"`
-}
-
 // ListRepos lists repositories accessible to the authenticated user.
 func (c *Client) ListRepos(limit int) ([]Repository, error) {
 	var page PagedResponse[Repository]
@@ -86,13 +79,4 @@ func (c *Client) CreateRepo(project string, input CreateRepoInput) (Repository, 
 // DeleteRepo deletes a repository.
 func (c *Client) DeleteRepo(project, slug string) error {
 	return c.Delete(fmt.Sprintf("/projects/%s/repos/%s", project, slug))
-}
-
-// GetApplicationProperties fetches Bitbucket version info.
-func (c *Client) GetApplicationProperties() (AppProperties, error) {
-	var props AppProperties
-	if err := c.GetJSON("/application-properties", &props); err != nil {
-		return AppProperties{}, err
-	}
-	return props, nil
 }
