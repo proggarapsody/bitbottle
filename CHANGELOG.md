@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.49.0](https://github.com/proggarapsody/bitbottle/compare/v1.48.0...v1.49.0) (2026-05-13)
+
+
+### Features
+
+* **diff:** add diff command to compare two refs (Cloud + Server/DC) ([8c520fa](https://github.com/proggarapsody/bitbottle/commit/8c520fa2b23de4ef2fdb08c0cf2acce44ab298b7))
+
 ## [1.48.0](https://github.com/proggarapsody/bitbottle/compare/v1.47.0...v1.48.0) (2026-05-13)
 
 
