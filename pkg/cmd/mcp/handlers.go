@@ -2017,11 +2017,20 @@ func (h *handlers) listCommitComments(_ context.Context, req mcplib.CallToolRequ
 		return errResultErr(err), nil
 	}
 
+	if req.GetBool("include_reactions", false) {
+		reactor, reactErr := backend.AsCommitCommentReactor(client, hostname)
+		if reactErr != nil {
+			return errResultErr(reactErr), nil
+		}
+		cmts = fetchCommitReactionsMCPConcurrent(reactor, project, slug, hash, cmts)
+	}
+
 	type row struct {
-		ID        int    `json:"id"`
-		Author    string `json:"author"`
-		Body      string `json:"body"`
-		CreatedAt string `json:"createdAt"`
+		ID        int                       `json:"id"`
+		Author    string                    `json:"author"`
+		Body      string                    `json:"body"`
+		CreatedAt string                    `json:"createdAt"`
+		Reactions []backend.CommentReaction `json:"reactions,omitempty"`
 	}
 	out := make([]row, 0, len(cmts))
 	for _, c := range cmts {
@@ -2034,9 +2043,52 @@ func (h *handlers) listCommitComments(_ context.Context, req mcplib.CallToolRequ
 			Author:    author,
 			Body:      c.Body,
 			CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			Reactions: c.Reactions,
 		})
 	}
 	return jsonResult(out)
+}
+
+// fetchCommitReactionsMCPConcurrent fetches reactions for each commit comment
+// concurrently using a bounded worker pool of 4 goroutines. Errors per comment
+// are silently ignored so a single failure doesn't abort the listing.
+func fetchCommitReactionsMCPConcurrent(reactor backend.CommitCommentReactor, ns, slug, hash string, cmts []backend.CommitComment) []backend.CommitComment {
+	const workers = 4
+	type job struct {
+		idx int
+		id  int
+	}
+	results := make([][]backend.CommentReaction, len(cmts))
+	jobs := make(chan job, len(cmts))
+	for i, c := range cmts {
+		jobs <- job{i, c.ID}
+	}
+	close(jobs)
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				rxns, err := reactor.ListCommitCommentReactions(ns, slug, hash, j.id)
+				if err == nil && len(rxns) > 0 {
+					mu.Lock()
+					results[j.idx] = rxns
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	out := make([]backend.CommitComment, len(cmts))
+	for i, c := range cmts {
+		c.Reactions = results[i]
+		out[i] = c
+	}
+	return out
 }
 
 func (h *handlers) addCommitComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {

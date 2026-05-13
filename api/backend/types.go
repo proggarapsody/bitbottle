@@ -636,12 +636,15 @@ type MergeCheck struct {
 type MergeCheckInput = MergeCheck
 
 // CommitComment is a comment attached to a specific commit.
+// Reactions is only populated when explicitly requested (e.g. --reactions flag
+// or include_reactions MCP parameter). Server/DC only.
 type CommitComment struct {
 	ID        int
 	Author    User
 	Body      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Reactions []CommentReaction // only populated when explicitly requested; Server/DC only
 }
 
 // AddCommitCommentInput carries parameters for creating a commit comment.
