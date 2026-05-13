@@ -19,6 +19,9 @@ type wireServerPRComment struct {
 	CreatedDate int64                 `json:"createdDate"` // Unix milliseconds
 	UpdatedDate int64                 `json:"updatedDate"`
 	Comments    []wireServerPRComment `json:"comments"` // nested replies
+	Severity    string                `json:"severity"` // "" | "BLOCKER"
+	State       string                `json:"state"`    // "" | "OPEN" | "RESOLVED"
+	Version     int                   `json:"version"`  // optimistic-lock token
 }
 
 func (w wireServerPRComment) baseDomain(parentID int, inline *backend.PRCommentInline) backend.PRComment {
@@ -32,6 +35,9 @@ func (w wireServerPRComment) baseDomain(parentID int, inline *backend.PRCommentI
 		CreatedAt: time.UnixMilli(w.CreatedDate).UTC(),
 		ParentID:  parentID,
 		Inline:    inline,
+		Severity:  w.Severity,
+		State:     w.State,
+		Version:   w.Version,
 	}
 	if w.UpdatedDate != 0 {
 		c.UpdatedAt = time.UnixMilli(w.UpdatedDate).UTC()
@@ -114,9 +120,10 @@ func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, e
 }
 
 type wireServerAddPRComment struct {
-	Text   string                   `json:"text"`
-	Anchor *wireServerCommentAnchor `json:"anchor,omitempty"`
-	Parent *wireServerParentRef     `json:"parent,omitempty"`
+	Text     string                   `json:"text"`
+	Anchor   *wireServerCommentAnchor `json:"anchor,omitempty"`
+	Parent   *wireServerParentRef     `json:"parent,omitempty"`
+	Severity string                   `json:"severity,omitempty"`
 }
 
 type wireServerParentRef struct {
@@ -144,7 +151,7 @@ func (c *Client) fetchPRDiffHashes(ns, slug string, id int, filePath string) (st
 }
 
 func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
-	body := wireServerAddPRComment{Text: in.Text}
+	body := wireServerAddPRComment{Text: in.Text, Severity: in.Severity}
 
 	if in.Inline != nil {
 		if in.Inline.StartLine != 0 && in.Inline.StartLine != in.Inline.Line {
@@ -226,4 +233,27 @@ func (c *Client) DeletePRComment(ns, slug string, id, commentID int) error {
 	}
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d?version=%d", ns, slug, id, commentID, version)
 	return c.delete(path, nil)
+}
+
+// wireServerSetCommentState is the body for PUT .../comments/{id} when
+// changing a task comment's state. Server requires the current `version`
+// echoed back (optimistic-locking); a stale version yields HTTP 409.
+type wireServerSetCommentState struct {
+	State   string `json:"state"`
+	Version int    `json:"version"`
+}
+
+// SetPRCommentState sets the state of a task comment (BLOCKER severity) on a
+// pull request. It first fetches the current comment to get the version token
+// (GET), then issues a PUT with the new state and the fetched version.
+// state must be "OPEN" or "RESOLVED".
+func (c *Client) SetPRCommentState(ns, slug string, id, commentID int, state string) error {
+	version, err := c.fetchCommentVersion(ns, slug, id, commentID)
+	if err != nil {
+		return err
+	}
+	in := wireServerSetCommentState{State: state, Version: version}
+	var w wireServerPRComment
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d?version=%d", ns, slug, id, commentID, version)
+	return c.putJSON(path, in, &w)
 }

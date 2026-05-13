@@ -62,6 +62,11 @@ func TestAsCodeInsightsClient_StampsHostUnsupportedCode(t *testing.T) {
 	requireUnsupportedHostCode(t, err, string(backend.FeatureCodeInsights))
 }
 
+func TestAsPRCommentStateSetter_StampsHostUnsupportedCode(t *testing.T) {
+	_, err := backend.AsPRCommentStateSetter(emptyClient{}, "h.example")
+	requireUnsupportedHostCode(t, err, string(backend.FeaturePRCommentStateSet))
+}
+
 func requireUnsupportedHostCode(t *testing.T, err error, wantFeature string) {
 	t.Helper()
 	if err == nil {
