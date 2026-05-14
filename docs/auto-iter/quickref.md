@@ -17,14 +17,16 @@ workflow lives in [`docs/workflows/iteration-cycle.md`](../workflows/iteration-c
 laptop (caffeinated, Claude desktop with Remote Control paired)
   └── /loop 30m /auto-iter
         └── /auto-iter (one cycle)
-              ├── §0a re-entry lock check     (.claude/auto-iter/.lock)
-              ├── §0  preflight + workspace inventory
-              ├── §1  pick mode + scope (+ bundle-check)
+              ├── §0a re-entry lock check     → scripts/auto-iter/lock.sh
+              ├── §0  preflight + workspace inventory → scripts/auto-iter/preflight.sh
+              ├── §1  pick mode + scope (+ bundle-check)  ▲ scripted (planned)
               ├── §2  execute mode (iteration | architecture | brainstorm | stop)
               ├── §3  halt routing (auto-confirm safe; phone for risky)
-              ├── §4  append to cycles.jsonl + metrics.jsonl
-              └── §5  release lock, exit
+              ├── §4  append to cycles.jsonl + metrics.jsonl → scripts/auto-iter/{metric,log-cycle}.sh
+              └── §5  release lock, exit       → scripts/auto-iter/lock.sh release
 ```
+
+**Mechanical steps are scripted.** Full interface catalog in [`docs/auto-iter/scripts.md`](scripts.md) — each script emits a single JSON object on stdout, exit-codes on halt-class failure, ships with a paired `_test.sh`. The orchestrator stays in the LLM only for genuine judgment phases.
 
 Three sibling files in `.claude/auto-iter/` (all gitignored):
 
@@ -125,7 +127,14 @@ The brainstorm emits its full output to `metrics.jsonl` as `step2_brainstorm` wi
 
 ## Cycle log schema (`cycles.jsonl`)
 
-One line per cycle, append-only:
+One line per cycle, append-only. **Write via [`scripts/auto-iter/log-cycle.sh`](../../scripts/auto-iter/log-cycle.sh)**:
+
+```bash
+scripts/auto-iter/log-cycle.sh --cycle=55 --mode=iteration \
+  --scope=PR-PARTICIPANTS --outcome=shipped --pr=292 --release=v1.60.0
+```
+
+Output line shape:
 
 ```jsonl
 {"ts":"<ISO>","cycle":<N>,"mode":"iteration|architecture|brainstorm|stop","scopes":[<slugs>],"prs":[<numbers>],"release":"<v1.X.Y or null>","duration_min":<int>,"tokens":<int or null>,"outcome":"<see below>","bundled":<bool>,"notes":[<strings>]}
@@ -157,7 +166,14 @@ One line per cycle, append-only:
 
 ## Metrics log schema (`metrics.jsonl`)
 
-One line per **step** within a cycle, append-only:
+One line per **step** within a cycle, append-only. **Write via [`scripts/auto-iter/metric.sh`](../../scripts/auto-iter/metric.sh)** — it sets `ts`, validates required fields, and appends atomically:
+
+```bash
+scripts/auto-iter/metric.sh --cycle=42 --step=step2_tdd \
+  --duration_ms=12345 --subagent_tokens=7000
+```
+
+Output line shape:
 
 ```jsonl
 {"cycle":<N>,"step":"<name>","ts":"<ISO start>","duration_ms":<int>,"...optional...":"..."}
