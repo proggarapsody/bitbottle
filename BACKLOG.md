@@ -2511,7 +2511,6 @@ Print `"already up to date"` if version matches.
 | 33 | **SEC** Secret Store & Config Security | Hygiene: token-never-in-file + keyring hardening. gh ships this; you should too. |
 | 34 | **HTTPH** HTTP Client Hardening | Hygiene: retry + rate limiting + ETag cache. gh has all three. |
 | 35 | **CIS** CI Supply Chain Hardening | Hygiene: SHA-pin actions, SBOM, Scorecard, gitleaks, Codecov. gh ships SBOMs and has a Scorecard badge. |
-| 36 | **NIX** Nix Flake Packaging | Distribution: tiny scope, unblocks Nix users. Optional. |
 | 37 | **PERMS** Permissions Management | DC-only extra (gh has no equivalent — covered by `gh api`). Bitbucket-native, not parity-driven. |
 | 38 | **ADMIN** Admin Commands | DC-only ops extra (no gh analogue). Ship only if a real ops user asks. |
 | 39 | **DEPLOY-KEY** Deploy Key Management | CI/CD primitive: deploy-key list/add/delete per-repo. Both backends. Small, self-contained. |
