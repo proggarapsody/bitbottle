@@ -132,7 +132,12 @@ to its implementation size. Refactor — extract or collapse.
   extract.
 - **Names communicate intent.** `CreateBranchInput`, not `BranchData`.
   `ListPRComments`, not `GetPRStuff`.
-- **No dead code.** CI catches via `unused` linter (golangci-lint).
+- **No dead code.** Off-the-shelf linters catch syntactic dead code
+  (`unused`, `staticcheck`, `gocritic` via golangci-lint). They do **not**
+  catch semantic no-ops — e.g. `if x == "Y" { x = "Y" }`,
+  `if cond { return v } else { return v }`,
+  `slice = append(slice, item); slice = slice[:len(slice)]`. Those are
+  on the human/judge reviewer (see Anti-patterns).
 - **Test names are sentences.** `TestListPRs_FiltersByState_ReturnsMatching`,
   not `TestListPRs2`.
 - **One PR = one logical change.** Conventional Commits
@@ -171,3 +176,10 @@ to its implementation size. Refactor — extract or collapse.
 - ❌ A package whose API surface is the same size as its implementation
   (shallow module — collapse or extract).
 - ❌ `pkg/cmd/**` importing `api/cloud` or `api/server` directly.
+- ❌ **Tautological / dead-branch logic.** Conditional whose body assigns
+  the same value the condition already pins (`if x == "Y" { x = "Y" }`),
+  or whose branches return identical values, or whose work is undone on
+  the next line. Standard Go linters don't flag this — review for it
+  explicitly. Real example: cyc 55 / PR #292 shipped
+  `if state == "CHANGES_REQUESTED" { state = "CHANGES_REQUESTED" }` in
+  `api/cloud/pr_participants.go` (removed in PR #295).
