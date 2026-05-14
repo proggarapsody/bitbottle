@@ -75,26 +75,3 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Update flake SHAs
-        # Rewrites flake.nix with the new version + SHA256 hashes from the
-        # just-published release, opens a PR, and enables auto-merge.
-        # Direct push to main is blocked by branch protection; a PR lets
-        # the required checks run on the chore(nix): commit before merge.
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout -b "chore/nix-flake-${{ github.ref_name }}" origin/main
-          bash scripts/update-flake-shas.sh "${{ github.ref_name }}"
-          git push origin "chore/nix-flake-${{ github.ref_name }}"
-          gh pr create \
-            --title "chore(nix): update flake SHAs for ${{ github.ref_name }}" \
-            --body "Automated: update \`flake.nix\` checksums for release ${{ github.ref_name }}." \
-            --base main \
-            --head "chore/nix-flake-${{ github.ref_name }}"
-          gh pr merge --auto --squash \
-            "chore/nix-flake-${{ github.ref_name }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

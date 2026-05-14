@@ -357,7 +357,6 @@ Current state of every command area against gh feature parity:
 | REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | ✅ |
 | REACT-COMMIT | **Commit Comment Reactions** | `commit comment react/unreact`, `commit comment list --reactions`; `CommitCommentReactor` interface + Server impl + MCP tools | Server/DC | 3 | ✅ |
 | PROF | **Named Profiles** | `profile create/use/list/delete` | N/A | 3 | ✅ |
-| NIX | **Nix Flake Packaging** | (distribution) | N/A | DX | ✅ |
 | EXT-CORE | **Extension Install + List** | `extension install USER/REPO`, `extension install --local PATH`, `extension list`; core package + SHA lockfile | N/A | 4 | ✅ |
 | EXT-RUNTIME | **Extension Exec** | `extension exec NAME [args...]`; SHA verification, env sanitise/inject, root-command dispatch hook | N/A | 4 | ✅ |
 | EXT-MGMT | **Extension Upgrade + Remove** | `extension upgrade [NAME\|--all]`, `extension remove NAME` | N/A | 4 | ✅ |
@@ -2357,76 +2356,6 @@ stateless MCP calls).
 
 ---
 
-### NIX — Nix Flake Packaging
-
-**Problem**: developers using Nix/NixOS cannot install bitbottle from nixpkgs
-without a PR to that repo. A `flake.nix` + `flake.lock` in the root allows
-`nix run github:proggarapsody/bitbottle` to work immediately.
-
-**Files to add** (`flake.nix`, `flake.lock`):
-
-```nix
-{
-  description = "Bitbottle — Bitbucket CLI";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-  outputs = { self, nixpkgs }: {
-    packages = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ] (system:
-      let pkgs = nixpkgs.legacyPackages.${system}; in {
-        default = pkgs.buildGoModule {
-          pname = "bitbottle";
-          version = self.shortRev or "dev";
-          src = self;
-          vendorHash = "sha256-..."; # updated on each release
-        };
-      }
-    );
-  };
-}
-```
-
-Add a `nix build` test job to CI (runs on `ubuntu-latest` with Nix installed via
-`cachix/install-nix-action`).
-
-**No backend or Go code changes.**
-
-**Implementation notes**:
-1. **Use Goreleaser's prebuilt binaries, not `buildGoModule`.** The flake
-   should `fetchurl` the platform-specific tarball from the GitHub release
-   and `dontStrip = true`. This avoids:
-   - Tracking `vendorHash` on every release (manual chore, breaks easily).
-   - Needing the Go toolchain on the user's Nix builder (faster `nix run`).
-   - Divergence between the Nix binary and the Goreleaser-built npm binary
-     (same binary everywhere).
-2. **Auto-update via release-please hook.** Goreleaser produces a
-   `checksums.txt` per release. Add a small Bash script run from
-   `release.yml` after Goreleaser that:
-   - Parses the SHA256 for each OS/arch tarball
-   - Rewrites `flake.nix` with the new SHAs and version
-   - Commits the change to the release tag
-   Without this automation, `flake.nix` goes stale immediately after the
-   first release post-merge.
-3. **macOS aarch64 codesigning.** Goreleaser handles codesigning during the
-   release build. The Nix flake just needs to point at the signed tarball —
-   no signing in Nix itself.
-4. **`flake.lock` reproducibility.** Pin nixpkgs to a specific commit
-   (`nixos-25.05` branch or similar). Update via `nix flake update` on a
-   scheduled cadence (quarterly), not per-release — release frequency would
-   make the lockfile churn meaningless.
-5. **Test infrastructure.** Add a CI job that runs
-   `nix build .#default` on `ubuntu-latest` after each release tag.
-   Don't run on every push — it's slow and adds little signal vs the existing
-   Goreleaser build.
-
-**Definition of Done**:
-- [ ] `nix run github:proggarapsody/bitbottle -- --version` works from a release tag
-- [ ] `flake.nix` fetches Goreleaser-built tarballs (no `buildGoModule`)
-- [ ] `flake.lock` committed and pinned to a nixpkgs commit
-- [ ] Release workflow auto-updates `flake.nix` SHAs on each release
-- [ ] CI job confirms `nix build` succeeds against the latest release
-- [ ] README installation section includes `nix run` one-liner
-
----
-
 ### EXT-CORE — Extension Install + List
 
 A plugin mechanism letting the community add `bitbottle <ext-name>` subcommands
@@ -2582,7 +2511,6 @@ Print `"already up to date"` if version matches.
 | 33 | **SEC** Secret Store & Config Security | Hygiene: token-never-in-file + keyring hardening. gh ships this; you should too. |
 | 34 | **HTTPH** HTTP Client Hardening | Hygiene: retry + rate limiting + ETag cache. gh has all three. |
 | 35 | **CIS** CI Supply Chain Hardening | Hygiene: SHA-pin actions, SBOM, Scorecard, gitleaks, Codecov. gh ships SBOMs and has a Scorecard badge. |
-| 36 | **NIX** Nix Flake Packaging | Distribution: tiny scope, unblocks Nix users. Optional. |
 | 37 | **PERMS** Permissions Management | DC-only extra (gh has no equivalent — covered by `gh api`). Bitbucket-native, not parity-driven. |
 | 38 | **ADMIN** Admin Commands | DC-only ops extra (no gh analogue). Ship only if a real ops user asks. |
 | 39 | **DEPLOY-KEY** Deploy Key Management | CI/CD primitive: deploy-key list/add/delete per-repo. Both backends. Small, self-contained. |

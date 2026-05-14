@@ -391,5 +391,4 @@ See `references/profile.md` for full flag reference.
 `npm install -g @proggarapsody/bitbottle` installs the CLI and
 auto-registers this skill. For non-npm installs (Homebrew, Go, bare
 binary): `bitbottle skill install` (refresh), `skill path` (locate),
-`skill remove` (uninstall). Nix users: `nix run github:proggarapsody/bitbottle`.
-Drift check: `python3 skills/scripts/sync_help.py`.
+`skill remove` (uninstall). Drift check: `python3 skills/scripts/sync_help.py`.
