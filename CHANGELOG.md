@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.61.0](https://github.com/proggarapsody/bitbottle/compare/v1.60.0...v1.61.0) (2026-05-14)
+
+
+### Features
+
+* **auto-iter:** scripts foundation for mechanical pipeline steps ([#298](https://github.com/proggarapsody/bitbottle/issues/298)) ([890fd7c](https://github.com/proggarapsody/bitbottle/commit/890fd7cb3c7de2031280de22f9227f45f1cad122))
+
 ## [1.60.0](https://github.com/proggarapsody/bitbottle/compare/v1.59.0...v1.60.0) (2026-05-13)
 
 
