@@ -17,15 +17,11 @@ type wireCloudPRParticipant struct {
 }
 
 func (w wireCloudPRParticipant) toDomain() backend.PRParticipant {
-	state := strings.ToUpper(w.State)
-	if state == "CHANGES_REQUESTED" {
-		state = "CHANGES_REQUESTED"
-	}
 	return backend.PRParticipant{
 		User:     w.User.toDomain(),
 		Role:     w.Role,
 		Approved: w.Approved,
-		State:    state,
+		State:    strings.ToUpper(w.State),
 	}
 }
 
