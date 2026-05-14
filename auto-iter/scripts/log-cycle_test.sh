@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit test for scripts/auto-iter/log-cycle.sh.
+# Unit test for auto-iter/scripts/log-cycle.sh.
 set -euo pipefail
 
 SCRIPT="$(cd "$(dirname "$0")" && pwd)/log-cycle.sh"

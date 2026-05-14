@@ -10,7 +10,7 @@ test:
 	$(GO) test ./... -race
 
 test-scripts:
-	@set -e; for t in scripts/auto-iter/*_test.sh; do echo "--- $$t ---"; bash "$$t" || exit 1; done
+	@set -e; for t in auto-iter/scripts/*_test.sh; do echo "--- $$t ---"; bash "$$t" || exit 1; done
 
 lint:
 	golangci-lint run ./...

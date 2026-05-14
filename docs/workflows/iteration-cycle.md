@@ -37,12 +37,12 @@ the same sections.
 **Actions**
 1. **Run the preflight script**:
    ```bash
-   bash scripts/auto-iter/preflight.sh
+   bash auto-iter/scripts/preflight.sh
    ```
    It emits a single JSON object with `clean`, `branch`, `on_main`,
    `ahead`, `behind`, `open_prs`, and `findings`. Exit code is non-zero
    when any finding is halt-class (dirty tree, off-main, behind
-   origin). See [`docs/auto-iter/scripts.md`](../auto-iter/scripts.md)
+   origin). See [`auto-iter/scripts.md`](../../auto-iter/scripts.md)
    for the full contract.
 2. **If exit was non-zero**, surface the `findings` array as a single
    inventory halt and ask the author what to keep / stash / commit /
@@ -425,7 +425,7 @@ updated docs.
    reachable from `main`, which is normal for squash-merge — `-D` works
    only if Safety Net allows it).
 
-2. **Append to `docs/auto-iter/metrics.csv`** — one row per cycle:
+2. **Append to `auto-iter/metrics.csv`** — one row per cycle:
 
    ```
    cycle,version,scope,pr,merged_at_utc,wall_minutes,ci_seconds,loc_added,loc_deleted,files_touched,subagent_tokens_k

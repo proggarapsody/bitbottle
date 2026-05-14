@@ -1,6 +1,6 @@
 # auto-iter scripts — canonical interface catalog
 
-> **Source of truth** for every shell script under `scripts/auto-iter/`. The
+> **Source of truth** for every shell script under `auto-iter/scripts/`. The
 > `/auto-iter` orchestrator (and its sibling `/auto-iter-stream`) calls these
 > scripts for everything mechanical. The orchestrator stays in the LLM only for
 > work that needs judgment — TDD dispatch, brainstorm, audit, judge, halt
@@ -25,7 +25,7 @@ JSON object on stdout fix three problems at once:
 
 ## Convention
 
-Every script in `scripts/auto-iter/` follows this contract:
+Every script in `auto-iter/scripts/` follows this contract:
 
 - **Stdout**: a single JSON object on a single line. Nothing else.
 - **Stderr**: progress / log messages (never parsed).
@@ -46,11 +46,11 @@ Status legend: ✅ implemented · 🔲 planned · 🟡 partial.
 
 | Script | Status | Inputs | Output (success) |
 |---|---|---|---|
-| [`_common.sh`](../../scripts/auto-iter/_common.sh) | ✅ | n/a (sourced) | helpers: `emit_json`, `halt`, `repo_root`, `auto_iter_dir`, `now_iso` |
-| [`metric.sh`](../../scripts/auto-iter/metric.sh) | ✅ | `--cycle=N --step=NAME [--key=val ...]` | `{"cycle":N,"step":"...","ts":"...",...}` — also appended to `metrics.jsonl` |
-| [`log-cycle.sh`](../../scripts/auto-iter/log-cycle.sh) | ✅ | `--cycle=N --outcome=... [...]` or `--stream=started\|completed [...]` | `{...}` — also appended to `cycles.jsonl` |
-| [`lock.sh`](../../scripts/auto-iter/lock.sh) | ✅ | `acquire \| release \| status` | `{"acquired":true,"age_min":0}` or `{"halt":"recent_lock","age_min":N}` or `{"held":bool,"age_min":N}` or `{"released":true}` |
-| [`preflight.sh`](../../scripts/auto-iter/preflight.sh) | ✅ | (none) | `{"clean":bool,"branch":"...","on_main":bool,"ahead":N,"behind":N,"open_prs":[{...}],"findings":[...]}`. Exit 1 if any finding is halt-class. |
+| [`_common.sh`](scripts/_common.sh) | ✅ | n/a (sourced) | helpers: `emit_json`, `halt`, `repo_root`, `auto_iter_dir`, `now_iso` |
+| [`metric.sh`](scripts/metric.sh) | ✅ | `--cycle=N --step=NAME [--key=val ...]` | `{"cycle":N,"step":"...","ts":"...",...}` — also appended to `metrics.jsonl` |
+| [`log-cycle.sh`](scripts/log-cycle.sh) | ✅ | `--cycle=N --outcome=... [...]` or `--stream=started\|completed [...]` | `{...}` — also appended to `cycles.jsonl` |
+| [`lock.sh`](scripts/lock.sh) | ✅ | `acquire \| release \| status` | `{"acquired":true,"age_min":0}` or `{"halt":"recent_lock","age_min":N}` or `{"held":bool,"age_min":N}` or `{"released":true}` |
+| [`preflight.sh`](scripts/preflight.sh) | ✅ | (none) | `{"clean":bool,"branch":"...","on_main":bool,"ahead":N,"behind":N,"open_prs":[{...}],"findings":[...]}`. Exit 1 if any finding is halt-class. |
 
 ### Planned
 
@@ -75,7 +75,7 @@ with `git init -b main`, so they never touch real state.
 
 ```bash
 # Run every auto-iter script test:
-for t in scripts/auto-iter/*_test.sh; do bash "$t" || exit 1; done
+for t in auto-iter/scripts/*_test.sh; do bash "$t" || exit 1; done
 
 # Or via make (see Makefile):
 make test-scripts
@@ -105,19 +105,19 @@ blocks with one-liners:
 
 ```bash
 # §0a — lock
-out=$(bash scripts/auto-iter/lock.sh acquire) || exit_skip "$out"
+out=$(bash auto-iter/scripts/lock.sh acquire) || exit_skip "$out"
 
 # §0 — preflight
-out=$(bash scripts/auto-iter/preflight.sh) || halt_to_phone "$out"
+out=$(bash auto-iter/scripts/preflight.sh) || halt_to_phone "$out"
 
 # §4 — metric writes (one per step, near the end of each phase)
-bash scripts/auto-iter/metric.sh --cycle=$CYCLE --step=step2_tdd \
+bash auto-iter/scripts/metric.sh --cycle=$CYCLE --step=step2_tdd \
   --duration_ms=$DUR --subagent_tokens=$TOK >/dev/null
 
 # §5 — cycle log + release lock
-bash scripts/auto-iter/log-cycle.sh --cycle=$CYCLE --mode=iteration \
+bash auto-iter/scripts/log-cycle.sh --cycle=$CYCLE --mode=iteration \
   --scope=$SCOPE --outcome=shipped --pr=$PR --release=$REL >/dev/null
-bash scripts/auto-iter/lock.sh release >/dev/null
+bash auto-iter/scripts/lock.sh release >/dev/null
 ```
 
 The LLM receives only the JSON. The shell side stays compact and testable.

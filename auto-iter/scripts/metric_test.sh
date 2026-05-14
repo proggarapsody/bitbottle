@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit test for scripts/auto-iter/metric.sh.
+# Unit test for auto-iter/scripts/metric.sh.
 # Verifies: emits valid JSON, appends to metrics.jsonl, rejects missing required fields.
 set -euo pipefail
 
