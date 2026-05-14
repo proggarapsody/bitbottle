@@ -105,9 +105,26 @@ inventory + smell scan acknowledged.
    - Skim recent `git log --oneline -30` for FIXMEs, deferred work, or
      "follow-up" commits.
    - Surface candidates with a one-line proposal each.
-3. **Nothing emerges?** Run a stress-test interview against the rough
-   ideas (the `grill-me` skill on Claude Code does this; on other
-   agents, drive a similar Q&A loop) until one scope crystallises.
+3. **Nothing emerges?** Switch to **brainstorm mode** (Opus subagent).
+   Brainstorm runs autonomously — no phone halt — and emits 3–4
+   candidate BACKLOG rows. Every emitted row must satisfy **all** of
+   the following or be dropped before write:
+   1. **No-overlap** — does not duplicate any ✅ row or Functionality
+      Map entry. _(This is the rule that retroactively killed
+      PR-TEMPLATE; without it brainstorm hallucinates plausible-but-
+      redundant scopes.)_
+   2. **Backend declared** — `Cloud` / `Server` / `Both`. If `Both`,
+      both endpoints named.
+   3. **Shape match** — declares which canonical pattern (`List*` via
+      `paging.Collect`, write op with typed errors, MCP triplet). New
+      shapes belong in an architecture-audit cycle, not a brainstorm.
+   4. **Pointer estimate** — 1 / 2 / 3 / 5. Anything >3 must be
+      decomposed.
+
+   Emit `step1_brainstorm` to `metrics.jsonl` with `subagent_tokens`,
+   `rows_added`, `rows_dropped_by_overlap`,
+   `rows_dropped_by_feasibility`. Empty brainstorm runs (0 rows after
+   rule application) count toward the 3-empty shutdown counter.
 4. **Bundle check** — if the chosen scope's estimated diff is **<30 files**
    AND the next 🔲 row in `BACKLOG.md` is also **<30 files** AND the two
    are deeply disjoint, propose a **two-scope bundle** with a combined
@@ -285,6 +302,14 @@ Run `docs/workflows/pre-merge-check.md` end-to-end (branch hygiene,
 Conventional Commits, no build artifacts in `dist/`, `make lint` +
 `go test`, the doc-sync table, the **design-judge** scan, release-please
 boundaries, and the secret scan).
+
+The **design-judge checklist** explicitly includes a dead-branch /
+tautological-assignment scan — semantic no-ops like
+`if x == "Y" { x = "Y" }` are not caught by `staticcheck`, `gocritic`,
+or `gosimple` and have shipped in past cycles (see
+`api/cloud/pr_participants.go` in PR #292 / cyc 55, fixed in this PR's
+parent chore). When reviewing a diff, scan every conditional whose
+then-body assigns a literal that the condition already pins.
 
 **Order matters.** Design-judge (pre-merge-check §6) runs **locally on
 the feature branch before §6 push**, not after the PR is open and CI is

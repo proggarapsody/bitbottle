@@ -52,7 +52,7 @@ Default to **Sonnet**. Escalate to **Opus** only for genuinely judgment-heavy ph
 | §2 TDD implementation | **Sonnet** (subagent) | Code generation. Dispatch via `Task` tool with `isolation: "worktree"` — keeps orchestrator context light. Opus only if scope is genuinely complex (rare). |
 | §2 doc sync | Sonnet | Mechanical doc updates per §5 doc-sync table |
 | §2 pre-merge gate | Sonnet | Reads CI status, runs grep checks |
-| §6 design-judge | **Sonnet** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Returns findings; runs in parallel with CI. |
+| §6 design-judge | **Sonnet** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Checklist includes a dead-branch / tautological-assignment scan (off-the-shelf linters don't catch semantic no-ops like `if x == "Y" { x = "Y" }`). Returns findings; runs in parallel with CI. |
 | §2 PR open + CI wait | Sonnet | Polling |
 | §2 halt (ship) | Sonnet | Frame the question, wait for tap |
 | §2 fix-after-CI-red | **Sonnet** (subagent) | Targeted code change against existing branch |
@@ -60,7 +60,7 @@ Default to **Sonnet**. Escalate to **Opus** only for genuinely judgment-heavy ph
 | §7 release publish wait | Sonnet | Polling `gh release view` + `npm view` |
 | §8 close PRD | Sonnet | `gh issue` mechanical |
 | §9 manual-test refresh | Sonnet | Per §9 decision flow |
-| **§2 brainstorm Q&A** (when BACKLOG empty) | **Opus** | Open-ended judgment, multi-turn dialogue |
+| **§2 brainstorm** (when BACKLOG empty) | **Opus** | Open-ended judgment, BACKLOG-pattern matching, scope generation. Runs autonomously (no phone halt) — see brainstorm rules below. |
 | **§2 architecture audit** (every 5th cycle) | **Opus** | Architectural reasoning, pattern recognition |
 | §5 release lock | Sonnet | File removal |
 
@@ -91,8 +91,9 @@ For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trig
 | Pre-merge BLOCKER | `❌ PR #N: <finding>` | tap `fix` / `override <reason>` |
 | CI red | `❌ PR #N CI red: <log_url>` | tap `retry` / `fix` / `abort` |
 | Merge conflict (during resolve) | `❌ PR #N merge conflict beyond union rule: <files>` | exit cleanly |
-| Brainstorm question (when BACKLOG empty) | `💭 <question>` | free-form reply |
 | Stop confirmation (BACKLOG empty + 3 empty brainstorms) | `🏁 confirm shutdown` | tap `confirm` / `continue` |
+
+> **Brainstorm runs autonomously** — no phone halt. Empirically validated across cycles 34–53 (5 brainstorms, 14/16 scopes shipped, 1 false positive, 1 pending). See "Brainstorm rules" below for the constraints that keep this honest.
 
 ### Halt protocol rules
 
@@ -100,6 +101,25 @@ For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trig
 - **Halt-response timeout**: 2 hours. After that, log `halt_no_response`, exit. Matches the cycle wall-clock cap (see below) so there's a single ceiling.
 - **Cycle wall-clock cap**: 2 hours per cycle. Hard ceiling; orchestrator force-exits with `halt_cycle_timeout` if exceeded. Covers the historical worst-case (~90 min) with margin; anything longer is almost certainly stuck.
 - **Auto-confirm**: scope-pick (BACKLOG-driven), bundle-check (algorithm-driven), workspace-clean preflight, mechanical doc-sync, secret-leak scan, build-artifacts scan, lint+test-via-CI, PRD close confirmation, manual-test refresh decision, worktree removal.
+
+---
+
+## Brainstorm rules
+
+Brainstorm runs autonomously (Opus, ~1–2 min, ~3 new BACKLOG rows per run). To keep autonomous brainstorms honest, every emitted row must satisfy **all** of the following or be dropped before it lands in `BACKLOG.md`:
+
+1. **No-overlap.** Scan existing ✅ rows and the Functionality Map. Reject anything redundant with already-shipped scope. _(This is the single load-bearing rule — it killed PR-TEMPLATE retroactively at cyc 39 because `repo file get` already covered it.)_
+2. **Backend declared.** Each row marks `Cloud` / `Server` / `Both`. If `Both`, both endpoints must be named.
+3. **Shape match.** Each row declares which canonical pattern it follows (`List*` via `paging.Collect`, write op with typed errors, MCP triplet, etc.). New shapes require a §architecture-audit cycle, not a brainstorm row.
+4. **Pointer estimate** (1 / 2 / 3 / 5). Anything >3 must be decomposed.
+
+Soft rules (Opus uses for ordering, no auto-reject):
+
+- Prefer scopes that exercise an under-instrumented adapter.
+- Prefer scopes that mirror a recently-shipped pattern (compounds tooling familiarity).
+- Avoid scopes that depend on un-released Bitbucket features.
+
+The brainstorm emits its full output to `metrics.jsonl` as `step1_brainstorm` with `rows_added`, `rows_dropped_by_overlap`, `rows_dropped_by_feasibility`. Empty brainstorms (0 rows added after rule application) count toward the 3-empty shutdown counter.
 
 ---
 
@@ -151,6 +171,10 @@ One line per **step** within a cycle, append-only:
 | `step0_preflight` | `inventory_findings_count` |
 | `step0_open_pr_overlap` | `pr`, `decision` |
 | `step1_mode_pick` | `mode`, `scope` (or `scopes` if bundled) |
+| `step1_brainstorm` | `subagent_tokens`, `rows_added`, `rows_dropped_by_overlap`, `rows_dropped_by_feasibility` |
+| `step2_audit_run` | `subagent_tokens`, `findings` |
+| `step2_design_judge` | `subagent_tokens`, `findings_count`, `blocker_count` |
+| `step2_taste_check` | `violations_count`, `fixagent_dispatched` |
 | `step2_prd` | `prd_issue` |
 | `step2_worktree` | `worktree_path`, `branch` |
 | `step2_tdd` | `subagent_tokens`, `commits_count` |
@@ -226,6 +250,5 @@ jq -s 'map(select(.step | startswith("step2_halt")) | .duration_ms / 1000)' \
 
 - **Manual review of every diff** — design-judge + pre-merge gate are the firewall. If those gates pass, the loop trusts and ships. (Tighten the gates if drift appears.)
 - **Auto-resolution of merge conflicts beyond the union rule** — if a real conflict surfaces (during `resolve` of an overlapping PR), the cycle halts.
-- **Brainstorming on autopilot** — brainstorm mode requires phone interaction.
 - **Auto-release without halt** — every release goes through the ship halt (the only halt left in the clean path).
 - **Compaction inside the cycle** — Claude's automatic context management handles this; the cycle doesn't force `/compact`.
