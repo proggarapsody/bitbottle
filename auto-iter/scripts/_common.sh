@@ -30,10 +30,14 @@ ensure_auto_iter_dir() {
 
 # Emit a JSON object to stdout from --key=value args.
 # Booleans (`true`/`false`), integers, and `null` are passed through; everything
-# else is string-quoted. Use --raw key=expr to inject a pre-formatted JSON value.
+# else is string-quoted.
+#
+# Variants for explicit typing:
+#   --str key=value   force STRING typing (use for enum fields like tier="2")
+#   --raw key=expr    inject a pre-formatted JSON value verbatim
 #
 # Example:
-#   emit_json --cycle=42 --step=step2_tdd --raw findings='["a","b"]'
+#   emit_json --cycle=42 --step=step2_tdd --str tier=2 --raw findings='["a","b"]'
 emit_json() {
   local jq_args=() filter='.'
   while [[ $# -gt 0 ]]; do
@@ -42,6 +46,11 @@ emit_json() {
       shift
       local key="${1%%=*}" expr="${1#*=}"
       jq_args+=(--argjson "$key" "$expr")
+      filter="$filter | .${key}=\$${key}"
+    elif [[ "$arg" == "--str" ]]; then
+      shift
+      local key="${1%%=*}" val="${1#*=}"
+      jq_args+=(--arg "$key" "$val")
       filter="$filter | .${key}=\$${key}"
     elif [[ "$arg" == --*=* ]]; then
       local key="${arg#--}"; key="${key%%=*}"
