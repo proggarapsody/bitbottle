@@ -121,7 +121,7 @@ inventory + smell scan acknowledged.
    4. **Pointer estimate** — 1 / 2 / 3 / 5. Anything >3 must be
       decomposed.
 
-   Emit `step1_brainstorm` to `metrics.jsonl` with `subagent_tokens`,
+   Emit `step2_brainstorm` to `metrics.jsonl` with `subagent_tokens`,
    `rows_added`, `rows_dropped_by_overlap`,
    `rows_dropped_by_feasibility`. Empty brainstorm runs (0 rows after
    rule application) count toward the 3-empty shutdown counter.
