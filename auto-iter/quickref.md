@@ -113,7 +113,7 @@ Brainstorm runs autonomously (Opus, ~1–2 min, ~3 new BACKLOG rows per run). To
 1. **No-overlap.** Scan existing ✅ rows and the Functionality Map. Reject anything redundant with already-shipped scope. _(This is the single load-bearing rule — it killed PR-TEMPLATE retroactively at cyc 39 because `repo file get` already covered it.)_
 2. **Backend declared.** Each row marks `Cloud` / `Server` / `Both`. If `Both`, both endpoints must be named.
 3. **Shape match.** Each row declares which canonical pattern it follows (`List*` via `paging.Collect`, write op with typed errors, MCP triplet, etc.). New shapes require a §architecture-audit cycle, not a brainstorm row.
-4. **Pointer estimate** (1 / 2 / 3 / 5). Anything >3 must be decomposed.
+4. **Tier classification** — `1` / `2` / `3` / `DX`. Matches the BACKLOG.md Tier column (`DX` = developer-experience / infrastructure scopes that don't fit the 1–3 user-feature ladder). Anything tagged ≥ 4 must be decomposed before it lands.
 
 Soft rules (Opus uses for ordering, no auto-reject):
 
