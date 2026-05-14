@@ -47,11 +47,6 @@ bitbottle skill remove             # uninstall
 go install github.com/proggarapsody/bitbottle/cmd/bitbottle@latest
 ```
 
-**Nix:**
-```sh
-nix run github:proggarapsody/bitbottle -- --version
-```
-
 **Homebrew / binary / deb / rpm / Docker** — see the [latest release](https://github.com/proggarapsody/bitbottle/releases/latest).
 
 ---
