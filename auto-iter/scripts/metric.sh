@@ -2,14 +2,14 @@
 # Append a single metric row to .claude/auto-iter/metrics.jsonl.
 #
 # Usage:
-#   scripts/auto-iter/metric.sh --cycle=42 --step=step2_design_judge \
+#   auto-iter/scripts/metric.sh --cycle=42 --step=step2_design_judge \
 #     --duration_ms=85000 --subagent_tokens=72000 --findings_count=2
 #
 # Required: --cycle, --step.
 # Optional: any number of --key=value pairs (typed per emit_json rules).
 # Adds: ts=<now>.
 #
-# Canonical schema list: docs/auto-iter/quickref.md § Metrics log schema.
+# Canonical schema list: auto-iter/quickref.md § Metrics log schema.
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
