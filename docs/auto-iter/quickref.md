@@ -119,7 +119,7 @@ Soft rules (Opus uses for ordering, no auto-reject):
 - Prefer scopes that mirror a recently-shipped pattern (compounds tooling familiarity).
 - Avoid scopes that depend on un-released Bitbucket features.
 
-The brainstorm emits its full output to `metrics.jsonl` as `step1_brainstorm` with `rows_added`, `rows_dropped_by_overlap`, `rows_dropped_by_feasibility`. Empty brainstorms (0 rows added after rule application) count toward the 3-empty shutdown counter.
+The brainstorm emits its full output to `metrics.jsonl` as `step2_brainstorm` with `rows_added`, `rows_dropped_by_overlap`, `rows_dropped_by_feasibility`. Empty brainstorms (0 rows added after rule application) count toward the 3-empty shutdown counter.
 
 ---
 
@@ -171,7 +171,7 @@ One line per **step** within a cycle, append-only:
 | `step0_preflight` | `inventory_findings_count` |
 | `step0_open_pr_overlap` | `pr`, `decision` |
 | `step1_mode_pick` | `mode`, `scope` (or `scopes` if bundled) |
-| `step1_brainstorm` | `subagent_tokens`, `rows_added`, `rows_dropped_by_overlap`, `rows_dropped_by_feasibility` |
+| `step2_brainstorm` | `subagent_tokens`, `rows_added`, `rows_dropped_by_overlap`, `rows_dropped_by_feasibility` |
 | `step2_audit_run` | `subagent_tokens`, `findings` |
 | `step2_design_judge` | `subagent_tokens`, `findings_count`, `blocker_count` |
 | `step2_taste_check` | `violations_count`, `fixagent_dispatched` |
