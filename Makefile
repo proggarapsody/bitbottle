@@ -1,4 +1,4 @@
-.PHONY: build test lint clean setup
+.PHONY: build test test-scripts lint clean setup
 
 BIN := bitbottle
 GO  := go
@@ -8,6 +8,9 @@ build:
 
 test:
 	$(GO) test ./... -race
+
+test-scripts:
+	@set -e; for t in scripts/auto-iter/*_test.sh; do echo "--- $$t ---"; bash "$$t" || exit 1; done
 
 lint:
 	golangci-lint run ./...

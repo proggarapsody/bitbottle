@@ -35,37 +35,25 @@ the same sections.
 **Goal**: confirm the workspace can take a new iteration.
 
 **Actions**
-1. Confirm `pwd` is the bitbottle repo root.
-2. `git status` is clean (no uncommitted changes, no stale staged files).
-3. `git rev-parse --abbrev-ref HEAD` is `main`.
-4. `git pull --ff-only` succeeds. If not, surface the divergence and
-   stop.
-5. **Inventory the workspace** — surface everything that could bite
-   later in one halt, not trickle-discovered mid-iteration:
-
+1. **Run the preflight script**:
    ```bash
-   # Open PRs the author owns — any blocker for the planned scopes?
-   gh pr list --author @me --state open \
-     --json number,title,headRefName,isDraft,updatedAt
-
-   # Local branches whose remote is gone or that have drifted from main
-   git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads/ \
-     | grep -E '\[gone\]|\[behind' || true
-
-   # Untracked paths the author may not have noticed
-   git status --porcelain | awk '/^\?\?/{print $2}'
+   bash scripts/auto-iter/preflight.sh
    ```
-
-   If any of these are non-empty, surface them as a single inventory
-   and ask the author what to keep / stash / commit / close —
-   **before** picking the scope. For parallel mode specifically: cross-
-   check that no candidate scope's expected files overlap with files
-   touched in any open PR (`gh pr diff <N> --name-only`). A surprise
-   PR-#133 or stale branch holding a registry file is far cheaper to
-   address up front than during a rolling rebase.
-6. Read `BACKLOG.md` headings so the rest of the loop has accurate
+   It emits a single JSON object with `clean`, `branch`, `on_main`,
+   `ahead`, `behind`, `open_prs`, and `findings`. Exit code is non-zero
+   when any finding is halt-class (dirty tree, off-main, behind
+   origin). See [`docs/auto-iter/scripts.md`](../auto-iter/scripts.md)
+   for the full contract.
+2. **If exit was non-zero**, surface the `findings` array as a single
+   inventory halt and ask the author what to keep / stash / commit /
+   close — **before** picking the scope. For parallel mode
+   specifically: cross-check that no candidate scope's expected files
+   overlap with files touched in any open PR (`gh pr diff <N>
+   --name-only`). A surprise stale branch holding a registry file is
+   far cheaper to address up front than during a rolling rebase.
+3. Read `BACKLOG.md` headings so the rest of the loop has accurate
    context.
-7. **Smell scan** (≤60 seconds). Surface any structural debt the recent
+4. **Smell scan** (≤60 seconds). Surface any structural debt the recent
    ship loop has accumulated, so the next mode pick is informed rather
    than blind:
 
