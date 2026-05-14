@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit test for scripts/auto-iter/preflight.sh.
+# Unit test for auto-iter/scripts/preflight.sh.
 # Doesn't require gh — script handles its absence gracefully.
 set -euo pipefail
 

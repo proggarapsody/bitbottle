@@ -2,14 +2,14 @@
 # Append a single cycle outcome line to .claude/auto-iter/cycles.jsonl.
 #
 # Usage:
-#   scripts/auto-iter/log-cycle.sh --cycle=42 --mode=iteration \
+#   auto-iter/scripts/log-cycle.sh --cycle=42 --mode=iteration \
 #     --scope=DEPLOY-KEY --outcome=shipped --pr=234 --release=v1.46.0
 #
 # Required: --cycle (or --stream=started|completed), --outcome (for cycle entries).
 # Optional: any number of --key=value pairs.
 # Adds: ts=<now>.
 #
-# Canonical schema: docs/auto-iter/quickref.md § Cycle log schema.
+# Canonical schema: auto-iter/quickref.md § Cycle log schema.
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")" && pwd)"

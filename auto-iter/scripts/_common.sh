@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Shared helpers for scripts/auto-iter/*.sh.
+# Shared helpers for auto-iter/scripts/*.sh.
 # Source from any auto-iter script: . "$(dirname "$0")/_common.sh"
 #
 # All scripts in this directory follow one convention:
 #   - Exit 0 on success, write a single JSON object to stdout.
 #   - Exit non-zero on failure, write {"halt":"<reason>","details":"..."} to stdout.
 #   - Never write progress/log lines to stdout (use stderr for that).
-# Canonical contract: docs/auto-iter/scripts.md.
+# Canonical contract: auto-iter/scripts.md.
 
 set -euo pipefail
 

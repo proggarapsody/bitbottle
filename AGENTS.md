@@ -17,7 +17,7 @@ Read before designing any new command, interface, package, transport, MCP tool, 
 
 The autonomous iteration loop spec — for designing or troubleshooting `/auto-iter`-driven runs.
 
-- [`docs/auto-iter/quickref.md`](docs/auto-iter/quickref.md) — declarative reference: model tier per phase, halt routing, cycle/metrics log schemas, anti-patterns, cadence guidance. Read this when changing how `/auto-iter` makes decisions.
+- [`auto-iter/`](auto-iter/) — self-contained auto-iter library: [`quickref.md`](auto-iter/quickref.md) (declarative contract — model tier per phase, halt routing, cycle/metrics log schemas, anti-patterns), [`scripts.md`](auto-iter/scripts.md) (script catalog), and `scripts/` (implementation + tests). Read this when changing how `/auto-iter` makes decisions.
 
 ## Workflow
 

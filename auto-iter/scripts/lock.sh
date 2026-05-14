@@ -2,9 +2,9 @@
 # Re-entry lock for /auto-iter. Owns .claude/auto-iter/.lock.
 #
 # Usage:
-#   scripts/auto-iter/lock.sh acquire        # exit 0 + JSON if lock taken, exit 1 if recent (<60min) lock present
-#   scripts/auto-iter/lock.sh release        # always exit 0
-#   scripts/auto-iter/lock.sh status         # exit 0 + JSON describing current state
+#   auto-iter/scripts/lock.sh acquire        # exit 0 + JSON if lock taken, exit 1 if recent (<60min) lock present
+#   auto-iter/scripts/lock.sh release        # always exit 0
+#   auto-iter/scripts/lock.sh status         # exit 0 + JSON describing current state
 #
 # Acquire semantics:
 #   - No lock file       -> create, emit {"acquired":true,"age_min":0}

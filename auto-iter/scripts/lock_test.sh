@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit test for scripts/auto-iter/lock.sh.
+# Unit test for auto-iter/scripts/lock.sh.
 set -euo pipefail
 
 SCRIPT="$(cd "$(dirname "$0")" && pwd)/lock.sh"
