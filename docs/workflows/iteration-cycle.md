@@ -106,8 +106,6 @@ inventory + smell scan acknowledged.
    3. **Shape match** — declares which canonical pattern (`List*` via
       `paging.Collect`, write op with typed errors, MCP triplet). New
       shapes belong in an architecture-audit cycle, not a brainstorm.
-   4. **Pointer estimate** — 1 / 2 / 3 / 5. Anything >3 must be
-      decomposed.
 
    Emit `step2_brainstorm` to `metrics.jsonl` with `subagent_tokens`,
    `rows_added`, `rows_dropped_by_overlap`,

@@ -46,25 +46,25 @@ Status legend: ✅ implemented · 🔲 planned · 🟡 partial.
 
 | Script | Status | Inputs | Output (success) |
 |---|---|---|---|
-| [`_common.sh`](scripts/_common.sh) | ✅ | n/a (sourced) | helpers: `emit_json`, `halt`, `repo_root`, `auto_iter_dir`, `now_iso` |
+| [`_common.sh`](scripts/_common.sh) | ✅ | n/a (sourced) | helpers: `emit_json`, `halt`, `repo_root`, `auto_iter_dir`, `now_iso`. Typing variants: `--str key=val` (force string), `--raw key=expr` (raw JSON). |
 | [`metric.sh`](scripts/metric.sh) | ✅ | `--cycle=N --step=NAME [--key=val ...]` | `{"cycle":N,"step":"...","ts":"...",...}` — also appended to `metrics.jsonl` |
 | [`log-cycle.sh`](scripts/log-cycle.sh) | ✅ | `--cycle=N --outcome=... [...]` or `--stream=started\|completed [...]` | `{...}` — also appended to `cycles.jsonl` |
 | [`lock.sh`](scripts/lock.sh) | ✅ | `acquire \| release \| status` | `{"acquired":true,"age_min":0}` or `{"halt":"recent_lock","age_min":N}` or `{"held":bool,"age_min":N}` or `{"released":true}` |
 | [`preflight.sh`](scripts/preflight.sh) | ✅ | (none) | `{"clean":bool,"branch":"...","on_main":bool,"ahead":N,"behind":N,"open_prs":[{...}],"findings":[...]}`. Exit 1 if any finding is halt-class. |
+| [`pick-mode.sh`](scripts/pick-mode.sh) | ✅ | (none — reads `cycles.jsonl` + `BACKLOG.md`) | `{"cycle":N,"mode":"iteration\|architecture\|brainstorm\|stop","open_scopes":N,"consecutive_empty_brainstorms":N,"reason":"..."}`. Honors the documented algorithm: cycle%5 → architecture, empty backlog + 3 trailing empty brainstorms → stop. |
+| [`pick-scope.sh`](scripts/pick-scope.sh) | ✅ | (none — reads `BACKLOG.md`) | `{"slug":"...","scope_name":"...","summary":"...","backend":"Cloud\|Server\|Both","tier":"1\|2\|3\|DX","has_scope_details":bool,"details_anchor":"#..."\|null}`. Halts `backlog_empty` if no 🔲 rows. |
+| [`overlap-check.sh`](scripts/overlap-check.sh) | ✅ | `<scope-slug>` | `{"scope":"...","overlapping_pr":N\|null,"matched_keywords":[...],"all_open_prs":[{num,title,score}]}`. Detection only — resolution decision (resolve/skip/close) stays in the orchestrator. |
+| [`worktree.sh`](scripts/worktree.sh) | ✅ | `create <slug> [--prefix=feat\|fix\|...]` or `remove <path>` | `{"path":"../bitbottle-worktrees/<slug>","branch":"<prefix>/<slug>","created":true}` or `{"path":"...","removed":true}` |
+| [`await-ci.sh`](scripts/await-ci.sh) | ✅ | `<pr-number> [--timeout-min=30] [--interval-sec=30]` | `{"pr":N,"all_passed":bool,"failed":[...],"skipped":[...],"elapsed_min":N}`. Halt `timeout` if CI still pending after deadline. |
+| [`await-publish.sh`](scripts/await-publish.sh) | ✅ | `<version> [--timeout-min=15]` | `{"version":"1.61.0","github":bool,"npm":bool,"elapsed_min":N}`. Accepts plain or `v`-prefixed versions. |
+| [`pre-merge-mechanical.sh`](scripts/pre-merge-mechanical.sh) | ✅ | (none — runs on current branch) | `{"findings":[{section,check,message,severity}],"blocker":bool}`. Covers `pre-merge-check.md` §1 (branch/tree), §2 (Conventional Commits + squash-merge title gotcha), §3 (build artifacts), §7 (release-please boundaries). Judgment sections stay LLM/CI. |
 
 ### Planned
 
 | Script | Status | Inputs | Output (success) | Replaces in orchestrator |
 |---|---|---|---|---|
-| `pick-mode.sh` | 🔲 | (none — reads `cycles.jsonl` + `BACKLOG.md`) | `{"mode":"iteration\|architecture\|brainstorm\|stop","cycle":N,"reason":"..."}` | §1 mode-pick block; cycle-counter parsing |
-| `pick-scope.sh` | 🔲 | (none — reads `BACKLOG.md`) | `{"slug":"...","backend":"Cloud\|Server\|Both","pointer":N,"details_anchor":"#..."}` | §1 scope-pick BACKLOG-table parsing |
-| `bundle-check.sh` | 🔲 | `<slug1> <slug2>` | `{"bundle":bool,"reason":"...","predicted_files":[...]}` | §1 bundle disjointness rules |
-| `overlap-check.sh` | 🔲 | `<scope-slug>` | `{"overlapping_pr":N\|null,"matched_keywords":[...]}` | §0B open-PR overlap scan |
-| `worktree.sh` | 🔲 | `create <slug>` \| `remove <path>` | `{"path":"...","branch":"..."}` or `{"removed":true}` | §2 worktree create/remove |
-| `await-ci.sh` | 🔲 | `<pr-number>` | `{"all_passed":bool,"failed":[...],"elapsed_min":N}` | §6 CI wait loop |
+| `bundle-check.sh` | 🔲 (deferred) | `<slug1> <slug2>` | `{"bundle":bool,"reason":"...","predicted_files":[...]}` | §1 bundle disjointness rules. **Deferred** — file-count estimation depends on parsing prose; needs a structured per-scope BACKLOG schema first. |
 | `await-release-pr.sh` | 🔲 | (none) | `{"release_pr":N,"version":"...","timed_out":bool}` | §7 release-please PR poll |
-| `await-publish.sh` | 🔲 | `<version>` | `{"github":bool,"npm":bool,"version":"..."}` | §7 publish wait |
-| `pre-merge-mechanical.sh` | 🔲 | (none — runs on current branch) | `{"findings":[...],"blocker":bool}` — bundles `smell-scan.sh`, `tdd-check.sh`, dist/-check, conventional-commit lint, release-please boundary grep, gitleaks | §5 mechanical pre-merge gate |
 
 ---
 
