@@ -92,7 +92,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
 | `user` | `view` |
-| `workspace` | `list` `member list` _(Cloud only)_ |
+| `workspace` | `list` `member list` `hook list` `hook create` `hook delete` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
 | `search` | `code QUERY` _(Cloud only)_ |
@@ -445,6 +445,15 @@ bitbottle project list myworkspace --limit 100
 bitbottle workspace member list myworkspace
 bitbottle workspace member list              # inferred from pinned repo
 bitbottle workspace member list myworkspace --json
+
+# Webhooks for a workspace
+bitbottle workspace hook list myworkspace
+bitbottle workspace hook list myworkspace --json
+
+bitbottle workspace hook create myworkspace --url https://example.com/hook --events repo:push,pullrequest:created
+bitbottle workspace hook create myworkspace --url https://example.com/hook --events repo:push --events pullrequest:created
+
+bitbottle workspace hook delete myworkspace WEBHOOK-UUID
 ```
 
 All commands surface a typed unsupported-capability error against

@@ -17,6 +17,18 @@ bitbottle workspace list --json slug,name --jq '.[].slug'
 bitbottle workspace member list WORKSPACE
 bitbottle workspace member list                # inferred from pinned repo
 bitbottle workspace member list myworkspace --limit 100 --json
+
+# List workspace-level webhooks
+bitbottle workspace hook list WORKSPACE
+bitbottle workspace hook list                  # inferred from pinned repo
+bitbottle workspace hook list myworkspace --json
+
+# Create a workspace-level webhook
+bitbottle workspace hook create WORKSPACE --url URL --events repo:push,pullrequest:created
+bitbottle workspace hook create WORKSPACE --url URL --events repo:push --events pullrequest:created --active
+
+# Delete a workspace-level webhook
+bitbottle workspace hook delete WORKSPACE UUID
 ```
 
 ## Flags
@@ -27,6 +39,12 @@ bitbottle workspace member list myworkspace --limit 100 --json
 | `workspace list` | `--hostname HOST` | — | Override the Bitbucket host |
 | `workspace member list` | `--limit INT` | 50 | Max members returned (0 = no cap) |
 | `workspace member list` | `--hostname HOST` | — | Override the Bitbucket host |
+| `workspace hook list` | `--hostname HOST` | — | Override the Bitbucket host |
+| `workspace hook create` | `--url URL` | — | Webhook URL (required) |
+| `workspace hook create` | `--events E1,E2` | — | Events to subscribe to (required, repeatable) |
+| `workspace hook create` | `--active` | true | Whether the webhook is active |
+| `workspace hook create` | `--hostname HOST` | — | Override the Bitbucket host |
+| `workspace hook delete` | `--hostname HOST` | — | Override the Bitbucket host |
 | all | `--json [FIELDS]` | — | JSON output (comma-separated field list optional) |
 | all | `--jq EXPR` | — | Filter JSON with jq expression |
 
@@ -48,6 +66,18 @@ bitbottle workspace member list myworkspace --limit 100 --json
 | SLUG | `slug` | User's account slug |
 | NAME | `name` | User's display name |
 
+### `workspace hook list`
+
+| Field | JSON key | Notes |
+|---|---|---|
+| UUID | `uuid` | Webhook UUID |
+| URL | `url` | Webhook endpoint URL |
+| EVENTS | `events` | Comma-separated event list |
+| ACTIVE | `active` | Whether the webhook is active |
+
 ## MCP tools
 
 - `list_workspace_members` — `workspace` (required), `hostname`, `limit`
+- `workspace_hook_list` — `workspace` (required), `hostname`
+- `workspace_hook_create` — `workspace` (required), `url` (required), `events` (required, comma-separated), `active`, `hostname`
+- `workspace_hook_delete` — `workspace` (required), `uuid` (required), `hostname`
