@@ -26,6 +26,11 @@ type RepoRenamer interface {
 	RenameRepo(ns, slug, newName string) (Repository, error)
 }
 
+// RepoVisibilitySetter sets a repository's public/private visibility.
+type RepoVisibilitySetter interface {
+	SetRepoVisibility(ns, slug string, isPrivate bool) error
+}
+
 // SourceReader reads file content and directory listings at a ref. Both
 // backends implement it (Cloud via /src/{ref}/{path}, Server via
 // /raw/{path}?at={ref} and /browse/{path}?at={ref}).

@@ -13,6 +13,7 @@ type wireRepository struct {
 	ID      int    `json:"id"`
 	Slug    string `json:"slug"`
 	Name    string `json:"name"`
+	Public  bool   `json:"public"`
 	Project struct {
 		Key  string `json:"key"`
 		Name string `json:"name"`
@@ -38,6 +39,7 @@ func (w wireRepository) toDomain() backend.Repository {
 		SCM:       w.ScmID,
 		WebURL:    webURL,
 		ID:        w.ID,
+		IsPrivate: !w.Public,
 	}
 }
 
@@ -109,4 +111,12 @@ func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error
 		return backend.Repository{}, err
 	}
 	return w.toDomain(), nil
+}
+
+func (c *Client) SetRepoVisibility(ns, slug string, isPrivate bool) error {
+	body := struct {
+		Public bool `json:"public"`
+	}{Public: !isPrivate}
+	var ignore wireRepository
+	return c.putJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), body, &ignore)
 }
