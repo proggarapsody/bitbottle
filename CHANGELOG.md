@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.67.0](https://github.com/proggarapsody/bitbottle/compare/v1.66.0...v1.67.0) (2026-05-15)
+
+
+### Features
+
+* **pipeline-cache:** add pipeline cache list and delete commands ([6b995e5](https://github.com/proggarapsody/bitbottle/commit/6b995e5f9bf8613304100896419dfe0b92e582c3))
+
 ## [1.66.0](https://github.com/proggarapsody/bitbottle/compare/v1.65.0...v1.66.0) (2026-05-15)
 
 
