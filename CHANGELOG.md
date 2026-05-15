@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.70.1](https://github.com/proggarapsody/bitbottle/compare/v1.70.0...v1.70.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **test:** add compile-time interface assertions to FakeClient ([5ead6e2](https://github.com/proggarapsody/bitbottle/commit/5ead6e2a9328d04bc45c2a454db4a6fc980ceab7))
+
 ## [1.70.0](https://github.com/proggarapsody/bitbottle/compare/v1.69.0...v1.70.0) (2026-05-15)
 
 
