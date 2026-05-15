@@ -385,7 +385,7 @@ Current state of every command area against gh feature parity:
 | REPO-FORKS | **Repository Forks** | `repo fork list [PROJECT/REPO]` — list forks of a repository. Cloud: `GET /repositories/{ws}/{slug}/forks` (paginated). Server: `GET /rest/api/1.0/projects/{ns}/repos/{slug}/forks` (paginated). Both backends. | Both | 2 | ✅ |
 | REPO-VISIBILITY | **Repository Visibility** | `repo visibility [PROJECT/REPO] [public\|private]` — get or toggle repository visibility. Cloud: `PUT /repositories/{ws}/{slug}` `{"is_private": bool}`. Server: `PUT /rest/api/1.0/projects/{ns}/repos/{slug}` `{"public": bool}`. Both backends. | Both | 2 | ✅ |
 | WORKSPACE-HOOKS | **Workspace Webhooks** | `workspace hook list WORKSPACE`, `workspace hook create WORKSPACE --url URL --events E1,E2`, `workspace hook delete WORKSPACE ID` — workspace-level webhooks (distinct from repo-level). Cloud: `GET/POST/DELETE /workspaces/{ws}/hooks`. Cloud only. | Cloud | 2 | ✅ |
-| PIPELINE-CACHE | **Pipeline Cache Management** | `pipeline cache list [PROJECT/REPO]`, `pipeline cache delete [PROJECT/REPO] UUID` — list and delete Cloud pipeline caches. Cloud: `GET /repositories/{ws}/{slug}/pipelines_config/caches/`, `DELETE /repositories/{ws}/{slug}/pipelines_config/caches/{uuid}`. Cloud only. | Cloud | 2 | 🔲 |
+| PIPELINE-CACHE | **Pipeline Cache Management** | `pipeline cache list [PROJECT/REPO]`, `pipeline cache delete [PROJECT/REPO] UUID` — list and delete Cloud pipeline caches. Cloud: `GET /repositories/{ws}/{slug}/pipelines_config/caches/`, `DELETE /repositories/{ws}/{slug}/pipelines_config/caches/{uuid}`. Cloud only. | Cloud | 2 | ✅ |
 
 ---
 
