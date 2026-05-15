@@ -28,6 +28,34 @@ linters:
               desc: "pkg/cmd must import api/backend interfaces only; direct cloud adapter use belongs in pkg/cmd/factory"
             - pkg: "github.com/proggarapsody/bitbottle/api/server"
               desc: "pkg/cmd must import api/backend interfaces only; direct server adapter use belongs in pkg/cmd/factory"
+            - pkg: "github.com/proggarapsody/bitbottle/api/cloud/gen"
+              desc: "gen packages are adapter-internal; pkg/cmd must not import them"
+            - pkg: "github.com/proggarapsody/bitbottle/api/server/gen"
+              desc: "gen packages are adapter-internal; pkg/cmd must not import them"
+        gen-layer-boundary:
+          # api/backend/, api/internal/, and cross-adapter files must not import gen packages.
+          files:
+            - "**/api/backend/**/*.go"
+            - "**/api/internal/**/*.go"
+          deny:
+            - pkg: "github.com/proggarapsody/bitbottle/api/cloud/gen"
+              desc: "gen packages are adapter-internal; api/backend and api/internal must not import them"
+            - pkg: "github.com/proggarapsody/bitbottle/api/server/gen"
+              desc: "gen packages are adapter-internal; api/backend and api/internal must not import them"
+        cross-adapter-boundary:
+          # api/cloud/** must not import api/server/gen; api/server/** must not import api/cloud/gen.
+          files:
+            - "**/api/cloud/**/*.go"
+          deny:
+            - pkg: "github.com/proggarapsody/bitbottle/api/server/gen"
+              desc: "gen packages are adapter-internal; api/cloud must not import api/server/gen"
+        cross-adapter-boundary-server:
+          # api/server/** must not import api/cloud/gen.
+          files:
+            - "**/api/server/**/*.go"
+          deny:
+            - pkg: "github.com/proggarapsody/bitbottle/api/cloud/gen"
+              desc: "gen packages are adapter-internal; api/server must not import api/cloud/gen"
     errcheck:
       exclude-functions:
         - fmt.Fprint

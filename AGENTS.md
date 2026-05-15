@@ -47,7 +47,9 @@ Tool-specific auto-trigger wrappers (e.g. `.claude/skills/`) defer to these docs
 ```
 api/backend/        — shared domain types + Client interface
 api/cloud/          — Bitbucket Cloud adapter
+api/cloud/gen/      — spec-derived wire types for Cloud (oapi-codegen); only api/cloud/*.go may import this
 api/server/         — Bitbucket Server/DC adapter
+api/server/gen/     — spec-derived wire types for Server/DC (oapi-codegen); only api/server/*.go may import this
 api/internal/httpx/ — shared HTTP transport (internal)
 internal/           — config, envvars, bbinstance, keyring, etc.
 pkg/cmd/            — Cobra commands (one package per noun)
@@ -58,6 +60,14 @@ docs/workflows/     — contributor + agent workflow checklists (pre-merge-check
 packages/mcp-npm/   — npm wrapper (downloads Go binary on postinstall, bundles README)
 conductor/          — project-context scaffolding from the Conductor plugin (product, tech stack, workflow, styleguides) — read for orientation, not authoritative for code rules
 ```
+
+## Wire types
+
+**All adapter wire types live in `api/cloud/gen/types.go` and `api/server/gen/types.go`.**
+Do not hand-write new `wireXxx` structs in `api/cloud/*.go` or `api/server/*.go` —
+add the schema to the corresponding `openapi.yaml`, run `make gen`, and use the
+generated type. The gen packages are adapter-internal: `api/backend/`, `api/internal/`,
+and `pkg/cmd/` must never import them (enforced by `depguard`).
 
 ## Release pipeline (automated)
 

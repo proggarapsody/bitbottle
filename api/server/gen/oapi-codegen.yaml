@@ -1,0 +1,5 @@
+package: gen
+generate:
+  models: true
+output: types.go
+input: openapi.yaml

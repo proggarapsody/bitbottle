@@ -14,7 +14,9 @@ new package, interface, transport, or refactor.
 ```
 api/backend/        — pure domain types + Client interface (NO I/O)
 api/cloud/          — Bitbucket Cloud adapter (impl details hidden)
+api/cloud/gen/      — spec-derived wire types for Cloud (oapi-codegen, types-only)
 api/server/         — Bitbucket Server/DC adapter (impl details hidden)
+api/server/gen/     — spec-derived wire types for Server/DC (oapi-codegen, types-only)
 api/internal/httpx/ — shared HTTP transport
 api/internal/paging/— canonical paginator
 internal/           — config, envvars, keyring, bbinstance (cross-cutting non-domain)
@@ -26,8 +28,10 @@ test/testhelpers/   — fakes, fixtures
 ```
 
 **Layer rule**: a package never imports from a layer above it. `pkg/cmd/**`
-may import `api/backend`; **may not** import `api/cloud` or `api/server`. The
-only path through the codebase is `cmd → backend → adapter`.
+may import `api/backend`; **may not** import `api/cloud`, `api/server`, or their
+`gen/` sub-packages. The `gen/` packages are adapter-internal — only `api/cloud/*.go`
+may import `api/cloud/gen`, and only `api/server/*.go` may import `api/server/gen`.
+The only path through the codebase is `cmd → backend → adapter`.
 
 **Enforcement**: `depguard` in `.golangci.yml` + Rule 5 in `scripts/smell-scan.sh`. Both fail CI on violations. Two principled exceptions are encoded in both checks:
 - `pkg/cmd/factory/` — the **composition root**; it must know concrete adapters to wire them together (canonical hex/clean-architecture exemption).

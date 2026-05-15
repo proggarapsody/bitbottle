@@ -185,6 +185,28 @@ func TestServerClient_DeleteBranch_SendsDeleteWithBody(t *testing.T) {
 	assert.Contains(t, string(gotBody), `"name"`)
 }
 
+// TestServerClient_EnableAutoMerge_SendsPOST verifies that EnableAutoMerge uses POST
+// (not PUT) on the Server auto-merge endpoint. The Bitbucket Server/DC API
+// requires POST to queue auto-merge; PUT returns a 405 Method Not Allowed.
+func TestServerClient_EnableAutoMerge_SendsPOST(t *testing.T) {
+	t.Parallel()
+	var gotMethod string
+	var gotPath string
+	var gotBody []byte
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{}`)
+	})
+	err := client.EnableAutoMerge("MYPROJ", "my-service", 42, "squash")
+	require.NoError(t, err)
+	assert.Equal(t, http.MethodPost, gotMethod, "EnableAutoMerge must POST, not PUT")
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/auto-merge", gotPath)
+	assert.Contains(t, string(gotBody), `"mergeStrategy"`)
+}
+
 func TestServerClient_GetCurrentUser_MapsSlug(t *testing.T) {
 	t.Parallel()
 	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {

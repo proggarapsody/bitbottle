@@ -6,6 +6,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
 // wireInboxPR is the shape of items from the Server inbox pull-requests endpoint
@@ -113,13 +114,13 @@ func (c *Client) listInboxPRs() ([]backend.MyPREntry, error) {
 func (c *Client) listAuthorPRs(ns, slug, userSlug string) ([]backend.MyPREntry, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests?author=%s&state=OPEN&limit=50", ns, slug, userSlug)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.MyPREntry, error) {
-		var page PagedResponse[wirePR]
+		var page PagedResponse[servergen.RestPullRequest]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.MyPREntry, 0, len(page.Values))
 		for _, w := range page.Values {
-			pr := w.toDomain()
+			pr := toPRDomain(w)
 			entry := backend.MyPREntry{
 				PullRequest: pr,
 				Repo:        fmt.Sprintf("%s/%s", ns, slug),

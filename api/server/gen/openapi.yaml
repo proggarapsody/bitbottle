@@ -1,0 +1,189 @@
+openapi: "3.0.3"
+info:
+  title: Bitbucket Data Center REST API (representative subset)
+  description: >
+    Schema subset (types-only); operations/paths are intentionally empty — the bitbottle adapter wires endpoints directly via httpx.
+  version: "8.19.0"
+  contact:
+    name: Atlassian Bitbucket Server REST API
+    url: https://developer.atlassian.com/server/bitbucket/reference/rest-api/
+paths: {}
+components:
+  schemas:
+    RestUserRef:
+      type: object
+      properties:
+        name:
+          type: string
+          description: User slug (login name)
+        slug:
+          type: string
+          description: User slug
+        displayName:
+          type: string
+          description: Human-readable display name
+
+    RestRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Full ref name (e.g. refs/heads/main)
+        displayId:
+          type: string
+          description: Short ref name (e.g. main)
+        latestCommit:
+          type: string
+          description: The SHA1 of the latest commit on this ref
+
+    RestSelfLink:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+
+    RestPullRequestLinks:
+      type: object
+      properties:
+        self:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestSelfLink"
+
+    RestAutoMerge:
+      type: object
+      description: Auto-merge configuration for a pull request on Bitbucket Server/DC
+      properties:
+        mergeStrategy:
+          type: string
+          description: Merge strategy (merge, squash, fast-forward)
+          enum:
+            - merge
+            - squash
+            - fast-forward
+
+    RestPullRequestAuthor:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/RestUserRef"
+
+    RestPullRequestReviewer:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/RestUserRef"
+
+    RestPullRequest:
+      type: object
+      description: A Bitbucket Data Center pull request
+      properties:
+        id:
+          type: integer
+          description: Pull request ID
+        version:
+          type: integer
+          description: Optimistic concurrency version
+        title:
+          type: string
+          description: Pull request title
+        description:
+          type: string
+          description: Pull request description
+        state:
+          type: string
+          description: Pull request state (OPEN, MERGED, DECLINED)
+          enum:
+            - OPEN
+            - MERGED
+            - DECLINED
+        draft:
+          type: boolean
+          description: Whether the pull request is a draft
+        author:
+          $ref: "#/components/schemas/RestPullRequestAuthor"
+        fromRef:
+          $ref: "#/components/schemas/RestRef"
+        toRef:
+          $ref: "#/components/schemas/RestRef"
+        reviewers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestPullRequestReviewer"
+        links:
+          $ref: "#/components/schemas/RestPullRequestLinks"
+        autoMerge:
+          $ref: "#/components/schemas/RestAutoMerge"
+
+    RestCreatePullRequestRequest:
+      type: object
+      description: Request body for creating a pull request
+      required:
+        - title
+        - fromRef
+        - toRef
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        draft:
+          type: boolean
+        fromRef:
+          $ref: "#/components/schemas/RestRefInput"
+        toRef:
+          $ref: "#/components/schemas/RestRefInput"
+        reviewers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestPullRequestReviewerInput"
+
+    RestRefInput:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Full ref name (e.g. refs/heads/main)
+
+    RestPullRequestReviewerInput:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            name:
+              type: string
+              description: User slug
+
+    RestMergePullRequestRequest:
+      type: object
+      description: Request body for merging a pull request
+      required:
+        - version
+      properties:
+        version:
+          type: integer
+          description: Current PR version for optimistic concurrency
+        message:
+          type: string
+          description: Custom merge commit message
+        strategy:
+          type: string
+          description: Merge strategy
+
+    RestAutoMergeRequest:
+      type: object
+      description: Request body for enabling auto-merge on a pull request
+      required:
+        - mergeStrategy
+      properties:
+        mergeStrategy:
+          type: string
+          description: Merge strategy to use when auto-merging
+          enum:
+            - merge
+            - squash
+            - fast-forward
