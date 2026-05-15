@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.66.0](https://github.com/proggarapsody/bitbottle/compare/v1.65.0...v1.66.0) (2026-05-15)
+
+
+### Features
+
+* **workspace-hooks:** add workspace hook list/create/delete (Cloud only) ([178e4de](https://github.com/proggarapsody/bitbottle/commit/178e4de479724075f334b3ca0a3ea68cda90e0bc)), closes [#318](https://github.com/proggarapsody/bitbottle/issues/318)
+
 ## [1.65.0](https://github.com/proggarapsody/bitbottle/compare/v1.64.0...v1.65.0) (2026-05-15)
 
 
