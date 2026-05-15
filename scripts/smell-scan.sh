@@ -62,8 +62,26 @@ if git rev-parse --verify origin/main >/dev/null 2>&1 && \
   fi
 fi
 
+# Rule 5 — layer boundary: pkg/cmd must not import api/cloud or api/server directly.
+# Exceptions: pkg/cmd/factory (composition root) and *_integration_test.go files.
+layer_files=$(
+  { grep -rl \
+      'github.com/proggarapsody/bitbottle/api/cloud\|github.com/proggarapsody/bitbottle/api/server' \
+      pkg/cmd/ \
+      --include="*.go" \
+      --exclude-dir=factory \
+      2>/dev/null || true; } \
+  | { grep -v '_integration_test\.go$' || true; }
+)
+layer_violations=$(echo "$layer_files" | grep -c . || true)
+if [ "${layer_violations:-0}" -gt 0 ]; then
+  echo "BLOCKER: pkg/cmd directly imports api/cloud or api/server (only pkg/cmd/factory is allowed):" >&2
+  echo "$layer_files" >&2
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
-  echo "smell-scan: ok (cmdtest clones=$clones, AsXClient hits=$switch_hits, translation funcs=$pairs)"
+  echo "smell-scan: ok (cmdtest clones=$clones, AsXClient hits=$switch_hits, translation funcs=$pairs, layer violations=$layer_violations)"
 fi
 
 exit "$fail"
