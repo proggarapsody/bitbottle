@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.68.0](https://github.com/proggarapsody/bitbottle/compare/v1.67.0...v1.68.0) (2026-05-15)
+
+
+### Features
+
+* **pr-suggestion:** add pr suggestion apply command ([b78aad5](https://github.com/proggarapsody/bitbottle/commit/b78aad5ce7f4d60b6e531d8bee17cfe132d2df5b))
+
 ## [1.67.0](https://github.com/proggarapsody/bitbottle/compare/v1.66.0...v1.67.0) (2026-05-15)
 
 
