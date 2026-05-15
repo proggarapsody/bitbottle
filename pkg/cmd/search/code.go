@@ -8,6 +8,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // NewCmdSearchCode returns the `bitbottle search code QUERY` command.
@@ -26,6 +27,9 @@ func NewCmdSearchCode(f *factory.Factory) *cobra.Command {
 		Short: "Search code across a Bitbucket Cloud workspace (Cloud only)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdutil.ValidatePositiveLimit(limit); err != nil {
+				return err
+			}
 			query := args[0]
 
 			host, ws, err := resolveSearchTarget(f, workspace, hostname)

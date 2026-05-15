@@ -228,3 +228,14 @@ func TestDelete_HappyPath(t *testing.T) {
 	assert.Equal(t, 42, gotID)
 	assert.Contains(t, out.String(), "Deleted restriction 42")
 }
+
+func TestList_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t}, serverConfig)
+	cmd := protect.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}

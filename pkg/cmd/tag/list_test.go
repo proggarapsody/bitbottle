@@ -79,3 +79,13 @@ func TestTagList_APIError_PropagatesError(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "tags not found")
 }
+
+func TestTagList_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tagConfig})
+	cmd := tag.NewCmdTagList(f)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}

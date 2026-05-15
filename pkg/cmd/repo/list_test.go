@@ -106,3 +106,14 @@ func TestRepoList_JQ_FilterOutput(t *testing.T) {
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
 	assert.Equal(t, []string{`"alpha"`, `"beta"`}, lines)
 }
+
+func TestNewCmdRepoList_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoConfig})
+	cmd := repo.NewCmdRepoList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}

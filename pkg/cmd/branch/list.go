@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 func NewCmdBranchList(f *factory.Factory) *cobra.Command {
@@ -17,6 +18,9 @@ func NewCmdBranchList(f *factory.Factory) *cobra.Command {
 		Short: "List branches",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdutil.ValidatePositiveLimit(limit); err != nil {
+				return err
+			}
 			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err

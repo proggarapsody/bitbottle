@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // ListOptions holds parsed flags for `branch protect list`.
@@ -26,6 +27,9 @@ func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Comman
 		Short: "List branch restrictions",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdutil.ValidatePositiveLimit(opts.Limit); err != nil {
+				return err
+			}
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {

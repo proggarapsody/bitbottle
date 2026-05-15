@@ -142,3 +142,14 @@ func TestBranchList_JQ_FilterOutput(t *testing.T) {
 	// jq output uses json.Marshal, so strings are quoted
 	assert.Equal(t, []string{`"main"`, `"develop"`}, lines)
 }
+
+func TestBranchList_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	cmd := branch.NewCmdBranchList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}
