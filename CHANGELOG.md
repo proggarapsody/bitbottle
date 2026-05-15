@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.70.2](https://github.com/proggarapsody/bitbottle/compare/v1.70.1...v1.70.2) (2026-05-15)
+
+
+### Bug Fixes
+
+* **reactions:** surface concurrent fetch errors and DRY into shared helper ([8e88260](https://github.com/proggarapsody/bitbottle/commit/8e88260ce18516f188bc9898de145d1b17b895cd))
+
 ## [1.70.1](https://github.com/proggarapsody/bitbottle/compare/v1.70.0...v1.70.1) (2026-05-15)
 
 
