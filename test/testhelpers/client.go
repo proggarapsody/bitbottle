@@ -102,6 +102,9 @@ type FakeClient struct {
 	ListWorkspacesFn func(limit int) ([]backend.Workspace, error)
 	ListProjectsFn   func(workspace string, limit int) ([]backend.Project, error)
 
+	// Workspace member methods (Cloud-only; satisfies backend.WorkspaceMemberClient when set)
+	ListWorkspaceMembersFn func(workspace string, limit int) ([]backend.WorkspaceMember, error)
+
 	// Issue methods (Cloud-only; satisfies backend.IssueClient when set)
 	ListIssuesFn         func(ns, slug, state string, limit int) ([]backend.Issue, error)
 	GetIssueFn           func(ns, slug string, id int) (backend.Issue, error)
@@ -1498,6 +1501,18 @@ func (c *FakeClient) ListPRParticipants(ns, slug string, prID int) ([]backend.PR
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListPRParticipants; set ListPRParticipantsFn in your test")
+	}
+	return nil, nil
+}
+
+// ── WorkspaceMemberClient ─────────────────────────────────────────────────────
+
+func (c *FakeClient) ListWorkspaceMembers(workspace string, limit int) ([]backend.WorkspaceMember, error) {
+	if c.ListWorkspaceMembersFn != nil {
+		return c.ListWorkspaceMembersFn(workspace, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaceMembers; set ListWorkspaceMembersFn in your test")
 	}
 	return nil, nil
 }

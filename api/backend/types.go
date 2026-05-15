@@ -395,6 +395,12 @@ type Workspace struct {
 	WebURL string
 }
 
+// WorkspaceMember is a member of a Bitbucket Cloud workspace.
+type WorkspaceMember struct {
+	User      User
+	Workspace string // workspace slug
+}
+
 // Project is a Bitbucket Cloud project (a logical group of repositories
 // inside a workspace). The naming clashes with Server/DC's "project" — which
 // is the namespace itself — but Cloud's project sits one level deeper.

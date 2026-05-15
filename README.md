@@ -91,7 +91,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
-| `workspace` | `list` _(Cloud only)_ |
+| `workspace` | `list` `member list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
 | `search` | `code QUERY` _(Cloud only)_ |
@@ -429,9 +429,14 @@ bitbottle workspace list --json slug,name --jq '.[].slug'
 # Projects within a workspace
 bitbottle project list myworkspace
 bitbottle project list myworkspace --limit 100
+
+# Members of a workspace
+bitbottle workspace member list myworkspace
+bitbottle workspace member list              # inferred from pinned repo
+bitbottle workspace member list myworkspace --json
 ```
 
-Both commands surface a typed unsupported-capability error against
+All commands surface a typed unsupported-capability error against
 Bitbucket Server / Data Center hosts (workspaces are a Cloud concept).
 
 ### Search _(Cloud only)_

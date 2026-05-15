@@ -380,7 +380,7 @@ Current state of every command area against gh feature parity:
 | REPO-WATCHER | **Repository Watchers** | `repo watcher list [PROJECT/REPO]` — list users watching a repository. Cloud: `GET /repositories/{ws}/{slug}/watchers` (paginated). Server: `GET /rest/api/1.0/projects/{ns}/repos/{slug}/watchers` (paginated). Both backends. | Both | 2 | ✅ |
 | COMMIT-STATUS-REPORT | **Report Commit Build Status** | `commit status report HASH --key KEY --state PASSED\|FAILED\|INPROGRESS [--url URL] [--name NAME] [--description DESC]` — post a build status against a commit hash (the write side of the existing `commit status list`). Cloud: `POST /repositories/{ws}/{slug}/commit/{hash}/statuses/build`. Server: `POST /rest/build-status/1.0/commits/{hash}` (uses existing `buildStatusHTTP` transport). Both backends. | Both | 2 | ✅ |
 | PR-PARTICIPANTS | **PR Participants** | `pr participant list PR_ID [PROJECT/REPO]` — list all participants in a PR (author, reviewers, observers) with their role and approval status. Cloud: `GET /repositories/{ws}/{slug}/pullrequests/{id}/participants` (paginated). Server: `GET /rest/api/1.0/projects/{k}/repos/{s}/pull-requests/{id}/participants` (paginated). Both backends. | Both | 2 | ✅ |
-| WORKSPACE-MEMBERS | **Workspace Members** | `workspace member list [WORKSPACE]` — list members of a Cloud workspace. Cloud: `GET /workspaces/{ws}/members` (paginated). Cloud only (Server has no workspace concept). | Cloud | 2 | 🔲 |
+| WORKSPACE-MEMBERS | **Workspace Members** | `workspace member list [WORKSPACE]` — list members of a Cloud workspace. Cloud: `GET /workspaces/{ws}/members` (paginated). Cloud only (Server has no workspace concept). | Cloud | 2 | ✅ |
 
 ---
 

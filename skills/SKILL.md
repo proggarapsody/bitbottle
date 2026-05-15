@@ -37,6 +37,7 @@ not sure about.**
 | SSH keys for current user (list/add/delete) — Cloud only | `references/ssh-key.md` |
 | PR default reviewers (list/add/remove) — Cloud and Server/DC | `references/pr.md` |
 | Diff between refs (`diff REF1..REF2 [--stat]`) — Cloud and Server/DC | `references/diff.md` |
+| Workspaces (list) + workspace member list — Cloud only | `references/workspace.md` |
 
 When the user's task spans two areas, load both. Don't load all of
 them speculatively.
