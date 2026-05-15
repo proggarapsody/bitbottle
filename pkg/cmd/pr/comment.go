@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -12,6 +11,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/reactions"
 )
 
 func NewCmdPRComment(f *factory.Factory) *cobra.Command {
@@ -55,7 +55,10 @@ func NewCmdPRCommentList(f *factory.Factory) *cobra.Command {
 				if reactErr != nil {
 					return reactErr
 				}
-				cmts = fetchReactionsConcurrent(reactor, ref.Project, ref.Slug, prID, cmts)
+				cmts, reactErr = fetchReactionsConcurrent(reactor, ref.Project, ref.Slug, prID, cmts)
+				if reactErr != nil {
+					fmt.Fprintf(f.IOStreams.ErrOut, "warning: some reactions could not be loaded: %v\n", reactErr)
+				}
 			}
 			p := prCommentFields(f, format.ConfigFromCmd(cmd), hasInline(cmts), withReactions)
 			for _, c := range cmts {
@@ -251,45 +254,22 @@ func NewCmdPRCommentResolve(f *factory.Factory) *cobra.Command {
 
 // fetchReactionsConcurrent fetches reactions for each comment concurrently
 // using a bounded worker pool of 4 goroutines. The returned slice has the
-// same order as the input; errors per-comment are silently ignored (reactions
-// will be nil for that comment) so a single failure doesn't abort the listing.
-func fetchReactionsConcurrent(reactor backend.CommentReactor, ns, slug string, prID int, cmts []backend.PRComment) []backend.PRComment {
-	const workers = 4
-	type job struct {
-		idx int
-		id  int
-	}
-	results := make([][]backend.CommentReaction, len(cmts))
-	jobs := make(chan job, len(cmts))
+// same order as the input. Partial results are returned alongside any
+// aggregated error so callers can show partial data with a warning.
+func fetchReactionsConcurrent(reactor backend.CommentReactor, ns, slug string, prID int, cmts []backend.PRComment) ([]backend.PRComment, error) {
+	ids := make([]int, len(cmts))
 	for i, c := range cmts {
-		jobs <- job{i, c.ID}
+		ids[i] = c.ID
 	}
-	close(jobs)
-
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	for range workers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := range jobs {
-				rxns, err := reactor.ListCommentReactions(ns, slug, prID, j.id)
-				if err == nil && len(rxns) > 0 {
-					mu.Lock()
-					results[j.idx] = rxns
-					mu.Unlock()
-				}
-			}
-		}()
-	}
-	wg.Wait()
-
+	results, err := reactions.FetchConcurrentByID(ids, func(id int) ([]backend.CommentReaction, error) {
+		return reactor.ListCommentReactions(ns, slug, prID, id)
+	})
 	out := make([]backend.PRComment, len(cmts))
 	for i, c := range cmts {
 		c.Reactions = results[i]
 		out[i] = c
 	}
-	return out
+	return out, err
 }
 
 // formatReactions renders a CommentReaction slice as a compact string like

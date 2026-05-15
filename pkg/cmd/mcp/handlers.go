@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/reactions"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/variable/shared"
 	"github.com/proggarapsody/bitbottle/pkg/errfmt"
 )
@@ -1007,51 +1007,36 @@ func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest)
 		if reactErr != nil {
 			return errResultErr(reactErr), nil
 		}
-		cmts = fetchReactionsMCPConcurrent(reactor, project, slug, id, cmts)
+		var rxnErr error
+		cmts, rxnErr = fetchReactionsMCPConcurrent(reactor, project, slug, id, cmts)
+		if rxnErr != nil {
+			type warningResult struct {
+				Comments []backend.PRComment `json:"comments"`
+				Warning  string              `json:"warning"`
+			}
+			return jsonResult(warningResult{Comments: cmts, Warning: fmt.Sprintf("some reactions could not be loaded: %v", rxnErr)})
+		}
 	}
 	return jsonResult(cmts)
 }
 
 // fetchReactionsMCPConcurrent fetches reactions for each comment concurrently
-// using a bounded worker pool of 4 goroutines. Errors per comment are silently
-// ignored so a single failure doesn't abort the listing.
-func fetchReactionsMCPConcurrent(reactor backend.CommentReactor, ns, slug string, prID int, cmts []backend.PRComment) []backend.PRComment {
-	const workers = 4
-	type job struct {
-		idx int
-		id  int
-	}
-	results := make([][]backend.CommentReaction, len(cmts))
-	jobs := make(chan job, len(cmts))
+// using a bounded worker pool of 4 goroutines. Partial results are returned
+// alongside any aggregated error so callers can surface partial data with a warning.
+func fetchReactionsMCPConcurrent(reactor backend.CommentReactor, ns, slug string, prID int, cmts []backend.PRComment) ([]backend.PRComment, error) {
+	ids := make([]int, len(cmts))
 	for i, c := range cmts {
-		jobs <- job{i, c.ID}
+		ids[i] = c.ID
 	}
-	close(jobs)
-
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	for range workers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := range jobs {
-				rxns, err := reactor.ListCommentReactions(ns, slug, prID, j.id)
-				if err == nil && len(rxns) > 0 {
-					mu.Lock()
-					results[j.idx] = rxns
-					mu.Unlock()
-				}
-			}
-		}()
-	}
-	wg.Wait()
-
+	results, err := reactions.FetchConcurrentByID(ids, func(id int) ([]backend.CommentReaction, error) {
+		return reactor.ListCommentReactions(ns, slug, prID, id)
+	})
 	out := make([]backend.PRComment, len(cmts))
 	for i, c := range cmts {
 		c.Reactions = results[i]
 		out[i] = c
 	}
-	return out
+	return out, err
 }
 
 func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
@@ -2022,7 +2007,37 @@ func (h *handlers) listCommitComments(_ context.Context, req mcplib.CallToolRequ
 		if reactErr != nil {
 			return errResultErr(reactErr), nil
 		}
-		cmts = fetchCommitReactionsMCPConcurrent(reactor, project, slug, hash, cmts)
+		var rxnErr error
+		cmts, rxnErr = fetchCommitReactionsMCPConcurrent(reactor, project, slug, hash, cmts)
+		if rxnErr != nil {
+			// Surface partial results with a warning field rather than failing.
+			type row struct {
+				ID        int                       `json:"id"`
+				Author    string                    `json:"author"`
+				Body      string                    `json:"body"`
+				CreatedAt string                    `json:"createdAt"`
+				Reactions []backend.CommentReaction `json:"reactions,omitempty"`
+			}
+			type warningResult struct {
+				Comments []row  `json:"comments"`
+				Warning  string `json:"warning"`
+			}
+			rows := make([]row, 0, len(cmts))
+			for _, c := range cmts {
+				author := c.Author.Slug
+				if author == "" {
+					author = c.Author.DisplayName
+				}
+				rows = append(rows, row{
+					ID:        c.ID,
+					Author:    author,
+					Body:      c.Body,
+					CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+					Reactions: c.Reactions,
+				})
+			}
+			return jsonResult(warningResult{Comments: rows, Warning: fmt.Sprintf("some reactions could not be loaded: %v", rxnErr)})
+		}
 	}
 
 	type row struct {
@@ -2050,45 +2065,22 @@ func (h *handlers) listCommitComments(_ context.Context, req mcplib.CallToolRequ
 }
 
 // fetchCommitReactionsMCPConcurrent fetches reactions for each commit comment
-// concurrently using a bounded worker pool of 4 goroutines. Errors per comment
-// are silently ignored so a single failure doesn't abort the listing.
-func fetchCommitReactionsMCPConcurrent(reactor backend.CommitCommentReactor, ns, slug, hash string, cmts []backend.CommitComment) []backend.CommitComment {
-	const workers = 4
-	type job struct {
-		idx int
-		id  int
-	}
-	results := make([][]backend.CommentReaction, len(cmts))
-	jobs := make(chan job, len(cmts))
+// concurrently using a bounded worker pool of 4 goroutines. Partial results are
+// returned alongside any aggregated error so callers can surface partial data with a warning.
+func fetchCommitReactionsMCPConcurrent(reactor backend.CommitCommentReactor, ns, slug, hash string, cmts []backend.CommitComment) ([]backend.CommitComment, error) {
+	ids := make([]int, len(cmts))
 	for i, c := range cmts {
-		jobs <- job{i, c.ID}
+		ids[i] = c.ID
 	}
-	close(jobs)
-
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	for range workers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := range jobs {
-				rxns, err := reactor.ListCommitCommentReactions(ns, slug, hash, j.id)
-				if err == nil && len(rxns) > 0 {
-					mu.Lock()
-					results[j.idx] = rxns
-					mu.Unlock()
-				}
-			}
-		}()
-	}
-	wg.Wait()
-
+	results, err := reactions.FetchConcurrentByID(ids, func(id int) ([]backend.CommentReaction, error) {
+		return reactor.ListCommitCommentReactions(ns, slug, hash, id)
+	})
 	out := make([]backend.CommitComment, len(cmts))
 	for i, c := range cmts {
 		c.Reactions = results[i]
 		out[i] = c
 	}
-	return out
+	return out, err
 }
 
 func (h *handlers) addCommitComment(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
