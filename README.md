@@ -245,6 +245,16 @@ bitbottle pipeline schedule create MYWORKSPACE/my-service \
 bitbottle pipeline schedule delete MYWORKSPACE/my-service {uuid}
 ```
 
+### Pipeline Caches _(Cloud only)_
+
+```bash
+# List all pipeline caches for a repository
+bitbottle pipeline cache list MYWORKSPACE/my-service
+
+# Delete a cache by UUID
+bitbottle pipeline cache delete MYWORKSPACE/my-service {uuid}
+```
+
 ### Deployments & Environments _(Cloud only)_
 
 ```bash

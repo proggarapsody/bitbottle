@@ -35,5 +35,6 @@ directory.`,
 	cmd.AddCommand(cmdLogs.NewCmdLogs(f, nil))
 	cmd.AddCommand(cmdWatch.NewCmdWatch(f, nil))
 	cmd.AddCommand(NewCmdPipelineSchedule(f))
+	cmd.AddCommand(NewCmdPipelineCache(f))
 	return cmd
 }

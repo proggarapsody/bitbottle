@@ -225,6 +225,15 @@ type PipelineScheduleInput struct {
 	Enabled        bool
 }
 
+// PipelineCache is a named cache entry for a Bitbucket Cloud pipeline.
+type PipelineCache struct {
+	UUID          string `json:"uuid"`
+	Name          string `json:"name"`
+	Path          string `json:"path"`
+	FileSizeBytes int64  `json:"fileSizeBytes"`
+	CreatedOn     string `json:"createdOn"`
+}
+
 // Tag is the domain representation of a repository tag.
 type Tag struct {
 	Name    string
