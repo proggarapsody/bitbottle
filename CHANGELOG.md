@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.71.0](https://github.com/proggarapsody/bitbottle/compare/v1.70.2...v1.71.0) (2026-05-15)
+
+
+### Features
+
+* **ci:** enforce layer boundary via depguard + smell-scan rule 5 ([358de5e](https://github.com/proggarapsody/bitbottle/commit/358de5e2d563e8462e408391cd9a2053d49669b6))
+
 ## [1.70.2](https://github.com/proggarapsody/bitbottle/compare/v1.70.1...v1.70.2) (2026-05-15)
 
 
