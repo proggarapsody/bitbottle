@@ -65,41 +65,28 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			httpx.ContentTypeAlwaysWrite,
 			serverPaginator{},
 		).UseDomainErrors(host),
-		buildStatusHTTP: httpx.New(
-			httpClient,
-			host+"/rest/build-status/1.0",
-			auth,
-			decodeErrorMessage,
-			httpx.ContentTypeAlwaysWrite,
-			serverPaginator{},
-		).UseDomainErrors(host),
-		defaultReviewersHTTP: httpx.New(
-			httpClient,
-			host+"/rest/default-reviewers/1.0",
-			auth,
-			decodeErrorMessage,
-			httpx.ContentTypeAlwaysWrite,
-			serverPaginator{},
-		).UseDomainErrors(host),
-		branchProtectHTTP: httpx.New(
-			httpClient,
-			host+"/rest/branch-permissions/2.0",
-			auth,
-			decodeErrorMessage,
-			httpx.ContentTypeAlwaysWrite,
-			serverPaginator{},
-		).UseDomainErrors(host),
-		codeInsightsHTTP: httpx.New(
-			httpClient,
-			host+"/rest/insights/1.0",
-			auth,
-			decodeErrorMessage,
-			httpx.ContentTypeAlwaysWrite,
-			serverPaginator{},
-		).UseDomainErrors(host),
-		host:     host,
-		userSlug: username,
+		buildStatusHTTP:      newAltTransport(httpClient, host, "/rest/build-status/1.0", auth),
+		defaultReviewersHTTP: newAltTransport(httpClient, host, "/rest/default-reviewers/1.0", auth),
+		branchProtectHTTP:    newAltTransport(httpClient, host, "/rest/branch-permissions/2.0", auth),
+		codeInsightsHTTP:     newAltTransport(httpClient, host, "/rest/insights/1.0", auth),
+		host:                 host,
+		userSlug:             username,
 	}
+}
+
+// newAltTransport constructs an httpx.Transport for a Bitbucket Server
+// supplementary REST root (e.g. /rest/build-status/1.0). These roots share
+// all transport config with the primary transport but target a different
+// base URL.
+func newAltTransport(httpClient HTTPClient, host, suffix string, auth httpx.Auth) *httpx.Transport {
+	return httpx.New(
+		httpClient,
+		host+suffix,
+		auth,
+		decodeErrorMessage,
+		httpx.ContentTypeAlwaysWrite,
+		serverPaginator{},
+	).UseDomainErrors(host)
 }
 
 // PagedResponse is the Bitbucket Data Center paged list envelope.
