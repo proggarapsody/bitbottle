@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.65.0](https://github.com/proggarapsody/bitbottle/compare/v1.64.0...v1.65.0) (2026-05-15)
+
+
+### Features
+
+* **repo-visibility:** add repo visibility get/set command ([5b089f2](https://github.com/proggarapsody/bitbottle/commit/5b089f224bf2dba9afd82c534fc767fdcc54d713)), closes [#315](https://github.com/proggarapsody/bitbottle/issues/315)
+
 ## [1.64.0](https://github.com/proggarapsody/bitbottle/compare/v1.63.0...v1.64.0) (2026-05-15)
 
 
