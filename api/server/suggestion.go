@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
 // wireSuggestionApplyResponse is the response from the suggestion apply endpoint.
@@ -26,7 +27,7 @@ type wireCommentBody struct {
 // returns HTTP 409. Mirrors MergePR's GET-then-POST(version) pattern.
 func (c *Client) ApplySuggestion(ns, slug string, prID, commentID, suggestionID int) (backend.SuggestionApplyResult, error) {
 	// Fetch current PR version for optimistic locking.
-	var current wirePR
+	var current servergen.RestPullRequest
 	prPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, prID)
 	if err := c.getJSON(prPath, &current); err != nil {
 		return backend.SuggestionApplyResult{}, stampPRNotFound(err, prID)

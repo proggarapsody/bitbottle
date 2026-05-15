@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
 func (c *Client) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
@@ -11,12 +12,12 @@ func (c *Client) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (ba
 		"title":       in.Title,
 		"description": in.Description,
 	}
-	var w wirePR
+	var w servergen.RestPullRequest
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.putJSON(path, body, &w); err != nil {
 		return backend.PullRequest{}, err
 	}
-	return w.toDomain(), nil
+	return toPRDomain(w), nil
 }
 
 // DeclinePR declines an open pull request.
@@ -33,7 +34,7 @@ func (c *Client) DeclinePR(ns, slug string, id int) error {
 // server returns HTTP 409 "Pull request was updated…" against any non-zero-
 // version declined PR. Mirrors MergePR's GET-then-POST(version) pattern.
 func (c *Client) ReopenPR(ns, slug string, id int) error {
-	var current wirePR
+	var current servergen.RestPullRequest
 	prPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.getJSON(prPath, &current); err != nil {
 		return stampPRNotFound(err, id)
@@ -59,7 +60,7 @@ func (c *Client) UnapprovePR(ns, slug string, id int) error {
 // (title, fromRef, toRef, ...), so we GET the current PR first, flip the
 // draft flag, and PUT the full body back.
 func (c *Client) ReadyPR(ns, slug string, id int) error {
-	var current wirePR
+	var current servergen.RestPullRequest
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.getJSON(path, &current); err != nil {
 		return err
@@ -69,42 +70,43 @@ func (c *Client) ReadyPR(ns, slug string, id int) error {
 	return c.putJSON(path, current, &result)
 }
 
-// wireReviewer is the wire type for a reviewer entry in the Server PR body.
-type wireReviewer struct {
-	User struct {
-		Name string `json:"name"`
-	} `json:"user"`
+// prReviewerInput is the wire type for a reviewer entry in the Server PR body.
+// Uses RestPullRequestReviewerInput from the gen package but alias kept here
+// for clarity in the RequestReview method.
+type prReviewerInput = servergen.RestPullRequestReviewerInput
+
+// prWithReviewers extends RestPullRequest to capture the existing reviewers list
+// when PUTting reviewers back onto a PR.
+type prWithReviewers struct {
+	servergen.RestPullRequest
+	Reviewers []servergen.RestPullRequestReviewer `json:"reviewers"`
 }
 
 // wireReviewerPR is the body used when PUTting reviewers back onto a PR.
 type wireReviewerPR struct {
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Reviewers   []wireReviewer `json:"reviewers"`
-}
-
-// wirePRWithReviewers extends wirePR to capture the existing reviewers list.
-type wirePRWithReviewers struct {
-	wirePR
-	Reviewers []wireReviewer `json:"reviewers"`
+	Title       string            `json:"title"`
+	Description string            `json:"description"`
+	Reviewers   []prReviewerInput `json:"reviewers"`
 }
 
 func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
-	var current wirePRWithReviewers
+	var current prWithReviewers
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.getJSON(path, &current); err != nil {
 		return err
 	}
 
 	existing := make(map[string]struct{}, len(current.Reviewers))
-	merged := make([]wireReviewer, 0, len(current.Reviewers)+len(users))
+	merged := make([]prReviewerInput, 0, len(current.Reviewers)+len(users))
 	for _, r := range current.Reviewers {
 		existing[r.User.Name] = struct{}{}
-		merged = append(merged, r)
+		var ri prReviewerInput
+		ri.User.Name = r.User.Name
+		merged = append(merged, ri)
 	}
 	for _, u := range users {
 		if _, ok := existing[u]; !ok {
-			var r wireReviewer
+			var r prReviewerInput
 			r.User.Name = u
 			merged = append(merged, r)
 		}

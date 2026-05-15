@@ -149,6 +149,36 @@ make lint
 
 ---
 
+## Updating OpenAPI specs
+
+Wire types for the Bitbucket Cloud and Server/DC adapters are generated from
+OpenAPI specs using `oapi-codegen` in `types`-only mode.
+
+**Specs live at:**
+- `api/cloud/gen/openapi.yaml` — Bitbucket Cloud subset
+- `api/server/gen/openapi.yaml` — Bitbucket Server/DC subset
+
+**To regenerate types after updating a spec:**
+
+```bash
+make gen
+```
+
+This installs the pinned `oapi-codegen` version (see `Makefile`) if needed,
+then regenerates `api/cloud/gen/types.go` and `api/server/gen/types.go`.
+
+**Layer rule:** only `api/cloud/*.go` may import `api/cloud/gen`, and only
+`api/server/*.go` may import `api/server/gen`. The gen packages are
+adapter-internal — `api/backend/`, `api/internal/`, and `pkg/cmd/` must never
+import them (enforced by `depguard`).
+
+**Adding new wire types:** update the appropriate `openapi.yaml`, run
+`make gen`, then use the generated type in the adapter file. Avoid
+hand-writing new `wireXxx` structs — the gen packages are the canonical home
+for all wire shapes.
+
+---
+
 ## Important: do not commit build artifacts
 
 `/dist/` is gitignored — never commit binaries or GoReleaser output. CI will reject tracked files in `dist/` or files larger than 1 MB.

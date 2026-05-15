@@ -1,0 +1,191 @@
+openapi: "3.0.3"
+info:
+  title: Bitbucket Cloud REST API (representative subset)
+  description: >
+    Representative subset of the Bitbucket Cloud REST API 2.0 covering the
+    wire shapes used by the bitbottle cloud adapter. Derived from the
+    Atlassian Bitbucket Cloud REST API documentation.
+    Only models used by api/cloud/*.go are included; fetch the full spec from
+    https://api.bitbucket.org/swagger.json and regenerate with `make gen` to add more.
+  version: "2.0.0"
+  contact:
+    name: Atlassian Bitbucket Cloud REST API
+    url: https://developer.atlassian.com/cloud/bitbucket/rest/intro/
+paths: {}
+components:
+  schemas:
+    CloudUser:
+      type: object
+      description: A Bitbucket Cloud user reference
+      properties:
+        account_id:
+          type: string
+          description: Atlassian account ID (UUID)
+        display_name:
+          type: string
+          description: Human-readable display name
+        nickname:
+          type: string
+          description: User's nickname / slug
+
+    CloudBranchName:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Branch name
+
+    CloudCommitRef:
+      type: object
+      properties:
+        hash:
+          type: string
+          description: Commit hash
+
+    CloudBranchRef:
+      type: object
+      description: A reference to a branch and its latest commit
+      properties:
+        branch:
+          $ref: "#/components/schemas/CloudBranchName"
+        commit:
+          $ref: "#/components/schemas/CloudCommitRef"
+
+    CloudDestinationRef:
+      type: object
+      description: A reference to a destination branch
+      properties:
+        branch:
+          $ref: "#/components/schemas/CloudBranchName"
+
+    CloudHTMLLink:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+
+    CloudPullRequestLinks:
+      type: object
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudPullRequestReviewer:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Atlassian account ID
+
+    CloudAutoMerge:
+      type: object
+      description: Auto-merge configuration for a Cloud pull request
+      properties:
+        merge_strategy:
+          type: string
+          description: >
+            Merge strategy: merge_commit, squash, or fast_forward.
+            Maps to CLI vocabulary: merge, squash, rebase.
+          enum:
+            - merge_commit
+            - squash
+            - fast_forward
+
+    CloudPullRequest:
+      type: object
+      description: A Bitbucket Cloud pull request
+      properties:
+        id:
+          type: integer
+          description: Pull request ID
+        title:
+          type: string
+          description: Pull request title
+        description:
+          type: string
+          description: Pull request description
+        state:
+          type: string
+          description: Pull request state
+          enum:
+            - OPEN
+            - MERGED
+            - DECLINED
+            - SUPERSEDED
+        draft:
+          type: boolean
+          description: Whether the pull request is a draft
+        author:
+          $ref: "#/components/schemas/CloudUser"
+        source:
+          $ref: "#/components/schemas/CloudBranchRef"
+        destination:
+          $ref: "#/components/schemas/CloudDestinationRef"
+        links:
+          $ref: "#/components/schemas/CloudPullRequestLinks"
+        reviewers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudPullRequestReviewer"
+        auto_merge:
+          $ref: "#/components/schemas/CloudAutoMerge"
+
+    CloudCreatePullRequest:
+      type: object
+      description: Request body for creating a pull request on Bitbucket Cloud
+      required:
+        - title
+        - source
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        draft:
+          type: boolean
+        source:
+          $ref: "#/components/schemas/CloudCreateBranchRef"
+        destination:
+          $ref: "#/components/schemas/CloudCreateBranchRef"
+        reviewers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudCreateReviewer"
+
+    CloudCreateBranchRef:
+      type: object
+      properties:
+        branch:
+          $ref: "#/components/schemas/CloudBranchName"
+
+    CloudCreateReviewer:
+      type: object
+      description: >
+        Reviewer shape for PR creation. Cloud accepts either username or uuid.
+        bitbottle uses username.
+      properties:
+        username:
+          type: string
+
+    CloudMergePullRequest:
+      type: object
+      description: Request body for merging a pull request on Bitbucket Cloud
+      properties:
+        merge_strategy:
+          type: string
+          description: Merge strategy override
+
+    CloudAutoMergeRequest:
+      type: object
+      description: Request body for enabling auto-merge on a Bitbucket Cloud pull request
+      required:
+        - merge_strategy
+      properties:
+        merge_strategy:
+          type: string
+          description: Merge strategy to apply when auto-merging
+          enum:
+            - merge_commit
+            - squash
+            - fast_forward
