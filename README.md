@@ -91,6 +91,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
+| `user` | `view` |
 | `workspace` | `list` `member list` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
@@ -438,6 +439,21 @@ bitbottle workspace member list myworkspace --json
 
 All commands surface a typed unsupported-capability error against
 Bitbucket Server / Data Center hosts (workspaces are a Cloud concept).
+
+### User Profile
+
+```bash
+# Display the currently authenticated user's profile
+bitbottle user view
+
+# JSON output
+bitbottle user view --json
+
+# Filter with jq
+bitbottle user view --json slug,name --jq '.slug'
+```
+
+Works on both Bitbucket Cloud and Bitbucket Server / Data Center.
 
 ### Search _(Cloud only)_
 
