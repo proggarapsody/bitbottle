@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.71.1](https://github.com/proggarapsody/bitbottle/compare/v1.71.0...v1.71.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **cmd:** validate --limit must be &gt;= 1 in list commands ([38b31dd](https://github.com/proggarapsody/bitbottle/commit/38b31dd2262caff11b3a14f5da0f6ced5c27350c))
+
 ## [1.71.0](https://github.com/proggarapsody/bitbottle/compare/v1.70.2...v1.71.0) (2026-05-15)
 
 
