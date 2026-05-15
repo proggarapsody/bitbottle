@@ -35,6 +35,8 @@ bitbottle pr task list   42 [--state open|resolved|all]      # Server/DC only; B
 bitbottle pr task create 42 --body "TEXT" [--parent COMMENT_ID]
 bitbottle pr task resolve 42 TASK_ID
 bitbottle pr task reopen  42 TASK_ID
+bitbottle pr suggestion apply 42 COMMENT_ID SUGGESTION_ID     # Server/DC only; commit suggested change
+bitbottle pr suggestion apply 42 COMMENT_ID SUGGESTION_ID --preview # show suggestion without applying
 bitbottle pr activity 42                                      # PR event stream
 bitbottle pr activity 42 --limit 20
 bitbottle pr activity 42 --json type,actor,createdAt,detail   # structured output
@@ -85,6 +87,12 @@ BLOCKER comment (optionally threaded under `--parent`). `pr task resolve` and
 `pr task reopen` toggle the comment state between RESOLVED and OPEN.
 Cloud returns a typed `host.unsupported` error for resolve/reopen. MCP tools:
 `list_pr_tasks`, `create_pr_task`, `resolve_pr_task`, `reopen_pr_task`.
+
+`pr suggestion apply` is Server/DC-only — Bitbucket Cloud has no suggested-change
+primitive. It calls `POST .../pull-requests/{id}/comments/{cid}/suggestions/{sid}/apply`
+and the server commits the suggested change directly to the PR source branch (no local
+file edits needed). Use `--preview` to display the suggestion body text without applying.
+Cloud returns a typed `host.unsupported` error. MCP tool: `pr_suggestion_apply`.
 
 `pr activity` streams all PR events (approvals, unapprovals, comments,
 updates, merges, declines, rescopes) from both backends. The TTY table

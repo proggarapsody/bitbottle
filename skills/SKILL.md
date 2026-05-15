@@ -96,7 +96,7 @@ command in that checkout runs without `-R`.
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only commands | `pipeline *`, `pr request-changes`, `pr comment resolve` | — |
-| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *`, `pr task resolve/reopen`, `pr comment react/unreact`, `pr comment list --reactions`, `commit comment react/unreact`, `commit comment list --reactions` |
+| Server-only commands | — | `branch protect *`, `code-insights *`, `perms *`, `pr task resolve/reopen`, `pr suggestion apply`, `pr comment react/unreact`, `pr comment list --reactions`, `commit comment react/unreact`, `commit comment list --reactions` |
 
 Custom-hostname Cloud Data Center? Force routing in `hosts.yml`:
 `backend_type: cloud` (or `server`). See `references/auth.md`.
@@ -225,6 +225,22 @@ bitbottle pr task reopen  42 TASK_ID
 MCP tools: `list_pr_tasks` (`{pr_id, state}`), `create_pr_task`
 (`{pr_id, body, parent_comment_id}`), `resolve_pr_task` (`{pr_id, task_id}`),
 `reopen_pr_task` (`{pr_id, task_id}`).
+
+## PR suggestions _(Server / DC only)_
+
+Apply Bitbucket Server / Data Center inline suggested-change blocks. The server
+commits the change directly to the PR source branch — no local file edits needed.
+
+```bash
+# Apply a suggestion (commits the change to the PR branch)
+bitbottle pr suggestion apply PR_ID COMMENT_ID SUGGESTION_ID
+
+# Preview the suggestion body without applying it
+bitbottle pr suggestion apply PR_ID COMMENT_ID SUGGESTION_ID --preview
+```
+
+MCP tool: `pr_suggestion_apply` (`{project, slug, pr_id, comment_id, suggestion_id, preview}`).
+Cloud returns `host.unsupported`.
 
 ## PR comment reactions _(Server / DC only)_
 
