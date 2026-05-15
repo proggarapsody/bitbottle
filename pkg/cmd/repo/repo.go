@@ -23,7 +23,13 @@ disambiguate when multiple Bitbucket hosts are configured.`,
 	cmd.AddCommand(NewCmdRepoClone(f))
 	cmd.AddCommand(NewCmdRepoSetDefault(f))
 	cmd.AddCommand(NewCmdRepoRename(f))
-	cmd.AddCommand(NewCmdRepoFork(f))
+	forkCmd := &cobra.Command{
+		Use:   "fork",
+		Short: "Create and list repository forks",
+	}
+	forkCmd.AddCommand(NewCmdRepoForkCreate(f))
+	forkCmd.AddCommand(NewCmdRepoForkList(f))
+	cmd.AddCommand(forkCmd)
 	cmd.AddCommand(NewCmdRepoTransfer(f))
 	cmd.AddCommand(NewCmdRepoFile(f))
 	cmd.AddCommand(NewCmdRepoTree(f))

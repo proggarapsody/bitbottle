@@ -222,6 +222,9 @@ type FakeClient struct {
 
 	// Repo watcher methods (both backends; satisfies backend.RepoWatcherClient when set)
 	ListRepoWatchersFn func(ns, slug string) ([]backend.User, error)
+
+	// Repo forks methods (both backends; satisfies backend.RepoForksLister when set)
+	ListRepoForksFn func(ns, slug string, limit int) ([]backend.Repository, error)
 }
 
 // Compile-time interface check.
@@ -1525,6 +1528,18 @@ func (c *FakeClient) ListRepoWatchers(ns, slug string) ([]backend.User, error) {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListRepoWatchers; set ListRepoWatchersFn in your test")
+	}
+	return nil, nil
+}
+
+// ── RepoForksLister ────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListRepoForks(ns, slug string, limit int) ([]backend.Repository, error) {
+	if c.ListRepoForksFn != nil {
+		return c.ListRepoForksFn(ns, slug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListRepoForks; set ListRepoForksFn in your test")
 	}
 	return nil, nil
 }
