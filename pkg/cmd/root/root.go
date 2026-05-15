@@ -6,35 +6,35 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/alias"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/api"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/auth"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/branch"
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/branchrule" // self-registers via init()
-	"github.com/proggarapsody/bitbottle/pkg/cmd/codeinsights"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/commit"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/completion"
-	configcmd "github.com/proggarapsody/bitbottle/pkg/cmd/config"
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/context"     // self-registers via init()
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/deploykey"   // self-registers via init()
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/deployment"  // self-registers via init()
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/diff"        // self-registers via init()
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/environment" // self-registers via init()
-	_ "github.com/proggarapsody/bitbottle/pkg/cmd/extension"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/api"          // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/auth"         // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/branch"       // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/branchrule"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/codeinsights" // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/commit"       // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/completion"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/config"       // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/context"      // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/deploykey"    // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/deployment"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/diff"         // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/environment"  // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/extension"    // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/issue"
-	mcpcmd "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
-	cmdProfile "github.com/proggarapsody/bitbottle/pkg/cmd/profile"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/project"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/repo"
-	searchcmd "github.com/proggarapsody/bitbottle/pkg/cmd/search"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/skill"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/tag"
-	cmdUser "github.com/proggarapsody/bitbottle/pkg/cmd/user"
-	cmdVariable "github.com/proggarapsody/bitbottle/pkg/cmd/variable"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/workspace"
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/issue"     // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"       // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"  // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/pr"        // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/profile"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/project"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/repo"      // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/search"    // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/skill"     // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/tag"       // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/user"      // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/variable"  // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/webhook"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/workspace" // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmdregistry"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
@@ -88,32 +88,11 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.PersistentFlags().String("template", "", "Format output with a Go template")
 	cmdutil.RegisterNoColorFlag(cmd)
 
-	cmd.AddCommand(completion.NewCmdCompletion(f))
-	cmd.AddCommand(auth.NewCmdAuth(f))
-	cmd.AddCommand(repo.NewCmdRepo(f))
-	cmd.AddCommand(pr.NewCmdPR(f))
-	cmd.AddCommand(branch.NewCmdBranch(f))
-	cmd.AddCommand(codeinsights.NewCmdCodeInsights(f))
-	cmd.AddCommand(pipeline.NewCmdPipeline(f))
-	cmd.AddCommand(tag.NewCmdTag(f))
-	cmd.AddCommand(webhook.NewCmdWebhook(f))
-	cmd.AddCommand(commit.NewCmdCommit(f))
-	cmd.AddCommand(issue.NewCmdIssue(f))
-	cmd.AddCommand(api.NewCmdAPI(f))
-	cmd.AddCommand(workspace.NewCmdWorkspace(f))
-	cmd.AddCommand(project.NewCmdProject(f))
-	cmd.AddCommand(configcmd.NewCmdConfig(f))
-	cmd.AddCommand(mcpcmd.NewCmdMCP(f))
-	cmd.AddCommand(searchcmd.NewCmdSearch(f))
-	cmd.AddCommand(skill.NewCmdSkill(f))
-	cmd.AddCommand(cmdUser.NewCmdUser(f))
-	cmd.AddCommand(cmdVariable.NewCmdVariable(f))
-	cmd.AddCommand(cmdProfile.NewCmdProfile(f))
 	cmd.AddCommand(NewCmdStatus(f))
 	cmd.AddCommand(NewCmdBrowse(f))
 
-	// Self-registered commands (legacy fixed list above; new commands use
-	// cmdregistry instead of editing this file).
+	// Self-registered commands — packages call cmdregistry.Register from init()
+	// so new commands never need to touch this file.
 	for _, sub := range cmdregistry.All(f) {
 		cmd.AddCommand(sub)
 	}
