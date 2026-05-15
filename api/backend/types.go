@@ -30,6 +30,7 @@ type Repository struct {
 	SCM         string
 	WebURL      string
 	Description string
+	IsPrivate   bool
 	ID          int
 }
 

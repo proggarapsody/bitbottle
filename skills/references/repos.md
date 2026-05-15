@@ -18,6 +18,9 @@ bitbottle repo transfer PROJ/repo --to TARGET-PROJ                   # both back
 bitbottle repo file get PROJ/repo PATH --ref REF [--out FILE]        # read file content at a ref
 bitbottle repo tree PROJ/repo [PATH] --ref REF [--json fields]       # list directory at a ref
 bitbottle repo watcher list PROJ/repo                                 # list users watching a repo
+bitbottle repo visibility PROJ/repo                                   # get visibility: "public" or "private"
+bitbottle repo visibility PROJ/repo public                            # set repo public
+bitbottle repo visibility PROJ/repo private                           # set repo private
 ```
 
 `repo rename`, `repo fork`, and `repo transfer` accept `--json fields` and
@@ -48,6 +51,10 @@ commands require `--ref` (branch / tag / commit hash) and accept
 `repo watcher list` lists all users watching a repository. Works on
 both Cloud and Server/DC. Columns: DISPLAY_NAME, USERNAME. Supports
 `--json fields`, `--jq expr`, `--hostname`. MCP tool: `list_repo_watchers(repo)`.
+
+`repo visibility PROJ/repo` prints `public` or `private`. With a second
+argument (`public` or `private`) it sets the visibility. Works on both
+Cloud and Server/DC. MCP tool: `repo_visibility(repo[, visibility])`.
 
 ## Branches
 

@@ -16,6 +16,7 @@ type wireCloudRepo struct {
 	Name        string `json:"name"`
 	SCM         string `json:"scm"`
 	Description string `json:"description"`
+	IsPrivate   bool   `json:"is_private"`
 	Links       struct {
 		HTML struct {
 			Href string `json:"href"`
@@ -37,6 +38,7 @@ func (w wireCloudRepo) toDomain() backend.Repository {
 		SCM:         w.SCM,
 		WebURL:      w.Links.HTML.Href,
 		Description: w.Description,
+		IsPrivate:   w.IsPrivate,
 	}
 }
 
@@ -107,6 +109,14 @@ func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error
 		return backend.Repository{}, err
 	}
 	return w.toDomain(), nil
+}
+
+func (c *Client) SetRepoVisibility(ns, slug string, isPrivate bool) error {
+	body := struct {
+		IsPrivate bool `json:"is_private"`
+	}{IsPrivate: isPrivate}
+	var ignore wireCloudRepo
+	return c.putJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), body, &ignore)
 }
 
 type wireCloudForkBody struct {

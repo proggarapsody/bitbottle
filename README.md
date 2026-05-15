@@ -393,6 +393,16 @@ Data Center, which has no fork primitive in its REST API. Both `rename` and
 `fork` accept `--json fields` and `--jq expr` for structured output.
 `repo transfer` works on both backends and also accepts `--json`/`--jq`.
 
+```bash
+# Get or set repository visibility
+bitbottle repo visibility MYPROJ/my-service          # prints "public" or "private"
+bitbottle repo visibility MYPROJ/my-service public   # make the repo public
+bitbottle repo visibility MYPROJ/my-service private  # make the repo private
+```
+
+`repo visibility` works on both Bitbucket Cloud and Server / Data Center.
+MCP tool: `repo_visibility(repo[, visibility])`.
+
 ### Reading source at a ref
 
 Read file content and directory listings at any ref (branch, tag, commit
