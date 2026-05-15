@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.72.0](https://github.com/proggarapsody/bitbottle/compare/v1.71.1...v1.72.0) (2026-05-15)
+
+
+### Features
+
+* **openapi-types:** add gen/ infrastructure and migrate server PR wire types ([6dbbbec](https://github.com/proggarapsody/bitbottle/commit/6dbbbec011c73879d42ee2797afdfc71304ee61c))
+
 ## [1.71.1](https://github.com/proggarapsody/bitbottle/compare/v1.71.0...v1.71.1) (2026-05-15)
 
 
