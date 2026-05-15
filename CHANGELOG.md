@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.64.0](https://github.com/proggarapsody/bitbottle/compare/v1.63.0...v1.64.0) (2026-05-15)
+
+
+### Features
+
+* **repo-forks:** add repo fork list command (both backends) ([d4c5e16](https://github.com/proggarapsody/bitbottle/commit/d4c5e16cad89aac48270a14383b185b1836e21ef))
+
 ## [1.63.0](https://github.com/proggarapsody/bitbottle/compare/v1.62.0...v1.63.0) (2026-05-15)
 
 
