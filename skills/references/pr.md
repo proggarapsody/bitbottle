@@ -54,6 +54,10 @@ bitbottle pr reopen 42                                        # reopen a decline
 bitbottle pr default-reviewer list [PROJ/repo]               # list configured default reviewers
 bitbottle pr default-reviewer add  [PROJ/repo] USER          # add a default reviewer (slug on Server, account ID/nickname on Cloud)
 bitbottle pr default-reviewer remove [PROJ/repo] USER        # remove a default reviewer
+bitbottle pr reviewer-group list [PROJ/repo]                 # list reviewer group conditions (Server/DC only)
+bitbottle pr reviewer-group add [PROJ/repo] --name NAME --users u1,u2  # create reviewer group
+bitbottle pr reviewer-group remove [PROJ/repo] NAME          # remove reviewer group by name
+bitbottle pr reviewer-group remove [PROJ/repo] --id ID       # remove reviewer group by condition ID
 ```
 
 The `pr comment list` output includes inline review comments (file:line
@@ -184,6 +188,31 @@ bitbottle pr default-reviewer remove MYPROJ/my-service jsmith
 
 MCP tools: `list_default_reviewers`, `add_default_reviewer`, `remove_default_reviewer`.
 Each accepts `repo` (required) and `hostname` (optional).
+
+## PR reviewer groups (Server/DC only)
+
+`pr reviewer-group` manages named reviewer-group conditions on Bitbucket Server / Data
+Center. Each condition maps a source matcher to a set of required reviewers. Cloud returns
+`host.unsupported`.
+
+```bash
+bitbottle pr reviewer-group list MYPROJ/my-service
+bitbottle pr reviewer-group add  MYPROJ/my-service --name team-a --users alice,bob
+bitbottle pr reviewer-group add  MYPROJ/my-service --name team-a --users alice,bob --required-approvals 2
+bitbottle pr reviewer-group remove MYPROJ/my-service team-a
+bitbottle pr reviewer-group remove MYPROJ/my-service --id 7
+```
+
+- `list` shows: ID, NAME, REQUIRED APPROVALS, REVIEWERS.
+- `add` uses `--name` as the source-matcher label. Users are comma-separated slugs.
+  `--required-approvals` defaults to 1.
+- `remove` looks up by name and deletes the condition. Pass `--id` to bypass the
+  name lookup.
+
+MCP tools: `pr_reviewer_group_list`, `pr_reviewer_group_add`, `pr_reviewer_group_remove`.
+`pr_reviewer_group_add` accepts `repo`, `name`, `users` (comma-separated slugs),
+`required_approvals` (optional, default 1), and `hostname`. `pr_reviewer_group_remove`
+accepts `repo`, `id` (numeric condition ID), and `hostname`.
 
 ## Common failures
 

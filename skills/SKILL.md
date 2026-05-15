@@ -37,6 +37,7 @@ not sure about.**
 | Branch restriction rules (list/add/delete) — Cloud only | `references/branch-rule.md` |
 | SSH keys for current user (list/add/delete) — Cloud only | `references/ssh-key.md` |
 | PR default reviewers (list/add/remove) — Cloud and Server/DC | `references/pr.md` |
+| PR reviewer groups (list/add/remove) — Server/DC only | `references/pr.md` |
 | Diff between refs (`diff REF1..REF2 [--stat]`) — Cloud and Server/DC | `references/diff.md` |
 | Workspaces (list) + workspace member list — Cloud only | `references/workspace.md` |
 | Workspace webhooks (list/create/delete) — Cloud only | `references/workspace.md` |
@@ -181,6 +182,8 @@ Repo transfer MCP tool (both backends): `transfer_repo` — accepts `repo` (PROJ
 SSH key MCP tools (Cloud only): `list_ssh_keys`, `add_ssh_key`, `delete_ssh_key`. See `references/ssh-key.md`.
 
 PR default reviewer MCP tools (both backends): `list_default_reviewers`, `add_default_reviewer`, `remove_default_reviewer`. See `references/pr.md`.
+
+PR reviewer group MCP tools (Server/DC only): `pr_reviewer_group_list`, `pr_reviewer_group_add`, `pr_reviewer_group_remove`. See `references/pr.md`.
 
 Pipeline trigger MCP tool (Cloud only): `trigger_pipeline` — accepts `repo` (WORKSPACE/REPO), `branch`, and optional `variables` (comma-separated `key=value` pairs).
 

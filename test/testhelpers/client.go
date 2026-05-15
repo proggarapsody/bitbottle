@@ -205,6 +205,11 @@ type FakeClient struct {
 	AddDefaultReviewerFn    func(ns, slug, userSlug string) error
 	RemoveDefaultReviewerFn func(ns, slug, userSlug string) error
 
+	// Reviewer group methods (Server-only; satisfies backend.ReviewerGroupClient when set)
+	ListReviewerGroupsFn  func(ns, slug string) ([]backend.ReviewerGroup, error)
+	CreateReviewerGroupFn func(ns, slug string, in backend.CreateReviewerGroupInput) (backend.ReviewerGroup, error)
+	DeleteReviewerGroupFn func(ns, slug string, id int) error
+
 	// Pipeline trigger methods (Cloud-only; satisfies backend.PipelineTriggerClient when set)
 	TriggerPipelineFn func(ns, slug string, input backend.PipelineTriggerInput) (backend.PipelineTriggerResult, error)
 
@@ -1584,6 +1589,38 @@ func (c *FakeClient) ListRepoForks(ns, slug string, limit int) ([]backend.Reposi
 		c.T.Fatalf("unexpected call to FakeClient.ListRepoForks; set ListRepoForksFn in your test")
 	}
 	return nil, nil
+}
+
+// ── ReviewerGroupClient ───────────────────────────────────────────────────────
+
+func (c *FakeClient) ListReviewerGroups(ns, slug string) ([]backend.ReviewerGroup, error) {
+	if c.ListReviewerGroupsFn != nil {
+		return c.ListReviewerGroupsFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListReviewerGroups; set ListReviewerGroupsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateReviewerGroup(ns, slug string, in backend.CreateReviewerGroupInput) (backend.ReviewerGroup, error) {
+	if c.CreateReviewerGroupFn != nil {
+		return c.CreateReviewerGroupFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateReviewerGroup; set CreateReviewerGroupFn in your test")
+	}
+	return backend.ReviewerGroup{}, nil
+}
+
+func (c *FakeClient) DeleteReviewerGroup(ns, slug string, id int) error {
+	if c.DeleteReviewerGroupFn != nil {
+		return c.DeleteReviewerGroupFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteReviewerGroup; set DeleteReviewerGroupFn in your test")
+	}
+	return nil
 }
 
 // ── WorkspaceWebhookClient ────────────────────────────────────────────────────
