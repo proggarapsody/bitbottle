@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.69.0](https://github.com/proggarapsody/bitbottle/compare/v1.68.0...v1.69.0) (2026-05-15)
+
+
+### Features
+
+* **pr-reviewer-group:** add pr reviewer-group list/add/remove commands ([4870d20](https://github.com/proggarapsody/bitbottle/commit/4870d201e71828faab6f8fd042200c8c688f1143))
+
 ## [1.68.0](https://github.com/proggarapsody/bitbottle/compare/v1.67.0...v1.68.0) (2026-05-15)
 
 
