@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.63.0](https://github.com/proggarapsody/bitbottle/compare/v1.62.0...v1.63.0) (2026-05-15)
+
+
+### Features
+
+* **user-view:** add user view command (both backends) ([d7efe70](https://github.com/proggarapsody/bitbottle/commit/d7efe706d21748e4861793b4128533af3fb4268a))
+
 ## [1.62.0](https://github.com/proggarapsody/bitbottle/compare/v1.61.0...v1.62.0) (2026-05-15)
 
 
