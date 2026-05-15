@@ -106,6 +106,11 @@ type FakeClient struct {
 	// Workspace member methods (Cloud-only; satisfies backend.WorkspaceMemberClient when set)
 	ListWorkspaceMembersFn func(workspace string, limit int) ([]backend.WorkspaceMember, error)
 
+	// Workspace webhook methods (Cloud-only; satisfies backend.WorkspaceWebhookClient when set)
+	ListWorkspaceWebhooksFn  func(workspace string) ([]backend.Webhook, error)
+	CreateWorkspaceWebhookFn func(workspace string, in backend.CreateWebhookInput) (backend.Webhook, error)
+	DeleteWorkspaceWebhookFn func(workspace, uuid string) error
+
 	// Issue methods (Cloud-only; satisfies backend.IssueClient when set)
 	ListIssuesFn         func(ns, slug, state string, limit int) ([]backend.Issue, error)
 	GetIssueFn           func(ns, slug string, id int) (backend.Issue, error)
@@ -1553,4 +1558,36 @@ func (c *FakeClient) ListRepoForks(ns, slug string, limit int) ([]backend.Reposi
 		c.T.Fatalf("unexpected call to FakeClient.ListRepoForks; set ListRepoForksFn in your test")
 	}
 	return nil, nil
+}
+
+// ── WorkspaceWebhookClient ────────────────────────────────────────────────────
+
+func (c *FakeClient) ListWorkspaceWebhooks(workspace string) ([]backend.Webhook, error) {
+	if c.ListWorkspaceWebhooksFn != nil {
+		return c.ListWorkspaceWebhooksFn(workspace)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaceWebhooks; set ListWorkspaceWebhooksFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateWorkspaceWebhook(workspace string, in backend.CreateWebhookInput) (backend.Webhook, error) {
+	if c.CreateWorkspaceWebhookFn != nil {
+		return c.CreateWorkspaceWebhookFn(workspace, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateWorkspaceWebhook; set CreateWorkspaceWebhookFn in your test")
+	}
+	return backend.Webhook{}, nil
+}
+
+func (c *FakeClient) DeleteWorkspaceWebhook(workspace, uuid string) error {
+	if c.DeleteWorkspaceWebhookFn != nil {
+		return c.DeleteWorkspaceWebhookFn(workspace, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteWorkspaceWebhook; set DeleteWorkspaceWebhookFn in your test")
+	}
+	return nil
 }

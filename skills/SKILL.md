@@ -39,6 +39,7 @@ not sure about.**
 | PR default reviewers (list/add/remove) — Cloud and Server/DC | `references/pr.md` |
 | Diff between refs (`diff REF1..REF2 [--stat]`) — Cloud and Server/DC | `references/diff.md` |
 | Workspaces (list) + workspace member list — Cloud only | `references/workspace.md` |
+| Workspace webhooks (list/create/delete) — Cloud only | `references/workspace.md` |
 | User profile (`user view`) — Cloud and Server/DC | `references/user.md` |
 
 When the user's task spans two areas, load both. Don't load all of

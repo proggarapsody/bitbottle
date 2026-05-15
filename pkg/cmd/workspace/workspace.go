@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	cmdhook "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/hook"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/list"
 	cmdMemberList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/member"
 )
@@ -25,6 +26,15 @@ func NewCmdWorkspace(f *factory.Factory) *cobra.Command {
 	}
 	memberCmd.AddCommand(cmdMemberList.NewCmdList(f, nil))
 	cmd.AddCommand(memberCmd)
+
+	hookCmd := &cobra.Command{
+		Use:   "hook",
+		Short: "Manage workspace webhooks (Cloud only)",
+	}
+	hookCmd.AddCommand(cmdhook.NewCmdList(f, nil))
+	hookCmd.AddCommand(cmdhook.NewCmdCreate(f, nil))
+	hookCmd.AddCommand(cmdhook.NewCmdDelete(f, nil))
+	cmd.AddCommand(hookCmd)
 
 	return cmd
 }
