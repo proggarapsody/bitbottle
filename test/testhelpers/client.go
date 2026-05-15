@@ -242,8 +242,47 @@ type FakeClient struct {
 	ListRepoForksFn func(ns, slug string, limit int) ([]backend.Repository, error)
 }
 
-// Compile-time interface check.
-var _ backend.Client = (*FakeClient)(nil)
+// ── Compile-time interface assertions ─────────────────────────────────────────
+// If FakeClient is missing a method required by any of these interfaces, this
+// file fails to compile, catching the gap before test-time.
+var (
+	// Base composite interface — all backends must satisfy this.
+	_ backend.Client = (*FakeClient)(nil)
+
+	// Optional interfaces — FakeClient implements all of these.
+	_ backend.AdminClient            = (*FakeClient)(nil)
+	_ backend.BranchProtector        = (*FakeClient)(nil)
+	_ backend.BranchRuleClient       = (*FakeClient)(nil)
+	_ backend.CodeInsightsClient     = (*FakeClient)(nil)
+	_ backend.CodeSearcher           = (*FakeClient)(nil)
+	_ backend.CommitFileClient       = (*FakeClient)(nil)
+	_ backend.DefaultReviewerClient  = (*FakeClient)(nil)
+	_ backend.DefaultReviewersResolver = (*FakeClient)(nil)
+	_ backend.DeployKeyClient        = (*FakeClient)(nil)
+	_ backend.DeploymentClient       = (*FakeClient)(nil)
+	_ backend.DiffClient             = (*FakeClient)(nil)
+	_ backend.IssueClient            = (*FakeClient)(nil)
+	_ backend.PermissionsClient      = (*FakeClient)(nil)
+	_ backend.PipelineCacheClient    = (*FakeClient)(nil)
+	_ backend.PipelineClient         = (*FakeClient)(nil)
+	_ backend.PipelineScheduleClient = (*FakeClient)(nil)
+	_ backend.PipelineTriggerClient  = (*FakeClient)(nil)
+	_ backend.PRBranchUpdater        = (*FakeClient)(nil)
+	_ backend.PRCommitClient         = (*FakeClient)(nil)
+	_ backend.PRFileClient           = (*FakeClient)(nil)
+	_ backend.PRParticipantClient    = (*FakeClient)(nil)
+	_ backend.PRStatusLister         = (*FakeClient)(nil)
+	_ backend.RepoForker             = (*FakeClient)(nil)
+	_ backend.RepoForksLister        = (*FakeClient)(nil)
+	_ backend.RepoTransferClient     = (*FakeClient)(nil)
+	_ backend.RepoWatcherClient      = (*FakeClient)(nil)
+	_ backend.ReviewerGroupClient    = (*FakeClient)(nil)
+	_ backend.SSHKeyClient           = (*FakeClient)(nil)
+	_ backend.WorkspaceClient        = (*FakeClient)(nil)
+	_ backend.WorkspaceMemberClient  = (*FakeClient)(nil)
+	_ backend.WorkspaceVariableClient = (*FakeClient)(nil)
+	_ backend.WorkspaceWebhookClient = (*FakeClient)(nil)
+)
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
 	if c.ListReposFn != nil {
