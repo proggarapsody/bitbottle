@@ -11,7 +11,23 @@ linters:
     - unconvert
     - noctx
     - bodyclose
+    - depguard
   settings:
+    depguard:
+      rules:
+        pkg-cmd-layer-boundary:
+          # pkg/cmd/** must talk to api/backend interfaces only.
+          # Exceptions: factory (composition root) and integration tests.
+          files:
+            - "**/pkg/cmd/**/*.go"
+            - "!**/pkg/cmd/factory/*.go"
+            - "!**/pkg/cmd/factory/**/*.go"
+            - "!**/*_integration_test.go"
+          deny:
+            - pkg: "github.com/proggarapsody/bitbottle/api/cloud"
+              desc: "pkg/cmd must import api/backend interfaces only; direct cloud adapter use belongs in pkg/cmd/factory"
+            - pkg: "github.com/proggarapsody/bitbottle/api/server"
+              desc: "pkg/cmd must import api/backend interfaces only; direct server adapter use belongs in pkg/cmd/factory"
     errcheck:
       exclude-functions:
         - fmt.Fprint

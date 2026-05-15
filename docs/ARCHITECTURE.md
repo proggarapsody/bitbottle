@@ -29,7 +29,9 @@ test/testhelpers/   — fakes, fixtures
 may import `api/backend`; **may not** import `api/cloud` or `api/server`. The
 only path through the codebase is `cmd → backend → adapter`.
 
-**Enforcement**: golangci-lint `depguard`. Violations are BLOCKER in CI.
+**Enforcement**: `depguard` in `.golangci.yml` + Rule 5 in `scripts/smell-scan.sh`. Both fail CI on violations. Two principled exceptions are encoded in both checks:
+- `pkg/cmd/factory/` — the **composition root**; it must know concrete adapters to wire them together (canonical hex/clean-architecture exemption).
+- `pkg/cmd/**/*_integration_test.go` — integration tests legitimately construct real adapter clients against `httptest` servers to verify wire compatibility.
 
 ---
 
