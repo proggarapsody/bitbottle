@@ -51,6 +51,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRFiles(f))
 	cmd.AddCommand(NewCmdPRParticipants(f))
 	cmd.AddCommand(NewCmdSuggestion(f))
+	cmd.AddCommand(NewCmdReviewerGroup(f))
 	return cmd
 }
 

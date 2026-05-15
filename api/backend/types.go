@@ -817,6 +817,25 @@ type DefaultReviewer struct {
 	EmailAddress string `json:"emailAddress,omitempty"`
 }
 
+// ReviewerGroup is the domain representation of a Bitbucket Server / Data
+// Center default-reviewers condition. Each condition defines a set of
+// reviewers that are automatically required for PRs matching a source/target
+// ref pattern.
+type ReviewerGroup struct {
+	ID                int    `json:"id"`
+	Name              string `json:"name"`
+	RequiredApprovals int    `json:"requiredApprovals"`
+	Reviewers         []User `json:"reviewers"`
+}
+
+// CreateReviewerGroupInput carries the parameters for creating a reviewer group
+// condition.
+type CreateReviewerGroupInput struct {
+	Name              string   // used as sourceMatcher displayId / id
+	UserSlugs         []string // reviewer user slugs
+	RequiredApprovals int      // default 1
+}
+
 // DeployKey is the domain representation of a repository deploy key (SSH public key).
 type DeployKey struct {
 	ID       int    `json:"id"`
