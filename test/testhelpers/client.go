@@ -213,6 +213,10 @@ type FakeClient struct {
 	CreatePipelineScheduleFn func(ns, slug string, input backend.PipelineScheduleInput) (backend.PipelineSchedule, error)
 	DeletePipelineScheduleFn func(ns, slug, uuid string) error
 
+	// Pipeline cache methods (Cloud-only; satisfies backend.PipelineCacheClient when set)
+	ListPipelineCachesFn  func(ns, slug string) ([]backend.PipelineCache, error)
+	DeletePipelineCacheFn func(ns, slug, uuid string) error
+
 	// Diff methods (both backends; satisfies backend.DiffClient when set)
 	GetDiffFn     func(ns, slug, from, to string) (string, error)
 	GetDiffStatFn func(ns, slug, from, to string) (backend.DiffStat, error)
@@ -1390,6 +1394,28 @@ func (c *FakeClient) DeletePipelineSchedule(ns, slug, uuid string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeletePipelineSchedule; set DeletePipelineScheduleFn in your test")
+	}
+	return nil
+}
+
+// ── PipelineCacheClient ──────────────────────────────────────────────────────
+
+func (c *FakeClient) ListPipelineCaches(ns, slug string) ([]backend.PipelineCache, error) {
+	if c.ListPipelineCachesFn != nil {
+		return c.ListPipelineCachesFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelineCaches; set ListPipelineCachesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) DeletePipelineCache(ns, slug, uuid string) error {
+	if c.DeletePipelineCacheFn != nil {
+		return c.DeletePipelineCacheFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeletePipelineCache; set DeletePipelineCacheFn in your test")
 	}
 	return nil
 }
