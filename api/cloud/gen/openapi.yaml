@@ -2,11 +2,7 @@ openapi: "3.0.3"
 info:
   title: Bitbucket Cloud REST API (representative subset)
   description: >
-    Representative subset of the Bitbucket Cloud REST API 2.0 covering the
-    wire shapes used by the bitbottle cloud adapter. Derived from the
-    Atlassian Bitbucket Cloud REST API documentation.
-    Only models used by api/cloud/*.go are included; fetch the full spec from
-    https://api.bitbucket.org/swagger.json and regenerate with `make gen` to add more.
+    Schema subset (types-only); operations/paths are intentionally empty — the bitbottle adapter wires endpoints directly via httpx.
   version: "2.0.0"
   contact:
     name: Atlassian Bitbucket Cloud REST API

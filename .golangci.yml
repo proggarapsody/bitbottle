@@ -42,6 +42,20 @@ linters:
               desc: "gen packages are adapter-internal; api/backend and api/internal must not import them"
             - pkg: "github.com/proggarapsody/bitbottle/api/server/gen"
               desc: "gen packages are adapter-internal; api/backend and api/internal must not import them"
+        cross-adapter-boundary:
+          # api/cloud/** must not import api/server/gen; api/server/** must not import api/cloud/gen.
+          files:
+            - "**/api/cloud/**/*.go"
+          deny:
+            - pkg: "github.com/proggarapsody/bitbottle/api/server/gen"
+              desc: "gen packages are adapter-internal; api/cloud must not import api/server/gen"
+        cross-adapter-boundary-server:
+          # api/server/** must not import api/cloud/gen.
+          files:
+            - "**/api/server/**/*.go"
+          deny:
+            - pkg: "github.com/proggarapsody/bitbottle/api/cloud/gen"
+              desc: "gen packages are adapter-internal; api/server must not import api/cloud/gen"
     errcheck:
       exclude-functions:
         - fmt.Fprint

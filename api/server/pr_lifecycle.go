@@ -77,6 +77,8 @@ type prReviewerInput = servergen.RestPullRequestReviewerInput
 
 // prWithReviewers extends RestPullRequest to capture the existing reviewers list
 // when PUTting reviewers back onto a PR.
+//
+// Reviewers shadows the embedded field to omit omitempty: Server requires an explicit empty array to clear reviewers on PUT.
 type prWithReviewers struct {
 	servergen.RestPullRequest
 	Reviewers []servergen.RestPullRequestReviewer `json:"reviewers"`

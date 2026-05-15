@@ -2,12 +2,7 @@ openapi: "3.0.3"
 info:
   title: Bitbucket Data Center REST API (representative subset)
   description: >
-    Representative subset of the Bitbucket Data Center REST API covering the
-    wire shapes used by the bitbottle server adapter. Derived from the
-    Atlassian Bitbucket Server REST API documentation for Bitbucket Data Center 8.x.
-    Only models used by api/server/*.go are included; fetch the full spec from
-    https://developer.atlassian.com/server/bitbucket/reference/rest-api/ and
-    regenerate with `make gen` to add more.
+    Schema subset (types-only); operations/paths are intentionally empty — the bitbottle adapter wires endpoints directly via httpx.
   version: "8.19.0"
   contact:
     name: Atlassian Bitbucket Server REST API

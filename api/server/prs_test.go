@@ -185,10 +185,10 @@ func TestServerClient_DeleteBranch_SendsDeleteWithBody(t *testing.T) {
 	assert.Contains(t, string(gotBody), `"name"`)
 }
 
-// TestEnableAutoMerge_Server_SendsPOST verifies that EnableAutoMerge uses POST
+// TestServerClient_EnableAutoMerge_SendsPOST verifies that EnableAutoMerge uses POST
 // (not PUT) on the Server auto-merge endpoint. The Bitbucket Server/DC API
 // requires POST to queue auto-merge; PUT returns a 405 Method Not Allowed.
-func TestEnableAutoMerge_Server_SendsPOST(t *testing.T) {
+func TestServerClient_EnableAutoMerge_SendsPOST(t *testing.T) {
 	t.Parallel()
 	var gotMethod string
 	var gotPath string
