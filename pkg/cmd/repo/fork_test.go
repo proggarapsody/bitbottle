@@ -17,7 +17,7 @@ import (
 func TestNewCmdRepoFork_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
-	cmd := repo.NewCmdRepoFork(f)
+	cmd := repo.NewCmdRepoForkCreate(f)
 	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
@@ -28,7 +28,7 @@ func TestRepoFork_RequiresInto(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newRepoFactory(t, fake)
-	cmd := repo.NewCmdRepoFork(f)
+	cmd := repo.NewCmdRepoForkCreate(f)
 	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
@@ -49,7 +49,7 @@ func TestRepoFork_CallsBackendWithTargetWorkspace(t *testing.T) {
 		},
 	}
 	f, _, _ := newRepoFactory(t, fake)
-	cmd := repo.NewCmdRepoFork(f)
+	cmd := repo.NewCmdRepoForkCreate(f)
 	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws"})
 	require.NoError(t, cmd.Execute())
@@ -70,7 +70,7 @@ func TestRepoFork_NameFlagRenamesFork(t *testing.T) {
 		},
 	}
 	f, _, _ := newRepoFactory(t, fake)
-	cmd := repo.NewCmdRepoFork(f)
+	cmd := repo.NewCmdRepoForkCreate(f)
 	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws", "--name", "renamed-fork"})
 	require.NoError(t, cmd.Execute())
@@ -91,7 +91,7 @@ func TestRepoFork_PrintsForkCoordinate(t *testing.T) {
 		},
 	}
 	f, out, _ := newRepoFactory(t, fake)
-	cmd := repo.NewCmdRepoFork(f)
+	cmd := repo.NewCmdRepoForkCreate(f)
 	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws"})
 	require.NoError(t, cmd.Execute())
@@ -107,7 +107,7 @@ func TestRepoFork_JSONOutput(t *testing.T) {
 		},
 	}
 	f, out, _ := newRepoFactory(t, fake)
-	cmd := repo.NewCmdRepoFork(f)
+	cmd := repo.NewCmdRepoForkCreate(f)
 	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws", "--json"})
 	require.NoError(t, cmd.Execute())
@@ -126,7 +126,7 @@ func TestRepoFork_APIError_Propagates(t *testing.T) {
 		},
 	}
 	f, _, _ := newRepoFactory(t, fake)
-	cmd := repo.NewCmdRepoFork(f)
+	cmd := repo.NewCmdRepoForkCreate(f)
 	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--into", "otherws"})
 	err := cmd.Execute()

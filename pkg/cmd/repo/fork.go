@@ -11,11 +11,11 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-func NewCmdRepoFork(f *factory.Factory) *cobra.Command {
+func NewCmdRepoForkCreate(f *factory.Factory) *cobra.Command {
 	var hostname, into, name string
 
 	cmd := &cobra.Command{
-		Use:   "fork PROJECT/REPO --into WORKSPACE [--name NAME]",
+		Use:   "create PROJECT/REPO --into WORKSPACE [--name NAME]",
 		Short: "Fork a repository into a workspace (Bitbucket Cloud only)",
 		Long: "Fork a Bitbucket Cloud repository into a destination workspace.\n" +
 			"Bitbucket Server / Data Center has no fork primitive — running this\n" +

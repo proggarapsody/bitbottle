@@ -73,3 +73,26 @@ func AsRepoForker(c Client, host string) (RepoForker, error) {
 	}
 	return rf, nil
 }
+
+// RepoForksLister lists forks of a repository. Both Cloud and Server support this.
+type RepoForksLister interface {
+	ListRepoForks(ns, slug string, limit int) ([]Repository, error)
+}
+
+// FeatureRepoForks names the repo-forks-list capability for typed-error reporting.
+const FeatureRepoForks Feature = "repo-forks"
+
+// AsRepoForksLister returns the RepoForksLister view of c, or a typed *DomainError.
+func AsRepoForksLister(c Client, host string) (RepoForksLister, error) {
+	rfl, ok := c.(RepoForksLister)
+	if !ok {
+		return nil, &DomainError{
+			Kind:    ErrUnsupportedOnHost,
+			Code:    CodeHostUnsupported,
+			Host:    host,
+			Feature: string(FeatureRepoForks),
+			Message: "repo fork list is not supported on " + host,
+		}
+	}
+	return rfl, nil
+}
