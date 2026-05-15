@@ -172,6 +172,10 @@ bitbottle pr files 42 --json status,path,additions,deletions
 # PR participants (author, reviewers, observers)
 bitbottle pr participants 42
 bitbottle pr participants 42 --json role,display_name,username,approved
+
+# Apply a suggested change (Bitbucket Server / DC only — commits to the PR branch)
+bitbottle pr suggestion apply 42 COMMENT_ID SUGGESTION_ID
+bitbottle pr suggestion apply 42 COMMENT_ID SUGGESTION_ID --preview   # show without applying
 ```
 
 ### Repos & Branches

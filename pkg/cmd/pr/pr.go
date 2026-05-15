@@ -50,6 +50,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRCommits(f))
 	cmd.AddCommand(NewCmdPRFiles(f))
 	cmd.AddCommand(NewCmdPRParticipants(f))
+	cmd.AddCommand(NewCmdSuggestion(f))
 	return cmd
 }
 
