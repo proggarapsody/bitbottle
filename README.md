@@ -66,6 +66,9 @@ echo "BBDC-YOUR-PAT" | bitbottle auth login \
 
 # Verify
 bitbottle auth status
+
+# Diagnose credential / keychain / connectivity issues
+bitbottle auth doctor [--hostname git.example.com]
 ```
 
 Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo with a Bitbucket remote the host and project/repo are detected automatically. Outside a repo, use `-R HOST/PROJECT/REPO`.
@@ -78,7 +81,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 
 | Group | Commands |
 |---|---|
-| `auth` | `login` `logout` `status` `token` `refresh` |
+| `auth` | `login` `logout` `status` `token` `refresh` `doctor` |
 | `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `request-review` `comment` `default-reviewer {list\|add\|remove}` |
 | `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` `watcher list` |
 | `branch` | `list` `create` `delete` `checkout` |

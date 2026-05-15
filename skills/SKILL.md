@@ -129,6 +129,12 @@ When you see one of these messages, you know the fix:
   passwords need the **Atlassian email**, not the username.
 - *Server/DC auth fails* → missing `--username`, or `--git-protocol
   ssh` was used with an HTTPS-only PAT.
+- *Credential / keychain / TLS / proxy issues* → run
+  `bitbottle auth doctor [--hostname HOST]`. It reports the keyring
+  backend, whether a token is stored, token format (BBDC- Server PAT /
+  ATATT Cloud OAuth / unknown), API base URL reachability, and whether
+  the stored token authenticates successfully. Never echoes the token
+  value. Exit 0 if all checks pass, 1 otherwise.
 - *`code-insights` returns "unsupported on host"* → Code Insights is a
   Bitbucket Server / Data Center feature only. Cloud hosts always return
   this error. Confirm the host is Server/DC with `bitbottle context`.
