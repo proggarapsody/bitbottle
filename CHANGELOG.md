@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.62.0](https://github.com/proggarapsody/bitbottle/compare/v1.61.0...v1.62.0) (2026-05-15)
+
+
+### Features
+
+* **auto-iter:** tier 1 + tier 2 scripts — pick/await/overlap/worktree/pre-merge ([#302](https://github.com/proggarapsody/bitbottle/issues/302)) ([30bca81](https://github.com/proggarapsody/bitbottle/commit/30bca8140b341e9102a6d98fca788069c44d91e7))
+* **workspace-members:** add workspace member list command (Cloud only) ([78d8439](https://github.com/proggarapsody/bitbottle/commit/78d843997dfc0b0c59b4c3361d92478192403ba6))
+
 ## [1.61.0](https://github.com/proggarapsody/bitbottle/compare/v1.60.0...v1.61.0) (2026-05-14)
 
 
