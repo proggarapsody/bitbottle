@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.70.0](https://github.com/proggarapsody/bitbottle/compare/v1.69.0...v1.70.0) (2026-05-15)
+
+
+### Features
+
+* **auth-doctor:** add auth doctor diagnostics command ([e75dc74](https://github.com/proggarapsody/bitbottle/commit/e75dc74b29cead46a7e2d555db1dc06958c2a6d7))
+
 ## [1.69.0](https://github.com/proggarapsody/bitbottle/compare/v1.68.0...v1.69.0) (2026-05-15)
 
 
