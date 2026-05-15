@@ -482,3 +482,13 @@ func TestIssueStateColor_TTY(t *testing.T) {
 		assert.Equal(t, want, colorize(state), "state=%q", state)
 	}
 }
+
+func TestIssueList_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t})
+	cmd := issue.NewCmdIssueList(f)
+	cmd.SetArgs([]string{"acme/repo", "--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}

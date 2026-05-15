@@ -7,6 +7,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/shared"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // Options holds parsed flags for `pipeline list`.
@@ -27,6 +28,9 @@ func NewCmdList(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Short: "List pipelines",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdutil.ValidatePositiveLimit(opts.Limit); err != nil {
+				return err
+			}
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
 			if runF != nil {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // mapPRState normalises user-facing state names to Bitbucket API values.
@@ -35,6 +36,9 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 		Short: "List pull requests",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdutil.ValidatePositiveLimit(limit); err != nil {
+				return err
+			}
 			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err

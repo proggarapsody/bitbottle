@@ -7,6 +7,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 func NewCmdRepoList(f *factory.Factory) *cobra.Command {
@@ -18,6 +19,9 @@ func NewCmdRepoList(f *factory.Factory) *cobra.Command {
 		Short: "List repositories",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdutil.ValidatePositiveLimit(limit); err != nil {
+				return err
+			}
 			host, err := resolveHostname(f, hostname)
 			if err != nil {
 				return err

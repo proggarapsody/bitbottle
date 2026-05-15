@@ -29,6 +29,9 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 		// IOStreams.Out below, Out is already the pager pipe.
 		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdutil.ValidatePositiveLimit(limit); err != nil {
+				return err
+			}
 			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err

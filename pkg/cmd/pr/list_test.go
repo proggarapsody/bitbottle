@@ -118,3 +118,14 @@ func TestPRList_JQ_FilterOutput(t *testing.T) {
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
 	assert.Equal(t, []string{"10", "20"}, lines)
 }
+
+func TestNewCmdPRList_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service", "--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}

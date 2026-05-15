@@ -184,3 +184,14 @@ func TestCode_JQFiltersJSONOutput(t *testing.T) {
 	assert.Contains(t, lines[0], "src/a.go")
 	assert.Contains(t, lines[1], "src/b.go")
 }
+
+func TestCode_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := newFactory(t, &testhelpers.FakeClient{T: t})
+	cmd := search.NewCmdSearchCode(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"TODO", "--workspace", "acme", "--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}

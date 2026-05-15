@@ -222,3 +222,14 @@ func TestCommitLog_JSONOutput(t *testing.T) {
 	assert.Equal(t, "abc1234def567890", results[0]["hash"])
 	assert.Equal(t, "feat: add new feature", results[0]["message"])
 }
+
+func TestCommitLog_InvalidLimit(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	cmd := commit.NewCmdCommitLog(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--limit", "0"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit")
+}
