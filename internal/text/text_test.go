@@ -47,4 +47,3 @@ func TestRelativeTime_Days(t *testing.T) {
 	got := text.RelativeTime(time.Now().Add(-48 * time.Hour))
 	assert.Contains(t, got, "2 days")
 }
-
