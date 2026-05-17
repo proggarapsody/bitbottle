@@ -137,6 +137,26 @@ func requireString(req mcplib.CallToolRequest, key string) (string, error) {
 	return v, nil
 }
 
+// validateEnum returns a non-nil error when value is not in the allowed set.
+// The error message tells the caller exactly which values are valid.
+func validateEnum(field, value string, allowed ...string) error {
+	for _, a := range allowed {
+		if value == a {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value %q for %s: must be one of %s",
+		value, field, strings.Join(allowed, ", "))
+}
+
+// validateRange returns a non-nil error when n is outside [min, max].
+func validateRange(field string, n, min, max int) error {
+	if n < min || n > max {
+		return fmt.Errorf("%s must be between %d and %d, got %d", field, min, max, n)
+	}
+	return nil
+}
+
 func (h *handlers) listHosts(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	cfg, err := h.f.Config()
 	if err != nil {
@@ -149,6 +169,9 @@ func (h *handlers) listRepos(_ context.Context, req mcplib.CallToolRequest) (*mc
 	hostname := req.GetString("hostname", "")
 	namespace := req.GetString("namespace", "")
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
@@ -304,7 +327,13 @@ func (h *handlers) listPRs(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 		return errResultErr(err), nil
 	}
 	state := req.GetString("state", "OPEN")
+	if err := validateEnum("state", state, "OPEN", "MERGED", "DECLINED"); err != nil {
+		return errResult(err.Error()), nil
+	}
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
@@ -400,8 +429,14 @@ func (h *handlers) mergePR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 		return errResult("missing required parameter: id"), nil
 	}
 	strategy := req.GetString("strategy", "")
+	if err := validateEnum("strategy", strategy, "", "merge", "squash", "rebase"); err != nil {
+		return errResult(err.Error()), nil
+	}
 	auto := req.GetBool("auto", false)
 	autoStrategy := req.GetString("auto_strategy", "merge")
+	if err := validateEnum("auto_strategy", autoStrategy, "merge", "squash", "rebase"); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
@@ -515,6 +550,9 @@ func (h *handlers) getCurrentUser(_ context.Context, req mcplib.CallToolRequest)
 func (h *handlers) listBranches(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	project, err := requireString(req, "project")
 	if err != nil {
@@ -539,6 +577,9 @@ func (h *handlers) listBranches(_ context.Context, req mcplib.CallToolRequest) (
 func (h *handlers) listPipelines(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	limit := req.GetInt("limit", 20)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	project, err := requireString(req, "project")
 	if err != nil {
@@ -632,6 +673,9 @@ func (h *handlers) createBranch(_ context.Context, req mcplib.CallToolRequest) (
 func (h *handlers) listTags(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	project, err := requireString(req, "project")
 	if err != nil {
@@ -902,6 +946,9 @@ func (h *handlers) listCommits(_ context.Context, req mcplib.CallToolRequest) (*
 	}
 	branch := req.GetString("branch", "main")
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
@@ -1588,6 +1635,9 @@ func (h *handlers) deleteWebhook(_ context.Context, req mcplib.CallToolRequest) 
 func (h *handlers) listWorkspaces(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
@@ -1607,6 +1657,9 @@ func (h *handlers) listWorkspaces(_ context.Context, req mcplib.CallToolRequest)
 func (h *handlers) listProjects(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	workspace, err := requireString(req, "workspace")
 	if err != nil {
@@ -1655,6 +1708,9 @@ func (h *handlers) resolveIssueClient(req mcplib.CallToolRequest) (backend.Issue
 func (h *handlers) listIssues(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	state := req.GetString("state", "")
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 	ic, project, slug, err := h.resolveIssueClient(req)
 	if err != nil {
 		return errResultErr(err), nil
@@ -1884,6 +1940,9 @@ func (h *handlers) resolveBranchProtector(req mcplib.CallToolRequest) (backend.B
 
 func (h *handlers) listBranchProtections(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 	bp, project, slug, err := h.resolveBranchProtector(req)
 	if err != nil {
 		return errResultErr(err), nil
@@ -1960,6 +2019,9 @@ func (h *handlers) searchCode(_ context.Context, req mcplib.CallToolRequest) (*m
 		return errResultErr(err), nil
 	}
 	limit := req.GetInt("limit", 30)
+	if err := validateRange("limit", limit, 1, 100); err != nil {
+		return errResult(err.Error()), nil
+	}
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {

@@ -2847,3 +2847,197 @@ func TestDeleteCommitComment_BackendError_ReturnsError(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "not found")
 }
+
+// ---- validateEnum / validateRange (MCP-VALIDATION) ----
+
+func TestListPRs_InvalidState_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPRs(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "state": "INVALID",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, `invalid value "INVALID" for state`)
+}
+
+func TestListPRs_ValidStates_PassThrough(t *testing.T) {
+	t.Parallel()
+	for _, state := range []string{"OPEN", "MERGED", "DECLINED"} {
+		state := state
+		t.Run(state, func(t *testing.T) {
+			t.Parallel()
+			fake := &testhelpers.FakeClient{
+				ListPRsFn: func(ns, slug, s string, limit int) ([]backend.PullRequest, error) {
+					return nil, nil
+				},
+			}
+			h := newHandlersWithFake(t, singleHostConfig, fake)
+			result, err := h.listPRs(context.Background(), makeReq(map[string]any{
+				"project": "PROJ", "slug": "repo", "state": state,
+			}))
+			require.NoError(t, err)
+			assert.False(t, result.IsError, "state %q should be valid", state)
+		})
+	}
+}
+
+func TestListPRs_LimitTooLow_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPRs(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListPRs_LimitTooHigh_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPRs(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(101),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestMergePR_InvalidStrategy_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.mergePR(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "id": float64(1), "strategy": "invalid",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, `invalid value "invalid" for strategy`)
+}
+
+func TestMergePR_EmptyStrategy_IsValid(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		MergePRFn: func(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: id, State: "MERGED"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.mergePR(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "id": float64(1),
+	}))
+	require.NoError(t, err)
+	assert.False(t, result.IsError, "empty strategy should be valid (server default)")
+}
+
+func TestMergePR_InvalidAutoStrategy_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.mergePR(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "id": float64(1), "auto": true, "auto_strategy": "bad",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, `invalid value "bad" for auto_strategy`)
+}
+
+func TestListRepos_LimitTooLow_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listRepos(context.Background(), makeReq(map[string]any{"limit": float64(0)}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListRepos_LimitTooHigh_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listRepos(context.Background(), makeReq(map[string]any{"limit": float64(101)}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListBranches_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listBranches(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListPipelines_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelines(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(200),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListTags_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listTags(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListCommits_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listCommits(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListWorkspaces_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listWorkspaces(context.Background(), makeReq(map[string]any{
+		"limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListProjects_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listProjects(context.Background(), makeReq(map[string]any{
+		"workspace": "myws", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListIssues_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listIssues(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestListBranchProtections_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listBranchProtections(context.Background(), makeReq(map[string]any{
+		"project": "PROJ", "slug": "repo", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+func TestSearchCode_LimitOutOfRange_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.searchCode(context.Background(), makeReq(map[string]any{
+		"workspace": "myws", "query": "foo", "limit": float64(0),
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
