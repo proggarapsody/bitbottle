@@ -13,6 +13,16 @@ const (
 	BackendTypeServer = "server"
 )
 
+// ValidateBackendType returns a non-nil error when s is not a recognised
+// backend_type value. Empty string is valid (auto-detect from hostname).
+func ValidateBackendType(s string) error {
+	switch s {
+	case "", BackendTypeCloud, BackendTypeServer, "datacenter":
+		return nil
+	}
+	return fmt.Errorf("invalid backend_type %q: must be one of cloud, server, datacenter, or empty (auto)", s)
+}
+
 // cloudHostname is the canonical Bitbucket Cloud hostname.
 const cloudHostname = "bitbucket.org"
 

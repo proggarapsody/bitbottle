@@ -83,6 +83,40 @@ func TestCreateRun_RequiredTokenMissing(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestCreateRun_InvalidBackend(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	store := profiles.New(t.TempDir())
+	factorytest.UseProfiles(f, store)
+
+	cmd := create.NewCmdCreate(f, nil)
+	cmd.SetArgs([]string{"work", "--hostname", "git.work.com", "--token", "tok", "--backend", "clud"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid backend_type")
+}
+
+func TestCreateRun_ValidBackendValues(t *testing.T) {
+	t.Parallel()
+	for _, backend := range []string{"cloud", "server", "datacenter", ""} {
+		backend := backend
+		t.Run(backend, func(t *testing.T) {
+			t.Parallel()
+			f, _, _ := factorytest.New(t, factorytest.Opts{})
+			store := profiles.New(t.TempDir())
+			factorytest.UseProfiles(f, store)
+
+			args := []string{"work", "--hostname", "git.work.com", "--token", "tok"}
+			if backend != "" {
+				args = append(args, "--backend", backend)
+			}
+			cmd := create.NewCmdCreate(f, nil)
+			cmd.SetArgs(args)
+			require.NoError(t, cmd.Execute())
+		})
+	}
+}
+
 func TestCreateRun_DuplicateNameOverwrites(t *testing.T) {
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 	store := profiles.New(t.TempDir())
