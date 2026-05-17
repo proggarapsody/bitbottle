@@ -9,6 +9,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // ListOptions carries parsed flags for `workspace hook list`.
@@ -59,16 +60,20 @@ func listRun(f *factory.Factory, opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	hooks, err := wwc.ListWorkspaceWebhooks(workspace)
-	if err != nil {
-		return err
+	hooks, listErr := wwc.ListWorkspaceWebhooks(workspace)
+	if listErr != nil && len(hooks) == 0 {
+		return listErr
 	}
 
 	p := workspaceWebhookFields(f, opts.Output)
 	for _, h := range hooks {
 		p.AddItem(h)
 	}
-	return p.Render()
+	if err := p.Render(); err != nil {
+		return err
+	}
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(hooks), listErr)
+	return listErr
 }
 
 // workspaceWebhookFields wires the format printer for both TTY and JSON paths.

@@ -31,16 +31,20 @@ func NewCmdBranchList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			branches, err := client.ListBranches(ref.Project, ref.Slug, limit)
-			if err != nil {
-				return err
+			branches, listErr := client.ListBranches(ref.Project, ref.Slug, limit)
+			if listErr != nil && len(branches) == 0 {
+				return listErr
 			}
 
 			p := branchFields(f, format.ConfigFromCmd(cmd))
 			for _, b := range branches {
 				p.AddItem(b)
 			}
-			return p.Render()
+			if err := p.Render(); err != nil {
+				return err
+			}
+			cmdutil.PartialWarn(f.IOStreams.ErrOut, len(branches), listErr)
+			return listErr
 		},
 	}
 	cmd.Flags().IntVar(&limit, "limit", 30, "Maximum number of branches")

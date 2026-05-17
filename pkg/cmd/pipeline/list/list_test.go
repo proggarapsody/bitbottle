@@ -1,6 +1,7 @@
 package list_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -153,4 +154,25 @@ func TestList_InvalidLimit(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--limit")
+}
+
+func TestList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPipelinesFn: func(ns, slug string, limit int) ([]backend.Pipeline, error) {
+			return []backend.Pipeline{
+				{BuildNumber: 42, State: "SUCCESSFUL", RefName: "main"},
+			}, listErr
+		},
+	}
+	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "42")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

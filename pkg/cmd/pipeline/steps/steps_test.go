@@ -120,3 +120,24 @@ func TestSteps_ClientNotPipelineCapable_ReturnsError(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pipelines")
 }
+
+func TestSteps_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPipelineStepsFn: func(ns, slug, uuid string) ([]backend.PipelineStep, error) {
+			return []backend.PipelineStep{
+				{UUID: "s1", Name: "partial-step", State: "SUCCESSFUL", Duration: 42},
+			}, listErr
+		},
+	}
+	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := steps.NewCmdSteps(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "p-uuid"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial-step")
+	assert.Contains(t, errOut.String(), "warning: partial results")
+}

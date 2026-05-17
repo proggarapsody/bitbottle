@@ -1,6 +1,7 @@
 package pr_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -128,4 +129,25 @@ func TestNewCmdPRList_InvalidLimit(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--limit")
+}
+
+func TestPRList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPRsFn: func(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
+			return []backend.PullRequest{
+				testhelpers.BackendPRFactory(testhelpers.BackendPRWithID(1), testhelpers.BackendPRWithTitle("partial PR")),
+			}, listErr
+		},
+	}
+	f, out, errOut := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial PR")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

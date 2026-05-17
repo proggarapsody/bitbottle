@@ -1,6 +1,7 @@
 package pipeline_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,6 +65,26 @@ func TestScheduleList_ClientNotCapable_ReturnsError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pipeline schedules")
+}
+
+func TestScheduleList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPipelineSchedulesFn: func(ns, slug string) ([]backend.PipelineSchedule, error) {
+			return []backend.PipelineSchedule{
+				{UUID: "partial-sched", Enabled: true, CronExpression: "0 0 * * *", Branch: "main"},
+			}, listErr
+		},
+	}
+	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := pipeline.NewCmdScheduleList(f, nil)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial-sched")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }
 
 // noPipelineScheduleFake wraps backend.Client without implementing

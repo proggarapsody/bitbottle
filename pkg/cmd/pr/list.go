@@ -49,16 +49,20 @@ func NewCmdPRList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			prs, err := client.ListPRs(ref.Project, ref.Slug, mapPRState(state), limit)
-			if err != nil {
-				return err
+			prs, listErr := client.ListPRs(ref.Project, ref.Slug, mapPRState(state), limit)
+			if listErr != nil && len(prs) == 0 {
+				return listErr
 			}
 
 			p := prFields(f, format.ConfigFromCmd(cmd))
 			for _, pr := range prs {
 				p.AddItem(pr)
 			}
-			return p.Render()
+			if err := p.Render(); err != nil {
+				return err
+			}
+			cmdutil.PartialWarn(f.IOStreams.ErrOut, len(prs), listErr)
+			return listErr
 		},
 	}
 	cmd.Flags().StringVar(&state, "state", "open", "State filter: open, closed, merged")

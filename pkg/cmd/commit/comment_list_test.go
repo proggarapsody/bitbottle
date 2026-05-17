@@ -140,3 +140,25 @@ func TestCommitCommentList_BackendError(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "upstream connection failed")
 }
+
+func TestCommitCommentList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	now := time.Now()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListCommitCommentsFn: func(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
+			return []backend.CommitComment{
+				{ID: 101, Author: backend.User{Slug: "alice"}, Body: "partial comment", CreatedAt: now},
+			}, listErr
+		},
+	}
+	f, out, errOut := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	factorytest.UseBackend(f, fake)
+	cmd := commit.NewCmdCommitCommentList(f)
+	cmd.SetArgs([]string{"myworkspace/my-repo", "deadbeef"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial comment")
+	assert.Contains(t, errOut.String(), "warning: partial results")
+}

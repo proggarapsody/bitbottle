@@ -7,6 +7,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // Options carries parsed flags for `workspace list`.
@@ -57,16 +58,20 @@ func listRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	workspaces, err := wc.ListWorkspaces(opts.Limit)
-	if err != nil {
-		return err
+	workspaces, listErr := wc.ListWorkspaces(opts.Limit)
+	if listErr != nil && len(workspaces) == 0 {
+		return listErr
 	}
 
 	p := workspaceFields(f, opts.Output)
 	for _, w := range workspaces {
 		p.AddItem(w)
 	}
-	return p.Render()
+	if err := p.Render(); err != nil {
+		return err
+	}
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(workspaces), listErr)
+	return listErr
 }
 
 // workspaceFields wires the format printer for both TTY and JSON paths.

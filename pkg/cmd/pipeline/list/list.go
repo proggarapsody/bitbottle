@@ -57,13 +57,17 @@ func listRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	pipelines, err := pc.ListPipelines(ref.Project, ref.Slug, opts.Limit)
-	if err != nil {
-		return err
+	pipelines, listErr := pc.ListPipelines(ref.Project, ref.Slug, opts.Limit)
+	if listErr != nil && len(pipelines) == 0 {
+		return listErr
 	}
 	p := shared.PipelineFields(f, opts.Output)
 	for _, pl := range pipelines {
 		p.AddItem(pl)
 	}
-	return p.Render()
+	if err := p.Render(); err != nil {
+		return err
+	}
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(pipelines), listErr)
+	return listErr
 }

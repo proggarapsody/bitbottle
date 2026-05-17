@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // NewCmdList builds the `branch-rule list` cobra command.
@@ -28,15 +29,19 @@ func NewCmdList(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rules, err := br.ListBranchRules(ref.Project, ref.Slug)
-			if err != nil {
-				return err
+			rules, listErr := br.ListBranchRules(ref.Project, ref.Slug)
+			if listErr != nil && len(rules) == 0 {
+				return listErr
 			}
 			p := branchRuleFields(f, format.ConfigFromCmd(cmd))
 			for _, r := range rules {
 				p.AddItem(r)
 			}
-			return p.Render()
+			if err := p.Render(); err != nil {
+				return err
+			}
+			cmdutil.PartialWarn(f.IOStreams.ErrOut, len(rules), listErr)
+			return listErr
 		},
 	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")

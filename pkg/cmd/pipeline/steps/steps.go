@@ -7,6 +7,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/shared"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // Options holds parsed flags for `pipeline steps`.
@@ -51,13 +52,17 @@ func stepsRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	steps, err := pc.ListPipelineSteps(ref.Project, ref.Slug, opts.Args[1])
-	if err != nil {
-		return err
+	steps, listErr := pc.ListPipelineSteps(ref.Project, ref.Slug, opts.Args[1])
+	if listErr != nil && len(steps) == 0 {
+		return listErr
 	}
 	p := shared.StepFields(f, opts.Output)
 	for _, s := range steps {
 		p.AddItem(s)
 	}
-	return p.Render()
+	if err := p.Render(); err != nil {
+		return err
+	}
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(steps), listErr)
+	return listErr
 }

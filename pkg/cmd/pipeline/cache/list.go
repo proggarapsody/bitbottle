@@ -8,6 +8,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // ListOptions holds parsed flags for `pipeline cache list`.
@@ -63,9 +64,9 @@ func runList(f *factory.Factory, cmd *cobra.Command, opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	caches, err := pc.ListPipelineCaches(ref.Project, ref.Slug)
-	if err != nil {
-		return err
+	caches, listErr := pc.ListPipelineCaches(ref.Project, ref.Slug)
+	if listErr != nil && len(caches) == 0 {
+		return listErr
 	}
 
 	cfg := format.ConfigFromCmd(cmd)
@@ -79,7 +80,11 @@ func runList(f *factory.Factory, cmd *cobra.Command, opts *ListOptions) error {
 		for _, c := range caches {
 			p.AddItem(c)
 		}
-		return p.Render()
+		if err := p.Render(); err != nil {
+			return err
+		}
+		cmdutil.PartialWarn(f.IOStreams.ErrOut, len(caches), listErr)
+		return listErr
 	}
 
 	out := f.IOStreams.Out
@@ -92,5 +97,6 @@ func runList(f *factory.Factory, cmd *cobra.Command, opts *ListOptions) error {
 		fmt.Fprintf(out, "%-38s  %-20s  %-30s  %10s  %s\n",
 			c.UUID, c.Name, c.Path, formatBytes(c.FileSizeBytes), c.CreatedOn)
 	}
-	return nil
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(caches), listErr)
+	return listErr
 }

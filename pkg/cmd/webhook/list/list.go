@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook/shared"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // Options holds parsed flags for `webhook list`.
@@ -46,13 +47,17 @@ func listRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	hooks, err := client.ListWebhooks(ref.Project, ref.Slug)
-	if err != nil {
-		return err
+	hooks, listErr := client.ListWebhooks(ref.Project, ref.Slug)
+	if listErr != nil && len(hooks) == 0 {
+		return listErr
 	}
 	p := shared.WebhookFields(f, opts.Output)
 	for _, h := range hooks {
 		p.AddItem(h)
 	}
-	return p.Render()
+	if err := p.Render(); err != nil {
+		return err
+	}
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(hooks), listErr)
+	return listErr
 }
