@@ -79,6 +79,41 @@ bitbottle pr diff "$PR_ID" | head -5
 Output begins with `diff --git ` and includes `+++ b/MANUAL_TEST.txt`. Pipe
 exits `0`.
 
+### 5.5. `pr commits` lists the PR's commits (PR-COMMITS)
+
+```bash
+bitbottle pr commits "$PR_ID"
+```
+
+Stdout is a table with columns `HASH`, `AUTHOR`, `DATE`, `MESSAGE`. The
+single `qa: pr-happy-path` commit is present. With `--json`:
+
+```bash
+bitbottle pr commits "$PR_ID" --json hash,message | jq 'length'
+```
+
+Output is `1`.
+
+### 5.6. `pr files` lists changed files (PR-FILES)
+
+```bash
+bitbottle pr files "$PR_ID"
+```
+
+Stdout is a table with `STATUS`, `PATH`, `+`, `-`. `MANUAL_TEST.txt`
+appears with status `A` (added) or `M` (modified) and a non-zero `+`.
+Exit code: `0`.
+
+### 5.7. `pr participant list` (PR-PARTICIPANTS)
+
+```bash
+bitbottle pr participant list "$PR_ID"
+```
+
+Stdout enumerates the PR author + any current reviewers with their
+`ROLE` (`PARTICIPANT`/`REVIEWER`) and `APPROVED` flag. At this point only
+the author is present. Exit code: `0`.
+
 ### 6. `pr edit` updates title + body
 
 ```bash
@@ -99,6 +134,31 @@ bitbottle pr request-review "$PR_ID" --reviewer "$BB_TEST_CLOUD_REVIEWER"
 Exit code: `0`.
 
 **Verify in UI:** the reviewer is listed on the PR.
+
+### 7.1. `pr participant list` now includes the reviewer
+
+```bash
+bitbottle pr participant list "$PR_ID" | grep -F "$BB_TEST_CLOUD_REVIEWER"
+```
+
+`grep` exits `0`. With `--json`:
+
+```bash
+bitbottle pr participant list "$PR_ID" --json username,role,approved \
+  | jq '.[] | select(.username=="'"$BB_TEST_CLOUD_REVIEWER"'") | .role'
+```
+
+Output is `"REVIEWER"` (or the Cloud equivalent — record exact value).
+
+### 7.2. `pr default-reviewer list` (read-only smoke)
+
+```bash
+bitbottle pr default-reviewer list
+```
+
+Stdout lists the per-repo default reviewers (may be empty). Exit code:
+`0`. The full add/remove cycle is covered in
+[`shared/repo-settings.md`](../shared/repo-settings.md).
 
 ### 8. `pr approve` (run as a different user, OR self-approve if your token
 allows it; on Cloud self-approval is typically disabled — record the result)
@@ -169,6 +229,74 @@ The `text` jq prints `"QA: edited"`. The `resolved` jq prints `true`.
 The `delete` exits `0` and the comment disappears from subsequent
 `pr comment list` output.
 
+### 8.8. `pr checks` lists build status (GHP)
+
+```bash
+bitbottle pr checks "$PR_ID"
+```
+
+Stdout is a table of build/check rows for the PR's source commit, with
+columns `CONTEXT`, `STATE`, `URL`. If the repo has no CI configured, the
+output reports "no checks found" and exits `0`. With `--watch`, the
+command blocks until every check reaches a terminal state:
+
+```bash
+bitbottle pr checks "$PR_ID" --watch
+```
+
+Press Ctrl-C if no CI is configured; otherwise the command exits `0` once
+all checks land on `SUCCESSFUL`/`FAILED`/`STOPPED`.
+
+### 8.9. `pr update-branch` rebases/merges main into the PR branch (GHP)
+
+```bash
+bitbottle pr update-branch "$PR_ID"
+```
+
+If `main` has diverged since the PR was created, the source branch is
+updated (Cloud: merges `main` in via the API). If not, stderr reports
+"already up to date" and exits `0`. Either is acceptable.
+
+**Verify in UI:** the PR's commit list either gains a merge commit from
+`main` or is unchanged.
+
+### 8.10. `pr status` shows the active PR for the current branch (GHP)
+
+Still inside `/tmp/bb-pr-happy` on branch `$FB`:
+
+```bash
+bitbottle pr status
+```
+
+Stdout shows the current branch, its active PR (`$PR_ID` with title),
+review state, and merge readiness. Exit code: `0`.
+
+### 8.11. Root `status` summarises the repo at-a-glance (GHP)
+
+```bash
+bitbottle status
+```
+
+Stdout shows the current host/repo/branch, the active PR for the branch
+(if any), open PRs you're reviewing, and recent pipeline runs. Exit
+code: `0`. This is the cross-cutting "what's happening here" view.
+
+### 8.12. Root `browse` opens the repo in the UI (GHP)
+
+```bash
+bitbottle browse
+```
+
+A browser tab opens to `https://$BB_TEST_CLOUD_HOST/<workspace>/<repo>`.
+Exit code: `0`. Try a target shortcut:
+
+```bash
+bitbottle browse "" pulls
+```
+
+The browser navigates to the repo's PR list. (Empty `[PROJECT/REPO]` means
+"current repo".)
+
 ### 9. `pr ready` promotes draft → open
 
 ```bash
@@ -177,6 +305,27 @@ bitbottle pr view "$PR_ID" | grep -i -E 'state|draft'
 ```
 
 State line no longer says "draft".
+
+### 9.5. `pr merge --auto` queues auto-merge (AUTOMERGE — Cloud beta)
+
+Auto-merge queues the PR to merge once all required checks pass. The Cloud
+implementation is beta; record any divergence from the expected wording.
+
+```bash
+bitbottle pr merge "$PR_ID" --auto --squash
+```
+
+Exit code: `0`. stdout reports the PR is queued for auto-merge with the
+chosen strategy.
+
+### 9.6. `pr merge --auto-off` cancels the queued auto-merge
+
+```bash
+bitbottle pr merge "$PR_ID" --auto-off
+```
+
+Exit code: `0`. stdout reports the auto-merge was cancelled. The PR is
+not merged.
 
 ### 10. `pr merge --squash --delete-branch`
 
