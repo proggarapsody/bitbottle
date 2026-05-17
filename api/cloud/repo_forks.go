@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
@@ -13,13 +14,13 @@ import (
 func (c *Client) ListRepoForks(ns, slug string, limit int) ([]backend.Repository, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/forks?pagelen=50", ns, slug)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
-		var page cloudPagedResponse[wireCloudRepo]
+		var page cloudPagedResponse[cloudgen.CloudRepo]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Repository, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toRepoDomain(w))
 		}
 		return out, nil
 	}, limit)

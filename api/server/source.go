@@ -7,23 +7,10 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerBrowseEntry is one row from Server's /browse JSON envelope.
-// path.toString carries the entry's segment name (NOT a path relative to
-// the repo root), so the adapter joins parent + name when building
-// TreeEntry.Path.
-type wireServerBrowseEntry struct {
-	Path struct {
-		ToString string `json:"toString"`
-	} `json:"path"`
-	Type      string `json:"type"`         // FILE | DIRECTORY | SUBMODULE
-	Size      int64  `json:"size"`         // 0 for directories
-	ContentID string `json:"contentId"`    // file blob hash
-	CommitID  string `json:"latestCommit"` // sometimes used in lieu of ContentID
-}
-
-func (w wireServerBrowseEntry) toDomain(parent string) backend.TreeEntry {
+func toBrowseEntryDomain(w servergen.RestBrowseEntry, parent string) backend.TreeEntry {
 	t := "file"
 	if w.Type == "DIRECTORY" || w.Type == "SUBMODULE" {
 		t = "dir"
@@ -34,7 +21,7 @@ func (w wireServerBrowseEntry) toDomain(parent string) backend.TreeEntry {
 	}
 	hash := w.ContentID
 	if hash == "" {
-		hash = w.CommitID
+		hash = w.LatestCommit
 	}
 	return backend.TreeEntry{
 		Path: full,
@@ -103,14 +90,14 @@ func (c *Client) ListTree(ns, slug, ref, pathInRepo string) ([]backend.TreeEntry
 	err := c.http.GetAllJSON(browsePath(ns, slug, ref, pathInRepo), func(body []byte) error {
 		var page struct {
 			Children struct {
-				Values []wireServerBrowseEntry `json:"values"`
+				Values []servergen.RestBrowseEntry `json:"values"`
 			} `json:"children"`
 		}
 		if err := json.Unmarshal(body, &page); err != nil {
 			return err
 		}
 		for _, e := range page.Children.Values {
-			out = append(out, e.toDomain(pathInRepo))
+			out = append(out, toBrowseEntryDomain(e, pathInRepo))
 		}
 		return nil
 	})

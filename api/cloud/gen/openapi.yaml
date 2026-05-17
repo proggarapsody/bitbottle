@@ -13,6 +13,10 @@ components:
     CloudUser:
       type: object
       description: A Bitbucket Cloud user reference
+      required:
+        - account_id
+        - display_name
+        - nickname
       properties:
         account_id:
           type: string
@@ -26,6 +30,8 @@ components:
 
     CloudBranchName:
       type: object
+      required:
+        - name
       properties:
         name:
           type: string
@@ -33,6 +39,8 @@ components:
 
     CloudCommitRef:
       type: object
+      required:
+        - hash
       properties:
         hash:
           type: string
@@ -41,6 +49,9 @@ components:
     CloudBranchRef:
       type: object
       description: A reference to a branch and its latest commit
+      required:
+        - branch
+        - commit
       properties:
         branch:
           $ref: "#/components/schemas/CloudBranchName"
@@ -50,12 +61,16 @@ components:
     CloudDestinationRef:
       type: object
       description: A reference to a destination branch
+      required:
+        - branch
       properties:
         branch:
           $ref: "#/components/schemas/CloudBranchName"
 
     CloudHTMLLink:
       type: object
+      required:
+        - href
       properties:
         href:
           type: string
@@ -63,12 +78,16 @@ components:
 
     CloudPullRequestLinks:
       type: object
+      required:
+        - html
       properties:
         html:
           $ref: "#/components/schemas/CloudHTMLLink"
 
     CloudPullRequestReviewer:
       type: object
+      required:
+        - account_id
       properties:
         account_id:
           type: string
@@ -77,20 +96,29 @@ components:
     CloudAutoMerge:
       type: object
       description: Auto-merge configuration for a Cloud pull request
+      required:
+        - merge_strategy
       properties:
         merge_strategy:
           type: string
           description: >
             Merge strategy: merge_commit, squash, or fast_forward.
             Maps to CLI vocabulary: merge, squash, rebase.
-          enum:
-            - merge_commit
-            - squash
-            - fast_forward
 
     CloudPullRequest:
       type: object
       description: A Bitbucket Cloud pull request
+      required:
+        - id
+        - title
+        - description
+        - state
+        - draft
+        - author
+        - source
+        - destination
+        - links
+        - reviewers
       properties:
         id:
           type: integer
@@ -104,11 +132,6 @@ components:
         state:
           type: string
           description: Pull request state
-          enum:
-            - OPEN
-            - MERGED
-            - DECLINED
-            - SUPERSEDED
         draft:
           type: boolean
           description: Whether the pull request is a draft
@@ -127,12 +150,16 @@ components:
         auto_merge:
           $ref: "#/components/schemas/CloudAutoMerge"
 
+
     CloudCreatePullRequest:
       type: object
       description: Request body for creating a pull request on Bitbucket Cloud
       required:
         - title
+        - description
+        - draft
         - source
+        - destination
       properties:
         title:
           type: string
@@ -151,6 +178,8 @@ components:
 
     CloudCreateBranchRef:
       type: object
+      required:
+        - branch
       properties:
         branch:
           $ref: "#/components/schemas/CloudBranchName"
@@ -160,6 +189,8 @@ components:
       description: >
         Reviewer shape for PR creation. Cloud accepts either username or uuid.
         bitbottle uses username.
+      required:
+        - username
       properties:
         username:
           type: string
@@ -175,13 +206,1414 @@ components:
     CloudAutoMergeRequest:
       type: object
       description: Request body for enabling auto-merge on a Bitbucket Cloud pull request
-      required:
-        - merge_strategy
       properties:
         merge_strategy:
           type: string
           description: Merge strategy to apply when auto-merging
-          enum:
-            - merge_commit
-            - squash
-            - fast_forward
+
+    # ── Branch rules ──────────────────────────────────────────────────────────
+    CloudBranchRule:
+      type: object
+      description: A branch restriction rule on Bitbucket Cloud
+      required:
+        - id
+        - kind
+        - pattern
+        - value
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+        pattern:
+          type: string
+        value:
+          type: integer
+
+    # ── Branches ──────────────────────────────────────────────────────────────
+    CloudBranchTarget:
+      type: object
+      description: Target commit of a branch
+      required:
+        - hash
+      properties:
+        hash:
+          type: string
+
+    CloudBranch:
+      type: object
+      description: A Bitbucket Cloud branch
+      required:
+        - name
+        - target
+      properties:
+        name:
+          type: string
+        target:
+          $ref: "#/components/schemas/CloudBranchTarget"
+
+    # ── Commits ───────────────────────────────────────────────────────────────
+    CloudCommitAuthorUser:
+      type: object
+      description: Nested user within commit author
+      required:
+        - account_id
+        - display_name
+      properties:
+        account_id:
+          type: string
+        display_name:
+          type: string
+
+    CloudCommitAuthor:
+      type: object
+      description: Author of a Cloud commit
+      required:
+        - raw
+        - user
+      properties:
+        raw:
+          type: string
+        user:
+          $ref: "#/components/schemas/CloudCommitAuthorUser"
+
+    CloudCommitLinks:
+      type: object
+      required:
+        - html
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudCommit:
+      type: object
+      description: A Bitbucket Cloud commit
+      required:
+        - hash
+        - message
+        - author
+        - date
+        - links
+      properties:
+        hash:
+          type: string
+        message:
+          type: string
+        author:
+          $ref: "#/components/schemas/CloudCommitAuthor"
+        date:
+          type: string
+          format: date-time
+        links:
+          $ref: "#/components/schemas/CloudCommitLinks"
+
+    # ── Commit comments ───────────────────────────────────────────────────────
+    CloudCommitCommentContent:
+      type: object
+      required:
+        - raw
+      properties:
+        raw:
+          type: string
+
+    CloudCommitCommentUser:
+      type: object
+      required:
+        - account_id
+        - display_name
+        - nickname
+      properties:
+        account_id:
+          type: string
+        display_name:
+          type: string
+        nickname:
+          type: string
+
+    CloudCommitComment:
+      type: object
+      description: A comment on a Bitbucket Cloud commit
+      required:
+        - id
+        - content
+        - user
+        - created_on
+        - updated_on
+      properties:
+        id:
+          type: integer
+        content:
+          $ref: "#/components/schemas/CloudCommitCommentContent"
+        user:
+          $ref: "#/components/schemas/CloudCommitCommentUser"
+        created_on:
+          type: string
+          format: date-time
+        updated_on:
+          type: string
+          format: date-time
+
+    CloudAddCommitComment:
+      type: object
+      description: Request body for adding a commit comment
+      required:
+        - content
+      properties:
+        content:
+          $ref: "#/components/schemas/CloudCommitCommentContent"
+
+    # ── Commit status ─────────────────────────────────────────────────────────
+    CloudCommitStatus:
+      type: object
+      description: A build/CI status on a Cloud commit
+      required:
+        - key
+        - state
+        - name
+        - description
+        - url
+      properties:
+        key:
+          type: string
+        state:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+
+    CloudCommitStatusBody:
+      type: object
+      description: Request body for reporting a commit status
+      required:
+        - key
+        - state
+        - url
+        - name
+        - description
+      properties:
+        key:
+          type: string
+        state:
+          type: string
+        url:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+
+    # ── Default reviewers ─────────────────────────────────────────────────────
+    CloudEffectiveDefaultReviewerUser:
+      type: object
+      required:
+        - account_id
+        - display_name
+        - nickname
+      properties:
+        account_id:
+          type: string
+        display_name:
+          type: string
+        nickname:
+          type: string
+
+    CloudEffectiveDefaultReviewer:
+      type: object
+      description: An effective default reviewer entry
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/CloudEffectiveDefaultReviewerUser"
+
+    # ── Deploy keys ───────────────────────────────────────────────────────────
+    CloudDeployKey:
+      type: object
+      description: A deploy key on a Cloud repository
+      required:
+        - id
+        - label
+        - key
+        - read_only
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        key:
+          type: string
+        read_only:
+          type: boolean
+
+    # ── Deployments ───────────────────────────────────────────────────────────
+    CloudEnvironmentType:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    CloudEnvironment:
+      type: object
+      description: A Bitbucket Cloud deployment environment
+      required:
+        - uuid
+        - name
+        - environment_type
+        - rank
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        environment_type:
+          $ref: "#/components/schemas/CloudEnvironmentType"
+        rank:
+          type: integer
+
+    CloudDeploymentState:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    CloudDeploymentRelease:
+      type: object
+      required:
+        - name
+        - url
+        - commit
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        commit:
+          $ref: "#/components/schemas/CloudCommitRef"
+
+    CloudDeployment:
+      type: object
+      description: A Bitbucket Cloud deployment
+      required:
+        - uuid
+        - state
+        - environment
+        - release
+      properties:
+        uuid:
+          type: string
+        state:
+          $ref: "#/components/schemas/CloudDeploymentState"
+        environment:
+          $ref: "#/components/schemas/CloudEnvironment"
+        release:
+          $ref: "#/components/schemas/CloudDeploymentRelease"
+
+    CloudEnvVariable:
+      type: object
+      description: A pipeline environment variable
+      required:
+        - uuid
+        - key
+        - value
+        - secured
+      properties:
+        uuid:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+        secured:
+          type: boolean
+
+    # ── Diff ──────────────────────────────────────────────────────────────────
+    CloudDiffStatPath:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+
+    CloudDiffStatEntry:
+      type: object
+      description: A single file entry in a Cloud diffstat response
+      required:
+        - status
+        - lines_added
+        - lines_removed
+      properties:
+        status:
+          type: string
+        lines_added:
+          type: integer
+        lines_removed:
+          type: integer
+        new:
+          $ref: "#/components/schemas/CloudDiffStatPath"
+        old:
+          $ref: "#/components/schemas/CloudDiffStatPath"
+
+    # ── Issues ────────────────────────────────────────────────────────────────
+    CloudIssueLinks:
+      type: object
+      required:
+        - html
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudIssueContent:
+      type: object
+      required:
+        - raw
+      properties:
+        raw:
+          type: string
+
+    CloudIssue:
+      type: object
+      description: A Bitbucket Cloud issue
+      required:
+        - id
+        - title
+        - state
+        - kind
+        - priority
+        - links
+        - content
+        - created_on
+        - updated_on
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        state:
+          type: string
+        kind:
+          type: string
+        priority:
+          type: string
+        reporter:
+          $ref: "#/components/schemas/CloudIssueUser"
+        assignee:
+          $ref: "#/components/schemas/CloudIssueUser"
+        created_on:
+          type: string
+        updated_on:
+          type: string
+        links:
+          $ref: "#/components/schemas/CloudIssueLinks"
+        content:
+          $ref: "#/components/schemas/CloudIssueContent"
+
+    CloudIssueUser:
+      type: object
+      description: A user referenced in an issue (reporter/assignee)
+      required:
+        - username
+        - display_name
+      properties:
+        username:
+          type: string
+        display_name:
+          type: string
+
+    CloudIssueComment:
+      type: object
+      description: A comment on a Bitbucket Cloud issue
+      required:
+        - id
+        - content
+        - created_on
+        - updated_on
+      properties:
+        id:
+          type: integer
+        author:
+          $ref: "#/components/schemas/CloudIssueUser"
+        content:
+          $ref: "#/components/schemas/CloudIssueContent"
+        created_on:
+          type: string
+        updated_on:
+          type: string
+
+    # ── Pipeline caches ───────────────────────────────────────────────────────
+    CloudPipelineCache:
+      type: object
+      description: A pipeline cache entry
+      required:
+        - uuid
+        - name
+        - path
+        - file_size_bytes
+        - created_on
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        path:
+          type: string
+        file_size_bytes:
+          type: integer
+          format: int64
+        created_on:
+          type: string
+
+    # ── Pipeline schedules ────────────────────────────────────────────────────
+    CloudScheduleTarget:
+      type: object
+      description: Target for a pipeline schedule
+      required:
+        - branch
+        - ref_type
+        - ref_name
+        - type
+      properties:
+        branch:
+          type: string
+        ref_type:
+          type: string
+        ref_name:
+          type: string
+        type:
+          type: string
+
+    CloudPipelineSchedule:
+      type: object
+      description: A pipeline schedule entry
+      required:
+        - uuid
+        - enabled
+        - cron_expression
+        - target
+      properties:
+        uuid:
+          type: string
+        enabled:
+          type: boolean
+        cron_expression:
+          type: string
+        target:
+          $ref: "#/components/schemas/CloudScheduleTarget"
+
+    CloudPipelineScheduleCreate:
+      type: object
+      description: Request body for creating a pipeline schedule
+      required:
+        - enabled
+        - cron_expression
+        - target
+      properties:
+        enabled:
+          type: boolean
+        cron_expression:
+          type: string
+        target:
+          $ref: "#/components/schemas/CloudScheduleTarget"
+
+    # ── Pipeline steps ────────────────────────────────────────────────────────
+    CloudPipelineStepResult:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    CloudPipelineStepState:
+      type: object
+      required:
+        - name
+        - result
+      properties:
+        name:
+          type: string
+        result:
+          $ref: "#/components/schemas/CloudPipelineStepResult"
+
+    CloudPipelineStep:
+      type: object
+      description: A step in a Bitbucket Cloud pipeline run
+      required:
+        - uuid
+        - name
+        - state
+        - duration_in_seconds
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        state:
+          $ref: "#/components/schemas/CloudPipelineStepState"
+        duration_in_seconds:
+          type: integer
+
+    # ── Pipeline trigger ──────────────────────────────────────────────────────
+    CloudTriggerTarget:
+      type: object
+      description: Target for a pipeline trigger
+      required:
+        - ref_type
+        - type
+        - ref_name
+      properties:
+        ref_type:
+          type: string
+        type:
+          type: string
+        ref_name:
+          type: string
+
+    CloudTriggerVarItem:
+      type: object
+      description: A variable passed to a triggered pipeline
+      required:
+        - key
+        - value
+        - secured
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        secured:
+          type: boolean
+
+    CloudTriggerBody:
+      type: object
+      description: Request body for triggering a pipeline
+      required:
+        - target
+        - variables
+      properties:
+        target:
+          $ref: "#/components/schemas/CloudTriggerTarget"
+        variables:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudTriggerVarItem"
+
+    CloudTriggerResponseSelfLink:
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+
+    CloudTriggerResponseLinks:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudTriggerResponseSelfLink"
+
+    CloudTriggerResponseState:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    CloudTriggerResponse:
+      type: object
+      description: Response from triggering a pipeline
+      required:
+        - uuid
+        - state
+        - links
+      properties:
+        uuid:
+          type: string
+        state:
+          $ref: "#/components/schemas/CloudTriggerResponseState"
+        links:
+          $ref: "#/components/schemas/CloudTriggerResponseLinks"
+
+    # ── Pipeline variables ────────────────────────────────────────────────────
+    CloudPipelineVariable:
+      type: object
+      description: A repository-level pipeline variable
+      required:
+        - uuid
+        - key
+        - value
+        - secured
+      properties:
+        uuid:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+        secured:
+          type: boolean
+
+    # ── Pipelines ─────────────────────────────────────────────────────────────
+    CloudPipelineStateResult:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    CloudPipelineState:
+      type: object
+      required:
+        - name
+        - result
+      properties:
+        name:
+          type: string
+        result:
+          $ref: "#/components/schemas/CloudPipelineStateResult"
+
+    CloudPipelineTarget:
+      type: object
+      required:
+        - ref_type
+        - ref_name
+      properties:
+        ref_type:
+          type: string
+        ref_name:
+          type: string
+
+    CloudPipelineSelfLink:
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+
+    CloudPipelineLinks:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          $ref: "#/components/schemas/CloudPipelineSelfLink"
+
+    CloudPipeline:
+      type: object
+      description: A Bitbucket Cloud pipeline run
+      required:
+        - uuid
+        - build_number
+        - state
+        - target
+        - created_on
+        - duration_in_seconds
+        - links
+      properties:
+        uuid:
+          type: string
+        build_number:
+          type: integer
+        state:
+          $ref: "#/components/schemas/CloudPipelineState"
+        target:
+          $ref: "#/components/schemas/CloudPipelineTarget"
+        created_on:
+          type: string
+        duration_in_seconds:
+          type: integer
+        links:
+          $ref: "#/components/schemas/CloudPipelineLinks"
+
+    CloudRunPipelineTarget:
+      type: object
+      required:
+        - type
+        - ref_type
+        - ref_name
+      properties:
+        type:
+          type: string
+        ref_type:
+          type: string
+        ref_name:
+          type: string
+
+    CloudRunPipelineInput:
+      type: object
+      description: Request body for running a pipeline
+      required:
+        - target
+      properties:
+        target:
+          $ref: "#/components/schemas/CloudRunPipelineTarget"
+
+    # ── PR activity ───────────────────────────────────────────────────────────
+    CloudActivityUser:
+      type: object
+      description: User ref in PR activity events
+      required:
+        - account_id
+        - display_name
+        - nickname
+      properties:
+        account_id:
+          type: string
+        display_name:
+          type: string
+        nickname:
+          type: string
+
+    CloudActivityApproval:
+      type: object
+      required:
+        - date
+        - user
+      properties:
+        date:
+          type: string
+        user:
+          $ref: "#/components/schemas/CloudActivityUser"
+
+    CloudActivityComment:
+      type: object
+      required:
+        - created_on
+        - author
+      properties:
+        created_on:
+          type: string
+          format: date-time
+        author:
+          $ref: "#/components/schemas/CloudActivityUser"
+
+    CloudActivityUpdate:
+      type: object
+      required:
+        - date
+        - author
+      properties:
+        date:
+          type: string
+        author:
+          $ref: "#/components/schemas/CloudActivityUser"
+
+    CloudActivity:
+      type: object
+      description: A PR activity event on Bitbucket Cloud
+      properties:
+        approval:
+          $ref: "#/components/schemas/CloudActivityApproval"
+        comment:
+          $ref: "#/components/schemas/CloudActivityComment"
+        update:
+          $ref: "#/components/schemas/CloudActivityUpdate"
+
+    # ── PR comments ───────────────────────────────────────────────────────────
+    CloudPRCommentContent:
+      type: object
+      required:
+        - raw
+      properties:
+        raw:
+          type: string
+
+    CloudPRCommentUser:
+      type: object
+      required:
+        - account_id
+        - display_name
+        - nickname
+      properties:
+        account_id:
+          type: string
+        display_name:
+          type: string
+        nickname:
+          type: string
+
+    CloudInline:
+      type: object
+      description: Inline anchor for a PR comment
+      required:
+        - path
+      properties:
+        path:
+          type: string
+        from:
+          type: integer
+        to:
+          type: integer
+        start_from:
+          type: integer
+        start_to:
+          type: integer
+
+    CloudParentRef:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: integer
+
+    CloudResolution:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+
+    CloudPRComment:
+      type: object
+      description: A comment on a Bitbucket Cloud pull request
+      required:
+        - id
+        - content
+        - user
+        - created_on
+        - updated_on
+      properties:
+        id:
+          type: integer
+        content:
+          $ref: "#/components/schemas/CloudPRCommentContent"
+        user:
+          $ref: "#/components/schemas/CloudPRCommentUser"
+        created_on:
+          type: string
+          format: date-time
+        updated_on:
+          type: string
+          format: date-time
+        inline:
+          $ref: "#/components/schemas/CloudInline"
+        parent:
+          $ref: "#/components/schemas/CloudParentRef"
+        resolution:
+          $ref: "#/components/schemas/CloudResolution"
+
+    CloudAddPRComment:
+      type: object
+      description: Request body for adding a PR comment
+      required:
+        - content
+      properties:
+        content:
+          $ref: "#/components/schemas/CloudPRCommentContent"
+        inline:
+          $ref: "#/components/schemas/CloudInline"
+        parent:
+          $ref: "#/components/schemas/CloudParentRef"
+
+    # ── PR participants ───────────────────────────────────────────────────────
+    CloudPRParticipant:
+      type: object
+      description: A participant on a Cloud pull request
+      required:
+        - user
+        - role
+        - approved
+        - state
+      properties:
+        user:
+          $ref: "#/components/schemas/CloudUser"
+        role:
+          type: string
+        approved:
+          type: boolean
+        state:
+          type: string
+
+    # ── PR status / dashboard ─────────────────────────────────────────────────
+    CloudDashboardPRSource:
+      type: object
+      required:
+        - repository
+        - commit
+      properties:
+        repository:
+          $ref: "#/components/schemas/CloudDashboardPRRepo"
+        commit:
+          $ref: "#/components/schemas/CloudCommitRef"
+
+    CloudDashboardPRRepo:
+      type: object
+      required:
+        - full_name
+      properties:
+        full_name:
+          type: string
+
+    CloudDashboardPRAuthor:
+      type: object
+      required:
+        - display_name
+        - nickname
+      properties:
+        display_name:
+          type: string
+        nickname:
+          type: string
+
+    CloudDashboardPRLinks:
+      type: object
+      required:
+        - html
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudDashboardPR:
+      type: object
+      description: A PR entry from the Cloud dashboard endpoint
+      required:
+        - id
+        - title
+        - state
+        - source
+        - author
+        - links
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        state:
+          type: string
+        source:
+          $ref: "#/components/schemas/CloudDashboardPRSource"
+        author:
+          $ref: "#/components/schemas/CloudDashboardPRAuthor"
+        links:
+          $ref: "#/components/schemas/CloudDashboardPRLinks"
+
+    # ── Repo transfer ──────────────────────────────────────────────────────────
+    CloudTransferOwner:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+
+    CloudTransferBody:
+      type: object
+      description: Request body for transferring a Cloud repository
+      required:
+        - new_owner
+      properties:
+        new_owner:
+          $ref: "#/components/schemas/CloudTransferOwner"
+
+    # ── Repos ─────────────────────────────────────────────────────────────────
+    CloudRepoLinks:
+      type: object
+      required:
+        - html
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudRepo:
+      type: object
+      description: A Bitbucket Cloud repository
+      required:
+        - full_name
+        - slug
+        - name
+        - scm
+        - description
+        - is_private
+        - links
+      properties:
+        full_name:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        scm:
+          type: string
+        description:
+          type: string
+        is_private:
+          type: boolean
+        links:
+          $ref: "#/components/schemas/CloudRepoLinks"
+
+    CloudCreateRepo:
+      type: object
+      description: Request body for creating a repository on Cloud
+      required:
+        - scm
+        - is_private
+        - name
+      properties:
+        scm:
+          type: string
+        is_private:
+          type: boolean
+        name:
+          type: string
+
+    CloudForkWorkspace:
+      type: object
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+
+    CloudForkBody:
+      type: object
+      description: Request body for forking a repository on Cloud
+      required:
+        - workspace
+      properties:
+        workspace:
+          $ref: "#/components/schemas/CloudForkWorkspace"
+        name:
+          type: string
+
+    # ── Search ────────────────────────────────────────────────────────────────
+    CloudSearchSegment:
+      type: object
+      description: A text segment in a code search result
+      required:
+        - text
+        - match
+      properties:
+        text:
+          type: string
+        match:
+          type: boolean
+
+    CloudContentLine:
+      type: object
+      description: A matched line in a code search result
+      required:
+        - line
+        - segments
+      properties:
+        line:
+          type: integer
+        segments:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudSearchSegment"
+
+    CloudContentMatch:
+      type: object
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudContentLine"
+
+    CloudCodeSearchFileRepo:
+      type: object
+      required:
+        - full_name
+      properties:
+        full_name:
+          type: string
+
+    CloudCodeSearchFileCommit:
+      type: object
+      required:
+        - repository
+      properties:
+        repository:
+          $ref: "#/components/schemas/CloudCodeSearchFileRepo"
+
+    CloudCodeSearchFileSelfLink:
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+
+    CloudCodeSearchFileLinks:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          $ref: "#/components/schemas/CloudCodeSearchFileSelfLink"
+
+    CloudCodeSearchFile:
+      type: object
+      required:
+        - path
+        - commit
+        - links
+      properties:
+        path:
+          type: string
+        commit:
+          $ref: "#/components/schemas/CloudCodeSearchFileCommit"
+        links:
+          $ref: "#/components/schemas/CloudCodeSearchFileLinks"
+
+    CloudCodeSearchHit:
+      type: object
+      description: A code search result hit
+      required:
+        - content_match_count
+        - path_matches
+        - content_matches
+        - file
+      properties:
+        content_match_count:
+          type: integer
+        path_matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudSearchSegment"
+        content_matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudContentMatch"
+        file:
+          $ref: "#/components/schemas/CloudCodeSearchFile"
+
+    # ── Source / tree ─────────────────────────────────────────────────────────
+    CloudSrcEntryCommit:
+      type: object
+      required:
+        - hash
+      properties:
+        hash:
+          type: string
+
+    CloudSrcEntry:
+      type: object
+      description: A directory listing entry from Cloud's /src endpoint
+      required:
+        - type
+        - path
+        - size
+        - commit
+      properties:
+        type:
+          type: string
+        path:
+          type: string
+        size:
+          type: integer
+          format: int64
+        commit:
+          $ref: "#/components/schemas/CloudSrcEntryCommit"
+
+    # ── SSH keys ──────────────────────────────────────────────────────────────
+    CloudCurrentUser:
+      type: object
+      description: Minimal current user shape from GET /user
+      required:
+        - nickname
+        - account_id
+      properties:
+        nickname:
+          type: string
+        account_id:
+          type: string
+
+    CloudSSHKey:
+      type: object
+      description: A Cloud user SSH key
+      required:
+        - id
+        - label
+        - key
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        key:
+          type: string
+
+    # ── Tags ──────────────────────────────────────────────────────────────────
+    CloudTagTarget:
+      type: object
+      required:
+        - hash
+      properties:
+        hash:
+          type: string
+
+    CloudTagLinks:
+      type: object
+      required:
+        - html
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudTag:
+      type: object
+      description: A Bitbucket Cloud tag
+      required:
+        - name
+        - target
+        - message
+        - links
+      properties:
+        name:
+          type: string
+        target:
+          $ref: "#/components/schemas/CloudTagTarget"
+        message:
+          type: string
+        links:
+          $ref: "#/components/schemas/CloudTagLinks"
+
+    CloudCreateTag:
+      type: object
+      description: Request body for creating a Cloud tag
+      required:
+        - name
+        - target
+      properties:
+        name:
+          type: string
+        target:
+          $ref: "#/components/schemas/CloudTagTarget"
+        message:
+          type: string
+
+    # ── Webhooks ──────────────────────────────────────────────────────────────
+    CloudWebhook:
+      type: object
+      description: A Bitbucket Cloud webhook
+      required:
+        - uuid
+        - url
+        - active
+        - events
+      properties:
+        uuid:
+          type: string
+        url:
+          type: string
+        active:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+
+    CloudCreateWebhook:
+      type: object
+      description: Request body for creating a Cloud webhook
+      required:
+        - description
+        - url
+        - active
+        - events
+      properties:
+        description:
+          type: string
+        url:
+          type: string
+        active:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+        secret:
+          type: string
+
+    # ── Workspace members ─────────────────────────────────────────────────────
+    CloudWorkspaceMemberWorkspace:
+      type: object
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+
+    CloudWorkspaceMember:
+      type: object
+      description: A member of a Cloud workspace
+      required:
+        - user
+        - workspace
+      properties:
+        user:
+          $ref: "#/components/schemas/CloudUser"
+        workspace:
+          $ref: "#/components/schemas/CloudWorkspaceMemberWorkspace"
+
+    # ── Workspaces ────────────────────────────────────────────────────────────
+    CloudWorkspaceLinks:
+      type: object
+      required:
+        - html
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudWorkspace:
+      type: object
+      description: A Bitbucket Cloud workspace
+      required:
+        - uuid
+        - slug
+        - name
+        - links
+      properties:
+        uuid:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        links:
+          $ref: "#/components/schemas/CloudWorkspaceLinks"
+
+    CloudProjectLinks:
+      type: object
+      required:
+        - html
+      properties:
+        html:
+          $ref: "#/components/schemas/CloudHTMLLink"
+
+    CloudProject:
+      type: object
+      description: A project in a Cloud workspace
+      required:
+        - uuid
+        - key
+        - name
+        - links
+      properties:
+        uuid:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        links:
+          $ref: "#/components/schemas/CloudProjectLinks"

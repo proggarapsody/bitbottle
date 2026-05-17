@@ -6,18 +6,11 @@ import (
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-// wireCloudDeployKey is the Cloud wire shape for a deploy key.
-type wireCloudDeployKey struct {
-	ID       int    `json:"id"`
-	Label    string `json:"label"`
-	Key      string `json:"key"`
-	ReadOnly bool   `json:"read_only"`
-}
-
-func (w wireCloudDeployKey) toDomain() backend.DeployKey {
+func toDeployKeyDomain(w cloudgen.CloudDeployKey) backend.DeployKey {
 	return backend.DeployKey{
 		ID:       w.ID,
 		Label:    w.Label,
@@ -34,13 +27,13 @@ func (c *Client) ListDeployKeys(ns, slug string) ([]backend.DeployKey, error) {
 	}
 	path := fmt.Sprintf("/repositories/%s/%s/deploy-keys", url.PathEscape(ns), url.PathEscape(slug))
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.DeployKey, error) {
-		var page cloudPagedResponse[wireCloudDeployKey]
+		var page cloudPagedResponse[cloudgen.CloudDeployKey]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.DeployKey, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toDeployKeyDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -62,12 +55,12 @@ func (c *Client) AddDeployKey(ns, slug string, input backend.DeployKeyInput) (ba
 		return backend.DeployKey{}, fmt.Errorf("key required")
 	}
 	body := addDeployKeyBody{Key: input.Key, Label: input.Label}
-	var w wireCloudDeployKey
+	var w cloudgen.CloudDeployKey
 	path := fmt.Sprintf("/repositories/%s/%s/deploy-keys", url.PathEscape(ns), url.PathEscape(slug))
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.DeployKey{}, err
 	}
-	return w.toDomain(), nil
+	return toDeployKeyDomain(w), nil
 }
 
 // DeleteDeployKey removes a deploy key from a repository.

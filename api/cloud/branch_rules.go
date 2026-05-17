@@ -6,18 +6,11 @@ import (
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-// wireCloudBranchRule is the Cloud wire shape for a branch restriction rule.
-type wireCloudBranchRule struct {
-	ID      int    `json:"id"`
-	Kind    string `json:"kind"`
-	Pattern string `json:"pattern"`
-	Value   int    `json:"value,omitempty"`
-}
-
-func (w wireCloudBranchRule) toDomain() backend.BranchRule {
+func toBranchRuleDomain(w cloudgen.CloudBranchRule) backend.BranchRule {
 	return backend.BranchRule{
 		ID:      w.ID,
 		Kind:    w.Kind,
@@ -34,13 +27,13 @@ func (c *Client) ListBranchRules(ns, slug string) ([]backend.BranchRule, error) 
 	}
 	path := fmt.Sprintf("/repositories/%s/%s/branch-restrictions", url.PathEscape(ns), url.PathEscape(slug))
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.BranchRule, error) {
-		var page cloudPagedResponse[wireCloudBranchRule]
+		var page cloudPagedResponse[cloudgen.CloudBranchRule]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.BranchRule, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toBranchRuleDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -70,12 +63,12 @@ func (c *Client) AddBranchRule(ns, slug string, input backend.BranchRuleInput) (
 		Pattern: input.Pattern,
 		Value:   input.Value,
 	}
-	var w wireCloudBranchRule
+	var w cloudgen.CloudBranchRule
 	path := fmt.Sprintf("/repositories/%s/%s/branch-restrictions", url.PathEscape(ns), url.PathEscape(slug))
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.BranchRule{}, err
 	}
-	return w.toDomain(), nil
+	return toBranchRuleDomain(w), nil
 }
 
 // DeleteBranchRule removes a branch restriction rule from a repository.

@@ -6,6 +6,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
 // ListPRFiles returns the files changed in a pull request, paginated.
@@ -13,13 +14,13 @@ import (
 func (c *Client) ListPRFiles(ns, slug string, prID int) ([]backend.DiffStatEntry, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/changes", ns, slug, prID)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.DiffStatEntry, error) {
-		var page PagedResponse[wireServerCommitChange]
+		var page PagedResponse[servergen.RestCommitChange]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.DiffStatEntry, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toCommitChangeDomain(w))
 		}
 		return out, nil
 	}, 0)

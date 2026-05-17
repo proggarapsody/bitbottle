@@ -5,21 +5,11 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-type wireCloudWorkspace struct {
-	UUID  string `json:"uuid"`
-	Slug  string `json:"slug"`
-	Name  string `json:"name"`
-	Links struct {
-		HTML struct {
-			Href string `json:"href"`
-		} `json:"html"`
-	} `json:"links"`
-}
-
-func (w wireCloudWorkspace) toDomain() backend.Workspace {
+func toWorkspaceDomain(w cloudgen.CloudWorkspace) backend.Workspace {
 	return backend.Workspace{
 		UUID:   stripBraces(w.UUID),
 		Slug:   w.Slug,
@@ -37,30 +27,19 @@ func (c *Client) ListWorkspaces(limit int) ([]backend.Workspace, error) {
 		path = fmt.Sprintf("%s?pagelen=%d", path, limit)
 	}
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Workspace, error) {
-		var page cloudPagedResponse[wireCloudWorkspace]
+		var page cloudPagedResponse[cloudgen.CloudWorkspace]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Workspace, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toWorkspaceDomain(w))
 		}
 		return out, nil
 	}, limit)
 }
 
-type wireCloudProject struct {
-	UUID  string `json:"uuid"`
-	Key   string `json:"key"`
-	Name  string `json:"name"`
-	Links struct {
-		HTML struct {
-			Href string `json:"href"`
-		} `json:"html"`
-	} `json:"links"`
-}
-
-func (w wireCloudProject) toDomain() backend.Project {
+func toProjectDomain(w cloudgen.CloudProject) backend.Project {
 	return backend.Project{
 		UUID:   stripBraces(w.UUID),
 		Key:    w.Key,
@@ -82,13 +61,13 @@ func (c *Client) ListProjects(workspace string, limit int) ([]backend.Project, e
 		path = fmt.Sprintf("%s?pagelen=%d", path, limit)
 	}
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Project, error) {
-		var page cloudPagedResponse[wireCloudProject]
+		var page cloudPagedResponse[cloudgen.CloudProject]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Project, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toProjectDomain(w))
 		}
 		return out, nil
 	}, limit)

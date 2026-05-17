@@ -6,28 +6,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerRestriction is the wire shape of a single Bitbucket Server
-// branch restriction returned by /rest/branch-permissions/2.0/.../restrictions.
-// The matcher is nested two levels deep — Type lives under Matcher.Type.ID
-// — and users come back as `{name, displayName}` objects rather than slugs.
-type wireServerRestriction struct {
-	ID      int    `json:"id"`
-	Type    string `json:"type"`
-	Matcher struct {
-		ID   string `json:"id"`
-		Type struct {
-			ID string `json:"id"`
-		} `json:"type"`
-	} `json:"matcher"`
-	Users []struct {
-		Name string `json:"name"`
-	} `json:"users"`
-	Groups []string `json:"groups"`
-}
-
-func (w wireServerRestriction) toDomain() backend.BranchProtection {
+func toRestrictionDomain(w servergen.RestRestriction) backend.BranchProtection {
 	users := make([]string, 0, len(w.Users))
 	for _, u := range w.Users {
 		users = append(users, u.Name)
@@ -46,35 +28,16 @@ func (w wireServerRestriction) toDomain() backend.BranchProtection {
 func (c *Client) ListBranchProtections(ns, slug string, limit int) ([]backend.BranchProtection, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/restrictions", ns, slug)
 	return paging.Collect(c.branchProtectHTTP, path, func(body []byte) ([]backend.BranchProtection, error) {
-		var page PagedResponse[wireServerRestriction]
+		var page PagedResponse[servergen.RestRestriction]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.BranchProtection, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toRestrictionDomain(w))
 		}
 		return out, nil
 	}, limit)
-}
-
-// wireServerRestrictionCreate is the create-side payload. BBS expects the
-// matcher type as a nested object {id: "BRANCH"|"PATTERN"|...} and users as
-// a flat slice of slugs (not the {name} envelope used on read).
-type wireServerRestrictionCreate struct {
-	Type    string                             `json:"type"`
-	Matcher wireServerRestrictionCreateMatcher `json:"matcher"`
-	Users   []string                           `json:"users"`
-	Groups  []string                           `json:"groups"`
-}
-
-type wireServerRestrictionCreateMatcher struct {
-	ID   string                                 `json:"id"`
-	Type wireServerRestrictionCreateMatcherKind `json:"type"`
-}
-
-type wireServerRestrictionCreateMatcherKind struct {
-	ID string `json:"id"`
 }
 
 // CreateBranchProtection creates a single branch restriction. Empty
@@ -93,21 +56,21 @@ func (c *Client) CreateBranchProtection(ns, slug string, in backend.CreateBranch
 	if groups == nil {
 		groups = []string{}
 	}
-	body := wireServerRestrictionCreate{
+	body := servergen.RestRestrictionCreate{
 		Type: in.Type,
-		Matcher: wireServerRestrictionCreateMatcher{
+		Matcher: servergen.RestRestrictionCreateMatcher{
 			ID:   in.MatcherID,
-			Type: wireServerRestrictionCreateMatcherKind{ID: kind},
+			Type: servergen.RestRestrictionCreateMatcherKind{ID: kind},
 		},
 		Users:  users,
 		Groups: groups,
 	}
 	path := fmt.Sprintf("/projects/%s/repos/%s/restrictions", ns, slug)
-	var w wireServerRestriction
+	var w servergen.RestRestriction
 	if err := c.branchProtectHTTP.PostJSON(path, body, &w); err != nil {
 		return backend.BranchProtection{}, err
 	}
-	return w.toDomain(), nil
+	return toRestrictionDomain(w), nil
 }
 
 // DeleteBranchProtection removes the restriction with the given numeric ID.

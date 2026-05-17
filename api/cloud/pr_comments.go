@@ -3,47 +3,14 @@ package cloud
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 )
-
-type wireCloudPRComment struct {
-	ID      int `json:"id"`
-	Content struct {
-		Raw string `json:"raw"`
-	} `json:"content"`
-	User struct {
-		AccountID   string `json:"account_id"`
-		DisplayName string `json:"display_name"`
-		Nickname    string `json:"nickname"`
-	} `json:"user"`
-	CreatedOn  time.Time            `json:"created_on"`
-	UpdatedOn  time.Time            `json:"updated_on"`
-	Inline     *wireCloudInline     `json:"inline,omitempty"`
-	Parent     *wireCloudParentRef  `json:"parent,omitempty"`
-	Resolution *wireCloudResolution `json:"resolution,omitempty"`
-}
-
-type wireCloudInline struct {
-	Path      string `json:"path"`
-	From      *int   `json:"from,omitempty"`
-	To        *int   `json:"to,omitempty"`
-	StartFrom *int   `json:"start_from,omitempty"`
-	StartTo   *int   `json:"start_to,omitempty"`
-}
-
-type wireCloudParentRef struct {
-	ID int `json:"id"`
-}
-
-type wireCloudResolution struct {
-	Type string `json:"type"`
-}
 
 // cloudInlineToDomain maps Bitbucket Cloud's inline payload to the domain type.
 // Returns nil if the inline anchor has no usable line number.
-func cloudInlineToDomain(in *wireCloudInline) *backend.PRCommentInline {
+func cloudInlineToDomain(in *cloudgen.CloudInline) *backend.PRCommentInline {
 	if in == nil {
 		return nil
 	}
@@ -67,7 +34,7 @@ func cloudInlineToDomain(in *wireCloudInline) *backend.PRCommentInline {
 	return out
 }
 
-func (w wireCloudPRComment) toDomain() backend.PRComment {
+func toPRCommentDomain(w cloudgen.CloudPRComment) backend.PRComment {
 	slug := w.User.Nickname
 	if slug == "" {
 		slug = w.User.AccountID
@@ -96,34 +63,26 @@ func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, e
 	var out []backend.PRComment
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments?pagelen=100", ns, slug, id)
 	err := c.http.GetAllJSON(path, func(body []byte) error {
-		var page cloudPagedResponse[wireCloudPRComment]
+		var page cloudPagedResponse[cloudgen.CloudPRComment]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return err
 		}
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toPRCommentDomain(w))
 		}
 		return nil
 	})
 	return out, err
 }
 
-type wireCloudAddPRComment struct {
-	Content struct {
-		Raw string `json:"raw"`
-	} `json:"content"`
-	Inline *wireCloudInline    `json:"inline,omitempty"`
-	Parent *wireCloudParentRef `json:"parent,omitempty"`
-}
-
 // inlineDomainToCloud maps the domain inline anchor onto Cloud's wire shape.
 // Side="new" populates `to` (and `start_to` for multi-line); Side="old"
 // populates `from` (and `start_from`).
-func inlineDomainToCloud(in *backend.PRCommentInline) *wireCloudInline {
+func inlineDomainToCloud(in *backend.PRCommentInline) *cloudgen.CloudInline {
 	if in == nil {
 		return nil
 	}
-	out := &wireCloudInline{Path: in.Path}
+	out := &cloudgen.CloudInline{Path: in.Path}
 	line := in.Line
 	switch in.Side {
 	case "old":
@@ -146,14 +105,15 @@ func inlineDomainToCloud(in *backend.PRCommentInline) *wireCloudInline {
 // Cloud accepts the same `{ "content": { "raw": ... } }` shape on PUT as on
 // the original POST, returning the refreshed comment.
 func (c *Client) EditPRComment(ns, slug string, id, commentID int, body string) (backend.PRComment, error) {
-	in := wireCloudAddPRComment{}
-	in.Content.Raw = body
-	var w wireCloudPRComment
+	in := cloudgen.CloudAddPRComment{
+		Content: cloudgen.CloudPRCommentContent{Raw: body},
+	}
+	var w cloudgen.CloudPRComment
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/%d", ns, slug, id, commentID)
 	if err := c.putJSON(path, in, &w); err != nil {
 		return backend.PRComment{}, err
 	}
-	return w.toDomain(), nil
+	return toPRCommentDomain(w), nil
 }
 
 // DeletePRComment removes a comment from a pull request. Cloud returns 204
@@ -173,23 +133,24 @@ func (c *Client) ResolvePRComment(ns, slug string, id, commentID int) error {
 	body := map[string]any{
 		"resolution": map[string]string{"type": "resolved"},
 	}
-	var w wireCloudPRComment
+	var w cloudgen.CloudPRComment
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/%d", ns, slug, id, commentID)
 	return c.putJSON(path, body, &w)
 }
 
 func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
-	body := wireCloudAddPRComment{}
-	body.Content.Raw = in.Text
-	body.Inline = inlineDomainToCloud(in.Inline)
+	body := cloudgen.CloudAddPRComment{
+		Content: cloudgen.CloudPRCommentContent{Raw: in.Text},
+		Inline:  inlineDomainToCloud(in.Inline),
+	}
 	if in.Parent != nil {
-		body.Parent = &wireCloudParentRef{ID: *in.Parent}
+		body.Parent = &cloudgen.CloudParentRef{ID: *in.Parent}
 	}
 
-	var w wireCloudPRComment
+	var w cloudgen.CloudPRComment
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments", ns, slug, id)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.PRComment{}, err
 	}
-	return w.toDomain(), nil
+	return toPRCommentDomain(w), nil
 }

@@ -7,27 +7,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-type wireRepository struct {
-	ID      int    `json:"id"`
-	Slug    string `json:"slug"`
-	Name    string `json:"name"`
-	Public  bool   `json:"public"`
-	Project struct {
-		Key  string `json:"key"`
-		Name string `json:"name"`
-	} `json:"project"`
-	ScmID string `json:"scmId"`
-	State string `json:"state"`
-	Links struct {
-		Self []struct {
-			Href string `json:"href"`
-		} `json:"self"`
-	} `json:"links"`
-}
-
-func (w wireRepository) toDomain() backend.Repository {
+func toRepositoryDomain(w servergen.RestRepository) backend.Repository {
 	webURL := ""
 	if len(w.Links.Self) > 0 {
 		webURL = w.Links.Self[0].Href
@@ -48,24 +31,24 @@ func (w wireRepository) toDomain() backend.Repository {
 func (c *Client) ListRepos(_ string, limit int) ([]backend.Repository, error) {
 	path := fmt.Sprintf("/repos?limit=%d", limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
-		var page PagedResponse[wireRepository]
+		var page PagedResponse[servergen.RestRepository]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Repository, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toRepositoryDomain(w))
 		}
 		return out, nil
 	}, limit)
 }
 
 func (c *Client) GetRepo(ns, slug string) (backend.Repository, error) {
-	var w wireRepository
+	var w servergen.RestRepository
 	if err := c.getJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), &w); err != nil {
 		return backend.Repository{}, stampRepoNotFound(err, ns, slug)
 	}
-	return w.toDomain(), nil
+	return toRepositoryDomain(w), nil
 }
 
 // stampRepoNotFound annotates a 404-on-repo error with CodeRepoNotFound +
@@ -79,25 +62,18 @@ func stampRepoNotFound(err error, ns, slug string) error {
 	return backend.StampCode(err, backend.CodeRepoNotFound, "repository", ns+"/"+slug, "")
 }
 
-type wireCreateRepoInput struct {
-	Name        string `json:"name"`
-	ScmID       string `json:"scmId"`
-	Public      bool   `json:"public"`
-	Description string `json:"description,omitempty"`
-}
-
 func (c *Client) CreateRepo(ns string, in backend.CreateRepoInput) (backend.Repository, error) {
-	body := wireCreateRepoInput{
+	body := servergen.RestCreateRepoInput{
 		Name:        in.Name,
 		ScmID:       in.SCM,
 		Public:      in.Public,
 		Description: in.Description,
 	}
-	var w wireRepository
+	var w servergen.RestRepository
 	if err := c.postJSON(fmt.Sprintf("/projects/%s/repos", ns), body, &w); err != nil {
 		return backend.Repository{}, err
 	}
-	return w.toDomain(), nil
+	return toRepositoryDomain(w), nil
 }
 
 func (c *Client) DeleteRepo(ns, slug string) error {
@@ -106,17 +82,17 @@ func (c *Client) DeleteRepo(ns, slug string) error {
 
 func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error) {
 	body := map[string]string{"name": newName}
-	var w wireRepository
+	var w servergen.RestRepository
 	if err := c.putJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), body, &w); err != nil {
 		return backend.Repository{}, err
 	}
-	return w.toDomain(), nil
+	return toRepositoryDomain(w), nil
 }
 
 func (c *Client) SetRepoVisibility(ns, slug string, isPrivate bool) error {
 	body := struct {
 		Public bool `json:"public"`
 	}{Public: !isPrivate}
-	var ignore wireRepository
+	var ignore servergen.RestRepository
 	return c.putJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), body, &ignore)
 }

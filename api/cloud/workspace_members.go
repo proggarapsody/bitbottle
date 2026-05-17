@@ -5,19 +5,13 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-type wireCloudWorkspaceMember struct {
-	User      wireCloudUser `json:"user"`
-	Workspace struct {
-		Slug string `json:"slug"`
-	} `json:"workspace"`
-}
-
-func (w wireCloudWorkspaceMember) toDomain() backend.WorkspaceMember {
+func toWorkspaceMemberDomain(w cloudgen.CloudWorkspaceMember) backend.WorkspaceMember {
 	return backend.WorkspaceMember{
-		User:      w.User.toDomain(),
+		User:      toCloudUserDomain(w.User),
 		Workspace: w.Workspace.Slug,
 	}
 }
@@ -33,13 +27,13 @@ func (c *Client) ListWorkspaceMembers(workspace string, limit int) ([]backend.Wo
 		path = fmt.Sprintf("%s?pagelen=%d", path, limit)
 	}
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.WorkspaceMember, error) {
-		var page cloudPagedResponse[wireCloudWorkspaceMember]
+		var page cloudPagedResponse[cloudgen.CloudWorkspaceMember]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.WorkspaceMember, 0, len(page.Values))
 		for _, m := range page.Values {
-			out = append(out, m.toDomain())
+			out = append(out, toWorkspaceMemberDomain(m))
 		}
 		return out, nil
 	}, limit)

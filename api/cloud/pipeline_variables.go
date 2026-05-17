@@ -5,20 +5,14 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 const variablesPath = "/repositories/%s/%s/pipelines_config/variables/"
 const variablePath = "/repositories/%s/%s/pipelines_config/variables/%s"
 
-type wireCloudPipelineVariable struct {
-	UUID    string `json:"uuid"`
-	Key     string `json:"key"`
-	Value   string `json:"value,omitempty"`
-	Secured bool   `json:"secured"`
-}
-
-func (w wireCloudPipelineVariable) toDomain() backend.PipelineVariable {
+func toPipelineVariableDomain(w cloudgen.CloudPipelineVariable) backend.PipelineVariable {
 	return backend.PipelineVariable{
 		UUID:    stripBraces(w.UUID),
 		Key:     w.Key,
@@ -32,13 +26,13 @@ func (w wireCloudPipelineVariable) toDomain() backend.PipelineVariable {
 // response, so PipelineVariable.Value is empty when Secured is true.
 func (c *Client) ListPipelineVariables(ns, slug string) ([]backend.PipelineVariable, error) {
 	return paging.Collect(c.http, fmt.Sprintf(variablesPath, ns, slug), func(body []byte) ([]backend.PipelineVariable, error) {
-		var page cloudPagedResponse[wireCloudPipelineVariable]
+		var page cloudPagedResponse[cloudgen.CloudPipelineVariable]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.PipelineVariable, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toPipelineVariableDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -52,12 +46,12 @@ func (c *Client) SetPipelineVariable(ns, slug string, in backend.PipelineVariabl
 	if err != nil {
 		return backend.PipelineVariable{}, err
 	}
-	body := wireCloudPipelineVariable{
+	body := cloudgen.CloudPipelineVariable{
 		Key:     in.Key,
 		Value:   in.Value,
 		Secured: in.Secured,
 	}
-	var w wireCloudPipelineVariable
+	var w cloudgen.CloudPipelineVariable
 	if existing != nil {
 		// PUT to {variable_uuid}; key field is ignored on update but kept for symmetry.
 		path := fmt.Sprintf(variablePath, ns, slug, braceUUID(existing.UUID))
@@ -70,7 +64,7 @@ func (c *Client) SetPipelineVariable(ns, slug string, in backend.PipelineVariabl
 			return backend.PipelineVariable{}, err
 		}
 	}
-	return w.toDomain(), nil
+	return toPipelineVariableDomain(w), nil
 }
 
 // DeletePipelineVariable looks up the variable by Key and DELETEs it. Returns

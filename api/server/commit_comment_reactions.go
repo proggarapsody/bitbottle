@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
 // ListCommitCommentReactions lists the reactions on a commit comment, grouped
@@ -14,12 +15,11 @@ import (
 func (c *Client) ListCommitCommentReactions(ns, slug, hash string, commentID int) ([]backend.CommentReaction, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/commits/%s/comments/%d/reactions", ns, slug, hash, commentID)
 
-	var allEntries []wireServerReaction
-	var page wireServerReactionsPage
+	var page servergen.RestReactionsPage
 	if err := c.getJSON(path, &page); err != nil {
 		return nil, err
 	}
-	allEntries = page.Values
+	allEntries := page.Values
 
 	// Group by canonical emoji.
 	order := make([]string, 0)
@@ -50,7 +50,7 @@ func (c *Client) ListCommitCommentReactions(ns, slug, hash string, commentID int
 // API: POST /rest/api/1.0/projects/{ns}/repos/{slug}/commits/{hash}/comments/{commentID}/reactions
 func (c *Client) AddCommitCommentReaction(ns, slug, hash string, commentID int, emoji string) error {
 	path := fmt.Sprintf("/projects/%s/repos/%s/commits/%s/comments/%d/reactions", ns, slug, hash, commentID)
-	var body wireServerAddReaction
+	var body servergen.RestAddReaction
 	body.Emoticon.Value = emoji
 	var resp json.RawMessage
 	return c.postJSON(path, body, &resp)

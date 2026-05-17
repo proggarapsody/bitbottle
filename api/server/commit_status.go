@@ -4,17 +4,10 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-type wireServerCommitStatus struct {
-	Key         string `json:"key"`
-	State       string `json:"state"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	URL         string `json:"url"`
-}
-
-func (w wireServerCommitStatus) toDomain() backend.CommitStatus {
+func toCommitStatusDomain(w servergen.RestCommitStatus) backend.CommitStatus {
 	return backend.CommitStatus{
 		Key:         w.Key,
 		State:       w.State,
@@ -50,14 +43,14 @@ func (c *Client) ReportCommitStatus(_, _, hash string, input backend.CommitStatu
 // The ns/slug arguments are unused by the Server build-status API (statuses
 // are keyed only by commit hash) but are kept for interface symmetry.
 func (c *Client) ListCommitStatuses(_, _, hash string) ([]backend.CommitStatus, error) {
-	var page PagedResponse[wireServerCommitStatus]
+	var page PagedResponse[servergen.RestCommitStatus]
 	path := fmt.Sprintf("/commits/%s?limit=100", hash)
 	if err := c.buildStatusHTTP.GetJSON(path, &page); err != nil {
 		return nil, err
 	}
 	out := make([]backend.CommitStatus, 0, len(page.Values))
 	for _, w := range page.Values {
-		out = append(out, w.toDomain())
+		out = append(out, toCommitStatusDomain(w))
 	}
 	return out, nil
 }

@@ -5,27 +5,8 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
-
-// wireServerReaction is one reaction entry returned by the Server reactions
-// endpoint. Each entry represents one (emoji, user) pair.
-type wireServerReaction struct {
-	Emoticon struct {
-		Value string `json:"value"` // e.g. ":thumbsup:" or "thumbsup"
-	} `json:"emoticon"`
-	User struct {
-		Slug        string `json:"slug"`
-		DisplayName string `json:"displayName"`
-	} `json:"user"`
-}
-
-// wireServerReactionsPage is the paged envelope for the reactions endpoint.
-// Server returns this as a standard paged response.
-type wireServerReactionsPage struct {
-	Values     []wireServerReaction `json:"values"`
-	IsLastPage bool                 `json:"isLastPage"`
-	Size       int                  `json:"size"`
-}
 
 // ListCommentReactions lists the reactions on a pull-request comment, grouped
 // by emoji.
@@ -36,8 +17,8 @@ func (c *Client) ListCommentReactions(ns, slug string, prID, commentID int) ([]b
 
 	// Collect all pages. Reactions are typically few so we fetch only the first
 	// page here; a full paginated loop can be added later if needed.
-	var allEntries []wireServerReaction
-	var page wireServerReactionsPage
+	var allEntries []servergen.RestReaction
+	var page servergen.RestReactionsPage
 	if err := c.getJSON(path, &page); err != nil {
 		return nil, err
 	}
@@ -67,19 +48,12 @@ func (c *Client) ListCommentReactions(ns, slug string, prID, commentID int) ([]b
 	return reactions, nil
 }
 
-// wireServerAddReaction is the POST body for adding a reaction.
-type wireServerAddReaction struct {
-	Emoticon struct {
-		Value string `json:"value"`
-	} `json:"emoticon"`
-}
-
 // AddCommentReaction adds an emoji reaction to a pull-request comment.
 //
 // API: POST /rest/api/1.0/projects/{ns}/repos/{slug}/pull-requests/{prID}/comments/{commentID}/reactions
 func (c *Client) AddCommentReaction(ns, slug string, prID, commentID int, emoji string) error {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d/reactions", ns, slug, prID, commentID)
-	var body wireServerAddReaction
+	var body servergen.RestAddReaction
 	body.Emoticon.Value = emoji
 	var resp json.RawMessage
 	return c.postJSON(path, body, &resp)

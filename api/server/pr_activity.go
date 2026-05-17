@@ -7,16 +7,8 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
-
-type wireServerActivity struct {
-	Action      string `json:"action"`
-	CreatedDate int64  `json:"createdDate"`
-	User        struct {
-		Slug        string `json:"slug"`
-		DisplayName string `json:"displayName"`
-	} `json:"user"`
-}
 
 func serverActionToType(action string) string {
 	switch action {
@@ -48,7 +40,7 @@ func (c *Client) GetPRActivity(ns, slug string, id int, limit int) ([]backend.PR
 		}
 		out := make([]backend.PRActivityEvent, 0, len(page.Values))
 		for _, raw := range page.Values {
-			var w wireServerActivity
+			var w servergen.RestActivity
 			if err := json.Unmarshal(raw, &w); err != nil {
 				continue
 			}

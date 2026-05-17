@@ -6,25 +6,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerSSHKey is the nested key object in the Server deploy-key wire shape.
-type wireServerSSHKey struct {
-	ID    int    `json:"id"`
-	Text  string `json:"text"`
-	Label string `json:"label"`
-}
-
-// wireServerDeployKey is the Server wire shape for a deploy key.
-// GET /rest/api/1.0/projects/{ns}/repos/{slug}/ssh returns:
-// {"id":1,"label":"CI key","key":{"id":1,"text":"ssh-rsa AAAA...","label":"CI key"}}
-type wireServerDeployKey struct {
-	ID    int              `json:"id"`
-	Label string           `json:"label"`
-	Key   wireServerSSHKey `json:"key"`
-}
-
-func (w wireServerDeployKey) toDomain() backend.DeployKey {
+func toDeployKeyDomain(w servergen.RestDeployKey) backend.DeployKey {
 	return backend.DeployKey{
 		ID:    w.ID,
 		Label: w.Label,
@@ -40,26 +25,16 @@ func (c *Client) ListDeployKeys(ns, slug string) ([]backend.DeployKey, error) {
 	}
 	path := fmt.Sprintf("/projects/%s/repos/%s/ssh", ns, slug)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.DeployKey, error) {
-		var page PagedResponse[wireServerDeployKey]
+		var page PagedResponse[servergen.RestDeployKey]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.DeployKey, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toDeployKeyDomain(w))
 		}
 		return out, nil
 	}, 0)
-}
-
-// wireServerAddDeployKeyBody is the POST body for adding a deploy key on Server.
-type wireServerAddDeployKeyBody struct {
-	Key wireServerSSHKeyInput `json:"key"`
-}
-
-type wireServerSSHKeyInput struct {
-	Text  string `json:"text"`
-	Label string `json:"label"`
 }
 
 // AddDeployKey adds a deploy key to a repository.
@@ -71,18 +46,18 @@ func (c *Client) AddDeployKey(ns, slug string, input backend.DeployKeyInput) (ba
 	if input.Key == "" {
 		return backend.DeployKey{}, fmt.Errorf("key required")
 	}
-	body := wireServerAddDeployKeyBody{
-		Key: wireServerSSHKeyInput{
+	body := servergen.RestAddDeployKeyBody{
+		Key: servergen.RestSSHKeyInput{
 			Text:  input.Key,
 			Label: input.Label,
 		},
 	}
-	var w wireServerDeployKey
+	var w servergen.RestDeployKey
 	path := fmt.Sprintf("/projects/%s/repos/%s/ssh", ns, slug)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.DeployKey{}, err
 	}
-	return w.toDomain(), nil
+	return toDeployKeyDomain(w), nil
 }
 
 // DeleteDeployKey removes a deploy key from a repository.

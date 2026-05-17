@@ -6,30 +6,11 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerDiffResponse is the Bitbucket Server/DC diff endpoint response.
-// GET /rest/api/1.0/projects/{project}/repos/{slug}/diff
-// (also used internally for refRange diff with ?since=&until=)
-type wireServerDiffResponse struct {
-	Diffs []wireServerDiff `json:"diffs"`
-}
-
-type wireServerDiff struct {
-	Source      *wireServerDiffPath  `json:"source"`
-	Destination *wireServerDiffPath  `json:"destination"`
-	Hunks       []wireServerDiffHunk `json:"hunks"`
-}
-
-type wireServerDiffPath struct {
-	Name       string   `json:"name"`
-	Components []string `json:"components"`
-	Parent     string   `json:"parent"`
-	Extension  string   `json:"extension"`
-	ToString   string   `json:"toString"`
-}
-
-func (p *wireServerDiffPath) path() string {
+// diffPathStr returns the path string from a RestDiffPath pointer.
+func diffPathStr(p *servergen.RestDiffPath) string {
 	if p == nil {
 		return ""
 	}
@@ -39,32 +20,12 @@ func (p *wireServerDiffPath) path() string {
 	return p.Name
 }
 
-type wireServerDiffHunk struct {
-	SourceLine      int                     `json:"sourceLine"`
-	SourceSpan      int                     `json:"sourceSpan"`
-	DestinationLine int                     `json:"destinationLine"`
-	DestinationSpan int                     `json:"destinationSpan"`
-	Segments        []wireServerDiffSegment `json:"segments"`
-}
-
-type wireServerDiffSegment struct {
-	Type  string               `json:"type"` // "CONTEXT", "ADDED", "REMOVED"
-	Lines []wireServerDiffLine `json:"lines"`
-}
-
-type wireServerDiffLine struct {
-	Destination int    `json:"destination"`
-	Source      int    `json:"source"`
-	Line        string `json:"line"`
-	Truncated   bool   `json:"truncated"`
-}
-
 // buildUnifiedDiff reconstructs a unified diff text from Server's JSON representation.
-func buildUnifiedDiff(diffs []wireServerDiff) string {
+func buildUnifiedDiff(diffs []servergen.RestDiff) string {
 	var sb strings.Builder
 	for _, d := range diffs {
-		srcPath := d.Source.path()
-		dstPath := d.Destination.path()
+		srcPath := diffPathStr(d.Source)
+		dstPath := diffPathStr(d.Destination)
 		if srcPath == "" && dstPath == "" {
 			continue
 		}
@@ -105,7 +66,7 @@ func buildUnifiedDiff(diffs []wireServerDiff) string {
 func (c *Client) GetDiff(ns, slug, from, to string) (string, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/diff", url.PathEscape(ns), url.PathEscape(slug))
 	path += fmt.Sprintf("?since=%s&until=%s&contextLines=5", url.QueryEscape(from), url.QueryEscape(to))
-	var resp wireServerDiffResponse
+	var resp servergen.RestDiffResponse
 	if err := c.getJSON(path, &resp); err != nil {
 		return "", err
 	}
@@ -117,7 +78,7 @@ func (c *Client) GetDiff(ns, slug, from, to string) (string, error) {
 func (c *Client) GetDiffStat(ns, slug, from, to string) (backend.DiffStat, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/diff", url.PathEscape(ns), url.PathEscape(slug))
 	path += fmt.Sprintf("?since=%s&until=%s&contextLines=0", url.QueryEscape(from), url.QueryEscape(to))
-	var resp wireServerDiffResponse
+	var resp servergen.RestDiffResponse
 	if err := c.getJSON(path, &resp); err != nil {
 		return backend.DiffStat{}, err
 	}
@@ -135,9 +96,9 @@ func (c *Client) GetDiffStat(ns, slug, from, to string) (backend.DiffStat, error
 }
 
 // diffEntryFromServer maps a single Server diff to a DiffStatEntry.
-func diffEntryFromServer(d wireServerDiff) backend.DiffStatEntry {
-	srcPath := d.Source.path()
-	dstPath := d.Destination.path()
+func diffEntryFromServer(d servergen.RestDiff) backend.DiffStatEntry {
+	srcPath := diffPathStr(d.Source)
+	dstPath := diffPathStr(d.Destination)
 
 	path := dstPath
 	if path == "" {

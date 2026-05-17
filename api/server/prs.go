@@ -94,10 +94,14 @@ func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.Pu
 		FromRef:     servergen.RestRefInput{ID: ensureRefsHeads(in.FromBranch)},
 		ToRef:       servergen.RestRefInput{ID: ensureRefsHeads(in.ToBranch)},
 	}
-	for _, s := range in.Reviewers {
-		var r servergen.RestPullRequestReviewerInput
-		r.User.Name = s
-		body.Reviewers = append(body.Reviewers, r)
+	if len(in.Reviewers) > 0 {
+		reviewers := make([]servergen.RestPullRequestReviewerInput, 0, len(in.Reviewers))
+		for _, s := range in.Reviewers {
+			var r servergen.RestPullRequestReviewerInput
+			r.User.Name = s
+			reviewers = append(reviewers, r)
+		}
+		body.Reviewers = &reviewers
 	}
 	var w servergen.RestPullRequest
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests", ns, slug)
@@ -117,9 +121,13 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 		return backend.PullRequest{}, stampPRNotFound(err, id)
 	}
 	body := servergen.RestMergePullRequestRequest{
-		Version:  current.Version,
-		Message:  in.Message,
-		Strategy: in.Strategy,
+		Version: current.Version,
+	}
+	if in.Message != "" {
+		body.Message = &in.Message
+	}
+	if in.Strategy != "" {
+		body.Strategy = &in.Strategy
 	}
 	var w servergen.RestPullRequest
 	if err := c.postJSON(prPath+"/merge", body, &w); err != nil {

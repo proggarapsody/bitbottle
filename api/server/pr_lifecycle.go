@@ -84,13 +84,6 @@ type prWithReviewers struct {
 	Reviewers []servergen.RestPullRequestReviewer `json:"reviewers"`
 }
 
-// wireReviewerPR is the body used when PUTting reviewers back onto a PR.
-type wireReviewerPR struct {
-	Title       string            `json:"title"`
-	Description string            `json:"description"`
-	Reviewers   []prReviewerInput `json:"reviewers"`
-}
-
 func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 	var current prWithReviewers
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
@@ -114,7 +107,7 @@ func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 		}
 	}
 
-	body := wireReviewerPR{
+	body := servergen.RestReviewerPR{
 		Title:       current.Title,
 		Description: current.Description,
 		Reviewers:   merged,

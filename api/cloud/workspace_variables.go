@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
@@ -16,13 +17,13 @@ const workspaceVariablePath = "/workspaces/%s/pipelines-config/variables/%s"
 func (c *Client) ListWorkspaceVariables(ns string) ([]backend.PipelineVariable, error) {
 	path := fmt.Sprintf(workspaceVariablesPath, ns)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PipelineVariable, error) {
-		var page cloudPagedResponse[wireCloudPipelineVariable]
+		var page cloudPagedResponse[cloudgen.CloudPipelineVariable]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.PipelineVariable, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toPipelineVariableDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -36,12 +37,12 @@ func (c *Client) SetWorkspaceVariable(ns string, in backend.PipelineVariableInpu
 	if err != nil {
 		return backend.PipelineVariable{}, err
 	}
-	body := wireCloudPipelineVariable{
+	body := cloudgen.CloudPipelineVariable{
 		Key:     in.Key,
 		Value:   in.Value,
 		Secured: in.Secured,
 	}
-	var w wireCloudPipelineVariable
+	var w cloudgen.CloudPipelineVariable
 	if existing != nil {
 		path := fmt.Sprintf(workspaceVariablePath, ns, braceUUID(existing.UUID))
 		if err := c.http.PutJSON(path, body, &w); err != nil {
@@ -53,7 +54,7 @@ func (c *Client) SetWorkspaceVariable(ns string, in backend.PipelineVariableInpu
 			return backend.PipelineVariable{}, err
 		}
 	}
-	return w.toDomain(), nil
+	return toPipelineVariableDomain(w), nil
 }
 
 // DeleteWorkspaceVariable looks up a variable by Key and DELETEs it. Returns

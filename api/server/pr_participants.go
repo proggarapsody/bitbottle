@@ -6,19 +6,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-type wireServerPRParticipant struct {
-	User struct {
-		Slug        string `json:"slug"`
-		DisplayName string `json:"displayName"`
-	} `json:"user"`
-	Role     string `json:"role"` // "AUTHOR", "REVIEWER", "PARTICIPANT"
-	Approved bool   `json:"approved"`
-	Status   string `json:"status"` // "APPROVED", "UNAPPROVED", "NEEDS_WORK"
-}
-
-func (w wireServerPRParticipant) toDomain() backend.PRParticipant {
+func toPRParticipantDomain(w servergen.RestPRParticipant) backend.PRParticipant {
 	var state string
 	switch w.Status {
 	case "APPROVED":
@@ -44,13 +35,13 @@ func (w wireServerPRParticipant) toDomain() backend.PRParticipant {
 func (c *Client) ListPRParticipants(ns, slug string, prID int) ([]backend.PRParticipant, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/participants", ns, slug, prID)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PRParticipant, error) {
-		var page PagedResponse[wireServerPRParticipant]
+		var page PagedResponse[servergen.RestPRParticipant]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.PRParticipant, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toPRParticipantDomain(w))
 		}
 		return out, nil
 	}, 0)
