@@ -56,13 +56,17 @@ func listRun(f *factory.Factory, opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	got, err := bp.ListBranchProtections(ref.Project, ref.Slug, opts.Limit)
-	if err != nil {
-		return err
+	got, listErr := bp.ListBranchProtections(ref.Project, ref.Slug, opts.Limit)
+	if listErr != nil && len(got) == 0 {
+		return listErr
 	}
 	p := fields(f, opts.Output)
 	for _, r := range got {
 		p.AddItem(r)
 	}
-	return p.Render()
+	if err := p.Render(); err != nil {
+		return err
+	}
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(got), listErr)
+	return listErr
 }

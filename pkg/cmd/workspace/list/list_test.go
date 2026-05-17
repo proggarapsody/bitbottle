@@ -1,6 +1,7 @@
 package list_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -127,4 +128,27 @@ func TestList_ServerBackend_ReturnsUnsupportedError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Cloud only")
+}
+
+func TestList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListWorkspacesFn: func(limit int) ([]backend.Workspace, error) {
+			return []backend.Workspace{
+				{Slug: "acme", Name: "Acme Inc"},
+			}, listErr
+		},
+	}
+	f, out, errOut := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig, BackendType: "cloud"})
+	factorytest.UseBackend(f, fake)
+
+	cmd := list.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "acme")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

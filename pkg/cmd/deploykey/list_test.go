@@ -1,6 +1,7 @@
 package deploykey_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,4 +74,25 @@ func TestList_UnsupportedBackend(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "deploy keys")
+}
+
+func TestList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListDeployKeysFn: func(ns, slug string) ([]backend.DeployKey, error) {
+			return []backend.DeployKey{
+				{ID: 1, Label: "partial-key", Key: "ssh-rsa AAAA1"},
+			}, listErr
+		},
+	}
+	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := deploykey.NewCmdList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial-key")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

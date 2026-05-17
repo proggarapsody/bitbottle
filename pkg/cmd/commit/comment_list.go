@@ -11,6 +11,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // NewCmdCommitCommentList lists all comments on a commit.
@@ -32,9 +33,9 @@ func NewCmdCommitCommentList(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			hash := args[1]
-			cmts, err := client.ListCommitComments(ref.Project, ref.Slug, hash, 0)
-			if err != nil {
-				return err
+			cmts, listErr := client.ListCommitComments(ref.Project, ref.Slug, hash, 0)
+			if listErr != nil && len(cmts) == 0 {
+				return listErr
 			}
 			if withReactions {
 				reactor, reactErr := backend.AsCommitCommentReactor(client, ref.Host)
@@ -47,7 +48,11 @@ func NewCmdCommitCommentList(f *factory.Factory) *cobra.Command {
 			for _, c := range cmts {
 				p.AddItem(c)
 			}
-			return p.Render()
+			if err := p.Render(); err != nil {
+				return err
+			}
+			cmdutil.PartialWarn(f.IOStreams.ErrOut, len(cmts), listErr)
+			return listErr
 		},
 	}
 	cmd.Flags().BoolVar(&withReactions, "reactions", false, "Fetch and display emoji reactions (Bitbucket Server / DC only)")

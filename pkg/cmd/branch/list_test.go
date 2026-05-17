@@ -1,6 +1,7 @@
 package branch_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -152,4 +153,26 @@ func TestBranchList_InvalidLimit(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--limit")
+}
+
+func TestBranchList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListBranchesFn: func(ns, slug string, limit int) ([]backend.Branch, error) {
+			return []backend.Branch{
+				{Name: "partial-branch", IsDefault: false, LatestHash: "abc1234"},
+			}, listErr
+		},
+	}
+	f, out, errOut := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
+	cmd := branch.NewCmdBranchList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial-branch")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

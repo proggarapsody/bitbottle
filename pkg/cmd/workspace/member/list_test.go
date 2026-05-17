@@ -1,6 +1,7 @@
 package member_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -152,4 +153,27 @@ func TestList_ServerBackend_ReturnsUnsupportedError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Cloud only")
+}
+
+func TestList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListWorkspaceMembersFn: func(workspace string, limit int) ([]backend.WorkspaceMember, error) {
+			return []backend.WorkspaceMember{
+				{User: backend.User{Slug: "alice", DisplayName: "Alice Smith"}, Workspace: "acme"},
+			}, listErr
+		},
+	}
+	f, out, errOut := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig, BackendType: "cloud"})
+	factorytest.UseBackend(f, fake)
+
+	cmd := member.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"acme"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "alice")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

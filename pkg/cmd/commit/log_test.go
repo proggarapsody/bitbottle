@@ -3,6 +3,7 @@ package commit_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -232,4 +233,26 @@ func TestCommitLog_InvalidLimit(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--limit")
+}
+
+func TestCommitLog_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListCommitsFn: func(ns, slug, branch string, limit int) ([]backend.Commit, error) {
+			return []backend.Commit{
+				{Hash: "abc1234def567890", Message: "partial commit", Author: backend.User{Slug: "alice"}, Timestamp: time.Now().Add(-1 * time.Hour)},
+			}, listErr
+		},
+	}
+	f, out, errOut := factorytest.New(t, factorytest.Opts{InitialConfig: commitConfig})
+	factorytest.UseBackend(f, fake)
+	cmd := commit.NewCmdCommitLog(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial commit")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

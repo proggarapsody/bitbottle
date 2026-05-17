@@ -2,6 +2,7 @@ package protect_test
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -238,4 +239,25 @@ func TestList_InvalidLimit(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--limit")
+}
+
+func TestList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListBranchProtectionsFn: func(ns, slug string, limit int) ([]backend.BranchProtection, error) {
+			return []backend.BranchProtection{
+				{ID: 99, Type: "partial-restriction", MatcherID: "main", MatcherKind: "BRANCH"},
+			}, listErr
+		},
+	}
+	f, out, errOut := newFactory(t, fake, serverConfig)
+	cmd := protect.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"MYPROJ/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial-restriction")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

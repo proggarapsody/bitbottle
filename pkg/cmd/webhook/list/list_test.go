@@ -2,6 +2,7 @@ package list_test
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,4 +74,25 @@ func TestList_JSON(t *testing.T) {
 	require.True(t, ok)
 	require.Len(t, events, 1)
 	assert.Equal(t, "repo:push", events[0])
+}
+
+func TestList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListWebhooksFn: func(ns, slug string) ([]backend.Webhook, error) {
+			return []backend.Webhook{
+				{ID: "partial-hook", URL: "https://example.com/partial", Active: true, Events: []string{"repo:push"}},
+			}, listErr
+		},
+	}
+	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := cmdList.NewCmdList(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial-hook")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

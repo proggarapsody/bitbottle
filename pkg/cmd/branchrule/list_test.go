@@ -1,6 +1,7 @@
 package branchrule_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,4 +74,25 @@ func TestList_UnsupportedBackend(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "branch restriction rules")
+}
+
+func TestList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListBranchRulesFn: func(ns, slug string) ([]backend.BranchRule, error) {
+			return []backend.BranchRule{
+				{ID: 1, Kind: "push", Pattern: "main"},
+			}, listErr
+		},
+	}
+	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := branchrule.NewCmdList(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "push")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }

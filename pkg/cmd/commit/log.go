@@ -56,16 +56,20 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			commits, err := client.ListCommits(ref.Project, ref.Slug, branch, limit)
-			if err != nil {
-				return err
+			commits, listErr := client.ListCommits(ref.Project, ref.Slug, branch, limit)
+			if listErr != nil && len(commits) == 0 {
+				return listErr
 			}
 
 			p := commitLogFields(f, format.ConfigFromCmd(cmd))
 			for _, c := range commits {
 				p.AddItem(c)
 			}
-			return p.Render()
+			if err := p.Render(); err != nil {
+				return err
+			}
+			cmdutil.PartialWarn(f.IOStreams.ErrOut, len(commits), listErr)
+			return listErr
 		},
 	}
 

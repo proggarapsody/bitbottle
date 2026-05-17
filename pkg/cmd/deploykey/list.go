@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // NewCmdList builds the `deploy-key list` cobra command.
@@ -28,15 +29,19 @@ func NewCmdList(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			keys, err := dk.ListDeployKeys(ref.Project, ref.Slug)
-			if err != nil {
-				return err
+			keys, listErr := dk.ListDeployKeys(ref.Project, ref.Slug)
+			if listErr != nil && len(keys) == 0 {
+				return listErr
 			}
 			p := deployKeyFields(f, format.ConfigFromCmd(cmd))
 			for _, k := range keys {
 				p.AddItem(k)
 			}
-			return p.Render()
+			if err := p.Render(); err != nil {
+				return err
+			}
+			cmdutil.PartialWarn(f.IOStreams.ErrOut, len(keys), listErr)
+			return listErr
 		},
 	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")

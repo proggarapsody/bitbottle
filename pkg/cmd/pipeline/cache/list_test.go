@@ -1,6 +1,7 @@
 package cache_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,6 +65,26 @@ func TestCacheList_ClientNotCapable_ReturnsError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pipeline cache")
+}
+
+func TestCacheList_PartialResults(t *testing.T) {
+	t.Parallel()
+	listErr := errors.New("429 Too Many Requests")
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPipelineCachesFn: func(ns, slug string) ([]backend.PipelineCache, error) {
+			return []backend.PipelineCache{
+				{UUID: "partial-cache", Name: "node_modules", Path: "/app/node_modules", FileSizeBytes: 1024, CreatedOn: "2024-01-01T00:00:00.000Z"},
+			}, listErr
+		},
+	}
+	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := cache.NewCmdList(f, nil)
+	cmd.SetArgs([]string{"myworkspace/my-service"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, out.String(), "partial-cache")
+	assert.Contains(t, errOut.String(), "warning: partial results")
 }
 
 // noPipelineCacheFake wraps backend.Client without implementing

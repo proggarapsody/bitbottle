@@ -8,6 +8,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // ScheduleListOptions holds parsed flags for `pipeline schedule list`.
@@ -48,9 +49,9 @@ func runScheduleList(f *factory.Factory, cmd *cobra.Command, opts *ScheduleListO
 	if err != nil {
 		return err
 	}
-	schedules, err := sc.ListPipelineSchedules(ref.Project, ref.Slug)
-	if err != nil {
-		return err
+	schedules, listErr := sc.ListPipelineSchedules(ref.Project, ref.Slug)
+	if listErr != nil && len(schedules) == 0 {
+		return listErr
 	}
 
 	cfg := format.ConfigFromCmd(cmd)
@@ -63,7 +64,11 @@ func runScheduleList(f *factory.Factory, cmd *cobra.Command, opts *ScheduleListO
 		for _, s := range schedules {
 			p.AddItem(s)
 		}
-		return p.Render()
+		if err := p.Render(); err != nil {
+			return err
+		}
+		cmdutil.PartialWarn(f.IOStreams.ErrOut, len(schedules), listErr)
+		return listErr
 	}
 
 	out := f.IOStreams.Out
@@ -75,5 +80,6 @@ func runScheduleList(f *factory.Factory, cmd *cobra.Command, opts *ScheduleListO
 	for _, s := range schedules {
 		fmt.Fprintf(out, "%-38s  %-20s  %-20s  %v\n", s.UUID, s.CronExpression, s.Branch, s.Enabled)
 	}
-	return nil
+	cmdutil.PartialWarn(f.IOStreams.ErrOut, len(schedules), listErr)
+	return listErr
 }
