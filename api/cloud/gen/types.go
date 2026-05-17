@@ -747,8 +747,8 @@ type CloudTransferOwner struct {
 // CloudTriggerBody Request body for triggering a pipeline
 type CloudTriggerBody struct {
 	// Target Target for a pipeline trigger
-	Target    CloudTriggerTarget    `json:"target"`
-	Variables []CloudTriggerVarItem `json:"variables"`
+	Target    CloudTriggerTarget     `json:"target"`
+	Variables *[]CloudTriggerVarItem `json:"variables,omitempty"`
 }
 
 // CloudTriggerResponse Response from triggering a pipeline

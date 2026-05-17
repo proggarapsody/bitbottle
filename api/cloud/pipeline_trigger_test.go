@@ -80,6 +80,27 @@ func TestCloudClient_TriggerPipeline_WithVariables(t *testing.T) {
 	assert.Equal(t, "bar", v0["value"])
 }
 
+func TestCloudClient_TriggerPipeline_OmitsVariablesWhenEmpty(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	client := newCloudTriggerServer(t, func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"uuid": "{abc-123}",
+			"state": {"name": "PENDING"},
+			"links": {"self": [{"href": "https://api.bitbucket.org/2.0/repositories/myws/my-repo/pipelines/%7Babc-123%7D"}]}
+		}`))
+	})
+	_, err := client.TriggerPipeline("myws", "my-repo", backend.PipelineTriggerInput{
+		Branch: "main",
+	})
+	require.NoError(t, err)
+	_, hasVariables := gotBody["variables"]
+	assert.False(t, hasVariables, "request body should not contain 'variables' key when no variables are provided, got: %v", gotBody)
+}
+
 func TestCloudClient_TriggerPipeline_NoSelfLink(t *testing.T) {
 	t.Parallel()
 	client := newCloudTriggerServer(t, func(w http.ResponseWriter, r *http.Request) {

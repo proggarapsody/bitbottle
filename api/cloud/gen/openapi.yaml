@@ -796,7 +796,6 @@ components:
       description: Request body for triggering a pipeline
       required:
         - target
-        - variables
       properties:
         target:
           $ref: "#/components/schemas/CloudTriggerTarget"
