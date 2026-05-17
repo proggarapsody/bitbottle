@@ -2,7 +2,6 @@ package text
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -13,14 +12,6 @@ func Truncate(s string, max int) string {
 		return s
 	}
 	return string(runes[:max-1]) + "…"
-}
-
-// Pluralize returns singular when n == 1, otherwise plural.
-func Pluralize(n int, singular, plural string) string {
-	if n == 1 {
-		return singular
-	}
-	return plural
 }
 
 // RelativeTime returns a human-readable description of how long ago t was.
@@ -39,12 +30,4 @@ func RelativeTime(t time.Time) string {
 		days := int(d.Hours() / 24)
 		return fmt.Sprintf("%d days ago", days)
 	}
-}
-
-// PadRight pads s with spaces on the right to reach width.
-func PadRight(s string, width int) string {
-	if len(s) >= width {
-		return s
-	}
-	return s + strings.Repeat(" ", width-len(s))
 }
