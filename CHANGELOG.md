@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.73.0](https://github.com/proggarapsody/bitbottle/compare/v1.72.1...v1.73.0) (2026-05-17)
+
+
+### Features
+
+* **backend:** add AllFeatureSpecs registry + capability contract tests ([0078124](https://github.com/proggarapsody/bitbottle/commit/0078124fb8725eb03abb68c1d7a19567dbf0fcac))
+* **backend:** stamp ErrInvalidRequest+CodeInvalidRequest on bare 400/422 (ERR-EMPTY-400) ([e58ee30](https://github.com/proggarapsody/bitbottle/commit/e58ee30bf94100b5e9538370a3c8c8bb65a5b521))
+* **cmd:** add --json golden-file tests for field stability (JSON-STABILITY) ([ce115e5](https://github.com/proggarapsody/bitbottle/commit/ce115e500911910bd999236278a06f15b4dba006))
+* **cmd:** surface partial list results on mid-pagination error ([74e0804](https://github.com/proggarapsody/bitbottle/commit/74e08049c3c210e09749aeae22a001c2674b00f3))
+* **mcp:** add validateEnum + validateRange input validation (MCP-VALIDATION) ([8f53e29](https://github.com/proggarapsody/bitbottle/commit/8f53e290b55971155465a41e4764f340a373e4c5))
+* **profile:** validate --backend type at profile create time (BACKEND-TYPE-STRICT) ([1dbc66d](https://github.com/proggarapsody/bitbottle/commit/1dbc66d99e461fbf6ab17d41012ed34f9461f29f))
+
 ## [1.72.1](https://github.com/proggarapsody/bitbottle/compare/v1.72.0...v1.72.1) (2026-05-17)
 
 
