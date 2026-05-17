@@ -9,50 +9,11 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-type wireCloudPR struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	State       string `json:"state"`
-	Draft       bool   `json:"draft"`
-	Author      struct {
-		DisplayName string `json:"display_name"`
-		AccountID   string `json:"account_id"`
-		Nickname    string `json:"nickname"`
-	} `json:"author"`
-	Source struct {
-		Branch struct {
-			Name string `json:"name"`
-		} `json:"branch"`
-		Commit struct {
-			Hash string `json:"hash"`
-		} `json:"commit"`
-	} `json:"source"`
-	Destination struct {
-		Branch struct {
-			Name string `json:"name"`
-		} `json:"branch"`
-	} `json:"destination"`
-	Links struct {
-		HTML struct {
-			Href string `json:"href"`
-		} `json:"html"`
-	} `json:"links"`
-	Reviewers []struct {
-		AccountID string `json:"account_id"`
-	} `json:"reviewers"`
-	AutoMerge *wireCloudAutoMerge `json:"auto_merge"`
-}
-
-// wireCloudAutoMerge is the Cloud wire shape for the auto_merge field on a PR.
-type wireCloudAutoMerge struct {
-	MergeStrategy string `json:"merge_strategy"`
-}
-
-func (w wireCloudPR) toDomain() backend.PullRequest {
+func toPRDomain(w cloudgen.CloudPullRequest) backend.PullRequest {
 	pr := backend.PullRequest{
 		ID:          w.ID,
 		Title:       w.Title,
@@ -92,84 +53,61 @@ func cloudStrategyToCLI(s string) string {
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests?state=%s&pagelen=%d", ns, slug, state, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PullRequest, error) {
-		var page cloudPagedResponse[wireCloudPR]
+		var page cloudPagedResponse[cloudgen.CloudPullRequest]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.PullRequest, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toPRDomain(w))
 		}
 		return out, nil
 	}, limit)
 }
 
 func (c *Client) GetPR(ns, slug string, id int) (backend.PullRequest, error) {
-	var w wireCloudPR
+	var w cloudgen.CloudPullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
 	if err := c.getJSON(path, &w); err != nil {
 		return backend.PullRequest{}, stampPRNotFound(err, id)
 	}
-	return w.toDomain(), nil
-}
-
-type wireCloudCreatePR struct {
-	Title       string                    `json:"title"`
-	Description string                    `json:"description,omitempty"`
-	Draft       bool                      `json:"draft,omitempty"`
-	Source      wireCloudBranchRef        `json:"source"`
-	Destination wireCloudBranchRef        `json:"destination"`
-	Reviewers   []wireCloudCreateReviewer `json:"reviewers,omitempty"`
-}
-
-type wireCloudBranchRef struct {
-	Branch wireCloudBranchName `json:"branch"`
-}
-
-type wireCloudBranchName struct {
-	Name string `json:"name"`
-}
-
-// wireCloudCreateReviewer is Cloud's reviewer shape on PR create. Cloud
-// accepts either `username` or `uuid` — we use `username` since that's
-// what bitbottle's CLI surface (--reviewer) collects.
-type wireCloudCreateReviewer struct {
-	Username string `json:"username,omitempty"`
+	return toPRDomain(w), nil
 }
 
 func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.PullRequest, error) {
-	body := wireCloudCreatePR{
+	body := cloudgen.CloudCreatePullRequest{
 		Title:       in.Title,
 		Description: in.Description,
 		Draft:       in.Draft,
-		Source:      wireCloudBranchRef{Branch: wireCloudBranchName{Name: in.FromBranch}},
-		Destination: wireCloudBranchRef{Branch: wireCloudBranchName{Name: in.ToBranch}},
+		Source:      cloudgen.CloudCreateBranchRef{Branch: cloudgen.CloudBranchName{Name: in.FromBranch}},
+		Destination: cloudgen.CloudCreateBranchRef{Branch: cloudgen.CloudBranchName{Name: in.ToBranch}},
 	}
-	for _, name := range in.Reviewers {
-		body.Reviewers = append(body.Reviewers, wireCloudCreateReviewer{Username: name})
+	if len(in.Reviewers) > 0 {
+		reviewers := make([]cloudgen.CloudCreateReviewer, 0, len(in.Reviewers))
+		for _, name := range in.Reviewers {
+			reviewers = append(reviewers, cloudgen.CloudCreateReviewer{Username: name})
+		}
+		body.Reviewers = &reviewers
 	}
-	var w wireCloudPR
+	var w cloudgen.CloudPullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests", ns, slug)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.PullRequest{}, stampPRCreate(err)
 	}
-	return w.toDomain(), nil
-}
-
-type wireCloudMergePR struct {
-	MergeStrategy string `json:"merge_strategy,omitempty"`
+	return toPRDomain(w), nil
 }
 
 func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
-	body := wireCloudMergePR{
-		MergeStrategy: in.Strategy,
+	body := cloudgen.CloudMergePullRequest{}
+	if in.Strategy != "" {
+		body.MergeStrategy = &in.Strategy
 	}
-	var w wireCloudPR
+	var w cloudgen.CloudPullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/merge", ns, slug, id)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.PullRequest{}, stampPRMerge(err, id)
 	}
-	return w.toDomain(), nil
+	return toPRDomain(w), nil
 }
 
 // ApprovePR approves a PR on behalf of the authenticated user.

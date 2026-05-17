@@ -5,21 +5,14 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 const cachesPath = "/repositories/%s/%s/pipelines_config/caches/"
 const cachePath = "/repositories/%s/%s/pipelines_config/caches/%s"
 
-type wireCloudPipelineCache struct {
-	UUID          string `json:"uuid"`
-	Name          string `json:"name"`
-	Path          string `json:"path"`
-	FileSizeBytes int64  `json:"file_size_bytes"`
-	CreatedOn     string `json:"created_on"`
-}
-
-func (w wireCloudPipelineCache) toDomain() backend.PipelineCache {
+func toPipelineCacheDomain(w cloudgen.CloudPipelineCache) backend.PipelineCache {
 	return backend.PipelineCache{
 		UUID:          stripBraces(w.UUID),
 		Name:          w.Name,
@@ -37,14 +30,14 @@ func (c *Client) ListPipelineCaches(ns, slug string) ([]backend.PipelineCache, e
 		path,
 		func(body []byte) ([]backend.PipelineCache, error) {
 			var page struct {
-				Values []wireCloudPipelineCache `json:"values"`
+				Values []cloudgen.CloudPipelineCache `json:"values"`
 			}
 			if err := json.Unmarshal(body, &page); err != nil {
 				return nil, err
 			}
 			out := make([]backend.PipelineCache, 0, len(page.Values))
 			for _, w := range page.Values {
-				out = append(out, w.toDomain())
+				out = append(out, toPipelineCacheDomain(w))
 			}
 			return out, nil
 		},

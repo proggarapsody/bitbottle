@@ -2,14 +2,8 @@ package server
 
 import (
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
-
-// ── wire types ───────────────────────────────────────────────────────────────
-
-type wireLoggingConfig struct {
-	LogLevel     string `json:"logLevel"`
-	AsyncLogging bool   `json:"asyncLogging"`
-}
 
 // ── AdminClient implementation ────────────────────────────────────────────────
 
@@ -22,7 +16,7 @@ func (c *Client) RotateSecrets() error {
 // GetLoggingConfig returns the current log level and async-logging setting.
 // GET /rest/api/1.0/admin/logging
 func (c *Client) GetLoggingConfig() (backend.LoggingConfig, error) {
-	var wire wireLoggingConfig
+	var wire servergen.RestLoggingConfig
 	if err := c.http.GetJSON("/admin/logging", &wire); err != nil {
 		return backend.LoggingConfig{}, err
 	}
@@ -36,7 +30,7 @@ func (c *Client) GetLoggingConfig() (backend.LoggingConfig, error) {
 // If in.Persistent is true: PUT /rest/api/1.0/admin/logging/properties
 // Otherwise:                PUT /rest/api/1.0/admin/logging
 func (c *Client) SetLoggingConfig(in backend.LoggingConfigInput) error {
-	wire := wireLoggingConfig{
+	wire := servergen.RestLoggingConfig{
 		LogLevel:     in.Level,
 		AsyncLogging: in.Async,
 	}

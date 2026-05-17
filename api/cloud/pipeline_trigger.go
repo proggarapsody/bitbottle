@@ -4,57 +4,27 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 )
-
-// wireTriggerBody is the JSON body sent to POST /repositories/{ws}/{slug}/pipelines/.
-type wireTriggerBody struct {
-	Target    wireTriggerTarget    `json:"target"`
-	Variables []wireTriggerVarItem `json:"variables,omitempty"`
-}
-
-type wireTriggerTarget struct {
-	RefType string `json:"ref_type"`
-	Type    string `json:"type"`
-	RefName string `json:"ref_name"`
-}
-
-type wireTriggerVarItem struct {
-	Key     string `json:"key"`
-	Value   string `json:"value"`
-	Secured bool   `json:"secured"`
-}
-
-// wireTriggerResponse is the relevant subset of the Cloud pipeline response.
-type wireTriggerResponse struct {
-	UUID  string `json:"uuid"`
-	State struct {
-		Name string `json:"name"`
-	} `json:"state"`
-	Links struct {
-		Self []struct {
-			Href string `json:"href"`
-		} `json:"self"`
-	} `json:"links"`
-}
 
 // TriggerPipeline implements backend.PipelineTriggerClient for Bitbucket Cloud.
 func (c *Client) TriggerPipeline(ns, slug string, input backend.PipelineTriggerInput) (backend.PipelineTriggerResult, error) {
-	body := wireTriggerBody{
-		Target: wireTriggerTarget{
+	body := cloudgen.CloudTriggerBody{
+		Target: cloudgen.CloudTriggerTarget{
 			RefType: "branch",
 			Type:    "pipeline_ref_target",
 			RefName: input.Branch,
 		},
 	}
 	for _, v := range input.Variables {
-		body.Variables = append(body.Variables, wireTriggerVarItem{
+		body.Variables = append(body.Variables, cloudgen.CloudTriggerVarItem{
 			Key:     v.Key,
 			Value:   v.Value,
 			Secured: v.Secured,
 		})
 	}
 
-	var resp wireTriggerResponse
+	var resp cloudgen.CloudTriggerResponse
 	path := fmt.Sprintf("/repositories/%s/%s/pipelines/", ns, slug)
 	if err := c.postJSON(path, body, &resp); err != nil {
 		return backend.PipelineTriggerResult{}, err

@@ -1,5 +1,6 @@
 package: gen
 generate:
   models: true
-output: types.go
-input: openapi.yaml
+output-options:
+  skip-prune: true
+  name-normalizer: ToCamelCaseWithInitialisms

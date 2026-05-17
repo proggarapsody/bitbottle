@@ -3,27 +3,13 @@ package cloud
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-type wireCloudCommitComment struct {
-	ID      int `json:"id"`
-	Content struct {
-		Raw string `json:"raw"`
-	} `json:"content"`
-	User struct {
-		AccountID   string `json:"account_id"`
-		DisplayName string `json:"display_name"`
-		Nickname    string `json:"nickname"`
-	} `json:"user"`
-	CreatedOn time.Time `json:"created_on"`
-	UpdatedOn time.Time `json:"updated_on"`
-}
-
-func (w wireCloudCommitComment) toDomain() backend.CommitComment {
+func toCommitCommentDomain(w cloudgen.CloudCommitComment) backend.CommitComment {
 	slug := w.User.Nickname
 	if slug == "" {
 		slug = w.User.AccountID
@@ -45,46 +31,42 @@ func (w wireCloudCommitComment) toDomain() backend.CommitComment {
 func (c *Client) ListCommitComments(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments?pagelen=100", ns, slug, hash)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.CommitComment, error) {
-		var page cloudPagedResponse[wireCloudCommitComment]
+		var page cloudPagedResponse[cloudgen.CloudCommitComment]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.CommitComment, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toCommitCommentDomain(w))
 		}
 		return out, nil
 	}, limit)
 }
 
-type wireCloudAddCommitComment struct {
-	Content struct {
-		Raw string `json:"raw"`
-	} `json:"content"`
-}
-
 // AddCommitComment posts a new comment on a commit.
 func (c *Client) AddCommitComment(ns, slug, hash string, in backend.AddCommitCommentInput) (backend.CommitComment, error) {
-	var body wireCloudAddCommitComment
-	body.Content.Raw = in.Body
-	var w wireCloudCommitComment
+	body := cloudgen.CloudAddCommitComment{
+		Content: cloudgen.CloudCommitCommentContent{Raw: in.Body},
+	}
+	var w cloudgen.CloudCommitComment
 	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments", ns, slug, hash)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.CommitComment{}, err
 	}
-	return w.toDomain(), nil
+	return toCommitCommentDomain(w), nil
 }
 
 // EditCommitComment updates the body of an existing commit comment via PUT.
 func (c *Client) EditCommitComment(ns, slug, hash string, commentID int, body string) (backend.CommitComment, error) {
-	var req wireCloudAddCommitComment
-	req.Content.Raw = body
-	var w wireCloudCommitComment
+	req := cloudgen.CloudAddCommitComment{
+		Content: cloudgen.CloudCommitCommentContent{Raw: body},
+	}
+	var w cloudgen.CloudCommitComment
 	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments/%d", ns, slug, hash, commentID)
 	if err := c.putJSON(path, req, &w); err != nil {
 		return backend.CommitComment{}, err
 	}
-	return w.toDomain(), nil
+	return toCommitCommentDomain(w), nil
 }
 
 // DeleteCommitComment removes a commit comment. Cloud returns 204 on success.

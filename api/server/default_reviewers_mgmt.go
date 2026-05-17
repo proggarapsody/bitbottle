@@ -6,17 +6,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerDefaultReviewerUser is the user shape returned by the
-// /rest/default-reviewers/1.0/.../reviewers CRUD endpoints.
-type wireServerDefaultReviewerUser struct {
-	Slug         string `json:"slug"`
-	DisplayName  string `json:"displayName"`
-	EmailAddress string `json:"emailAddress"`
-}
-
-func (w wireServerDefaultReviewerUser) toDomainDefaultReviewer() backend.DefaultReviewer {
+func toDefaultReviewerDomain(w servergen.RestDefaultReviewerUser) backend.DefaultReviewer {
 	return backend.DefaultReviewer{
 		UserSlug:     w.Slug,
 		DisplayName:  w.DisplayName,
@@ -32,13 +25,13 @@ func (c *Client) ListDefaultReviewers(ns, slug string) ([]backend.DefaultReviewe
 	}
 	path := fmt.Sprintf("/projects/%s/repos/%s/reviewers", ns, slug)
 	return paging.Collect(c.defaultReviewersHTTP, path, func(body []byte) ([]backend.DefaultReviewer, error) {
-		var page PagedResponse[wireServerDefaultReviewerUser]
+		var page PagedResponse[servergen.RestDefaultReviewerUser]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.DefaultReviewer, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomainDefaultReviewer())
+			out = append(out, toDefaultReviewerDomain(w))
 		}
 		return out, nil
 	}, 0)

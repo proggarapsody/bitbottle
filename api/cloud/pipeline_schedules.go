@@ -5,28 +5,14 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 const schedulesPath = "/repositories/%s/%s/pipelines_config/schedules"
 const schedulePath = "/repositories/%s/%s/pipelines_config/schedules/%s"
 
-type wireCloudScheduleTarget struct {
-	Branch string `json:"branch,omitempty"`
-	// RefType and RefName are used when creating a schedule.
-	RefType string `json:"ref_type,omitempty"`
-	RefName string `json:"ref_name,omitempty"`
-	Type    string `json:"type,omitempty"`
-}
-
-type wireCloudSchedule struct {
-	UUID           string                  `json:"uuid"`
-	Enabled        bool                    `json:"enabled"`
-	CronExpression string                  `json:"cron_expression"`
-	Target         wireCloudScheduleTarget `json:"target"`
-}
-
-func (w wireCloudSchedule) toDomain() backend.PipelineSchedule {
+func toPipelineScheduleDomain(w cloudgen.CloudPipelineSchedule) backend.PipelineSchedule {
 	branch := w.Target.Branch
 	if branch == "" {
 		branch = w.Target.RefName
@@ -39,12 +25,6 @@ func (w wireCloudSchedule) toDomain() backend.PipelineSchedule {
 	}
 }
 
-type wireCloudScheduleCreate struct {
-	Enabled        bool                    `json:"enabled"`
-	CronExpression string                  `json:"cron_expression"`
-	Target         wireCloudScheduleTarget `json:"target"`
-}
-
 // ListPipelineSchedules returns all pipeline schedules for a repository.
 func (c *Client) ListPipelineSchedules(ns, slug string) ([]backend.PipelineSchedule, error) {
 	path := fmt.Sprintf(schedulesPath, ns, slug)
@@ -53,14 +33,14 @@ func (c *Client) ListPipelineSchedules(ns, slug string) ([]backend.PipelineSched
 		path,
 		func(body []byte) ([]backend.PipelineSchedule, error) {
 			var page struct {
-				Values []wireCloudSchedule `json:"values"`
+				Values []cloudgen.CloudPipelineSchedule `json:"values"`
 			}
 			if err := json.Unmarshal(body, &page); err != nil {
 				return nil, err
 			}
 			out := make([]backend.PipelineSchedule, 0, len(page.Values))
 			for _, w := range page.Values {
-				out = append(out, w.toDomain())
+				out = append(out, toPipelineScheduleDomain(w))
 			}
 			return out, nil
 		},
@@ -70,21 +50,21 @@ func (c *Client) ListPipelineSchedules(ns, slug string) ([]backend.PipelineSched
 
 // CreatePipelineSchedule creates a new pipeline schedule.
 func (c *Client) CreatePipelineSchedule(ns, slug string, input backend.PipelineScheduleInput) (backend.PipelineSchedule, error) {
-	body := wireCloudScheduleCreate{
+	body := cloudgen.CloudPipelineScheduleCreate{
 		Enabled:        input.Enabled,
 		CronExpression: input.CronExpression,
-		Target: wireCloudScheduleTarget{
+		Target: cloudgen.CloudScheduleTarget{
 			RefType: "branch",
 			RefName: input.Branch,
 			Type:    "pipeline_ref_target",
 		},
 	}
-	var w wireCloudSchedule
+	var w cloudgen.CloudPipelineSchedule
 	path := fmt.Sprintf(schedulesPath, ns, slug)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.PipelineSchedule{}, err
 	}
-	return w.toDomain(), nil
+	return toPipelineScheduleDomain(w), nil
 }
 
 // DeletePipelineSchedule deletes a pipeline schedule by UUID.

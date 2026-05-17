@@ -7,19 +7,6 @@ import (
 	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireSuggestionApplyResponse is the response from the suggestion apply endpoint.
-type wireSuggestionApplyResponse struct {
-	CommitHash    string `json:"commitHash"`
-	CommitMessage string `json:"commitMessage"`
-}
-
-// wirePRComment is a minimal wire type for fetching a single comment.
-// The full wireServerPRComment is defined in pr_comments.go.
-type wireCommentBody struct {
-	ID   int    `json:"id"`
-	Text string `json:"text"`
-}
-
 // ApplySuggestion commits a suggested change to the PR source branch.
 //
 // Bitbucket Server uses optimistic concurrency on PR lifecycle endpoints: the
@@ -35,7 +22,7 @@ func (c *Client) ApplySuggestion(ns, slug string, prID, commentID, suggestionID 
 	body := struct {
 		Version int `json:"version"`
 	}{Version: current.Version}
-	var resp wireSuggestionApplyResponse
+	var resp servergen.RestSuggestionApplyResponse
 	applyPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d/suggestions/%d/apply",
 		ns, slug, prID, commentID, suggestionID)
 	if err := c.postJSON(applyPath, body, &resp); err != nil {
@@ -50,7 +37,7 @@ func (c *Client) ApplySuggestion(ns, slug string, prID, commentID, suggestionID 
 // GetSuggestionPreview fetches the comment body text from Bitbucket Server
 // and returns it so the caller can display the suggestion without applying it.
 func (c *Client) GetSuggestionPreview(ns, slug string, prID, commentID int) (string, error) {
-	var w wireCommentBody
+	var w servergen.RestCommentBody
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d", ns, slug, prID, commentID)
 	if err := c.getJSON(path, &w); err != nil {
 		return "", err

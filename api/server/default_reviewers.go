@@ -5,18 +5,10 @@ import (
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerReviewerUser is the user shape returned by the
-// /rest/default-reviewers/1.0/.../reviewers endpoint. It is identical to the
-// regular /users/{slug} response but the endpoint returns a flat array
-// (not a paged envelope), which is why it has its own decoder.
-type wireServerReviewerUser struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
-}
-
-func (w wireServerReviewerUser) toDomain() backend.User {
+func toReviewerUserDomain(w servergen.RestReviewerUser) backend.User {
 	return backend.User{Slug: w.Name, DisplayName: w.DisplayName}
 }
 
@@ -49,13 +41,13 @@ func (c *Client) DefaultReviewers(ns, slug, fromBranch, toBranch string) ([]back
 	q.Set("targetRefId", ensureRefsHeads(toBranch))
 	path := fmt.Sprintf("/projects/%s/repos/%s/reviewers?%s", ns, slug, q.Encode())
 
-	var users []wireServerReviewerUser
+	var users []servergen.RestReviewerUser
 	if err := c.defaultReviewersHTTP.GetJSON(path, &users); err != nil {
 		return nil, err
 	}
 	out := make([]backend.User, 0, len(users))
 	for _, u := range users {
-		out = append(out, u.toDomain())
+		out = append(out, toReviewerUserDomain(u))
 	}
 	return out, nil
 }

@@ -12,6 +12,10 @@ components:
   schemas:
     RestUserRef:
       type: object
+      required:
+        - name
+        - slug
+        - displayName
       properties:
         name:
           type: string
@@ -25,6 +29,10 @@ components:
 
     RestRef:
       type: object
+      required:
+        - id
+        - displayId
+        - latestCommit
       properties:
         id:
           type: string
@@ -38,6 +46,8 @@ components:
 
     RestSelfLink:
       type: object
+      required:
+        - href
       properties:
         href:
           type: string
@@ -45,6 +55,8 @@ components:
 
     RestPullRequestLinks:
       type: object
+      required:
+        - self
       properties:
         self:
           type: array
@@ -54,23 +66,25 @@ components:
     RestAutoMerge:
       type: object
       description: Auto-merge configuration for a pull request on Bitbucket Server/DC
+      required:
+        - mergeStrategy
       properties:
         mergeStrategy:
           type: string
           description: Merge strategy (merge, squash, fast-forward)
-          enum:
-            - merge
-            - squash
-            - fast-forward
 
     RestPullRequestAuthor:
       type: object
+      required:
+        - user
       properties:
         user:
           $ref: "#/components/schemas/RestUserRef"
 
     RestPullRequestReviewer:
       type: object
+      required:
+        - user
       properties:
         user:
           $ref: "#/components/schemas/RestUserRef"
@@ -78,6 +92,18 @@ components:
     RestPullRequest:
       type: object
       description: A Bitbucket Data Center pull request
+      required:
+        - id
+        - version
+        - title
+        - description
+        - state
+        - draft
+        - author
+        - fromRef
+        - toRef
+        - reviewers
+        - links
       properties:
         id:
           type: integer
@@ -94,10 +120,6 @@ components:
         state:
           type: string
           description: Pull request state (OPEN, MERGED, DECLINED)
-          enum:
-            - OPEN
-            - MERGED
-            - DECLINED
         draft:
           type: boolean
           description: Whether the pull request is a draft
@@ -121,6 +143,8 @@ components:
       description: Request body for creating a pull request
       required:
         - title
+        - description
+        - draft
         - fromRef
         - toRef
       properties:
@@ -150,9 +174,13 @@ components:
 
     RestPullRequestReviewerInput:
       type: object
+      required:
+        - user
       properties:
         user:
           type: object
+          required:
+            - name
           properties:
             name:
               type: string
@@ -183,7 +211,1406 @@ components:
         mergeStrategy:
           type: string
           description: Merge strategy to use when auto-merging
-          enum:
-            - merge
-            - squash
-            - fast-forward
+
+    # ── Admin ─────────────────────────────────────────────────────────────────
+    RestLoggingConfig:
+      type: object
+      description: Bitbucket Server logging configuration
+      required:
+        - logLevel
+        - asyncLogging
+      properties:
+        logLevel:
+          type: string
+        asyncLogging:
+          type: boolean
+
+    # ── Branch protection ─────────────────────────────────────────────────────
+    RestRestrictionMatcherType:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+
+    RestRestrictionMatcher:
+      type: object
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/RestRestrictionMatcherType"
+
+    RestRestrictionUser:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    RestRestriction:
+      type: object
+      description: A branch restriction rule on Bitbucket Server
+      required:
+        - id
+        - type
+        - matcher
+        - users
+        - groups
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        matcher:
+          $ref: "#/components/schemas/RestRestrictionMatcher"
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestRestrictionUser"
+        groups:
+          type: array
+          items:
+            type: string
+
+    RestRestrictionCreateMatcherKind:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+
+    RestRestrictionCreateMatcher:
+      type: object
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/RestRestrictionCreateMatcherKind"
+
+    RestRestrictionCreate:
+      type: object
+      description: Request body for creating a branch restriction
+      required:
+        - type
+        - matcher
+        - users
+        - groups
+      properties:
+        type:
+          type: string
+        matcher:
+          $ref: "#/components/schemas/RestRestrictionCreateMatcher"
+        users:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+
+    # ── Branches ──────────────────────────────────────────────────────────────
+    RestBranch:
+      type: object
+      description: A Bitbucket Server branch
+      required:
+        - id
+        - displayId
+        - isDefault
+        - latestCommit
+      properties:
+        id:
+          type: string
+        displayId:
+          type: string
+        isDefault:
+          type: boolean
+        latestCommit:
+          type: string
+
+    # ── Code insights ─────────────────────────────────────────────────────────
+    RestReportDatum:
+      type: object
+      description: A single data point in a Code Insights report
+      required:
+        - title
+        - type
+        - value
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+        value: {}
+
+    RestReport:
+      type: object
+      description: A Code Insights report
+      required:
+        - key
+        - title
+        - result
+        - reportType
+        - details
+        - reporter
+        - link
+        - logoUrl
+        - data
+      properties:
+        key:
+          type: string
+        title:
+          type: string
+        result:
+          type: string
+        reportType:
+          type: string
+        details:
+          type: string
+        reporter:
+          type: string
+        link:
+          type: string
+        logoUrl:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestReportDatum"
+        createdDate:
+          type: integer
+          format: int64
+        updatedDate:
+          type: integer
+          format: int64
+
+    RestReportUpsert:
+      type: object
+      description: Request body for creating/updating a Code Insights report
+      required:
+        - title
+        - result
+        - reportType
+        - details
+        - reporter
+        - link
+        - logoUrl
+        - data
+      properties:
+        title:
+          type: string
+        result:
+          type: string
+        reportType:
+          type: string
+        details:
+          type: string
+        reporter:
+          type: string
+        link:
+          type: string
+        logoUrl:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestReportDatum"
+
+    RestAnnotation:
+      type: object
+      description: A Code Insights annotation
+      required:
+        - externalId
+        - path
+        - line
+        - message
+        - severity
+        - type
+        - link
+      properties:
+        externalId:
+          type: string
+        path:
+          type: string
+        line:
+          type: integer
+        message:
+          type: string
+        severity:
+          type: string
+        type:
+          type: string
+        link:
+          type: string
+
+    RestAnnotationsPage:
+      type: object
+      description: Response page for annotations
+      required:
+        - annotations
+      properties:
+        annotations:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestAnnotation"
+
+    RestMergeCheck:
+      type: object
+      description: A Code Insights merge check configuration
+      required:
+        - key
+        - reportKey
+        - mustPass
+        - minSeverity
+      properties:
+        key:
+          type: string
+        reportKey:
+          type: string
+        mustPass:
+          type: boolean
+        minSeverity:
+          type: string
+
+    # ── Commit ────────────────────────────────────────────────────────────────
+    RestCommitAuthor:
+      type: object
+      required:
+        - name
+        - emailAddress
+      properties:
+        name:
+          type: string
+        emailAddress:
+          type: string
+
+    RestCommit:
+      type: object
+      description: A Bitbucket Server commit
+      required:
+        - id
+        - message
+        - author
+        - authorTimestamp
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        author:
+          $ref: "#/components/schemas/RestCommitAuthor"
+        authorTimestamp:
+          type: integer
+          format: int64
+
+    # ── Commit comment ────────────────────────────────────────────────────────
+    RestCommitCommentAuthor:
+      type: object
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestCommitComment:
+      type: object
+      description: A comment on a Bitbucket Server commit
+      required:
+        - id
+        - text
+        - author
+        - createdDate
+        - updatedDate
+        - version
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        author:
+          $ref: "#/components/schemas/RestCommitCommentAuthor"
+        createdDate:
+          type: integer
+          format: int64
+        updatedDate:
+          type: integer
+          format: int64
+        version:
+          type: integer
+
+    RestAddCommitComment:
+      type: object
+      description: Request body for adding a commit comment
+      required:
+        - text
+      properties:
+        text:
+          type: string
+
+    RestEditCommitComment:
+      type: object
+      description: Request body for editing a commit comment
+      required:
+        - text
+        - version
+      properties:
+        text:
+          type: string
+        version:
+          type: integer
+
+    # ── Commit files ──────────────────────────────────────────────────────────
+    RestCommitChangePath:
+      type: object
+      required:
+        - toString
+      properties:
+        toString:
+          type: string
+
+    RestCommitChange:
+      type: object
+      description: A file change in a Server commit
+      required:
+        - type
+        - path
+      properties:
+        type:
+          type: string
+        path:
+          $ref: "#/components/schemas/RestCommitChangePath"
+
+    # ── Commit status ─────────────────────────────────────────────────────────
+    RestCommitStatus:
+      type: object
+      description: A build/CI status on a Server commit
+      required:
+        - key
+        - state
+        - name
+        - description
+        - url
+      properties:
+        key:
+          type: string
+        state:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+
+    # ── Default reviewers ─────────────────────────────────────────────────────
+    RestReviewerUser:
+      type: object
+      description: User shape from the default-reviewers reviewer endpoint
+      required:
+        - name
+        - displayName
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+
+    RestDefaultReviewerUser:
+      type: object
+      description: User shape from the default-reviewers CRUD endpoint
+      required:
+        - slug
+        - displayName
+        - emailAddress
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+        emailAddress:
+          type: string
+
+    # ── Deploy keys ───────────────────────────────────────────────────────────
+    RestSSHKey:
+      type: object
+      description: Nested SSH key object in Server deploy key response
+      required:
+        - id
+        - text
+        - label
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        label:
+          type: string
+
+    RestDeployKey:
+      type: object
+      description: A Server deploy key
+      required:
+        - id
+        - label
+        - key
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        key:
+          $ref: "#/components/schemas/RestSSHKey"
+
+    RestSSHKeyInput:
+      type: object
+      required:
+        - text
+        - label
+      properties:
+        text:
+          type: string
+        label:
+          type: string
+
+    RestAddDeployKeyBody:
+      type: object
+      description: Request body for adding a deploy key on Server
+      required:
+        - key
+      properties:
+        key:
+          $ref: "#/components/schemas/RestSSHKeyInput"
+
+    # ── Diff ──────────────────────────────────────────────────────────────────
+    RestDiffPath:
+      type: object
+      description: A path reference in a Server diff
+      required:
+        - name
+        - toString
+      properties:
+        name:
+          type: string
+        components:
+          type: array
+          items:
+            type: string
+        parent:
+          type: string
+        extension:
+          type: string
+        toString:
+          type: string
+
+    RestDiffLine:
+      type: object
+      required:
+        - line
+      properties:
+        destination:
+          type: integer
+        source:
+          type: integer
+        line:
+          type: string
+        truncated:
+          type: boolean
+
+    RestDiffSegment:
+      type: object
+      required:
+        - type
+        - lines
+      properties:
+        type:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestDiffLine"
+
+    RestDiffHunk:
+      type: object
+      required:
+        - sourceLine
+        - sourceSpan
+        - destinationLine
+        - destinationSpan
+        - segments
+      properties:
+        sourceLine:
+          type: integer
+        sourceSpan:
+          type: integer
+        destinationLine:
+          type: integer
+        destinationSpan:
+          type: integer
+        segments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestDiffSegment"
+
+    RestDiff:
+      type: object
+      required:
+        - hunks
+      properties:
+        source:
+          $ref: "#/components/schemas/RestDiffPath"
+        destination:
+          $ref: "#/components/schemas/RestDiffPath"
+        hunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestDiffHunk"
+
+    RestDiffResponse:
+      type: object
+      description: Server diff endpoint response
+      required:
+        - diffs
+      properties:
+        diffs:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestDiff"
+
+    # ── Permissions ───────────────────────────────────────────────────────────
+    RestPermUserInner:
+      type: object
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestPermUser:
+      type: object
+      description: A user permission grant
+      required:
+        - user
+        - permission
+      properties:
+        user:
+          $ref: "#/components/schemas/RestPermUserInner"
+        permission:
+          type: string
+
+    RestPermGroupInner:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    RestPermGroup:
+      type: object
+      description: A group permission grant
+      required:
+        - group
+        - permission
+      properties:
+        group:
+          $ref: "#/components/schemas/RestPermGroupInner"
+        permission:
+          type: string
+
+    # ── PR activity ───────────────────────────────────────────────────────────
+    RestActivityUser:
+      type: object
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestActivity:
+      type: object
+      description: A Server PR activity event
+      required:
+        - action
+        - createdDate
+        - user
+      properties:
+        action:
+          type: string
+        createdDate:
+          type: integer
+          format: int64
+        user:
+          $ref: "#/components/schemas/RestActivityUser"
+
+    # ── PR comments ───────────────────────────────────────────────────────────
+    RestCommentAuthor:
+      type: object
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestPRComment:
+      type: object
+      description: A comment on a Server pull request
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        author:
+          $ref: "#/components/schemas/RestCommentAuthor"
+        createdDate:
+          type: integer
+          format: int64
+        updatedDate:
+          type: integer
+          format: int64
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestPRComment"
+        severity:
+          type: string
+        state:
+          type: string
+        version:
+          type: integer
+
+    RestServerPRComment:
+      type: object
+      description: A comment on a Server pull request (with all fields required for adapter use)
+      required:
+        - id
+        - text
+        - author
+        - createdDate
+        - updatedDate
+        - comments
+        - severity
+        - state
+        - version
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        author:
+          $ref: "#/components/schemas/RestCommentAuthor"
+        createdDate:
+          type: integer
+          format: int64
+        updatedDate:
+          type: integer
+          format: int64
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestServerPRComment"
+        severity:
+          type: string
+        state:
+          type: string
+        version:
+          type: integer
+
+    RestCommentAnchor:
+      type: object
+      description: Where an inline comment is anchored in the diff
+      required:
+        - path
+        - line
+        - lineType
+        - fileType
+        - fromHash
+        - toHash
+        - srcPath
+      properties:
+        path:
+          type: string
+        line:
+          type: integer
+        lineType:
+          type: string
+        fileType:
+          type: string
+        fromHash:
+          type: string
+        toHash:
+          type: string
+        srcPath:
+          type: string
+
+    RestPRActivity:
+      type: object
+      description: Wrapper for comment activity in a Server PR
+      required:
+        - action
+        - comment
+      properties:
+        action:
+          type: string
+        comment:
+          $ref: "#/components/schemas/RestServerPRComment"
+        commentAnchor:
+          $ref: "#/components/schemas/RestCommentAnchor"
+
+    RestParentRef:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: integer
+
+    RestAddPRComment:
+      type: object
+      description: Request body for adding a PR comment
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        anchor:
+          $ref: "#/components/schemas/RestCommentAnchor"
+        parent:
+          $ref: "#/components/schemas/RestParentRef"
+        severity:
+          type: string
+
+    RestDiffEnvelope:
+      type: object
+      description: Response from the Server diff endpoint for inline comments
+      required:
+        - fromHash
+        - toHash
+      properties:
+        fromHash:
+          type: string
+        toHash:
+          type: string
+
+    RestEditPRComment:
+      type: object
+      description: Request body for editing a PR comment
+      required:
+        - text
+        - version
+      properties:
+        text:
+          type: string
+        version:
+          type: integer
+
+    RestSetCommentState:
+      type: object
+      description: Request body for setting a comment's state
+      required:
+        - state
+        - version
+      properties:
+        state:
+          type: string
+        version:
+          type: integer
+
+    # ── PR lifecycle ──────────────────────────────────────────────────────────
+    RestReviewerPR:
+      type: object
+      description: PR body used when PUTting reviewers back onto a PR
+      required:
+        - title
+        - description
+        - reviewers
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        reviewers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestPullRequestReviewerInput"
+
+    # ── PR participants ───────────────────────────────────────────────────────
+    RestPRParticipantUser:
+      type: object
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestPRParticipant:
+      type: object
+      description: A participant on a Server pull request
+      required:
+        - user
+        - role
+        - approved
+        - status
+      properties:
+        user:
+          $ref: "#/components/schemas/RestPRParticipantUser"
+        role:
+          type: string
+        approved:
+          type: boolean
+        status:
+          type: string
+
+    # ── PR status (inbox) ─────────────────────────────────────────────────────
+    RestInboxPRProject:
+      type: object
+      required:
+        - key
+      properties:
+        key:
+          type: string
+
+    RestInboxPRRepo:
+      type: object
+      required:
+        - project
+        - slug
+      properties:
+        project:
+          $ref: "#/components/schemas/RestInboxPRProject"
+        slug:
+          type: string
+
+    RestInboxPRToRef:
+      type: object
+      required:
+        - repository
+      properties:
+        repository:
+          $ref: "#/components/schemas/RestInboxPRRepo"
+
+    RestInboxPRFromRef:
+      type: object
+      required:
+        - latestCommit
+      properties:
+        latestCommit:
+          type: string
+
+    RestInboxPRAuthorUser:
+      type: object
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestInboxPRAuthor:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/RestInboxPRAuthorUser"
+
+    RestInboxPRSelfLink:
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+
+    RestInboxPRLinks:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestInboxPRSelfLink"
+
+    RestInboxPR:
+      type: object
+      description: A PR from the Server inbox endpoint
+      required:
+        - id
+        - title
+        - state
+        - toRef
+        - fromRef
+        - author
+        - links
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        state:
+          type: string
+        toRef:
+          $ref: "#/components/schemas/RestInboxPRToRef"
+        fromRef:
+          $ref: "#/components/schemas/RestInboxPRFromRef"
+        author:
+          $ref: "#/components/schemas/RestInboxPRAuthor"
+        links:
+          $ref: "#/components/schemas/RestInboxPRLinks"
+
+    # ── Reactions ─────────────────────────────────────────────────────────────
+    RestReactionEmoticon:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+
+    RestReactionUser:
+      type: object
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestReaction:
+      type: object
+      description: A reaction on a Server PR comment
+      required:
+        - emoticon
+        - user
+      properties:
+        emoticon:
+          $ref: "#/components/schemas/RestReactionEmoticon"
+        user:
+          $ref: "#/components/schemas/RestReactionUser"
+
+    RestReactionsPage:
+      type: object
+      description: Paged response for reactions
+      required:
+        - values
+        - isLastPage
+      properties:
+        values:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestReaction"
+        isLastPage:
+          type: boolean
+        size:
+          type: integer
+
+    RestAddReactionEmoticon:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+
+    RestAddReaction:
+      type: object
+      description: Request body for adding a reaction
+      required:
+        - emoticon
+      properties:
+        emoticon:
+          $ref: "#/components/schemas/RestAddReactionEmoticon"
+
+    # ── Repo transfer ──────────────────────────────────────────────────────────
+    RestTransferProject:
+      type: object
+      required:
+        - key
+      properties:
+        key:
+          type: string
+
+    RestTransferBody:
+      type: object
+      description: Request body for transferring a Server repository
+      required:
+        - project
+      properties:
+        project:
+          $ref: "#/components/schemas/RestTransferProject"
+
+    # ── Repo watchers ─────────────────────────────────────────────────────────
+    RestWatcher:
+      type: object
+      description: A user watching a Server repository
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    # ── Repos ─────────────────────────────────────────────────────────────────
+    RestRepositoryProject:
+      type: object
+      required:
+        - key
+        - name
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+
+    RestRepositorySelfLink:
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+
+    RestRepositoryLinks:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestRepositorySelfLink"
+
+    RestRepository:
+      type: object
+      description: A Bitbucket Server repository
+      required:
+        - id
+        - slug
+        - name
+        - public
+        - project
+        - scmId
+        - state
+        - links
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        public:
+          type: boolean
+        project:
+          $ref: "#/components/schemas/RestRepositoryProject"
+        scmId:
+          type: string
+        state:
+          type: string
+        links:
+          $ref: "#/components/schemas/RestRepositoryLinks"
+
+    RestCreateRepoInput:
+      type: object
+      description: Request body for creating a Server repository
+      required:
+        - name
+        - scmId
+        - public
+        - description
+      properties:
+        name:
+          type: string
+        scmId:
+          type: string
+        public:
+          type: boolean
+        description:
+          type: string
+
+    # ── Reviewer groups ───────────────────────────────────────────────────────
+    RestConditionMatcherType:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+
+    RestConditionMatcher:
+      type: object
+      description: A source/target matcher in a reviewer condition
+      required:
+        - id
+        - displayId
+        - type
+      properties:
+        id:
+          type: string
+        displayId:
+          type: string
+        type:
+          $ref: "#/components/schemas/RestConditionMatcherType"
+
+    RestReviewerRef:
+      type: object
+      description: A reviewer reference in a condition
+      required:
+        - slug
+        - displayName
+      properties:
+        slug:
+          type: string
+        displayName:
+          type: string
+
+    RestCondition:
+      type: object
+      description: A reviewer group condition
+      required:
+        - id
+        - sourceMatcher
+        - targetMatcher
+        - reviewers
+        - requiredApprovals
+      properties:
+        id:
+          type: integer
+        sourceMatcher:
+          $ref: "#/components/schemas/RestConditionMatcher"
+        targetMatcher:
+          $ref: "#/components/schemas/RestConditionMatcher"
+        reviewers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestReviewerRef"
+        requiredApprovals:
+          type: integer
+
+    RestCreateMatcherType:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+
+    RestCreateMatcher:
+      type: object
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/RestCreateMatcherType"
+
+    RestCreateReviewer:
+      type: object
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+
+    RestCreateConditionBody:
+      type: object
+      description: Request body for creating a reviewer condition
+      required:
+        - sourceMatcher
+        - targetMatcher
+        - reviewers
+        - requiredApprovals
+      properties:
+        sourceMatcher:
+          $ref: "#/components/schemas/RestCreateMatcher"
+        targetMatcher:
+          $ref: "#/components/schemas/RestCreateMatcher"
+        reviewers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestCreateReviewer"
+        requiredApprovals:
+          type: integer
+
+    # ── Source ────────────────────────────────────────────────────────────────
+    RestBrowseEntryPath:
+      type: object
+      required:
+        - toString
+      properties:
+        toString:
+          type: string
+
+    RestBrowseEntry:
+      type: object
+      description: An entry in a Server browse listing
+      required:
+        - path
+        - type
+        - size
+        - contentId
+        - latestCommit
+      properties:
+        path:
+          $ref: "#/components/schemas/RestBrowseEntryPath"
+        type:
+          type: string
+        size:
+          type: integer
+          format: int64
+        contentId:
+          type: string
+        latestCommit:
+          type: string
+
+    # ── Suggestion ────────────────────────────────────────────────────────────
+    RestSuggestionApplyResponse:
+      type: object
+      description: Response from the suggestion apply endpoint
+      required:
+        - commitHash
+        - commitMessage
+      properties:
+        commitHash:
+          type: string
+        commitMessage:
+          type: string
+
+    RestCommentBody:
+      type: object
+      description: Minimal comment shape for fetching a single comment
+      required:
+        - id
+        - text
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+
+    # ── Tags ──────────────────────────────────────────────────────────────────
+    RestTag:
+      type: object
+      description: A Bitbucket Server tag
+      required:
+        - displayId
+        - latestCommit
+        - displayMessage
+      properties:
+        displayId:
+          type: string
+        latestCommit:
+          type: string
+        displayMessage:
+          type: string
+
+    RestCreateTag:
+      type: object
+      description: Request body for creating a Server tag
+      required:
+        - name
+        - startPoint
+        - message
+      properties:
+        name:
+          type: string
+        startPoint:
+          type: string
+        message:
+          type: string
+
+    # ── Version ───────────────────────────────────────────────────────────────
+    RestApplicationProperties:
+      type: object
+      description: Server application properties response
+      required:
+        - version
+      properties:
+        version:
+          type: string
+
+    # ── Webhooks ──────────────────────────────────────────────────────────────
+    RestWebhook:
+      type: object
+      description: A Bitbucket Server webhook
+      required:
+        - id
+        - url
+        - active
+        - events
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: string
+        active:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+
+    RestWebhookConfig:
+      type: object
+      required:
+        - secret
+      properties:
+        secret:
+          type: string
+
+    RestCreateWebhook:
+      type: object
+      description: Request body for creating a Server webhook
+      required:
+        - name
+        - url
+        - active
+        - events
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        active:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+        configuration:
+          $ref: "#/components/schemas/RestWebhookConfig"

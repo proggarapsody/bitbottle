@@ -9,26 +9,12 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// ── wire types ───────────────────────────────────────────────────────────────
+// ── domain converters ─────────────────────────────────────────────────────────
 
-type wirePermUser struct {
-	User struct {
-		Slug        string `json:"slug"`
-		DisplayName string `json:"displayName"`
-	} `json:"user"`
-	Permission string `json:"permission"`
-}
-
-type wirePermGroup struct {
-	Group struct {
-		Name string `json:"name"`
-	} `json:"group"`
-	Permission string `json:"permission"`
-}
-
-func (w wirePermUser) toGrant() backend.PermissionGrant {
+func toPermUserGrant(w servergen.RestPermUser) backend.PermissionGrant {
 	return backend.PermissionGrant{
 		Subject: backend.PermissionSubject{
 			Kind:        "user",
@@ -39,7 +25,7 @@ func (w wirePermUser) toGrant() backend.PermissionGrant {
 	}
 }
 
-func (w wirePermGroup) toGrant() backend.PermissionGrant {
+func toPermGroupGrant(w servergen.RestPermGroup) backend.PermissionGrant {
 	return backend.PermissionGrant{
 		Subject: backend.PermissionSubject{
 			Kind: "group",
@@ -170,13 +156,13 @@ func (c *Client) RevokeRepoPermission(_ context.Context, project, slug string, s
 // all grants as a []backend.PermissionGrant slice.
 func (c *Client) collectUserGrants(path string) ([]backend.PermissionGrant, error) {
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PermissionGrant, error) {
-		var page PagedResponse[wirePermUser]
+		var page PagedResponse[servergen.RestPermUser]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.PermissionGrant, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toGrant())
+			out = append(out, toPermUserGrant(w))
 		}
 		return out, nil
 	}, 0)
@@ -186,13 +172,13 @@ func (c *Client) collectUserGrants(path string) ([]backend.PermissionGrant, erro
 // all grants as a []backend.PermissionGrant slice.
 func (c *Client) collectGroupGrants(path string) ([]backend.PermissionGrant, error) {
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PermissionGrant, error) {
-		var page PagedResponse[wirePermGroup]
+		var page PagedResponse[servergen.RestPermGroup]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.PermissionGrant, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toGrant())
+			out = append(out, toPermGroupGrant(w))
 		}
 		return out, nil
 	}, 0)

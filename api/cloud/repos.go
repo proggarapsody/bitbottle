@@ -7,24 +7,11 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-type wireCloudRepo struct {
-	FullName    string `json:"full_name"`
-	Slug        string `json:"slug"`
-	Name        string `json:"name"`
-	SCM         string `json:"scm"`
-	Description string `json:"description"`
-	IsPrivate   bool   `json:"is_private"`
-	Links       struct {
-		HTML struct {
-			Href string `json:"href"`
-		} `json:"html"`
-	} `json:"links"`
-}
-
-func (w wireCloudRepo) toDomain() backend.Repository {
+func toRepoDomain(w cloudgen.CloudRepo) backend.Repository {
 	ns := ""
 	slug := w.Slug
 	if parts := strings.SplitN(w.FullName, "/", 2); len(parts) == 2 {
@@ -35,7 +22,7 @@ func (w wireCloudRepo) toDomain() backend.Repository {
 		Slug:        slug,
 		Name:        w.Name,
 		Namespace:   ns,
-		SCM:         w.SCM,
+		SCM:         w.Scm,
 		WebURL:      w.Links.HTML.Href,
 		Description: w.Description,
 		IsPrivate:   w.IsPrivate,
@@ -48,24 +35,24 @@ func (c *Client) ListRepos(ns string, limit int) ([]backend.Repository, error) {
 	}
 	path := fmt.Sprintf("/repositories/%s?pagelen=%d", ns, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Repository, error) {
-		var page cloudPagedResponse[wireCloudRepo]
+		var page cloudPagedResponse[cloudgen.CloudRepo]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Repository, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toRepoDomain(w))
 		}
 		return out, nil
 	}, limit)
 }
 
 func (c *Client) GetRepo(ns, slug string) (backend.Repository, error) {
-	var w wireCloudRepo
+	var w cloudgen.CloudRepo
 	if err := c.getJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), &w); err != nil {
 		return backend.Repository{}, stampRepoNotFound(err, ns, slug)
 	}
-	return w.toDomain(), nil
+	return toRepoDomain(w), nil
 }
 
 // stampRepoNotFound annotates a 404-on-repo error with CodeRepoNotFound +
@@ -79,23 +66,17 @@ func stampRepoNotFound(err error, ns, slug string) error {
 	return backend.StampCode(err, backend.CodeRepoNotFound, "repository", ns+"/"+slug, "")
 }
 
-type wireCloudCreateRepo struct {
-	SCM       string `json:"scm"`
-	IsPrivate bool   `json:"is_private"`
-	Name      string `json:"name"`
-}
-
 func (c *Client) CreateRepo(ns string, in backend.CreateRepoInput) (backend.Repository, error) {
-	body := wireCloudCreateRepo{
-		SCM:       in.SCM,
+	body := cloudgen.CloudCreateRepo{
+		Scm:       in.SCM,
 		IsPrivate: !in.Public,
 		Name:      in.Name,
 	}
-	var w wireCloudRepo
+	var w cloudgen.CloudRepo
 	if err := c.postJSON(fmt.Sprintf("/repositories/%s/%s", ns, in.Name), body, &w); err != nil {
 		return backend.Repository{}, err
 	}
-	return w.toDomain(), nil
+	return toRepoDomain(w), nil
 }
 
 func (c *Client) DeleteRepo(ns, slug string) error {
@@ -104,38 +85,31 @@ func (c *Client) DeleteRepo(ns, slug string) error {
 
 func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error) {
 	body := map[string]string{"name": newName}
-	var w wireCloudRepo
+	var w cloudgen.CloudRepo
 	if err := c.putJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), body, &w); err != nil {
 		return backend.Repository{}, err
 	}
-	return w.toDomain(), nil
+	return toRepoDomain(w), nil
 }
 
 func (c *Client) SetRepoVisibility(ns, slug string, isPrivate bool) error {
 	body := struct {
 		IsPrivate bool `json:"is_private"`
 	}{IsPrivate: isPrivate}
-	var ignore wireCloudRepo
+	var ignore cloudgen.CloudRepo
 	return c.putJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), body, &ignore)
 }
 
-type wireCloudForkBody struct {
-	Workspace wireCloudForkWorkspace `json:"workspace"`
-	Name      string                 `json:"name,omitempty"`
-}
-
-type wireCloudForkWorkspace struct {
-	Slug string `json:"slug"`
-}
-
 func (c *Client) ForkRepo(ns, slug string, in backend.ForkRepoInput) (backend.Repository, error) {
-	body := wireCloudForkBody{
-		Workspace: wireCloudForkWorkspace{Slug: in.Workspace},
-		Name:      in.Name,
+	body := cloudgen.CloudForkBody{
+		Workspace: cloudgen.CloudForkWorkspace{Slug: in.Workspace},
 	}
-	var w wireCloudRepo
+	if in.Name != "" {
+		body.Name = &in.Name
+	}
+	var w cloudgen.CloudRepo
 	if err := c.postJSON(fmt.Sprintf("/repositories/%s/%s/forks", ns, slug), body, &w); err != nil {
 		return backend.Repository{}, err
 	}
-	return w.toDomain(), nil
+	return toRepoDomain(w), nil
 }

@@ -7,24 +7,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-type wireServerPRComment struct {
-	ID     int    `json:"id"`
-	Text   string `json:"text"`
-	Author struct {
-		Slug        string `json:"slug"`
-		DisplayName string `json:"displayName"`
-	} `json:"author"`
-	CreatedDate int64                 `json:"createdDate"` // Unix milliseconds
-	UpdatedDate int64                 `json:"updatedDate"`
-	Comments    []wireServerPRComment `json:"comments"` // nested replies
-	Severity    string                `json:"severity"` // "" | "BLOCKER"
-	State       string                `json:"state"`    // "" | "OPEN" | "RESOLVED"
-	Version     int                   `json:"version"`  // optimistic-lock token
-}
-
-func (w wireServerPRComment) baseDomain(parentID int, inline *backend.PRCommentInline) backend.PRComment {
+func prCommentBaseDomain(w servergen.RestServerPRComment, parentID int, inline *backend.PRCommentInline) backend.PRComment {
 	c := backend.PRComment{
 		ID: w.ID,
 		Author: backend.User{
@@ -45,26 +31,13 @@ func (w wireServerPRComment) baseDomain(parentID int, inline *backend.PRCommentI
 	return c
 }
 
-func (w wireServerPRComment) toDomain() backend.PRComment {
-	return w.baseDomain(0, nil)
-}
-
-// wireServerCommentAnchor describes where an inline comment is anchored in
-// the diff. lineType (CONTEXT/ADDED/REMOVED) is informational; fileType
-// (FROM/TO) determines which side of the diff the comment lives on.
-type wireServerCommentAnchor struct {
-	Path     string `json:"path"`
-	Line     int    `json:"line"`
-	LineType string `json:"lineType"`
-	FileType string `json:"fileType"`
-	FromHash string `json:"fromHash"`
-	ToHash   string `json:"toHash"`
-	SrcPath  string `json:"srcPath"`
+func toPRCommentDomain(w servergen.RestServerPRComment) backend.PRComment {
+	return prCommentBaseDomain(w, 0, nil)
 }
 
 // serverAnchorToInline maps Bitbucket Server's commentAnchor envelope to the
 // domain inline type. Returns nil if the anchor has no path or line.
-func serverAnchorToInline(a *wireServerCommentAnchor) *backend.PRCommentInline {
+func serverAnchorToInline(a *servergen.RestCommentAnchor) *backend.PRCommentInline {
 	if a == nil || a.Path == "" || a.Line == 0 {
 		return nil
 	}
@@ -83,27 +56,18 @@ func serverAnchorToInline(a *wireServerCommentAnchor) *backend.PRCommentInline {
 // returns a flat slice. The root is emitted with the supplied inline anchor
 // and parentID. Replies inherit no anchor (Server does not anchor replies)
 // and carry their direct parent's ID.
-func flattenServerReplies(top wireServerPRComment, inline *backend.PRCommentInline, parentID int) []backend.PRComment {
-	out := []backend.PRComment{top.baseDomain(parentID, inline)}
+func flattenServerReplies(top servergen.RestServerPRComment, inline *backend.PRCommentInline, parentID int) []backend.PRComment {
+	out := []backend.PRComment{prCommentBaseDomain(top, parentID, inline)}
 	for _, child := range top.Comments {
 		out = append(out, flattenServerReplies(child, nil, top.ID)...)
 	}
 	return out
 }
 
-// wireServerPRActivity wraps comment payloads in a PR activity envelope, as
-// returned by GET /pull-requests/{id}/activities. commentAnchor is present
-// for inline comments and nil for general PR comments.
-type wireServerPRActivity struct {
-	Action        string                   `json:"action"`
-	Comment       wireServerPRComment      `json:"comment"`
-	CommentAnchor *wireServerCommentAnchor `json:"commentAnchor,omitempty"`
-}
-
 func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/activities?limit=100", ns, slug, id)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PRComment, error) {
-		var page PagedResponse[wireServerPRActivity]
+		var page PagedResponse[servergen.RestPRActivity]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
@@ -119,30 +83,11 @@ func (c *Client) ListPRComments(ns, slug string, id int) ([]backend.PRComment, e
 	}, 0)
 }
 
-type wireServerAddPRComment struct {
-	Text     string                   `json:"text"`
-	Anchor   *wireServerCommentAnchor `json:"anchor,omitempty"`
-	Parent   *wireServerParentRef     `json:"parent,omitempty"`
-	Severity string                   `json:"severity,omitempty"`
-}
-
-type wireServerParentRef struct {
-	ID int `json:"id"`
-}
-
-// wireServerDiffEnvelope is the JSON shape returned by
-// GET /pull-requests/{id}/diff/{path}. Only fromHash/toHash are needed
-// for inline-comment construction; the full hunk payload is ignored.
-type wireServerDiffEnvelope struct {
-	FromHash string `json:"fromHash"`
-	ToHash   string `json:"toHash"`
-}
-
 // fetchPRDiffHashes returns the (fromHash, toHash) for the given path on a
 // pull request. Server requires both on every inline-comment anchor; the
 // JSON-flavoured /diff/{path} endpoint surfaces them at the envelope root.
 func (c *Client) fetchPRDiffHashes(ns, slug string, id int, filePath string) (string, string, error) {
-	var env wireServerDiffEnvelope
+	var env servergen.RestDiffEnvelope
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/diff/%s", ns, slug, id, filePath)
 	if err := c.getJSON(path, &env); err != nil {
 		return "", "", err
@@ -151,7 +96,10 @@ func (c *Client) fetchPRDiffHashes(ns, slug string, id int, filePath string) (st
 }
 
 func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentInput) (backend.PRComment, error) {
-	body := wireServerAddPRComment{Text: in.Text, Severity: in.Severity}
+	body := servergen.RestAddPRComment{Text: in.Text}
+	if in.Severity != "" {
+		body.Severity = &in.Severity
+	}
 
 	if in.Inline != nil {
 		if in.Inline.StartLine != 0 && in.Inline.StartLine != in.Inline.Line {
@@ -167,7 +115,7 @@ func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentIn
 			fileType = "FROM"
 			lineType = "REMOVED"
 		}
-		body.Anchor = &wireServerCommentAnchor{
+		body.Anchor = &servergen.RestCommentAnchor{
 			Path:     in.Inline.Path,
 			Line:     in.Inline.Line,
 			LineType: lineType,
@@ -178,23 +126,15 @@ func (c *Client) AddPRComment(ns, slug string, id int, in backend.AddPRCommentIn
 		}
 	}
 	if in.Parent != nil {
-		body.Parent = &wireServerParentRef{ID: *in.Parent}
+		body.Parent = &servergen.RestParentRef{ID: *in.Parent}
 	}
 
-	var w wireServerPRComment
+	var w servergen.RestServerPRComment
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments", ns, slug, id)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.PRComment{}, err
 	}
-	return w.toDomain(), nil
-}
-
-// wireServerEditPRComment carries the body for PUT .../comments/{id}.
-// Server requires the current `version` to be echoed back; a stale
-// version yields HTTP 409.
-type wireServerEditPRComment struct {
-	Text    string `json:"text"`
-	Version int    `json:"version"`
+	return toPRCommentDomain(w), nil
 }
 
 // fetchCommentVersion looks up the current version of a comment so the
@@ -217,13 +157,13 @@ func (c *Client) EditPRComment(ns, slug string, id, commentID int, body string) 
 	if err != nil {
 		return backend.PRComment{}, err
 	}
-	in := wireServerEditPRComment{Text: body, Version: version}
-	var w wireServerPRComment
+	in := servergen.RestEditPRComment{Text: body, Version: version}
+	var w servergen.RestServerPRComment
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d?version=%d", ns, slug, id, commentID, version)
 	if err := c.putJSON(path, in, &w); err != nil {
 		return backend.PRComment{}, err
 	}
-	return w.toDomain(), nil
+	return toPRCommentDomain(w), nil
 }
 
 func (c *Client) DeletePRComment(ns, slug string, id, commentID int) error {
@@ -235,14 +175,6 @@ func (c *Client) DeletePRComment(ns, slug string, id, commentID int) error {
 	return c.delete(path, nil)
 }
 
-// wireServerSetCommentState is the body for PUT .../comments/{id} when
-// changing a task comment's state. Server requires the current `version`
-// echoed back (optimistic-locking); a stale version yields HTTP 409.
-type wireServerSetCommentState struct {
-	State   string `json:"state"`
-	Version int    `json:"version"`
-}
-
 // SetPRCommentState sets the state of a task comment (BLOCKER severity) on a
 // pull request. It first fetches the current comment to get the version token
 // (GET), then issues a PUT with the new state and the fetched version.
@@ -252,8 +184,8 @@ func (c *Client) SetPRCommentState(ns, slug string, id, commentID int, state str
 	if err != nil {
 		return err
 	}
-	in := wireServerSetCommentState{State: state, Version: version}
-	var w wireServerPRComment
+	in := servergen.RestSetCommentState{State: state, Version: version}
+	var w servergen.RestServerPRComment
 	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/comments/%d?version=%d", ns, slug, id, commentID, version)
 	return c.putJSON(path, in, &w)
 }

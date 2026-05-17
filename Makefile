@@ -33,5 +33,5 @@ gen:
 	@command -v oapi-codegen >/dev/null 2>&1 || \
 		(echo "Installing oapi-codegen $(OAPI_CODEGEN_VERSION)..." && \
 		 go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION))
-	oapi-codegen -config api/cloud/gen/oapi-codegen.yaml api/cloud/gen/openapi.yaml
-	oapi-codegen -config api/server/gen/oapi-codegen.yaml api/server/gen/openapi.yaml
+	oapi-codegen -config api/cloud/gen/oapi-codegen.yaml -o api/cloud/gen/types.go api/cloud/gen/openapi.yaml
+	oapi-codegen -config api/server/gen/oapi-codegen.yaml -o api/server/gen/types.go api/server/gen/openapi.yaml

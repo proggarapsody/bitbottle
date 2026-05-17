@@ -7,23 +7,10 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 )
 
-// wireCloudSrcEntry is the per-row shape inside a Cloud directory listing
-// returned from /repositories/{ws}/{slug}/src/{ref}/{path}/. The "type"
-// field is "commit_directory" or "commit_file"; "commit_submodule" also
-// appears but bitbottle treats those as directories so renderers can
-// recurse without a special case.
-type wireCloudSrcEntry struct {
-	Type   string `json:"type"`
-	Path   string `json:"path"`
-	Size   int64  `json:"size"`
-	Commit struct {
-		Hash string `json:"hash"`
-	} `json:"commit"`
-}
-
-func (w wireCloudSrcEntry) toDomain() backend.TreeEntry {
+func toSrcEntryDomain(w cloudgen.CloudSrcEntry) backend.TreeEntry {
 	t := "file"
 	if w.Type == "commit_directory" || w.Type == "commit_submodule" {
 		t = "dir"
@@ -110,13 +97,13 @@ func (c *Client) ListTree(ns, slug, ref, pathInRepo string) ([]backend.TreeEntry
 		}
 		sawListing = true
 		var page struct {
-			Values []wireCloudSrcEntry `json:"values"`
+			Values []cloudgen.CloudSrcEntry `json:"values"`
 		}
 		if err := json.Unmarshal(body, &page); err != nil {
 			return err
 		}
 		for _, e := range page.Values {
-			out = append(out, e.toDomain())
+			out = append(out, toSrcEntryDomain(e))
 		}
 		return nil
 	})

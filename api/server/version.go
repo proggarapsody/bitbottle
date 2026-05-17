@@ -5,12 +5,8 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
-
-// wireApplicationProperties is the /rest/api/1.0/application-properties response.
-type wireApplicationProperties struct {
-	Version string `json:"version"`
-}
 
 // GetServerVersion fetches and caches the Bitbucket Server version.
 // The result is cached for the lifetime of the Client; subsequent calls
@@ -18,7 +14,7 @@ type wireApplicationProperties struct {
 // On error, the zero ServerVersion is returned (AtLeast always returns false).
 func (c *Client) GetServerVersion() backend.ServerVersion {
 	c.versionOnce.Do(func() {
-		var props wireApplicationProperties
+		var props servergen.RestApplicationProperties
 		if err := c.http.GetJSON("/application-properties", &props); err != nil {
 			return
 		}

@@ -6,21 +6,11 @@ import (
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-// wireCloudEffectiveDefaultReviewer is the Cloud wire shape for an effective default reviewer.
-// GET /repositories/{ws}/{slug}/effective-default-reviewers returns paged values where
-// each entry has a nested user object.
-type wireCloudEffectiveDefaultReviewer struct {
-	User struct {
-		AccountID   string `json:"account_id"`
-		DisplayName string `json:"display_name"`
-		Nickname    string `json:"nickname"`
-	} `json:"user"`
-}
-
-func (w wireCloudEffectiveDefaultReviewer) toDomain() backend.DefaultReviewer {
+func toEffectiveDefaultReviewerDomain(w cloudgen.CloudEffectiveDefaultReviewer) backend.DefaultReviewer {
 	return backend.DefaultReviewer{
 		UserSlug:    w.User.Nickname,
 		DisplayName: w.User.DisplayName,
@@ -35,13 +25,13 @@ func (c *Client) ListDefaultReviewers(ns, slug string) ([]backend.DefaultReviewe
 	}
 	path := fmt.Sprintf("/repositories/%s/%s/effective-default-reviewers", url.PathEscape(ns), url.PathEscape(slug))
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.DefaultReviewer, error) {
-		var page cloudPagedResponse[wireCloudEffectiveDefaultReviewer]
+		var page cloudPagedResponse[cloudgen.CloudEffectiveDefaultReviewer]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.DefaultReviewer, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toEffectiveDefaultReviewerDomain(w))
 		}
 		return out, nil
 	}, 0)

@@ -6,41 +6,9 @@ import (
 	"time"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
-
-type wireCloudActivity struct {
-	Approval *wireCloudActivityApproval `json:"approval,omitempty"`
-	Comment  *wireCloudActivityComment  `json:"comment,omitempty"`
-	Update   *wireCloudActivityUpdate   `json:"update,omitempty"`
-}
-
-type wireCloudActivityApproval struct {
-	Date string `json:"date"`
-	User struct {
-		AccountID   string `json:"account_id"`
-		DisplayName string `json:"display_name"`
-		Nickname    string `json:"nickname"`
-	} `json:"user"`
-}
-
-type wireCloudActivityComment struct {
-	CreatedOn time.Time `json:"created_on"`
-	Author    struct {
-		AccountID   string `json:"account_id"`
-		DisplayName string `json:"display_name"`
-		Nickname    string `json:"nickname"`
-	} `json:"author"`
-}
-
-type wireCloudActivityUpdate struct {
-	Date   string `json:"date"`
-	Author struct {
-		AccountID   string `json:"account_id"`
-		DisplayName string `json:"display_name"`
-		Nickname    string `json:"nickname"`
-	} `json:"author"`
-}
 
 func cloudUserSlug(accountID, nickname string) string {
 	if nickname != "" {
@@ -49,7 +17,7 @@ func cloudUserSlug(accountID, nickname string) string {
 	return accountID
 }
 
-func (w wireCloudActivity) toDomain() (backend.PRActivityEvent, bool) {
+func toCloudActivityDomain(w cloudgen.CloudActivity) (backend.PRActivityEvent, bool) {
 	var ev backend.PRActivityEvent
 	switch {
 	case w.Approval != nil:
@@ -95,13 +63,13 @@ func (w wireCloudActivity) toDomain() (backend.PRActivityEvent, bool) {
 func (c *Client) GetPRActivity(ns, slug string, id int, limit int) ([]backend.PRActivityEvent, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/activity?pagelen=100", ns, slug, id)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.PRActivityEvent, error) {
-		var page cloudPagedResponse[wireCloudActivity]
+		var page cloudPagedResponse[cloudgen.CloudActivity]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.PRActivityEvent, 0, len(page.Values))
 		for _, w := range page.Values {
-			ev, ok := w.toDomain()
+			ev, ok := toCloudActivityDomain(w)
 			if ok {
 				out = append(out, ev)
 			}

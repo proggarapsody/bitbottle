@@ -6,15 +6,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-type wireServerTag struct {
-	DisplayID      string `json:"displayId"`
-	LatestCommit   string `json:"latestCommit"`
-	DisplayMessage string `json:"displayMessage"`
-}
-
-func (w wireServerTag) toDomain() backend.Tag {
+func toTagDomain(w servergen.RestTag) backend.Tag {
 	return backend.Tag{
 		Name:    w.DisplayID,
 		Hash:    w.LatestCommit,
@@ -25,36 +20,30 @@ func (w wireServerTag) toDomain() backend.Tag {
 func (c *Client) ListTags(ns, slug string, limit int) ([]backend.Tag, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/tags?limit=%d", ns, slug, limit)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Tag, error) {
-		var page PagedResponse[wireServerTag]
+		var page PagedResponse[servergen.RestTag]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Tag, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toTagDomain(w))
 		}
 		return out, nil
 	}, limit)
 }
 
-type wireServerCreateTag struct {
-	Name       string `json:"name"`
-	StartPoint string `json:"startPoint"`
-	Message    string `json:"message,omitempty"`
-}
-
 func (c *Client) CreateTag(ns, slug string, in backend.CreateTagInput) (backend.Tag, error) {
-	body := wireServerCreateTag{
+	body := servergen.RestCreateTag{
 		Name:       in.Name,
 		StartPoint: in.StartAt,
 		Message:    in.Message,
 	}
-	var w wireServerTag
+	var w servergen.RestTag
 	path := fmt.Sprintf("/projects/%s/repos/%s/tags", ns, slug)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.Tag{}, err
 	}
-	return w.toDomain(), nil
+	return toTagDomain(w), nil
 }
 
 func (c *Client) DeleteTag(ns, slug, name string) error {

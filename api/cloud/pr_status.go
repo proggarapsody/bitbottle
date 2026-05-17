@@ -5,33 +5,9 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
-
-// wireCloudDashboardPR is the shape of each item from the Cloud dashboard
-// pull-requests endpoint.
-type wireCloudDashboardPR struct {
-	ID     int    `json:"id"`
-	Title  string `json:"title"`
-	State  string `json:"state"`
-	Source struct {
-		Repository struct {
-			FullName string `json:"full_name"`
-		} `json:"repository"`
-		Commit struct {
-			Hash string `json:"hash"`
-		} `json:"commit"`
-	} `json:"source"`
-	Author struct {
-		DisplayName string `json:"display_name"`
-		Nickname    string `json:"nickname"`
-	} `json:"author"`
-	Links struct {
-		HTML struct {
-			Href string `json:"href"`
-		} `json:"html"`
-	} `json:"links"`
-}
 
 // ListMyPRs returns the authenticated user's open PRs from the Cloud
 // dashboard endpoint, combining AUTHOR and REVIEWER roles.
@@ -42,7 +18,7 @@ func (c *Client) ListMyPRs(ns, slug string) ([]backend.MyPREntry, error) {
 	for _, role := range []string{"REVIEWER", "AUTHOR"} {
 		path := fmt.Sprintf("/dashboard/pullrequests?role=%s&state=OPEN&pagelen=50", role)
 		entries, err := paging.Collect(c.http, path, func(body []byte) ([]backend.MyPREntry, error) {
-			var page cloudPagedResponse[wireCloudDashboardPR]
+			var page cloudPagedResponse[cloudgen.CloudDashboardPR]
 			if err := json.Unmarshal(body, &page); err != nil {
 				return nil, err
 			}

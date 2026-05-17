@@ -6,17 +6,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerCommitChange is the Server wire shape for a single file change in a commit.
-type wireServerCommitChange struct {
-	Type string `json:"type"`
-	Path struct {
-		ToString string `json:"toString"`
-	} `json:"path"`
-}
-
-func (w wireServerCommitChange) toDomain() backend.DiffStatEntry {
+func toCommitChangeDomain(w servergen.RestCommitChange) backend.DiffStatEntry {
 	status := "modified"
 	switch w.Type {
 	case "ADD":
@@ -43,13 +36,13 @@ func (w wireServerCommitChange) toDomain() backend.DiffStatEntry {
 func (c *Client) ListCommitFiles(ns, slug, hash string) ([]backend.DiffStatEntry, error) {
 	path := fmt.Sprintf("/projects/%s/repos/%s/commits/%s/changes", ns, slug, hash)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.DiffStatEntry, error) {
-		var page PagedResponse[wireServerCommitChange]
+		var page PagedResponse[servergen.RestCommitChange]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.DiffStatEntry, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toCommitChangeDomain(w))
 		}
 		return out, nil
 	}, 0)

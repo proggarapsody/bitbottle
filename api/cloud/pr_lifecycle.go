@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 )
 
 // UpdatePR updates the title and/or description of a pull request.
@@ -12,12 +13,12 @@ func (c *Client) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (ba
 		"title":       in.Title,
 		"description": in.Description,
 	}
-	var w wireCloudPR
+	var w cloudgen.CloudPullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
 	if err := c.putJSON(path, body, &w); err != nil {
 		return backend.PullRequest{}, err
 	}
-	return w.toDomain(), nil
+	return toPRDomain(w), nil
 }
 
 // DeclinePR declines an open pull request.
@@ -51,7 +52,7 @@ func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
 
 	// 1. Read current PR to preserve existing reviewers.
-	var current wireCloudPR
+	var current cloudgen.CloudPullRequest
 	if err := c.getJSON(path, &current); err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 		"title":     current.Title,
 		"reviewers": reviewers,
 	}
-	var result wireCloudPR
+	var result cloudgen.CloudPullRequest
 	return c.putJSON(path, body, &result)
 }
 

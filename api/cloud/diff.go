@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
@@ -21,20 +22,7 @@ func (c *Client) GetDiff(ns, slug, from, to string) (string, error) {
 	return c.getText(path)
 }
 
-// wireDiffStatEntry is the Cloud wire shape for a single file in a diffstat response.
-type wireDiffStatEntry struct {
-	Status       string `json:"status"` // "added", "modified", "removed", "renamed"
-	LinesAdded   int    `json:"lines_added"`
-	LinesRemoved int    `json:"lines_removed"`
-	New          *struct {
-		Path string `json:"path"`
-	} `json:"new"`
-	Old *struct {
-		Path string `json:"path"`
-	} `json:"old"`
-}
-
-func (w wireDiffStatEntry) toDomain() backend.DiffStatEntry {
+func toDiffStatEntryDomain(w cloudgen.CloudDiffStatEntry) backend.DiffStatEntry {
 	path := ""
 	if w.New != nil {
 		path = w.New.Path
@@ -63,13 +51,13 @@ func (c *Client) GetDiffStat(ns, slug, from, to string) (backend.DiffStat, error
 		url.PathEscape(to),
 	)
 	entries, err := paging.Collect(c.http, path, func(body []byte) ([]backend.DiffStatEntry, error) {
-		var page cloudPagedResponse[wireDiffStatEntry]
+		var page cloudPagedResponse[cloudgen.CloudDiffStatEntry]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.DiffStatEntry, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toDiffStatEntryDomain(w))
 		}
 		return out, nil
 	}, 0)

@@ -6,42 +6,13 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerConditionMatcher is the sourceMatcher / targetMatcher shape in
-// the /rest/default-reviewers/1.0/.../conditions wire format.
-type wireServerConditionMatcher struct {
-	ID        string `json:"id"`
-	DisplayID string `json:"displayId"`
-	Type      struct {
-		ID string `json:"id"`
-	} `json:"type"`
-}
-
-// wireServerReviewerRef is the minimal user ref used inside a condition's
-// reviewers array.
-type wireServerReviewerRef struct {
-	Slug        string `json:"slug"`
-	DisplayName string `json:"displayName"`
-}
-
-func (w wireServerReviewerRef) toDomain() backend.User {
-	return backend.User{Slug: w.Slug, DisplayName: w.DisplayName}
-}
-
-// wireServerCondition is the condition entry returned by GET .../conditions.
-type wireServerCondition struct {
-	ID                int                        `json:"id"`
-	SourceMatcher     wireServerConditionMatcher `json:"sourceMatcher"`
-	TargetMatcher     wireServerConditionMatcher `json:"targetMatcher"`
-	Reviewers         []wireServerReviewerRef    `json:"reviewers"`
-	RequiredApprovals int                        `json:"requiredApprovals"`
-}
-
-func (w wireServerCondition) toDomain() backend.ReviewerGroup {
+func toReviewerGroupDomain(w servergen.RestCondition) backend.ReviewerGroup {
 	reviewers := make([]backend.User, 0, len(w.Reviewers))
 	for _, r := range w.Reviewers {
-		reviewers = append(reviewers, r.toDomain())
+		reviewers = append(reviewers, backend.User{Slug: r.Slug, DisplayName: r.DisplayName})
 	}
 	name := w.SourceMatcher.DisplayID
 	if name == "" {
@@ -55,27 +26,6 @@ func (w wireServerCondition) toDomain() backend.ReviewerGroup {
 	}
 }
 
-// wireServerCreateConditionBody is the POST body for creating a condition.
-type wireServerCreateConditionBody struct {
-	SourceMatcher     wireServerCreateMatcher    `json:"sourceMatcher"`
-	TargetMatcher     wireServerCreateMatcher    `json:"targetMatcher"`
-	Reviewers         []wireServerCreateReviewer `json:"reviewers"`
-	RequiredApprovals int                        `json:"requiredApprovals"`
-}
-
-type wireServerCreateMatcher struct {
-	ID   string                      `json:"id"`
-	Type wireServerCreateMatcherType `json:"type"`
-}
-
-type wireServerCreateMatcherType struct {
-	ID string `json:"id"`
-}
-
-type wireServerCreateReviewer struct {
-	Slug string `json:"slug"`
-}
-
 // ListReviewerGroups returns all reviewer-group conditions for a repository.
 // GET /rest/default-reviewers/1.0/projects/{ns}/repos/{slug}/conditions
 func (c *Client) ListReviewerGroups(ns, slug string) ([]backend.ReviewerGroup, error) {
@@ -84,13 +34,13 @@ func (c *Client) ListReviewerGroups(ns, slug string) ([]backend.ReviewerGroup, e
 	}
 	path := fmt.Sprintf("/projects/%s/repos/%s/conditions", ns, slug)
 	return paging.Collect(c.defaultReviewersHTTP, path, func(body []byte) ([]backend.ReviewerGroup, error) {
-		var page PagedResponse[wireServerCondition]
+		var page PagedResponse[servergen.RestCondition]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.ReviewerGroup, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toReviewerGroupDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -110,30 +60,30 @@ func (c *Client) CreateReviewerGroup(ns, slug string, in backend.CreateReviewerG
 		requiredApprovals = 1
 	}
 
-	reviewers := make([]wireServerCreateReviewer, 0, len(in.UserSlugs))
+	reviewers := make([]servergen.RestCreateReviewer, 0, len(in.UserSlugs))
 	for _, s := range in.UserSlugs {
-		reviewers = append(reviewers, wireServerCreateReviewer{Slug: s})
+		reviewers = append(reviewers, servergen.RestCreateReviewer{Slug: s})
 	}
 
-	body := wireServerCreateConditionBody{
-		SourceMatcher: wireServerCreateMatcher{
+	body := servergen.RestCreateConditionBody{
+		SourceMatcher: servergen.RestCreateMatcher{
 			ID:   in.Name,
-			Type: wireServerCreateMatcherType{ID: "ANY_REF"},
+			Type: servergen.RestCreateMatcherType{ID: "ANY_REF"},
 		},
-		TargetMatcher: wireServerCreateMatcher{
+		TargetMatcher: servergen.RestCreateMatcher{
 			ID:   "ANY_REF_MATCHER_ID",
-			Type: wireServerCreateMatcherType{ID: "ANY_REF"},
+			Type: servergen.RestCreateMatcherType{ID: "ANY_REF"},
 		},
 		Reviewers:         reviewers,
 		RequiredApprovals: requiredApprovals,
 	}
 
 	path := fmt.Sprintf("/projects/%s/repos/%s/conditions", ns, slug)
-	var resp wireServerCondition
+	var resp servergen.RestCondition
 	if err := c.defaultReviewersHTTP.PostJSON(path, body, &resp); err != nil {
 		return backend.ReviewerGroup{}, err
 	}
-	return resp.toDomain(), nil
+	return toReviewerGroupDomain(resp), nil
 }
 
 // DeleteReviewerGroup deletes a reviewer-group condition by its numeric ID.

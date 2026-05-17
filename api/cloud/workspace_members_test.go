@@ -14,11 +14,11 @@ import (
 const wsMemberPageJSON = `{
   "values": [
     {
-      "user": {"username":"alice","display_name":"Alice Smith"},
+      "user": {"account_id":"alice-id","nickname":"alice","display_name":"Alice Smith"},
       "workspace":{"slug":"acme"}
     },
     {
-      "user": {"username":"bob","display_name":"Bob Jones"},
+      "user": {"account_id":"bob-id","nickname":"bob","display_name":"Bob Jones"},
       "workspace":{"slug":"acme"}
     }
   ]

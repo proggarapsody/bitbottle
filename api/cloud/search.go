@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
@@ -16,74 +17,30 @@ import (
 // so we clamp the wire value while letting paging keep collecting.
 const cloudSearchPagelenMax = 100
 
-// wireCloudSearchSegment mirrors Cloud's `{text, match}` segment object.
-// `match` is omitted on non-matched segments — the bool zero value is the
-// correct behaviour.
-type wireCloudSearchSegment struct {
-	Text  string `json:"text"`
-	Match bool   `json:"match"`
-}
-
-func (w wireCloudSearchSegment) toDomain() backend.SearchSegment {
+func toSearchSegmentDomain(w cloudgen.CloudSearchSegment) backend.SearchSegment {
 	return backend.SearchSegment{Text: w.Text, Match: w.Match}
 }
 
-// wireCloudContentLine is one entry inside content_matches[].lines[]: a
-// 1-based line number plus a sequence of segments. Cloud groups
-// consecutive matched lines into "content_matches" objects each holding a
-// `lines` array; we flatten all those lines into a single ContentMatch
-// slice in arrival order so renderers don't have to walk two levels.
-type wireCloudContentLine struct {
-	Line     int                      `json:"line"`
-	Segments []wireCloudSearchSegment `json:"segments"`
-}
-
-func (w wireCloudContentLine) toDomain() backend.ContentMatch {
+func toContentMatchDomain(w cloudgen.CloudContentLine) backend.ContentMatch {
 	segs := make([]backend.SearchSegment, 0, len(w.Segments))
 	for _, s := range w.Segments {
-		segs = append(segs, s.toDomain())
+		segs = append(segs, toSearchSegmentDomain(s))
 	}
 	return backend.ContentMatch{Line: w.Line, Segments: segs}
 }
 
-type wireCloudContentMatch struct {
-	Lines []wireCloudContentLine `json:"lines"`
-}
-
-// wireCloudCodeSearchHit is the JSON shape Cloud returns inside the
-// paginated `values` array. Only the fields bitbottle's domain type cares
-// about are decoded; the rest pass through silently.
-type wireCloudCodeSearchHit struct {
-	ContentMatchCount int                      `json:"content_match_count"`
-	PathMatches       []wireCloudSearchSegment `json:"path_matches"`
-	ContentMatches    []wireCloudContentMatch  `json:"content_matches"`
-	File              struct {
-		Path   string `json:"path"`
-		Commit struct {
-			Repository struct {
-				FullName string `json:"full_name"`
-			} `json:"repository"`
-		} `json:"commit"`
-		Links struct {
-			Self struct {
-				Href string `json:"href"`
-			} `json:"self"`
-		} `json:"links"`
-	} `json:"file"`
-}
-
-func (w wireCloudCodeSearchHit) toDomain() backend.CodeSearchHit {
+func toCodeSearchHitDomain(w cloudgen.CloudCodeSearchHit) backend.CodeSearchHit {
 	pm := make([]backend.SearchSegment, 0, len(w.PathMatches))
 	for _, s := range w.PathMatches {
-		pm = append(pm, s.toDomain())
+		pm = append(pm, toSearchSegmentDomain(s))
 	}
-	// Flatten content_matches[].lines[] — see wireCloudContentLine doc.
+	// Flatten content_matches[].lines[] — see CloudContentLine doc.
 	// Preallocated to a non-nil zero-length slice so JSON marshalling emits
 	// `[]` instead of `null`, matching pm above.
 	cm := make([]backend.ContentMatch, 0)
 	for _, group := range w.ContentMatches {
 		for _, ln := range group.Lines {
-			cm = append(cm, ln.toDomain())
+			cm = append(cm, toContentMatchDomain(ln))
 		}
 	}
 	return backend.CodeSearchHit{
@@ -121,13 +78,13 @@ func (c *Client) SearchCode(workspace, query string, limit int) ([]backend.CodeS
 	path := fmt.Sprintf("/workspaces/%s/search/code?%s", url.PathEscape(workspace), q.Encode())
 
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.CodeSearchHit, error) {
-		var page cloudPagedResponse[wireCloudCodeSearchHit]
+		var page cloudPagedResponse[cloudgen.CloudCodeSearchHit]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.CodeSearchHit, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toCodeSearchHitDomain(w))
 		}
 		return out, nil
 	}, limit)

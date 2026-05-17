@@ -6,21 +6,13 @@ import (
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 // ── wire types ───────────────────────────────────────────────────────────────
 
-type wireCloudEnvironment struct {
-	UUID            string `json:"uuid"`
-	Name            string `json:"name"`
-	EnvironmentType struct {
-		Name string `json:"name"`
-	} `json:"environment_type"`
-	Rank int `json:"rank"`
-}
-
-func (w wireCloudEnvironment) toDomain() backend.Environment {
+func toEnvironmentDomain(w cloudgen.CloudEnvironment) backend.Environment {
 	return backend.Environment{
 		UUID: stripBraces(w.UUID),
 		Name: w.Name,
@@ -29,26 +21,11 @@ func (w wireCloudEnvironment) toDomain() backend.Environment {
 	}
 }
 
-type wireCloudDeployment struct {
-	UUID  string `json:"uuid"`
-	State struct {
-		Name string `json:"name"`
-	} `json:"state"`
-	Environment wireCloudEnvironment `json:"environment"`
-	Release     struct {
-		Name   string `json:"name"`
-		URL    string `json:"url"`
-		Commit struct {
-			Hash string `json:"hash"`
-		} `json:"commit"`
-	} `json:"release"`
-}
-
-func (w wireCloudDeployment) toDomain() backend.Deployment {
+func toDeploymentDomain(w cloudgen.CloudDeployment) backend.Deployment {
 	d := backend.Deployment{
 		UUID:        stripBraces(w.UUID),
 		State:       w.State.Name,
-		Environment: w.Environment.toDomain(),
+		Environment: toEnvironmentDomain(w.Environment),
 	}
 	d.Release.Name = w.Release.Name
 	d.Release.URL = w.Release.URL
@@ -56,14 +33,7 @@ func (w wireCloudDeployment) toDomain() backend.Deployment {
 	return d
 }
 
-type wireCloudEnvVariable struct {
-	UUID    string `json:"uuid"`
-	Key     string `json:"key"`
-	Value   string `json:"value"`
-	Secured bool   `json:"secured"`
-}
-
-func (w wireCloudEnvVariable) toDomain() backend.EnvVariable {
+func toEnvVariableDomain(w cloudgen.CloudEnvVariable) backend.EnvVariable {
 	return backend.EnvVariable{
 		UUID:    stripBraces(w.UUID),
 		Key:     w.Key,
@@ -103,13 +73,13 @@ func (c *Client) ListDeployments(ns, slug string, limit int) ([]backend.Deployme
 		url.PathEscape(ns), url.PathEscape(slug), pagelen)
 
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Deployment, error) {
-		var page cloudPagedResponse[wireCloudDeployment]
+		var page cloudPagedResponse[cloudgen.CloudDeployment]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Deployment, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toDeploymentDomain(w))
 		}
 		return out, nil
 	}, limit)
@@ -117,13 +87,13 @@ func (c *Client) ListDeployments(ns, slug string, limit int) ([]backend.Deployme
 
 // GetDeployment fetches a single deployment by UUID.
 func (c *Client) GetDeployment(ns, slug, uuid string) (backend.Deployment, error) {
-	var w wireCloudDeployment
+	var w cloudgen.CloudDeployment
 	path := fmt.Sprintf("/repositories/%s/%s/deployments/%s",
 		url.PathEscape(ns), url.PathEscape(slug), url.PathEscape(braceUUID(uuid)))
 	if err := c.getJSON(path, &w); err != nil {
 		return backend.Deployment{}, err
 	}
-	return w.toDomain(), nil
+	return toDeploymentDomain(w), nil
 }
 
 // ListEnvironments returns all deployment environments for the repository.
@@ -132,13 +102,13 @@ func (c *Client) ListEnvironments(ns, slug string) ([]backend.Environment, error
 		url.PathEscape(ns), url.PathEscape(slug))
 
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Environment, error) {
-		var page cloudPagedResponse[wireCloudEnvironment]
+		var page cloudPagedResponse[cloudgen.CloudEnvironment]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Environment, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toEnvironmentDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -151,13 +121,13 @@ func (c *Client) CreateEnvironment(ns, slug string, in backend.CreateEnvironment
 		EnvironmentType: createEnvironmentTypeBody{Name: in.Type},
 		Rank:            in.Rank,
 	}
-	var w wireCloudEnvironment
+	var w cloudgen.CloudEnvironment
 	path := fmt.Sprintf("/repositories/%s/%s/environments",
 		url.PathEscape(ns), url.PathEscape(slug))
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.Environment{}, err
 	}
-	return w.toDomain(), nil
+	return toEnvironmentDomain(w), nil
 }
 
 // DeleteEnvironment deletes a deployment environment by UUID.
@@ -173,13 +143,13 @@ func (c *Client) ListEnvVariables(ns, slug, envUUID string) ([]backend.EnvVariab
 		url.PathEscape(ns), url.PathEscape(slug), url.PathEscape(braceUUID(envUUID)))
 
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.EnvVariable, error) {
-		var page cloudPagedResponse[wireCloudEnvVariable]
+		var page cloudPagedResponse[cloudgen.CloudEnvVariable]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.EnvVariable, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toEnvVariableDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -198,7 +168,7 @@ func (c *Client) SetEnvVariable(ns, slug, envUUID string, in backend.EnvVariable
 		Value:   in.Value,
 		Secured: in.Secured,
 	}
-	var w wireCloudEnvVariable
+	var w cloudgen.CloudEnvVariable
 	if existing != nil {
 		path := fmt.Sprintf("/repositories/%s/%s/deployments_config/environments/%s/variables/%s",
 			url.PathEscape(ns), url.PathEscape(slug),
@@ -213,7 +183,7 @@ func (c *Client) SetEnvVariable(ns, slug, envUUID string, in backend.EnvVariable
 			return backend.EnvVariable{}, err
 		}
 	}
-	return w.toDomain(), nil
+	return toEnvVariableDomain(w), nil
 }
 
 // findEnvVariable returns the variable matching key, or nil if none.

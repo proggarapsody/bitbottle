@@ -9,36 +9,6 @@ import (
 	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireInboxPR is the shape of items from the Server inbox pull-requests endpoint
-// (PRs assigned to the user for review).
-type wireInboxPR struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
-	State string `json:"state"`
-	ToRef struct {
-		Repository struct {
-			Project struct {
-				Key string `json:"key"`
-			} `json:"project"`
-			Slug string `json:"slug"`
-		} `json:"repository"`
-	} `json:"toRef"`
-	FromRef struct {
-		LatestCommit string `json:"latestCommit"`
-	} `json:"fromRef"`
-	Author struct {
-		User struct {
-			Slug        string `json:"slug"`
-			DisplayName string `json:"displayName"`
-		} `json:"user"`
-	} `json:"author"`
-	Links struct {
-		Self []struct {
-			Href string `json:"href"`
-		} `json:"self"`
-	} `json:"links"`
-}
-
 // ListMyPRs returns the authenticated user's open PRs.
 // REVIEWER PRs come from /inbox/pull-requests.
 // AUTHOR PRs come from the scoped repo endpoint filtered by author slug.
@@ -78,7 +48,7 @@ func (c *Client) ListMyPRs(ns, slug string) ([]backend.MyPREntry, error) {
 func (c *Client) listInboxPRs() ([]backend.MyPREntry, error) {
 	path := "/inbox/pull-requests?limit=50"
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.MyPREntry, error) {
-		var page PagedResponse[wireInboxPR]
+		var page PagedResponse[servergen.RestInboxPR]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}

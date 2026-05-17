@@ -7,33 +7,12 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
+	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// ── wire types ────────────────────────────────────────────────────────────────
+// ── domain converters ─────────────────────────────────────────────────────────
 
-// wireReportDatum matches the BBS JSON shape for a single data point.
-type wireReportDatum struct {
-	Title string `json:"title"`
-	Type  string `json:"type"`
-	Value any    `json:"value"`
-}
-
-// wireReport matches the BBS JSON envelope for a Code Insights report.
-type wireReport struct {
-	Key         string            `json:"key"`
-	Title       string            `json:"title"`
-	Result      string            `json:"result"`
-	ReportType  string            `json:"reportType"`
-	Details     string            `json:"details"`
-	Reporter    string            `json:"reporter"`
-	Link        string            `json:"link"`
-	LogoURL     string            `json:"logoUrl"`
-	Data        []wireReportDatum `json:"data"`
-	CreatedDate *int64            `json:"createdDate"`
-	UpdatedDate *int64            `json:"updatedDate"`
-}
-
-func (w wireReport) toDomain() backend.CodeInsightsReport {
+func toReportDomain(w servergen.RestReport) backend.CodeInsightsReport {
 	data := make([]backend.CodeInsightsReportDatum, 0, len(w.Data))
 	for _, d := range w.Data {
 		data = append(data, backend.CodeInsightsReportDatum{
@@ -62,30 +41,7 @@ func (w wireReport) toDomain() backend.CodeInsightsReport {
 	return r
 }
 
-// wireReportUpsert is the PUT request body for creating/updating a report.
-type wireReportUpsert struct {
-	Title      string            `json:"title"`
-	Result     string            `json:"result,omitempty"`
-	ReportType string            `json:"reportType,omitempty"`
-	Details    string            `json:"details,omitempty"`
-	Reporter   string            `json:"reporter,omitempty"`
-	Link       string            `json:"link,omitempty"`
-	LogoURL    string            `json:"logoUrl,omitempty"`
-	Data       []wireReportDatum `json:"data,omitempty"`
-}
-
-// wireAnnotation matches the BBS JSON shape for a single annotation.
-type wireAnnotation struct {
-	ExternalID string `json:"externalId,omitempty"`
-	Path       string `json:"path"`
-	Line       int    `json:"line,omitempty"`
-	Message    string `json:"message"`
-	Severity   string `json:"severity,omitempty"`
-	Type       string `json:"type,omitempty"`
-	Link       string `json:"link,omitempty"`
-}
-
-func (w wireAnnotation) toDomain() backend.CodeInsightsAnnotation {
+func toAnnotationDomain(w servergen.RestAnnotation) backend.CodeInsightsAnnotation {
 	return backend.CodeInsightsAnnotation{
 		ExternalID: w.ExternalID,
 		Path:       w.Path,
@@ -97,8 +53,8 @@ func (w wireAnnotation) toDomain() backend.CodeInsightsAnnotation {
 	}
 }
 
-func toWireAnnotation(a backend.CodeInsightsAnnotationInput) wireAnnotation {
-	return wireAnnotation{
+func toGenAnnotation(a backend.CodeInsightsAnnotationInput) servergen.RestAnnotation {
+	return servergen.RestAnnotation{
 		ExternalID: a.ExternalID,
 		Path:       a.Path,
 		Line:       a.Line,
@@ -109,20 +65,7 @@ func toWireAnnotation(a backend.CodeInsightsAnnotationInput) wireAnnotation {
 	}
 }
 
-// wireAnnotationsPage is the paged response for listing annotations.
-type wireAnnotationsPage struct {
-	Annotations []wireAnnotation `json:"annotations"`
-}
-
-// wireMergeCheck matches the BBS JSON shape for a merge-check configuration.
-type wireMergeCheck struct {
-	Key         string `json:"key"`
-	ReportKey   string `json:"reportKey"`
-	MustPass    bool   `json:"mustPass"`
-	MinSeverity string `json:"minSeverity,omitempty"`
-}
-
-func (w wireMergeCheck) toDomain() backend.MergeCheck {
+func toMergeCheckDomain(w servergen.RestMergeCheck) backend.MergeCheck {
 	return backend.MergeCheck{
 		Key:         w.Key,
 		ReportKey:   w.ReportKey,
@@ -159,13 +102,13 @@ func mergeCheckPath(project, slug, key string) string {
 func (c *Client) ListReports(project, slug, hash string) ([]backend.CodeInsightsReport, error) {
 	path := reportBasePath(project, slug, hash)
 	return paging.Collect(c.codeInsightsHTTP, path, func(body []byte) ([]backend.CodeInsightsReport, error) {
-		var page PagedResponse[wireReport]
+		var page PagedResponse[servergen.RestReport]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.CodeInsightsReport, 0, len(page.Values))
 		for _, w := range page.Values {
-			out = append(out, w.toDomain())
+			out = append(out, toReportDomain(w))
 		}
 		return out, nil
 	}, 0)
@@ -175,22 +118,22 @@ func (c *Client) ListReports(project, slug, hash string) ([]backend.CodeInsights
 
 // GetReport fetches a single Code Insights report by key.
 func (c *Client) GetReport(project, slug, hash, key string) (backend.CodeInsightsReport, error) {
-	var w wireReport
+	var w servergen.RestReport
 	if err := c.codeInsightsHTTP.GetJSON(reportKeyPath(project, slug, hash, key), &w); err != nil {
 		return backend.CodeInsightsReport{}, err
 	}
-	return w.toDomain(), nil
+	return toReportDomain(w), nil
 }
 
 // ── SetReport ────────────────────────────────────────────────────────────────
 
 // SetReport creates or replaces a Code Insights report (PUT / upsert).
 func (c *Client) SetReport(project, slug, hash, key string, in backend.CodeInsightsReportInput) (backend.CodeInsightsReport, error) {
-	wdata := make([]wireReportDatum, 0, len(in.Data))
+	wdata := make([]servergen.RestReportDatum, 0, len(in.Data))
 	for _, d := range in.Data {
-		wdata = append(wdata, wireReportDatum{Title: d.Title, Type: d.Type, Value: d.Value})
+		wdata = append(wdata, servergen.RestReportDatum{Title: d.Title, Type: d.Type, Value: d.Value})
 	}
-	body := wireReportUpsert{
+	body := servergen.RestReportUpsert{
 		Title:      in.Title,
 		Result:     in.Result,
 		ReportType: in.ReportType,
@@ -200,11 +143,11 @@ func (c *Client) SetReport(project, slug, hash, key string, in backend.CodeInsig
 		LogoURL:    in.LogoURL,
 		Data:       wdata,
 	}
-	var w wireReport
+	var w servergen.RestReport
 	if err := c.codeInsightsHTTP.PutJSON(reportKeyPath(project, slug, hash, key), body, &w); err != nil {
 		return backend.CodeInsightsReport{}, err
 	}
-	return w.toDomain(), nil
+	return toReportDomain(w), nil
 }
 
 // ── DeleteReport ─────────────────────────────────────────────────────────────
@@ -222,13 +165,13 @@ func (c *Client) ListAnnotations(project, slug, hash, key string) ([]backend.Cod
 	// The annotations endpoint returns {"annotations":[...]} — not the standard
 	// paged envelope. We fetch in one shot (BBS docs don't describe pagination
 	// here) and return the slice directly.
-	var page wireAnnotationsPage
+	var page servergen.RestAnnotationsPage
 	if err := c.codeInsightsHTTP.GetJSON(path, &page); err != nil {
 		return nil, err
 	}
 	out := make([]backend.CodeInsightsAnnotation, 0, len(page.Annotations))
 	for _, w := range page.Annotations {
-		out = append(out, w.toDomain())
+		out = append(out, toAnnotationDomain(w))
 	}
 	return out, nil
 }
@@ -237,9 +180,9 @@ func (c *Client) ListAnnotations(project, slug, hash, key string) ([]backend.Cod
 
 // AddAnnotations bulk-POSTs all annotations in a single request.
 func (c *Client) AddAnnotations(project, slug, hash, key string, in []backend.CodeInsightsAnnotationInput) error {
-	wanns := make([]wireAnnotation, 0, len(in))
+	wanns := make([]servergen.RestAnnotation, 0, len(in))
 	for _, a := range in {
-		wanns = append(wanns, toWireAnnotation(a))
+		wanns = append(wanns, toGenAnnotation(a))
 	}
 	body := map[string]any{"annotations": wanns}
 	return c.codeInsightsHTTP.PostJSON(annotationBasePath(project, slug, hash, key), body, nil)
@@ -257,7 +200,7 @@ func (c *Client) DeleteAnnotations(project, slug, hash, key string) error {
 // SetMergeCheck creates or replaces a merge-check configuration.
 // Uses the partly-undocumented /rest/insights/latest/.../merge-check/ path.
 func (c *Client) SetMergeCheck(project, slug, key string, in backend.MergeCheckInput) error {
-	body := wireMergeCheck{
+	body := servergen.RestMergeCheck{
 		Key:         key,
 		ReportKey:   in.ReportKey,
 		MustPass:    in.MustPass,
@@ -270,11 +213,11 @@ func (c *Client) SetMergeCheck(project, slug, key string, in backend.MergeCheckI
 
 // GetMergeCheck fetches the current merge-check configuration for a key.
 func (c *Client) GetMergeCheck(project, slug, key string) (backend.MergeCheck, error) {
-	var w wireMergeCheck
+	var w servergen.RestMergeCheck
 	if err := c.http.GetJSON(mergeCheckPath(project, slug, key), &w); err != nil {
 		return backend.MergeCheck{}, err
 	}
-	return w.toDomain(), nil
+	return toMergeCheckDomain(w), nil
 }
 
 // ── DeleteMergeCheck (experimental) ──────────────────────────────────────────
