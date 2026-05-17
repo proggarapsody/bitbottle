@@ -92,6 +92,10 @@ var catalogue = map[backend.ErrorCode]entry{
 		title: "Request to {{.Host}} timed out.",
 		hints: []string{"Network or VPN may be slow or down. Retry; pass `--debug` for transport details."},
 	},
+	backend.CodeInvalidRequest: {
+		title: "The request was rejected by {{.Host}} as invalid.",
+		hints: []string{"Check that all required fields are set and values are within the expected range."},
+	},
 }
 
 // Render writes a friendly error explanation to ios.ErrOut.

@@ -54,14 +54,37 @@ func TestClassifyHTTPError(t *testing.T) {
 }
 
 // TestClassifyHTTPError_UnknownStatusHasNoKind verifies that statuses that do
-// not fit the bounded domain set (e.g. 400 validation) still produce a
-// DomainError but with Kind=nil so callers do not match it against a sentinel.
+// not fit the bounded domain set still produce a DomainError but with Kind=nil
+// so callers do not match it against a sentinel.
 func TestClassifyHTTPError_UnknownStatusHasNoKind(t *testing.T) {
 	t.Parallel()
-	got := backend.ClassifyHTTPError("h.example", &backend.HTTPError{StatusCode: 400, Message: "bad"})
+	// 418 is not a mapped status — Kind must remain nil.
+	got := backend.ClassifyHTTPError("h.example", &backend.HTTPError{StatusCode: 418, Message: "I'm a teapot"})
 	require.NotNil(t, got)
 	assert.Nil(t, got.Kind)
 	assert.NotErrorIs(t, got, backend.ErrNotFound)
+}
+
+// TestClassifyHTTPError_400_SetsInvalidRequest verifies that HTTP 400 is
+// classified as ErrInvalidRequest with CodeInvalidRequest.
+func TestClassifyHTTPError_400_SetsInvalidRequest(t *testing.T) {
+	t.Parallel()
+	he := &backend.HTTPError{StatusCode: 400, Message: "Bad Request"}
+	de := backend.ClassifyHTTPError("bb.example.com", he)
+	require.NotNil(t, de)
+	assert.ErrorIs(t, de, backend.ErrInvalidRequest)
+	assert.Equal(t, backend.CodeInvalidRequest, de.Code)
+}
+
+// TestClassifyHTTPError_422_SetsInvalidRequest verifies that HTTP 422 is
+// classified as ErrInvalidRequest with CodeInvalidRequest.
+func TestClassifyHTTPError_422_SetsInvalidRequest(t *testing.T) {
+	t.Parallel()
+	he := &backend.HTTPError{StatusCode: 422, Message: "Unprocessable Entity"}
+	de := backend.ClassifyHTTPError("bb.example.com", he)
+	require.NotNil(t, de)
+	assert.ErrorIs(t, de, backend.ErrInvalidRequest)
+	assert.Equal(t, backend.CodeInvalidRequest, de.Code)
 }
 
 // TestClassifyHTTPError_AttachesAuthInvalidTokenCode verifies that 401 not
