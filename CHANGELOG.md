@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.72.1](https://github.com/proggarapsody/bitbottle/compare/v1.72.0...v1.72.1) (2026-05-17)
+
+
+### Bug Fixes
+
+* **cloud:** omit empty variables in pipeline trigger body ([7a25c13](https://github.com/proggarapsody/bitbottle/commit/7a25c136c263fe44b01364232d3d680d669f717e))
+
 ## [1.72.0](https://github.com/proggarapsody/bitbottle/compare/v1.71.1...v1.72.0) (2026-05-15)
 
 
