@@ -81,4 +81,3 @@ func TestPRView_JSONGolden(t *testing.T) {
 
 	testhelpers.AssertGolden(t, "json/pr-view", out.String())
 }
-
