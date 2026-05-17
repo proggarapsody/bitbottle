@@ -27,6 +27,7 @@ var (
 	ErrUnsupportedOnHost = errors.New("operation unsupported on this host")
 	ErrConflict          = errors.New("conflict")
 	ErrTransport         = errors.New("transport error")
+	ErrInvalidRequest    = errors.New("invalid request")
 )
 
 // ErrorCode is a stable, dotted token identifying a specific user-visible
@@ -69,6 +70,9 @@ const (
 	// these.
 	CodeNetworkTLSUnknownAuthority ErrorCode = "network.tls_unknown_authority"
 	CodeTransportTimeout           ErrorCode = "transport.timeout"
+
+	// request cluster — malformed or invalid input
+	CodeInvalidRequest ErrorCode = "request.invalid"
 )
 
 // AllCodes lists every published ErrorCode. The errfmt test suite iterates
@@ -94,6 +98,7 @@ var AllCodes = []ErrorCode{
 	CodeHostUnsupported,
 	CodeNetworkTLSUnknownAuthority,
 	CodeTransportTimeout,
+	CodeInvalidRequest,
 }
 
 // DomainError wraps an underlying cause with structured context for renderers
@@ -222,6 +227,9 @@ func ClassifyHTTPError(host string, err *HTTPError) *DomainError {
 		de.Kind = ErrNotFound
 	case 409:
 		de.Kind = ErrConflict
+	case 400, 422:
+		de.Kind = ErrInvalidRequest
+		de.Code = CodeInvalidRequest
 	default:
 		if err.StatusCode >= 500 {
 			de.Kind = ErrTransport
