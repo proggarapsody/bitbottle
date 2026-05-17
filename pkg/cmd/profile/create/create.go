@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/profiles"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
@@ -50,6 +51,9 @@ func NewCmdCreate(f *factory.Factory, runF func(*Options) error) *cobra.Command 
 }
 
 func createRun(f *factory.Factory, opts *Options) error {
+	if err := bbinstance.ValidateBackendType(opts.BackendType); err != nil {
+		return err
+	}
 	store, err := f.Profiles()
 	if err != nil {
 		return err
