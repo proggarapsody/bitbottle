@@ -110,6 +110,37 @@ func TestCloudRESTBase(t *testing.T) {
 	assert.Equal(t, "https://api.bitbucket.org/2.0", bbinstance.CloudRESTBase())
 }
 
+func TestValidateBackendType(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		input   string
+		wantErr bool
+	}{
+		{"", false},
+		{"cloud", false},
+		{"server", false},
+		{"datacenter", false},
+		{"clud", true},
+		{"Cloud", true},
+		{"SERVER", true},
+		{"auto", true},
+		{"s3", true},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			t.Parallel()
+			err := bbinstance.ValidateBackendType(tc.input)
+			if tc.wantErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid backend_type")
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestIsCloud_EdgeCases(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
