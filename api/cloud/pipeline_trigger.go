@@ -16,12 +16,16 @@ func (c *Client) TriggerPipeline(ns, slug string, input backend.PipelineTriggerI
 			RefName: input.Branch,
 		},
 	}
-	for _, v := range input.Variables {
-		body.Variables = append(body.Variables, cloudgen.CloudTriggerVarItem{
-			Key:     v.Key,
-			Value:   v.Value,
-			Secured: v.Secured,
-		})
+	if len(input.Variables) > 0 {
+		vars := make([]cloudgen.CloudTriggerVarItem, 0, len(input.Variables))
+		for _, v := range input.Variables {
+			vars = append(vars, cloudgen.CloudTriggerVarItem{
+				Key:     v.Key,
+				Value:   v.Value,
+				Secured: v.Secured,
+			})
+		}
+		body.Variables = &vars
 	}
 
 	var resp cloudgen.CloudTriggerResponse
