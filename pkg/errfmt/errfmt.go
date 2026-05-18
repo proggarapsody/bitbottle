@@ -90,7 +90,7 @@ var catalogue = map[backend.ErrorCode]entry{
 	},
 	backend.CodeTransportTimeout: {
 		title: "Request to {{.Host}} timed out.",
-		hints: []string{"Network or VPN may be slow or down. Retry; pass `--debug` for transport details."},
+		hints: []string{"Network or VPN may be slow or down. Retry in a moment."},
 	},
 	backend.CodeInvalidRequest: {
 		title: "The request was rejected by {{.Host}} as invalid.",
