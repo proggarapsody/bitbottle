@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.79.0](https://github.com/proggarapsody/bitbottle/compare/v1.78.0...v1.79.0) (2026-05-18)
+
+
+### Features
+
+* **pr:** add JSON/YAML output to pr checks ([#401](https://github.com/proggarapsody/bitbottle/issues/401)) ([bfd15de](https://github.com/proggarapsody/bitbottle/commit/bfd15de44974de6cad3d32332a1c4d790a25b847))
+
 ## [1.78.0](https://github.com/proggarapsody/bitbottle/compare/v1.77.1...v1.78.0) (2026-05-18)
 
 
