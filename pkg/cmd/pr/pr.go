@@ -37,6 +37,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRReopen(f))
 	cmd.AddCommand(NewCmdPRUnapprove(f))
 	cmd.AddCommand(NewCmdPRReady(f))
+	cmd.AddCommand(NewCmdPRUnready(f))
 	cmd.AddCommand(NewCmdPRRequestReview(f))
 	cmd.AddCommand(NewCmdPRRequestChanges(f))
 	cmd.AddCommand(NewCmdPRReview(f))

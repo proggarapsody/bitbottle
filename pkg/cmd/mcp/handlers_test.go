@@ -1305,6 +1305,42 @@ func TestReadyPR_ZeroId_ReturnsError(t *testing.T) {
 	assertErrorResult(t, result, "id")
 }
 
+// ---- unready_pull_request ----
+
+func TestUnreadyPR_CallsClientAndReturnsPR(t *testing.T) {
+	t.Parallel()
+	var gotID int
+	fake := &testhelpers.FakeClient{
+		UnreadyPRFn: func(ns, slug string, id int) error {
+			gotID = id
+			return nil
+		},
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: id, Title: "Draft PR"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.unreadyPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+		"id":      float64(7),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, 7, gotID)
+	assertJSONContains(t, result, "Draft PR", "")
+}
+
+func TestUnreadyPR_ZeroId_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.unreadyPR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "my-repo",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
 // ---- request_review ----
 
 func TestRequestReview_CallsClientWithUsers(t *testing.T) {

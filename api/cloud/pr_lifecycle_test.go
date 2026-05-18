@@ -88,6 +88,19 @@ func TestCloudClient_ReadyPR_SendsDraftFalse(t *testing.T) {
 	assert.Contains(t, string(gotBody), `"draft":false`)
 }
 
+func TestCloudClient_UnreadyPR_SendsDraftTrue(t *testing.T) {
+	t.Parallel()
+	var gotBody []byte
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(prGetBody(t))
+	})
+	err := client.UnreadyPR("myworkspace", "my-service", 7)
+	require.NoError(t, err)
+	assert.Contains(t, string(gotBody), `"draft":true`)
+}
+
 // TestCloudClient_RequestReview_UsesPutWithReviewersList verifies that
 // RequestReview issues exactly 2 requests: GET to read the current PR, then
 // PUT to /pullrequests/{id} carrying the merged reviewers list.

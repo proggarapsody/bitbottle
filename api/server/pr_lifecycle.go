@@ -70,6 +70,22 @@ func (c *Client) ReadyPR(ns, slug string, id int) error {
 	return c.putJSON(path, current, &result)
 }
 
+// UnreadyPR marks an open pull request as draft (Server 8.0+).
+//
+// Bitbucket Server's PUT endpoint for a PR requires the full PR object
+// (title, fromRef, toRef, ...), so we GET the current PR first, flip the
+// draft flag to true, and PUT the full body back.
+func (c *Client) UnreadyPR(ns, slug string, id int) error {
+	var current servergen.RestPullRequest
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
+	if err := c.getJSON(path, &current); err != nil {
+		return err
+	}
+	current.Draft = true
+	var result struct{}
+	return c.putJSON(path, current, &result)
+}
+
 // prReviewerInput is the wire type for a reviewer entry in the Server PR body.
 // Uses RestPullRequestReviewerInput from the gen package but alias kept here
 // for clarity in the RequestReview method.

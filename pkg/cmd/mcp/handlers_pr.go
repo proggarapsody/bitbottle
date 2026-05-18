@@ -340,6 +340,35 @@ func (h *handlers) readyPR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	return jsonResult(pr)
 }
 
+func (h *handlers) unreadyPR(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	project, err := requireString(req, "project")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	id := req.GetInt("id", 0)
+	if id == 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := client.UnreadyPR(project, slug, id); err != nil {
+		return errResultErr(err), nil
+	}
+	pr, err := client.GetPR(project, slug, id)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(pr)
+}
+
 func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
 	project, err := requireString(req, "project")

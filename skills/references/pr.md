@@ -16,6 +16,7 @@ bitbottle pr checkout  42
 bitbottle pr edit      42 [--title "x"] [--body "x"]
 bitbottle pr decline   42
 bitbottle pr ready     42                       # draft → ready
+bitbottle pr unready   42                       # open → draft
 bitbottle pr request-review  42 --reviewer alice [--reviewer bob]
 bitbottle pr request-changes 42                 # Cloud only
 bitbottle pr review 42 --approve                     # approve + optional body/inline comments
@@ -213,6 +214,21 @@ MCP tools: `pr_reviewer_group_list`, `pr_reviewer_group_add`, `pr_reviewer_group
 `pr_reviewer_group_add` accepts `repo`, `name`, `users` (comma-separated slugs),
 `required_approvals` (optional, default 1), and `hostname`. `pr_reviewer_group_remove`
 accepts `repo`, `id` (numeric condition ID), and `hostname`.
+
+## pr ready / pr unready — draft state
+
+`pr ready PR_ID` promotes a draft pull request to open/ready-for-review state.
+`pr unready PR_ID` converts an open pull request back to draft state — inverse of `pr ready`.
+
+Both commands accept `--hostname HOST` and work on Cloud and Server/DC.
+
+- **Cloud**: both operations issue `PUT /repositories/{ws}/{slug}/pullrequests/{id}` with
+  `{"draft": false}` (ready) or `{"draft": true}` (unready).
+- **Server/DC**: both operations GET the full PR body, flip `draft`, then PUT it back
+  (Bitbucket Server 8.0+ required for draft support).
+
+MCP tools: `ready_pr` and `unready_pull_request`. Both accept `project`, `slug`, `id`,
+and optional `hostname`; both return the updated PR object.
 
 ## Common failures
 

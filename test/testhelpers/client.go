@@ -52,6 +52,7 @@ type FakeClient struct {
 	DeclinePRFn     func(ns, slug string, id int) error
 	UnapprovePRFn   func(ns, slug string, id int) error
 	ReadyPRFn       func(ns, slug string, id int) error
+	UnreadyPRFn     func(ns, slug string, id int) error
 	RequestReviewFn func(ns, slug string, id int, users []string) error
 	SubmitReviewFn  func(ns, slug string, id int, in backend.SubmitReviewInput) error
 
@@ -538,6 +539,16 @@ func (c *FakeClient) ReadyPR(ns, slug string, id int) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ReadyPR; set ReadyPRFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) UnreadyPR(ns, slug string, id int) error {
+	if c.UnreadyPRFn != nil {
+		return c.UnreadyPRFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UnreadyPR; set UnreadyPRFn in your test")
 	}
 	return nil
 }

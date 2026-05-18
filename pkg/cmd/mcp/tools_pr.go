@@ -198,6 +198,17 @@ func registerPRTools(s *mcpserver.MCPServer, h *handlers) {
 	)
 
 	s.AddTool(
+		mcplib.NewTool("unready_pull_request",
+			mcplib.WithDescription("Convert an open pull request back to draft state"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqID,
+		),
+		h.unreadyPR,
+	)
+
+	s.AddTool(
 		mcplib.NewTool("request_review",
 			mcplib.WithDescription("Request reviewers on a pull request"),
 			optHostname,
