@@ -147,6 +147,45 @@ func TestCloudClient_RequestReview_PreservesExistingReviewers(t *testing.T) {
 	assert.Contains(t, string(putBody), "alice", "new reviewer must be added")
 }
 
+func TestCloudClient_RemoveReviewers_FiltersAndPuts(t *testing.T) {
+	t.Parallel()
+	var methods []string
+	var putBody []byte
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		methods = append(methods, r.Method)
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPut {
+			putBody, _ = io.ReadAll(r.Body)
+		}
+		// PR with reviewers alice and bob
+		_, _ = io.WriteString(w, `{"id":7,"title":"My PR","reviewers":[{"account_id":"alice"},{"account_id":"bob"}],"source":{"branch":{"name":"feat"}},"destination":{"branch":{"name":"main"}},"links":{"html":{"href":""}}}`)
+	})
+	err := client.RemoveReviewers("myworkspace", "my-service", 7, []string{"alice"})
+	require.NoError(t, err)
+	require.Len(t, methods, 2, "expect GET then PUT")
+	assert.Equal(t, http.MethodGet, methods[0])
+	assert.Equal(t, http.MethodPut, methods[1])
+	assert.NotContains(t, string(putBody), "alice", "removed reviewer must not be in PUT body")
+	assert.Contains(t, string(putBody), "bob", "remaining reviewer must be preserved")
+}
+
+func TestCloudClient_RemoveReviewers_NonExistentIsNoOp(t *testing.T) {
+	t.Parallel()
+	var putBody []byte
+	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPut {
+			putBody, _ = io.ReadAll(r.Body)
+		}
+		_, _ = io.WriteString(w, `{"id":7,"title":"My PR","reviewers":[{"account_id":"bob"}],"source":{"branch":{"name":"feat"}},"destination":{"branch":{"name":"main"}},"links":{"html":{"href":""}}}`)
+	})
+	// "alice" is not a reviewer — filtered list is unchanged
+	err := client.RemoveReviewers("myworkspace", "my-service", 7, []string{"alice"})
+	require.NoError(t, err)
+	assert.Contains(t, string(putBody), "bob")
+	assert.NotContains(t, string(putBody), "alice")
+}
+
 func TestCloudClient_RequestChangesPR_IssuesCorrectPath(t *testing.T) {
 	t.Parallel()
 	var gotPath, gotMethod string

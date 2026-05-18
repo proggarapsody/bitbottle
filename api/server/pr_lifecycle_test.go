@@ -213,6 +213,34 @@ func TestServerClient_UnreadyPR_GetsThenPutsFullBody(t *testing.T) {
 	assert.Contains(t, put, `"toRef"`)
 }
 
+func TestServerClient_RemoveReviewers_DeletesPerUser(t *testing.T) {
+	t.Parallel()
+	var paths, methods []string
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		methods = append(methods, r.Method)
+		w.WriteHeader(http.StatusNoContent)
+	})
+	err := client.RemoveReviewers("MYPROJ", "my-service", 42, []string{"alice", "bob"})
+	require.NoError(t, err)
+	require.Len(t, paths, 2)
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/participants/alice", paths[0])
+	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/participants/bob", paths[1])
+	assert.Equal(t, http.MethodDelete, methods[0])
+	assert.Equal(t, http.MethodDelete, methods[1])
+}
+
+func TestServerClient_RemoveReviewers_404IsIgnored(t *testing.T) {
+	t.Parallel()
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = io.WriteString(w, `{"errors":[{"message":"not found"}]}`)
+	})
+	// 404 for a non-participant should not be an error
+	err := client.RemoveReviewers("MYPROJ", "my-service", 42, []string{"ghost"})
+	require.NoError(t, err)
+}
+
 func TestServerClient_RequestReview_GetsAndPutsPR(t *testing.T) {
 	t.Parallel()
 	var methods []string

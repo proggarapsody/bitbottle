@@ -93,6 +93,36 @@ func (c *Client) RequestReview(ns, slug string, id int, users []string) error {
 	return c.putJSON(path, body, &result)
 }
 
+// RemoveReviewers removes the given users from a pull request's reviewer list.
+// Cloud has no dedicated DELETE reviewer endpoint; we GET the current PR,
+// filter out the named account IDs, and PUT the reduced list back.
+func (c *Client) RemoveReviewers(ns, slug string, id int, users []string) error {
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
+	var current cloudgen.CloudPullRequest
+	if err := c.getJSON(path, &current); err != nil {
+		return err
+	}
+	remove := make(map[string]bool, len(users))
+	for _, u := range users {
+		remove[u] = true
+	}
+	type reviewer struct {
+		AccountID string `json:"account_id"`
+	}
+	var filtered []reviewer
+	for _, r := range current.Reviewers {
+		if !remove[r.AccountID] {
+			filtered = append(filtered, reviewer{AccountID: r.AccountID})
+		}
+	}
+	body := map[string]any{
+		"title":     current.Title,
+		"reviewers": filtered,
+	}
+	var result cloudgen.CloudPullRequest
+	return c.putJSON(path, body, &result)
+}
+
 // RequestChangesPR requests changes on a pull request (Cloud only).
 // A nil body is intentional: ContentTypeWhenBody ensures no Content-Type is
 // set, which is required for this endpoint on Bitbucket Cloud.
