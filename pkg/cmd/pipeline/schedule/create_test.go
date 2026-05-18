@@ -1,4 +1,4 @@
-package pipeline_test
+package schedule_test
 
 import (
 	"testing"
@@ -8,14 +8,14 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/schedule"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdScheduleCreate_Flags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleCreate(f, nil)
+	cmd := schedule.NewCmdCreate(f, nil)
 	assert.NotNil(t, cmd.Flag("hostname"))
 	assert.NotNil(t, cmd.Flag("cron"))
 	assert.NotNil(t, cmd.Flag("branch"))
@@ -40,7 +40,7 @@ func TestScheduleCreate_PassesInputToAPI(t *testing.T) {
 		},
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleCreate(f, nil)
+	cmd := schedule.NewCmdCreate(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--cron", "0 0 * * *", "--branch", "main"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "0 0 * * *", gotInput.CronExpression)
@@ -53,7 +53,7 @@ func TestScheduleCreate_MissingCron_ReturnsError(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleCreate(f, nil)
+	cmd := schedule.NewCmdCreate(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--branch", "main"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -63,7 +63,7 @@ func TestScheduleCreate_MissingBranch_ReturnsError(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleCreate(f, nil)
+	cmd := schedule.NewCmdCreate(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--cron", "0 0 * * *"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -80,7 +80,7 @@ func TestScheduleCreate_EnabledFalse(t *testing.T) {
 		},
 	}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleCreate(f, nil)
+	cmd := schedule.NewCmdCreate(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--cron", "0 0 * * *", "--branch", "main", "--enabled=false"})
 	require.NoError(t, cmd.Execute())
 	assert.False(t, gotEnabled)
@@ -90,7 +90,7 @@ func TestScheduleCreate_ClientNotCapable_ReturnsError(t *testing.T) {
 	t.Parallel()
 	fake := &noPipelineScheduleFake{Client: &testhelpers.FakeClient{T: t}}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleCreate(f, nil)
+	cmd := schedule.NewCmdCreate(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--cron", "0 0 * * *", "--branch", "main"})
 	err := cmd.Execute()
 	require.Error(t, err)

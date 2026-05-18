@@ -1,4 +1,4 @@
-package pipeline_test
+package schedule_test
 
 import (
 	"errors"
@@ -9,14 +9,14 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/schedule"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 func TestNewCmdScheduleList_Flags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleList(f, nil)
+	cmd := schedule.NewCmdList(f, nil)
 	assert.NotNil(t, cmd.Flag("hostname"))
 }
 
@@ -33,7 +33,7 @@ func TestScheduleList_PrintsSchedules(t *testing.T) {
 		},
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleList(f, nil)
+	cmd := schedule.NewCmdList(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "sched-1")
@@ -50,7 +50,7 @@ func TestScheduleList_EmptyList(t *testing.T) {
 		},
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleList(f, nil)
+	cmd := schedule.NewCmdList(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "No pipeline schedules found")
@@ -60,7 +60,7 @@ func TestScheduleList_ClientNotCapable_ReturnsError(t *testing.T) {
 	t.Parallel()
 	fake := &noPipelineScheduleFake{Client: &testhelpers.FakeClient{T: t}}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleList(f, nil)
+	cmd := schedule.NewCmdList(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -79,7 +79,7 @@ func TestScheduleList_PartialResults(t *testing.T) {
 		},
 	}
 	f, out, errOut := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
-	cmd := pipeline.NewCmdScheduleList(f, nil)
+	cmd := schedule.NewCmdList(f, nil)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)

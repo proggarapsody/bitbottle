@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	cmdSchedule "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/schedule"
 )
 
 // NewCmdPipelineSchedule builds the `pipeline schedule` subgroup command.
@@ -18,8 +19,8 @@ directory.`,
 		},
 	}
 	factory.EnableRepoOverride(cmd, f)
-	cmd.AddCommand(NewCmdScheduleList(f, nil))
-	cmd.AddCommand(NewCmdScheduleCreate(f, nil))
-	cmd.AddCommand(NewCmdScheduleDelete(f, nil))
+	cmd.AddCommand(cmdSchedule.NewCmdList(f, nil))
+	cmd.AddCommand(cmdSchedule.NewCmdCreate(f, nil))
+	cmd.AddCommand(cmdSchedule.NewCmdDelete(f, nil))
 	return cmd
 }

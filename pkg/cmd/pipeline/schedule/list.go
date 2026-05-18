@@ -1,4 +1,4 @@
-package pipeline
+package schedule
 
 import (
 	"fmt"
@@ -11,15 +11,15 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
-// ScheduleListOptions holds parsed flags for `pipeline schedule list`.
-type ScheduleListOptions struct {
+// ListOptions holds parsed flags for `pipeline schedule list`.
+type ListOptions struct {
 	Hostname string
 	Args     []string
 }
 
-// NewCmdScheduleList builds the `pipeline schedule list` cobra command.
-func NewCmdScheduleList(f *factory.Factory, runF func(*ScheduleListOptions) error) *cobra.Command {
-	opts := &ScheduleListOptions{}
+// NewCmdList builds the `pipeline schedule list` cobra command.
+func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Command {
+	opts := &ListOptions{}
 	cmd := &cobra.Command{
 		Use:   "list [PROJECT/REPO]",
 		Short: "List pipeline schedules for a repository",
@@ -29,14 +29,14 @@ func NewCmdScheduleList(f *factory.Factory, runF func(*ScheduleListOptions) erro
 			if runF != nil {
 				return runF(opts)
 			}
-			return runScheduleList(f, cmd, opts)
+			return runList(f, cmd, opts)
 		},
 	}
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func runScheduleList(f *factory.Factory, cmd *cobra.Command, opts *ScheduleListOptions) error {
+func runList(f *factory.Factory, cmd *cobra.Command, opts *ListOptions) error {
 	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
 	if err != nil {
 		return err
