@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -66,6 +67,10 @@ type Factory struct {
 	// failure without editing hosts.yml — the recovery path that the
 	// `network.tls_unknown_authority` error hint promises.
 	SkipTLSOverride bool
+	// DebugHTTP enables verbose HTTP request/response logging to
+	// IOStreams.ErrOut. Set by the persistent root flag --debug so users
+	// can diagnose transport-level failures (timeouts, auth errors, etc.).
+	DebugHTTP bool
 }
 
 func New() *Factory {
@@ -149,7 +154,7 @@ func New() *Factory {
 		}
 		hostCfg, _ := cfg.Get(hostname)
 		hostCfg.OAuthToken = resolveToken(hostCfg, kr)
-		hc := newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride)
+		hc := newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride, f.DebugHTTP, f.IOStreams.ErrOut)
 		return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 	}
 	f.BackendWithOptions = func(hostname string, opts backend.Options) (backend.Client, error) {
@@ -172,7 +177,7 @@ func New() *Factory {
 			hostCfg.User = opts.Username
 			hostCfg.AuthUser = opts.Username
 		}
-		hc := newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride)
+		hc := newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride, f.DebugHTTP, f.IOStreams.ErrOut)
 		return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 	}
 	f.HTTPClient = func(hostname string) (HTTPClient, error) {
@@ -180,7 +185,7 @@ func New() *Factory {
 			return nil, err
 		}
 		hostCfg, _ := cfg.Get(hostname)
-		return newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride), nil
+		return newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride, f.DebugHTTP, f.IOStreams.ErrOut), nil
 	}
 	return f
 }
@@ -232,12 +237,33 @@ func configHomeDir() string {
 	return filepath.Join(home, ".config")
 }
 
-func newHTTPClient(skipTLSVerify bool) *http.Client {
+func newHTTPClient(skipTLSVerify, debug bool, errOut io.Writer) *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	if skipTLSVerify {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
 	}
-	return &http.Client{Transport: bitbottleapi.WrapTransport(transport)}
+	var rt http.RoundTripper = bitbottleapi.WrapTransport(transport)
+	if debug {
+		rt = &debugRoundTripper{inner: rt, out: errOut}
+	}
+	return &http.Client{Transport: rt}
+}
+
+type debugRoundTripper struct {
+	inner http.RoundTripper
+	out   io.Writer
+}
+
+func (d *debugRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	start := time.Now()
+	fmt.Fprintf(d.out, "→ %s %s\n", req.Method, req.URL)
+	resp, err := d.inner.RoundTrip(req)
+	if err != nil {
+		fmt.Fprintf(d.out, "← error: %s (%s)\n", err, time.Since(start).Round(time.Millisecond))
+		return nil, err
+	}
+	fmt.Fprintf(d.out, "← %s (%s)\n", resp.Status, time.Since(start).Round(time.Millisecond))
+	return resp, nil
 }
 
 // resolveToken returns the token to use for the given host. When the
