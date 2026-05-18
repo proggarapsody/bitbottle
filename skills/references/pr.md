@@ -13,7 +13,7 @@ bitbottle pr approve   42
 bitbottle pr unapprove 42
 bitbottle pr diff      42                       # unified diff; pipes to pager on TTY
 bitbottle pr checkout  42
-bitbottle pr edit      42 [--title "x"] [--body "x"]
+bitbottle pr edit      42 [--title "x"] [--body "x"] [--remove-reviewer alice]
 bitbottle pr decline   42
 bitbottle pr ready     42                       # draft → ready
 bitbottle pr unready   42                       # open → draft

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
@@ -84,6 +85,22 @@ func (c *Client) UnreadyPR(ns, slug string, id int) error {
 	current.Draft = true
 	var result struct{}
 	return c.putJSON(path, current, &result)
+}
+
+// RemoveReviewers removes the given users from a pull request's reviewer list.
+// Server exposes DELETE /pull-requests/{id}/participants/{userSlug} per user.
+// A 404 (user is not a participant) is silently ignored.
+func (c *Client) RemoveReviewers(ns, slug string, id int, users []string) error {
+	for _, u := range users {
+		path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/participants/%s", ns, slug, id, u)
+		if err := c.delete(path, nil); err != nil {
+			if errors.Is(err, backend.ErrNotFound) {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 // prReviewerInput is the wire type for a reviewer entry in the Server PR body.

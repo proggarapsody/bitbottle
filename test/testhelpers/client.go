@@ -48,13 +48,14 @@ type FakeClient struct {
 	DeleteTagFn func(ns, slug, name string) error
 
 	// PR lifecycle methods
-	UpdatePRFn      func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error)
-	DeclinePRFn     func(ns, slug string, id int) error
-	UnapprovePRFn   func(ns, slug string, id int) error
-	ReadyPRFn       func(ns, slug string, id int) error
-	UnreadyPRFn     func(ns, slug string, id int) error
-	RequestReviewFn func(ns, slug string, id int, users []string) error
-	SubmitReviewFn  func(ns, slug string, id int, in backend.SubmitReviewInput) error
+	UpdatePRFn        func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error)
+	DeclinePRFn       func(ns, slug string, id int) error
+	UnapprovePRFn     func(ns, slug string, id int) error
+	ReadyPRFn         func(ns, slug string, id int) error
+	UnreadyPRFn       func(ns, slug string, id int) error
+	RequestReviewFn   func(ns, slug string, id int, users []string) error
+	RemoveReviewersFn func(ns, slug string, id int, users []string) error
+	SubmitReviewFn    func(ns, slug string, id int, in backend.SubmitReviewInput) error
 
 	// Pipeline methods (Cloud-only; satisfies backend.PipelineClient when set)
 	ListPipelinesFn          func(ns, slug string, limit int) ([]backend.Pipeline, error)
@@ -282,6 +283,7 @@ var (
 	_ backend.WorkspaceClient          = (*FakeClient)(nil)
 	_ backend.WorkspaceMemberClient    = (*FakeClient)(nil)
 	_ backend.WorkspaceVariableClient  = (*FakeClient)(nil)
+	_ backend.PRReviewerRemover        = (*FakeClient)(nil)
 	_ backend.WorkspaceWebhookClient   = (*FakeClient)(nil)
 )
 
@@ -559,6 +561,16 @@ func (c *FakeClient) RequestReview(ns, slug string, id int, users []string) erro
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RequestReview; set RequestReviewFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RemoveReviewers(ns, slug string, id int, users []string) error {
+	if c.RemoveReviewersFn != nil {
+		return c.RemoveReviewersFn(ns, slug, id, users)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RemoveReviewers; set RemoveReviewersFn in your test")
 	}
 	return nil
 }

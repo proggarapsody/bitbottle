@@ -76,6 +76,11 @@ type PRReviewRequester interface {
 	RequestReview(ns, slug string, id int, users []string) error
 }
 
+// PRReviewerRemover removes reviewers from a pull request.
+type PRReviewerRemover interface {
+	RemoveReviewers(ns, slug string, id int, users []string) error
+}
+
 // PRChangesRequester can request changes on a pull request (Cloud only).
 // Access via type assertion — not embedded in Client.
 type PRChangesRequester interface {

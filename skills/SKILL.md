@@ -20,7 +20,7 @@ not sure about.**
 | Task | Open |
 |---|---|
 | Auth, hosts.yml, env vars, multi-host setup, auth migrate | `references/auth.md` |
-| PR lifecycle (list/view/create/merge/approve/comment/pr activity/review/commits/files/participants/ready/unready/…) | `references/pr.md` |
+| PR lifecycle (list/view/create/merge/approve/comment/pr activity/review/commits/files/participants/ready/unready/remove-reviewer/…) | `references/pr.md` |
 | Repos, branches, tags, commits, pipelines, webhooks, repo watcher list | `references/repos.md` |
 | repo visibility | Get or set repository visibility | `references/repos.md` |
 | commit comment list/add/edit/delete/react/unreact | list, add, edit, delete commit comments; react/unreact (Server/DC only) | `references/commit.md` |

@@ -12,7 +12,7 @@ import (
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
-func TestPREdit_RequiresTitleOrBody(t *testing.T) {
+func TestPREdit_RequiresTitleOrBodyOrRemoveReviewer(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{T: t}
 	f, _, _ := newPRFactory(t, fake, newPRRunner())
@@ -71,6 +71,49 @@ func TestPREdit_PassesBodyToAPI(t *testing.T) {
 	cmd.SetArgs([]string{"42", "--body", "Updated description"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, "Updated description", gotIn.Description)
+}
+
+func TestPREdit_RemoveReviewer_CallsRemoveReviewers(t *testing.T) {
+	t.Parallel()
+	var gotUsers []string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		RemoveReviewersFn: func(ns, slug string, id int, users []string) error {
+			gotUsers = users
+			return nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPREdit(f)
+	cmd.SetArgs([]string{"42", "--remove-reviewer", "alice,bob"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, []string{"alice", "bob"}, gotUsers)
+	assert.Contains(t, out.String(), "Removed reviewer(s) from pull request #42")
+}
+
+func TestPREdit_RemoveReviewerAndTitle_DoesBoth(t *testing.T) {
+	t.Parallel()
+	var updatedTitle string
+	var removedUsers []string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
+			updatedTitle = in.Title
+			return backend.PullRequest{ID: id, Title: in.Title}, nil
+		},
+		RemoveReviewersFn: func(ns, slug string, id int, users []string) error {
+			removedUsers = users
+			return nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPREdit(f)
+	cmd.SetArgs([]string{"42", "--title", "New title", "--remove-reviewer", "alice"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, "New title", updatedTitle)
+	assert.Equal(t, []string{"alice"}, removedUsers)
+	assert.Contains(t, out.String(), "Updated pull request #42")
+	assert.Contains(t, out.String(), "Removed reviewer(s) from pull request #42")
 }
 
 func TestPREdit_APIError_PropagatesError(t *testing.T) {
