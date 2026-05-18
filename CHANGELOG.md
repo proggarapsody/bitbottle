@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.76.0](https://github.com/proggarapsody/bitbottle/compare/v1.75.0...v1.76.0) (2026-05-18)
+
+
+### Features
+
+* pr edit --remove-reviewer removes reviewers from a PR ([1add15f](https://github.com/proggarapsody/bitbottle/commit/1add15fa73adf3ab042fa6de5bec342dca020585))
+
+
+### Bug Fixes
+
+* **release:** remove cosign-installer to fix goreleaser bundle verification ([3136c80](https://github.com/proggarapsody/bitbottle/commit/3136c80bdf641402f2e67b9e5ffafbd1be492855))
+
 ## [1.75.0](https://github.com/proggarapsody/bitbottle/compare/v1.74.0...v1.75.0) (2026-05-18)
 
 
