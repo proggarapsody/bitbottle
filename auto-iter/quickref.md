@@ -74,15 +74,19 @@ Two phases legitimately need Opus: brainstorm and architecture-audit. Everything
 
 Two categories — **mid-cycle** (pause-and-continue) and **chain-breaking** (exit).
 
-### Mid-cycle halt (every successful `feat:` cycle has exactly 1)
+### Mid-cycle halt (fires when release-please opens a new release PR, not per feat)
 
 | Halt | Phone format | Required reply |
 |---|---|---|
-| HALT — Ship | `🚀 PR #N <scope> merged. v<X.Y.Z> ready to publish. ship?` | tap `ship` / `hold` |
+| HALT — Ship | `🚀 release PR #N bundles K feat/fix → v<X.Y.Z>. ship?` | tap `ship` / `hold` |
 
-The feature PR is **auto-merged** once CI is green AND all gates pass (no halt — gates already vetted content). The only mid-cycle halt is at the irreversible release-publish step. Tap → release PR merges, GoReleaser publishes async. Tap "hold" → exit, cycle outcome `halt_release`.
+The feature PR is **auto-merged** once CI is green AND all gates pass (no halt — gates already vetted content). The only mid-cycle halt is at the irreversible release-publish step.
 
-For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trigger release-please, cycle ends after feature merge.
+**The halt fires per release-please PR, NOT per feat cycle.** When cycles run back-to-back faster than release-please reacts, one release-please PR collects multiple `feat:` commits — across cycles 81–86 in the May-17 stream, six `feat:` cycles ran in 87 minutes and release-please opened a single PR (#359) that bundled all six. A halt-per-feat model would have asked the user to ship six times for one publish; instead it fired zero times because the per-cycle assumption is wrong. Match reality: halt only when release-please opens a **new** PR (different number than the previously-halted-on one).
+
+Tap → release PR merges, GoReleaser publishes async. Tap "hold" → exit, cycle outcome `halt_release`.
+
+For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trigger release-please, cycle ends after feature merge. For `feat:` / `fix:` cycles where release-please hasn't opened a new PR yet (debounce in progress): also no halt; cycle ends `shipped` with `release: null`, and the halt fires on a later cycle when the PR opens.
 
 ### Chain-breaking halts (rare — exit and wait for human)
 
@@ -146,6 +150,7 @@ Output line shape:
 | Value | Meaning |
 |---|---|
 | `shipped` | Feature PR merged, release published (or release skipped for `refactor:`/`chore:`) |
+| `skipped_already_shipped` | Scope was already in main's history (§1.5 already-shipped check). Cycle wrote a 1-line BACKLOG status flip and skipped §2. Counts toward stream `ran`. |
 | `audit_no_findings` | Architecture mode, no findings → no PR opened |
 | `brainstorm_added_<N>` | Brainstorm yielded N new BACKLOG rows |
 | `shutdown_confirmed` | Stop mode confirmed |
@@ -240,10 +245,14 @@ jq -s 'map(select(.step | startswith("step2_halt")) | .duration_ms / 1000)' \
 - ❌ Skipping pre-merge-check or design-judge "because the change is small".
 - ❌ Editing `CHANGELOG.md`, `.release-please-manifest.json`, or `<!-- x-release-please-version -->` lines on a non-release branch.
 - ❌ Force-pushing or `--no-verify`.
-- ❌ Marking a `BACKLOG.md` row ✅ before the release PR has merged.
+- ❌ Opening a separate `chore: mark X shipped in BACKLOG` PR after the feat PR merges. **The BACKLOG status flip belongs in the feat commit itself** (see iteration-cycle §4). Across cycles 77–86 the post-merge chore-PR pattern produced 8 extra PRs and 4 duplicate commits on `main` (MCP-VALIDATION, JSON-STABILITY, ERR-EMPTY-400, BACKEND-TYPE-STRICT each landed twice).
+- ❌ Marking a `BACKLOG.md` row ✅ before the corresponding feat PR has merged. (Flipping in the same commit is correct; flipping in a separate earlier PR is not.)
 - ❌ Multiple feature PRs in one cycle without §1 bundle-check or §11 parallel-mode rules being satisfied.
 - ❌ Embedding diff content in halt messages — reference PR URL only.
-- ❌ Running TDD inline in the orchestrator instead of dispatching to a Sonnet `Task` subagent.
+- ❌ Running TDD inline in the orchestrator instead of dispatching to a Sonnet `Task` subagent. Across the May-17 stream this produced `dispatch_violation:true` on cycles 77 and 79 — both were "scope already shipped historically" cases that should have been caught earlier (see §1.5 already-shipped check).
+- ❌ Running a full §2 pipeline for a scope already present in `main`. The §1.5 already-shipped check (`git log --all --grep="$SCOPE_TAG"` matched against a `feat:`/`fix:`/`refactor:` commit) must run before TDD dispatch. Cycles 77 (DEPGUARD-CI) and 79 (FAKECLIENT-SAFETY) re-did work shipped two days earlier (PR #338 and #334).
+- ❌ `git merge origin/main` at cycle boundaries on local `main`. Branch protection blocks direct pushes to `main` so the local branch is read-only at cycle boundaries — `git reset --hard origin/main` is the correct operation. The May-17 stream littered `main` with 7 `Merge remote-tracking branch` commits because the orchestrator chose merge over reset.
+- ❌ Emitting metrics via raw `echo >> metrics.jsonl` or inline `jq -nc`. **Always use [`auto-iter/scripts/metric.sh`](scripts/metric.sh).** Prose checklists for emission discipline get skimmed past after context compaction — across cycles 81–86 in the May-17 stream, per-step metrics emission collapsed from 10 lines/cycle (cycles 77–79) to 0–1 lines/cycle. A shell invocation can't be skimmed.
 - ❌ Forcing `/compact` inside `/auto-iter` — trust Claude's automatic compaction.
 
 ---

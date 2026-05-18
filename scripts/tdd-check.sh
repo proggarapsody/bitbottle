@@ -87,7 +87,21 @@ if [ -n "$forced" ]; then
   fail=1
 fi
 
-# ─── Rule 5: SKILL.md skim heuristic ─────────────────────────────────────────
+# ─── Rule 5: strict gofmt residue check ──────────────────────────────────────
+# gofmt -w ./... in the self-check leaves no diff IFF every file was already
+# touched and reformatted. A non-empty `gofmt -l ./...` afterward means a file
+# slipped through — typically a newly-created file the subagent forgot to
+# format. Cycle 83 (JSON-STABILITY) shipped a `style: gofmt …` follow-up
+# commit because the strict check was missing; CI lint catches it but only
+# after a 1.5-minute CI cycle. Catch it here instead.
+stray_fmt=$(gofmt -l ./... 2>/dev/null || true)
+if [ -n "$stray_fmt" ]; then
+  echo "BLOCKER: gofmt -l flagged files (run 'gofmt -w' and re-commit):"
+  echo "$stray_fmt" | sed 's/^/  /'
+  fail=1
+fi
+
+# ─── Rule 6: SKILL.md skim heuristic ─────────────────────────────────────────
 # New command files in pkg/cmd/ should map to entries in skills/SKILL.md.
 # This is a hint, not a hard fail — perfect coverage is hard to autodetect.
 new_cmd_dirs=$(git diff --name-only --diff-filter=A "$BASE"...HEAD pkg/cmd/ 2>/dev/null \

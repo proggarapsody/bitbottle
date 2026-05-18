@@ -257,7 +257,13 @@ opens.
 **In-repo docs** (update only what the scope actually changed)
 - `README.md` — new command section, examples.
 - `BACKLOG.md` — flip the row to ✅, update the "Full Functionality
-  Map" entries.
+  Map" entries. **The flip lands in the same commit as the feat work,
+  NOT in a follow-up `chore: mark X shipped in BACKLOG` PR.** Across
+  cycles 77–86 in the May-17 autonomous stream, the post-merge chore-PR
+  pattern produced 8 extra PRs and 4 duplicate commits on `main`
+  (MCP-VALIDATION, JSON-STABILITY, ERR-EMPTY-400, and BACKEND-TYPE-STRICT
+  each landed twice). One feat commit that touches both code and BACKLOG
+  is the correct shape.
 - `AGENTS.md` — only if a new project-wide rule emerged (a new pattern
   for adapters, a new invariant, etc.).
 - `skills/SKILL.md` — single-file Claude skill bundled with the npm
