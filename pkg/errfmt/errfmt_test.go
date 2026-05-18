@@ -141,7 +141,7 @@ func TestRender_Catalogue(t *testing.T) {
 			code: backend.CodeTransportTimeout,
 			want: []string{
 				"Request to git.example.com timed out",
-				"Retry in a moment",
+				"`--debug`",
 			},
 		},
 	}

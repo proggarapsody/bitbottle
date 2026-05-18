@@ -10,7 +10,7 @@ in `pkg/cmd/**` (excluding `*_test.go`). Run against commit where UX-FLAG-AUDIT 
 
 | Source | Flag / Shorthand | Actually Wired? | Fix |
 |--------|------------------|-----------------|-----|
-| `pkg/errfmt/errfmt.go:93` — `CodeTransportTimeout` hint | `--debug` | ❌ no such flag registered anywhere | Removed the `--debug` reference from hint text (this PR); follow-up scope `DEBUG-TRANSPORT-FLAG` to wire a real flag |
+| `pkg/errfmt/errfmt.go:93` — `CodeTransportTimeout` hint | `--debug` | ❌ no such flag registered anywhere (at UX-FLAG-AUDIT time) | Removed stale hint in UX-FLAG-AUDIT; wired real `--debug` persistent flag in DEBUG-TRANSPORT-FLAG (v1.78.0) |
 | `pkg/errfmt/errfmt.go:89` — `CodeNetworkTLSUnknownAuthority` hint | `-k` / `--skip-tls-verify` | ✅ `PersistentFlags().BoolP("skip-tls-verify","k",…)` on root | TLS-VERIFY-GLOBAL (shipped v1.77.0) |
 | `pkg/errfmt/errfmt.go:41` — `CodeAuthNoToken` hint | `--hostname` | ✅ registered on every subcommand + root | — |
 | `pkg/errfmt/errfmt.go:45` — `CodeAuthInvalidToken` hint | `--hostname` | ✅ same | — |
@@ -35,9 +35,9 @@ in `pkg/cmd/**` (excluding `*_test.go`). Run against commit where UX-FLAG-AUDIT 
 
 ## Summary
 
-One finding: `--debug` was referenced in the `CodeTransportTimeout` error hint but has
-never been registered as a flag. The hint was corrected in this PR. A follow-up scope
-`DEBUG-TRANSPORT-FLAG` has been added to BACKLOG.md to implement a real `--debug` flag
-that dumps HTTP request/response details to stderr.
+One finding: `--debug` was referenced in the `CodeTransportTimeout` error hint but had
+never been registered as a flag. The stale hint was removed in UX-FLAG-AUDIT (v1.77.1),
+then a real `--debug` persistent flag that logs HTTP method/URL/status/latency to stderr
+was wired in DEBUG-TRANSPORT-FLAG (v1.78.0), and the hint was restored.
 
 All other hinted flags verified as correctly wired at the point of this audit.

@@ -57,6 +57,9 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 			if skip, _ := c.Flags().GetBool("skip-tls-verify"); skip {
 				f.SkipTLSOverride = true
 			}
+			if dbg, _ := c.Flags().GetBool("debug"); dbg {
+				f.DebugHTTP = true
+			}
 
 			jsonMode, _ := c.Flags().GetBool("json")
 			yamlMode, _ := c.Flags().GetBool("yaml")
@@ -91,6 +94,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.PersistentFlags().String("jq", "", "Filter JSON output with a jq expression")
 	cmd.PersistentFlags().String("template", "", "Format output with a Go template")
 	cmd.PersistentFlags().BoolP("skip-tls-verify", "k", false, "Skip TLS certificate verification for this invocation (self-signed CAs)")
+	cmd.PersistentFlags().Bool("debug", false, "Log HTTP request/response details to stderr")
 	cmdutil.RegisterNoColorFlag(cmd)
 
 	cmd.AddCommand(NewCmdStatus(f))
