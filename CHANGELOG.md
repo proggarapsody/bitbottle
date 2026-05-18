@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.76.2](https://github.com/proggarapsody/bitbottle/compare/v1.76.1...v1.76.2) (2026-05-18)
+
+
+### Bug Fixes
+
+* **npm:** add repository.url to package.json for provenance verification ([#391](https://github.com/proggarapsody/bitbottle/issues/391)) ([46ece44](https://github.com/proggarapsody/bitbottle/commit/46ece44ec866ed945db9b9b87e481b0e08d83b5a))
+
 ## [1.76.1](https://github.com/proggarapsody/bitbottle/compare/v1.76.0...v1.76.1) (2026-05-18)
 
 
