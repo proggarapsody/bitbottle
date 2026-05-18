@@ -52,6 +52,13 @@ type Factory struct {
 	// ConfigDir is the root config directory (e.g. ~/.config/bitbottle).
 	// Used by extension commands to locate the extensions subdirectory.
 	ConfigDir func() string
+	// SkipTLSOverride forces InsecureSkipVerify=true on the HTTP
+	// transport for the current invocation, regardless of the per-host
+	// SkipTLSVerify config. Set by the persistent root flag -k /
+	// --skip-tls-verify so users can recover from a self-signed CA
+	// failure without editing hosts.yml — the recovery path that the
+	// `network.tls_unknown_authority` error hint promises.
+	SkipTLSOverride bool
 }
 
 func New() *Factory {
@@ -109,48 +116,9 @@ func New() *Factory {
 	// See PRD #372 Bug B.
 	kr := keyring.New()
 
-	return &Factory{
-		IOStreams: iostreams.System(),
-		Config:    configFn,
-		Backend: func(hostname string) (backend.Client, error) {
-			if err := loadConfig(); err != nil {
-				return nil, err
-			}
-			hostCfg, _ := cfg.Get(hostname)
-			hostCfg.OAuthToken = resolveToken(hostCfg, kr)
-			hc := newHTTPClient(hostCfg.SkipTLSVerify)
-			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
-		},
-		BackendWithOptions: func(hostname string, opts backend.Options) (backend.Client, error) {
-			if err := loadConfig(); err != nil {
-				return nil, err
-			}
-			hostCfg, _ := cfg.Get(hostname)
-			if opts.Token != "" {
-				hostCfg.OAuthToken = opts.Token
-			} else {
-				hostCfg.OAuthToken = resolveToken(hostCfg, kr)
-			}
-			if opts.SkipTLSVerify {
-				hostCfg.SkipTLSVerify = true
-			}
-			if opts.Email != "" {
-				hostCfg.AuthUser = opts.Email
-			}
-			if opts.Username != "" {
-				hostCfg.User = opts.Username
-				hostCfg.AuthUser = opts.Username
-			}
-			hc := newHTTPClient(hostCfg.SkipTLSVerify)
-			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
-		},
-		HTTPClient: func(hostname string) (HTTPClient, error) {
-			if err := loadConfig(); err != nil {
-				return nil, err
-			}
-			hostCfg, _ := cfg.Get(hostname)
-			return newHTTPClient(hostCfg.SkipTLSVerify), nil
-		},
+	f := &Factory{
+		IOStreams:  iostreams.System(),
+		Config:     configFn,
 		UserConfig: userConfigFn,
 		Aliases:    aliasesFn,
 		Profiles:   profilesFn,
@@ -163,6 +131,50 @@ func New() *Factory {
 		Now:        time.Now,
 		ConfigDir:  func() string { return configDir },
 	}
+	// Closures read f.SkipTLSOverride at call time so the persistent
+	// root flag -k / --skip-tls-verify (set in root's PersistentPreRunE)
+	// is honored on the very first Backend/HTTPClient call of the
+	// command's RunE.
+	f.Backend = func(hostname string) (backend.Client, error) {
+		if err := loadConfig(); err != nil {
+			return nil, err
+		}
+		hostCfg, _ := cfg.Get(hostname)
+		hostCfg.OAuthToken = resolveToken(hostCfg, kr)
+		hc := newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride)
+		return newBackendClient(hc, hostname, hostCfg, baseURL), nil
+	}
+	f.BackendWithOptions = func(hostname string, opts backend.Options) (backend.Client, error) {
+		if err := loadConfig(); err != nil {
+			return nil, err
+		}
+		hostCfg, _ := cfg.Get(hostname)
+		if opts.Token != "" {
+			hostCfg.OAuthToken = opts.Token
+		} else {
+			hostCfg.OAuthToken = resolveToken(hostCfg, kr)
+		}
+		if opts.SkipTLSVerify {
+			hostCfg.SkipTLSVerify = true
+		}
+		if opts.Email != "" {
+			hostCfg.AuthUser = opts.Email
+		}
+		if opts.Username != "" {
+			hostCfg.User = opts.Username
+			hostCfg.AuthUser = opts.Username
+		}
+		hc := newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride)
+		return newBackendClient(hc, hostname, hostCfg, baseURL), nil
+	}
+	f.HTTPClient = func(hostname string) (HTTPClient, error) {
+		if err := loadConfig(); err != nil {
+			return nil, err
+		}
+		hostCfg, _ := cfg.Get(hostname)
+		return newHTTPClient(hostCfg.SkipTLSVerify || f.SkipTLSOverride), nil
+	}
+	return f
 }
 
 func DefaultBaseRepo(runner run.Runner, cfg func() (*config.Config, error)) func() (bbrepo.RepoRef, error) {
