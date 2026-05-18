@@ -69,14 +69,14 @@ func NewCmdContext(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-// Build assembles a backend.Context from config, git state, and the backend
+// Build assembles a Context from config, git state, and the backend
 // (current user + branch list when inside a repo). Exposed so the MCP
 // `get_context` handler returns the exact same shape as the CLI.
 //
 // Outside a git repository, BaseRepo() returns a non-nil error. That branch
 // yields an empty Project / Slug / Branch / DefaultBranch / Ahead / Behind
 // while still resolving Host, User, and Backend.
-func Build(f *factory.Factory, hostname string) (backend.Context, error) {
+func Build(f *factory.Factory, hostname string) (Context, error) {
 	ref, baseRepoErr := f.BaseRepo()
 
 	host := hostname
@@ -87,25 +87,25 @@ func Build(f *factory.Factory, hostname string) (backend.Context, error) {
 		// No -R, no remote, no flag — fall back to the single-host rule.
 		resolved, err := factory.ResolveHost(f, "")
 		if err != nil {
-			return backend.Context{}, err
+			return Context{}, err
 		}
 		host = resolved
 	}
 
 	client, err := f.Backend(host)
 	if err != nil {
-		return backend.Context{}, err
+		return Context{}, err
 	}
 
 	user, err := client.GetCurrentUser()
 	if err != nil {
-		return backend.Context{}, err
+		return Context{}, err
 	}
 
-	ctx := backend.Context{
+	ctx := Context{
 		Host:    host,
 		Backend: backendKind(f, host),
-		User:    backend.ContextUser(user),
+		User:    ContextUser(user),
 	}
 
 	if baseRepoErr != nil {
@@ -200,7 +200,7 @@ func aheadBehind(runner interface {
 	return right, left, true
 }
 
-func renderTable(f *factory.Factory, ctx backend.Context) error {
+func renderTable(f *factory.Factory, ctx Context) error {
 	w := f.IOStreams.Out
 	fmt.Fprintf(w, "Host:           %s\n", ctx.Host)
 	fmt.Fprintf(w, "Backend:        %s\n", ctx.Backend)
@@ -233,14 +233,14 @@ func renderTable(f *factory.Factory, ctx backend.Context) error {
 	return nil
 }
 
-func contextFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.Context] {
-	p := format.New[backend.Context](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
-	p.AddField(format.Field[backend.Context]{Name: "host", Header: "HOST", Extract: func(c backend.Context) any { return c.Host }})
-	p.AddField(format.Field[backend.Context]{Name: "project", Header: "PROJECT", Extract: func(c backend.Context) any { return c.Project }})
-	p.AddField(format.Field[backend.Context]{Name: "slug", Header: "SLUG", Extract: func(c backend.Context) any { return c.Slug }})
-	p.AddField(format.Field[backend.Context]{Name: "branch", Header: "BRANCH", Extract: func(c backend.Context) any { return c.Branch }})
-	p.AddField(format.Field[backend.Context]{Name: "default_branch", Header: "DEFAULT", Extract: func(c backend.Context) any { return c.DefaultBranch }})
-	p.AddField(format.Field[backend.Context]{Name: "ahead", Header: "AHEAD", Extract: func(c backend.Context) any {
+func contextFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[Context] {
+	p := format.New[Context](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
+	p.AddField(format.Field[Context]{Name: "host", Header: "HOST", Extract: func(c Context) any { return c.Host }})
+	p.AddField(format.Field[Context]{Name: "project", Header: "PROJECT", Extract: func(c Context) any { return c.Project }})
+	p.AddField(format.Field[Context]{Name: "slug", Header: "SLUG", Extract: func(c Context) any { return c.Slug }})
+	p.AddField(format.Field[Context]{Name: "branch", Header: "BRANCH", Extract: func(c Context) any { return c.Branch }})
+	p.AddField(format.Field[Context]{Name: "default_branch", Header: "DEFAULT", Extract: func(c Context) any { return c.DefaultBranch }})
+	p.AddField(format.Field[Context]{Name: "ahead", Header: "AHEAD", Extract: func(c Context) any {
 		// Return untyped nil (not a typed *int) so the printer's omit-nil
 		// rule fires — keeping ahead absent when unknown rather than
 		// emitting JSON null or 0.
@@ -249,13 +249,13 @@ func contextFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[
 		}
 		return *c.Ahead
 	}})
-	p.AddField(format.Field[backend.Context]{Name: "behind", Header: "BEHIND", Extract: func(c backend.Context) any {
+	p.AddField(format.Field[Context]{Name: "behind", Header: "BEHIND", Extract: func(c Context) any {
 		if c.Behind == nil {
 			return nil
 		}
 		return *c.Behind
 	}})
-	p.AddField(format.Field[backend.Context]{Name: "user", Header: "USER", Extract: func(c backend.Context) any {
+	p.AddField(format.Field[Context]{Name: "user", Header: "USER", Extract: func(c Context) any {
 		// gojq cannot traverse struct values; emit a map so `--jq .user.slug`
 		// works the same as it would on the json.Marshal output.
 		return map[string]any{
@@ -263,6 +263,6 @@ func contextFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[
 			"display_name": c.User.DisplayName,
 		}
 	}})
-	p.AddField(format.Field[backend.Context]{Name: "backend", Header: "BACKEND", Extract: func(c backend.Context) any { return c.Backend }})
+	p.AddField(format.Field[Context]{Name: "backend", Header: "BACKEND", Extract: func(c Context) any { return c.Backend }})
 	return p
 }
