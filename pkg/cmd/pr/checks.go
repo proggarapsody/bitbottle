@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -20,6 +22,11 @@ func NewCmdPRChecks(f *factory.Factory) *cobra.Command {
 		Short: "Show CI/build statuses for a pull request",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable && watch {
+				return fmt.Errorf("--json/--yaml/--template and --watch are mutually exclusive")
+			}
+
 			ref, prID, client, err := resolvePRTarget(f, args, "")
 			if err != nil {
 				return err
@@ -34,16 +41,27 @@ func NewCmdPRChecks(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("head commit hash unavailable for PR #%d", prID)
 			}
 
+			if cfg.Format != format.FormatTable {
+				statuses, err := client.ListCommitStatuses(ref.Project, ref.Slug, p.HeadCommitHash)
+				if err != nil {
+					return err
+				}
+				pr := checksFields(f, cfg)
+				for _, s := range statuses {
+					pr.AddItem(s)
+				}
+				return pr.Render()
+			}
+
 			out := f.IOStreams.Out
 
-			printStatuses := func() (bool, bool, error) {
+			printTable := func() (allTerminal bool, anyFailed bool, err error) {
 				statuses, err := client.ListCommitStatuses(ref.Project, ref.Slug, p.HeadCommitHash)
 				if err != nil {
 					return false, false, err
 				}
 				fmt.Fprintf(out, "%-30s %-12s %-30s %s\n", "KEY", "STATE", "NAME", "URL")
-				allTerminal := true
-				anyFailed := false
+				allTerminal = true
 				for _, s := range statuses {
 					fmt.Fprintf(out, "%-30s %-12s %-30s %s\n", s.Key, s.State, s.Name, s.URL)
 					switch s.State {
@@ -52,7 +70,6 @@ func NewCmdPRChecks(f *factory.Factory) *cobra.Command {
 					case "FAILED", "STOPPED":
 						anyFailed = true
 					default:
-						// INPROGRESS or other non-terminal
 						allTerminal = false
 					}
 				}
@@ -60,7 +77,7 @@ func NewCmdPRChecks(f *factory.Factory) *cobra.Command {
 			}
 
 			if !watch {
-				_, anyFailed, err := printStatuses()
+				_, anyFailed, err := printTable()
 				if err != nil {
 					return err
 				}
@@ -72,7 +89,7 @@ func NewCmdPRChecks(f *factory.Factory) *cobra.Command {
 
 			// Watch mode: poll until all statuses are terminal
 			for {
-				allTerminal, anyFailed, err := printStatuses()
+				allTerminal, anyFailed, err := printTable()
 				if err != nil {
 					return err
 				}
@@ -90,4 +107,14 @@ func NewCmdPRChecks(f *factory.Factory) *cobra.Command {
 	cmd.Flags().BoolVar(&watch, "watch", false, "Poll until all checks reach a terminal state")
 	cmd.Flags().IntVar(&interval, "interval", 10, "Polling interval in seconds (used with --watch)")
 	return cmd
+}
+
+func checksFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.CommitStatus] {
+	p := format.New[backend.CommitStatus](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
+	p.AddField(format.Field[backend.CommitStatus]{Name: "key", Header: "KEY", Extract: func(s backend.CommitStatus) any { return s.Key }})
+	p.AddField(format.Field[backend.CommitStatus]{Name: "state", Header: "STATE", Extract: func(s backend.CommitStatus) any { return s.State }})
+	p.AddField(format.Field[backend.CommitStatus]{Name: "name", Header: "NAME", Extract: func(s backend.CommitStatus) any { return s.Name }})
+	p.AddField(format.Field[backend.CommitStatus]{Name: "description", Header: "DESCRIPTION", JSONOnly: true, Extract: func(s backend.CommitStatus) any { return s.Description }})
+	p.AddField(format.Field[backend.CommitStatus]{Name: "url", Header: "URL", Extract: func(s backend.CommitStatus) any { return s.URL }})
+	return p
 }
