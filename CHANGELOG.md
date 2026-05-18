@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.77.1](https://github.com/proggarapsody/bitbottle/compare/v1.77.0...v1.77.1) (2026-05-18)
+
+
+### Bug Fixes
+
+* **errfmt:** remove phantom --debug hint from transport.timeout ([#394](https://github.com/proggarapsody/bitbottle/issues/394)) ([c24f964](https://github.com/proggarapsody/bitbottle/commit/c24f964ea9e2c2842140029cc5a4ecef9a259887))
+
 ## [1.77.0](https://github.com/proggarapsody/bitbottle/compare/v1.76.2...v1.77.0) (2026-05-18)
 
 
