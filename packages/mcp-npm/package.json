@@ -4,6 +4,10 @@
   "description": "Bitbucket CLI for Server/Data Center and Cloud — npm wrapper for bitbottle",
   "keywords": ["mcp", "bitbucket", "claude", "ai", "cli"],
   "homepage": "https://github.com/proggarapsody/bitbottle",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/proggarapsody/bitbottle"
+  },
   "license": "MIT",
   "bin": {
     "bitbottle": "./bin/run.js"
