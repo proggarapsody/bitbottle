@@ -50,9 +50,16 @@ only. The hosts.yml file is rewritten with the token field removed.`,
 					fmt.Fprintf(f.IOStreams.Out, "✓ %s: no config-file token found\n", host)
 					continue
 				}
+				if hc.User == "" {
+					return fmt.Errorf("%s: no user slug recorded; run `bitbottle auth login --hostname %s` first, then re-run migrate", host, host)
+				}
 
 				token := hc.OAuthToken
-				if err := f.Keyring.Set("bitbottle", host, token); err != nil {
+				// Keyring key is the user slug, matching the canonical shape
+				// used by `auth login`/`logout`/`status`. Storing under the
+				// hostname instead leaves the token invisible to every
+				// subsequent read (PRD #372 Bug C).
+				if err := f.Keyring.Set("bitbottle", hc.User, token); err != nil {
 					return fmt.Errorf("could not store token in keyring for %s: %w", host, err)
 				}
 

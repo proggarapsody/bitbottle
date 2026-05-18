@@ -25,10 +25,15 @@ func TestAuthMigrate_MovesTokenToKeyring(t *testing.T) {
 	// Output should indicate migration.
 	assert.Contains(t, out.String(), "token migrated to keyring")
 
-	// Token must be in the keyring under the host key.
-	stored, err := kr.Get("bitbottle", "bb.example.com")
+	// Token must be stored under the user slug (matches the canonical key
+	// used by auth login/logout/status). PRD #372 Bug C.
+	stored, err := kr.Get("bitbottle", "alice")
 	require.NoError(t, err)
 	assert.Equal(t, "tok", stored)
+
+	// Token must NOT be stored under the hostname key (the old buggy shape).
+	_, err = kr.Get("bitbottle", "bb.example.com")
+	require.Error(t, err, "keyring must not store under hostname key")
 
 	// Token must have been zeroed in the in-memory config (and thus stripped
 	// from any subsequent Save).
@@ -67,13 +72,13 @@ func TestAuthMigrate_HostnameFlag_TargetsSingleHost(t *testing.T) {
 
 	assert.Contains(t, out.String(), "bb.example.com: token migrated to keyring")
 
-	// Only the targeted host's token was moved.
-	stored, err := kr.Get("bitbottle", "bb.example.com")
+	// Token stored under user slug ("alice"), matching login/logout/status.
+	stored, err := kr.Get("bitbottle", "alice")
 	require.NoError(t, err)
 	assert.Equal(t, "tok1", stored)
 
-	// other.example.com was NOT touched.
-	_, err = kr.Get("bitbottle", "other.example.com")
+	// other.example.com (user "bob") was NOT touched.
+	_, err = kr.Get("bitbottle", "bob")
 	require.Error(t, err, "other host must not have been migrated")
 }
 
@@ -86,4 +91,22 @@ func TestAuthMigrate_UnknownHostname_ReturnsError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not logged into")
+}
+
+// TestAuthMigrate_EmptyUser_ReturnsError guards Bug C: when the host
+// config lacks a User slug, the keyring key has no canonical form, so
+// migrate refuses rather than storing under an empty key.
+func TestAuthMigrate_EmptyUser_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	const noUserConfig = "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n"
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: noUserConfig})
+	kr := testhelpers.NewFakeKeyring()
+	f.Keyring = kr
+
+	cmd := auth.NewCmdAuthMigrate(f)
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "auth login")
 }

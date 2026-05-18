@@ -47,14 +47,33 @@ type Client struct {
 	cachedVersion backend.ServerVersion
 }
 
+// hostFromURL returns the bare hostname (no scheme) portion of a URL,
+// or the URL itself if it cannot be parsed. Used to populate
+// backend.DomainError.Host so the errfmt hint at pkg/errfmt/errfmt.go
+// renders `--hostname HOST` rather than `--hostname https://HOST`
+// (which would trip the scheme-stripping path in `auth login`).
+// See PRD #372 Bug D.
+func hostFromURL(rawURL string) string {
+	if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return rawURL
+}
+
 // NewClient constructs a Client.
 // If token is non-empty Bearer auth is used; else if username is non-empty
 // Basic auth is used with username:token as credentials.
 func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
-	host := baseURL
+	// schemeHost is "scheme://host" used as the base for alt-transport
+	// REST roots and for constructing WebURLs on resources (commits, etc.)
+	// that the API does not return a self-link for.
+	schemeHost := baseURL
 	if u, err := url.Parse(baseURL); err == nil {
-		host = u.Scheme + "://" + u.Host
+		schemeHost = u.Scheme + "://" + u.Host
 	}
+	// bareHost is the hostname only — used for DomainError.Host so the
+	// errfmt hint renders a clean `--hostname HOST` (PRD #372 Bug D).
+	bareHost := hostFromURL(baseURL)
 	auth := httpx.Auth{Token: token, Username: username}
 	return &Client{
 		http: httpx.New(
@@ -64,12 +83,12 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			decodeErrorMessage,
 			httpx.ContentTypeAlwaysWrite,
 			serverPaginator{},
-		).UseDomainErrors(host),
-		buildStatusHTTP:      newAltTransport(httpClient, host, "/rest/build-status/1.0", auth),
-		defaultReviewersHTTP: newAltTransport(httpClient, host, "/rest/default-reviewers/1.0", auth),
-		branchProtectHTTP:    newAltTransport(httpClient, host, "/rest/branch-permissions/2.0", auth),
-		codeInsightsHTTP:     newAltTransport(httpClient, host, "/rest/insights/1.0", auth),
-		host:                 host,
+		).UseDomainErrors(bareHost),
+		buildStatusHTTP:      newAltTransport(httpClient, schemeHost, bareHost, "/rest/build-status/1.0", auth),
+		defaultReviewersHTTP: newAltTransport(httpClient, schemeHost, bareHost, "/rest/default-reviewers/1.0", auth),
+		branchProtectHTTP:    newAltTransport(httpClient, schemeHost, bareHost, "/rest/branch-permissions/2.0", auth),
+		codeInsightsHTTP:     newAltTransport(httpClient, schemeHost, bareHost, "/rest/insights/1.0", auth),
+		host:                 schemeHost,
 		userSlug:             username,
 	}
 }
@@ -77,16 +96,17 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 // newAltTransport constructs an httpx.Transport for a Bitbucket Server
 // supplementary REST root (e.g. /rest/build-status/1.0). These roots share
 // all transport config with the primary transport but target a different
-// base URL.
-func newAltTransport(httpClient HTTPClient, host, suffix string, auth httpx.Auth) *httpx.Transport {
+// base URL. schemeHost is the full "scheme://host" baseURL prefix;
+// bareHost is the hostname-only form used for DomainError.Host.
+func newAltTransport(httpClient HTTPClient, schemeHost, bareHost, suffix string, auth httpx.Auth) *httpx.Transport {
 	return httpx.New(
 		httpClient,
-		host+suffix,
+		schemeHost+suffix,
 		auth,
 		decodeErrorMessage,
 		httpx.ContentTypeAlwaysWrite,
 		serverPaginator{},
-	).UseDomainErrors(host)
+	).UseDomainErrors(bareHost)
 }
 
 // PagedResponse is the Bitbucket Data Center paged list envelope.

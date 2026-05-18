@@ -32,6 +32,12 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("--hostname is required")
 			}
 
+			// Strip any http:// or https:// prefix and trailing slash so
+			// downstream URL builders (bbinstance.RESTBase, PATManageURL,
+			// HTTPSURL) cannot produce double-scheme URLs like
+			// "https://https://HOST/...". See PRD #372 Bug A.
+			hostname = normalizeHostname(hostname)
+
 			// Flag cross-validation: --username is for Server/DC only;
 			// --email is for Cloud only.
 			isCloud := bbinstance.IsCloud(hostname, "")
@@ -283,6 +289,23 @@ func probeServerPATURL(hostname, username string, skipTLS bool) string {
 	}
 
 	return candidates[0] // best guess
+}
+
+// normalizeHostname strips a leading http:// or https:// scheme (case-
+// insensitive) and a single trailing slash. Downstream URL builders in
+// internal/bbinstance interpolate the hostname into "https://%s/..." —
+// without this normalization, passing --hostname https://HOST produces
+// "https://https://HOST/...", which Go's URL parser collapses to a DNS
+// lookup of the literal hostname "https". See PRD #372 Bug A.
+func normalizeHostname(s string) string {
+	low := strings.ToLower(s)
+	switch {
+	case strings.HasPrefix(low, "https://"):
+		s = s[len("https://"):]
+	case strings.HasPrefix(low, "http://"):
+		s = s[len("http://"):]
+	}
+	return strings.TrimSuffix(s, "/")
 }
 
 // readSecret reads a secret from the terminal without echoing the input.
