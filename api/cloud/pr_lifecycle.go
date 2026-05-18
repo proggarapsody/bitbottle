@@ -44,6 +44,14 @@ func (c *Client) ReadyPR(ns, slug string, id int) error {
 	return c.putJSON(path, body, &result)
 }
 
+// UnreadyPR marks an open pull request as draft.
+func (c *Client) UnreadyPR(ns, slug string, id int) error {
+	body := map[string]bool{"draft": true}
+	var result struct{}
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", ns, slug, id)
+	return c.putJSON(path, body, &result)
+}
+
 // RequestReview adds reviewers to a pull request using PUT /pullrequests/{id}.
 // It first GETs the current PR to preserve existing reviewers, then PUTs the
 // merged list. This is the only Cloud-supported approach (the /participants

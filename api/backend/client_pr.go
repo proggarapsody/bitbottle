@@ -66,6 +66,11 @@ type PRReadier interface {
 	ReadyPR(ns, slug string, id int) error
 }
 
+// PRUnreadier marks an open pull request back to draft state.
+type PRUnreadier interface {
+	UnreadyPR(ns, slug string, id int) error
+}
+
 // PRReviewRequester requests reviewers on a pull request.
 type PRReviewRequester interface {
 	RequestReview(ns, slug string, id int, users []string) error

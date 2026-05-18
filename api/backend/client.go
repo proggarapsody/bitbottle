@@ -34,6 +34,7 @@ type Client interface {
 	PRDecliner
 	PRUnapprover
 	PRReadier
+	PRUnreadier
 	PRReviewRequester
 	PRReviewer
 	UserGetter
