@@ -1,4 +1,4 @@
-package pipeline
+package schedule
 
 import (
 	"fmt"
@@ -9,16 +9,16 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-// ScheduleDeleteOptions holds parsed flags for `pipeline schedule delete`.
-type ScheduleDeleteOptions struct {
+// DeleteOptions holds parsed flags for `pipeline schedule delete`.
+type DeleteOptions struct {
 	Hostname string
 	UUID     string
 	Args     []string
 }
 
-// NewCmdScheduleDelete builds the `pipeline schedule delete` cobra command.
-func NewCmdScheduleDelete(f *factory.Factory, runF func(*ScheduleDeleteOptions) error) *cobra.Command {
-	opts := &ScheduleDeleteOptions{}
+// NewCmdDelete builds the `pipeline schedule delete` cobra command.
+func NewCmdDelete(f *factory.Factory, runF func(*DeleteOptions) error) *cobra.Command {
+	opts := &DeleteOptions{}
 	cmd := &cobra.Command{
 		Use:   "delete [PROJECT/REPO] UUID",
 		Short: "Delete a pipeline schedule from a repository",
@@ -35,14 +35,14 @@ func NewCmdScheduleDelete(f *factory.Factory, runF func(*ScheduleDeleteOptions) 
 			if runF != nil {
 				return runF(opts)
 			}
-			return runScheduleDelete(f, opts)
+			return runDelete(f, opts)
 		},
 	}
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func runScheduleDelete(f *factory.Factory, opts *ScheduleDeleteOptions) error {
+func runDelete(f *factory.Factory, opts *DeleteOptions) error {
 	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
 	if err != nil {
 		return err

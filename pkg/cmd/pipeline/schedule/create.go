@@ -1,4 +1,4 @@
-package pipeline
+package schedule
 
 import (
 	"fmt"
@@ -10,8 +10,8 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-// ScheduleCreateOptions holds parsed flags for `pipeline schedule create`.
-type ScheduleCreateOptions struct {
+// CreateOptions holds parsed flags for `pipeline schedule create`.
+type CreateOptions struct {
 	Hostname string
 	Cron     string
 	Branch   string
@@ -19,9 +19,9 @@ type ScheduleCreateOptions struct {
 	Args     []string
 }
 
-// NewCmdScheduleCreate builds the `pipeline schedule create` cobra command.
-func NewCmdScheduleCreate(f *factory.Factory, runF func(*ScheduleCreateOptions) error) *cobra.Command {
-	opts := &ScheduleCreateOptions{
+// NewCmdCreate builds the `pipeline schedule create` cobra command.
+func NewCmdCreate(f *factory.Factory, runF func(*CreateOptions) error) *cobra.Command {
+	opts := &CreateOptions{
 		Enabled: true,
 	}
 	cmd := &cobra.Command{
@@ -33,7 +33,7 @@ func NewCmdScheduleCreate(f *factory.Factory, runF func(*ScheduleCreateOptions) 
 			if runF != nil {
 				return runF(opts)
 			}
-			return runScheduleCreate(f, cmd, opts)
+			return runCreate(f, cmd, opts)
 		},
 	}
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
@@ -45,7 +45,7 @@ func NewCmdScheduleCreate(f *factory.Factory, runF func(*ScheduleCreateOptions) 
 	return cmd
 }
 
-func runScheduleCreate(f *factory.Factory, cmd *cobra.Command, opts *ScheduleCreateOptions) error {
+func runCreate(f *factory.Factory, cmd *cobra.Command, opts *CreateOptions) error {
 	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
 	if err != nil {
 		return err
