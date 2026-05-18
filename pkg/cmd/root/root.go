@@ -54,6 +54,10 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			cmdutil.ApplyNoColorFlag(c, f.IOStreams)
 
+			if skip, _ := c.Flags().GetBool("skip-tls-verify"); skip {
+				f.SkipTLSOverride = true
+			}
+
 			jsonMode, _ := c.Flags().GetBool("json")
 			yamlMode, _ := c.Flags().GetBool("yaml")
 			jqExpr, _ := c.Flags().GetString("jq")
@@ -86,6 +90,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	cmd.PersistentFlags().Bool("yaml", false, "Output as YAML")
 	cmd.PersistentFlags().String("jq", "", "Filter JSON output with a jq expression")
 	cmd.PersistentFlags().String("template", "", "Format output with a Go template")
+	cmd.PersistentFlags().BoolP("skip-tls-verify", "k", false, "Skip TLS certificate verification for this invocation (self-signed CAs)")
 	cmdutil.RegisterNoColorFlag(cmd)
 
 	cmd.AddCommand(NewCmdStatus(f))

@@ -24,6 +24,18 @@ echo "$BBDC_PAT" | bitbottle auth login \
 `--skip-tls-verify` is set once at login and remembered per host in
 `hosts.yml` as `skip_tls_verify: true`.
 
+For a one-off override (e.g. recovering from a new self-signed cert on
+an already-configured host) pass the persistent root flag `-k` /
+`--skip-tls-verify` to any command:
+
+```bash
+bitbottle -k pr approve 42 -R git.example.com/PROJ/repo
+bitbottle --skip-tls-verify pr list -R git.example.com/PROJ/repo
+```
+
+The root flag only affects the current invocation — it does not write
+to `hosts.yml`.
+
 ## Lifecycle commands
 
 ```bash
