@@ -22,6 +22,23 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 
 cd "$(repo_root)"
 
+# Wire .githooks/ into core.hooksPath if a tracked .githooks/ directory exists.
+# Idempotent: only writes when the current value differs.
+#
+# Why this lives in preflight: cycle 96 pushed an ST1023 lint error that CI
+# caught after the fact because `.githooks/pre-push` (which runs golangci-lint)
+# was inactive — core.hooksPath defaulted to .git/hooks/. The hook existed and
+# was executable, just not invoked. Wiring it here means every cycle's §0
+# preflight repairs this for any agent or contributor whose clone never set it.
+hooks_path_finding=""
+if [[ -d .githooks ]]; then
+  current_hooks="$(git config core.hooksPath 2>/dev/null || true)"
+  if [[ "$current_hooks" != ".githooks" ]]; then
+    git config core.hooksPath .githooks
+    hooks_path_finding="hooks_path_wired: set core.hooksPath=.githooks (was '${current_hooks:-unset}')"
+  fi
+fi
+
 branch="$(git rev-parse --abbrev-ref HEAD)"
 on_main="false"
 [[ "$branch" == "main" ]] && on_main="true"
@@ -50,6 +67,7 @@ fi
 
 findings=()
 halt_class=0
+[[ -n "$hooks_path_finding" ]] && findings+=("$hooks_path_finding")
 if [[ "$clean" == "false" ]]; then
   findings+=("workspace_dirty: $dirty_count uncommitted change(s)")
   halt_class=1

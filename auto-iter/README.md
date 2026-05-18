@@ -9,7 +9,8 @@ Self-contained library for bitbottle's autonomous iteration loop. Everything tha
 | [`quickref.md`](quickref.md) | Declarative contract — model tier per phase, halt routing, cycle/metrics log schemas, brainstorm rules, anti-patterns, cadence. The orchestrator reads this at the top of every run. |
 | [`scripts.md`](scripts.md) | Interface catalog for every shell script under `scripts/`. JSON contracts, exit-code semantics, implementation status (✅ / 🔲). |
 | [`scripts/`](scripts/) | Mechanical building blocks the orchestrator calls instead of running inline shell. Each script ships with a paired `_test.sh` that sandboxes via `mktemp -d` + `git init`. |
-| [`metrics.csv`](metrics.csv) | Hand-rolled per-cycle ledger (early-cycle history). The `.jsonl` files in `.claude/auto-iter/` are the authoritative real-time log; this CSV is a curated subset. |
+
+The authoritative per-cycle ledger is `.claude/auto-iter/cycles.jsonl` (one line per cycle outcome) plus `.claude/auto-iter/metrics.jsonl` (one line per step). Both are gitignored runtime state — read with `jq -s` for ad-hoc analysis. An earlier hand-rolled `metrics.csv` was removed in `chore(auto-iter): loop hardening` because it had not been updated since cycle 14 and the JSONL files are strictly richer (handle `bundled`, `prs[]`, `resolved_overlapping_pr`, per-step token cost, etc.).
 
 ## What's NOT here (and why)
 

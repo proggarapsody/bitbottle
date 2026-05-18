@@ -255,6 +255,34 @@ jq -s 'map(select(.step | startswith("step2_halt")) | .duration_ms / 1000)' \
 - ❌ `git checkout -b feat/<slug> origin/main` inside the **main checkout**. Every iteration runs in its own worktree — use `git worktree add -b feat/<slug> ../bitbottle-worktrees/<slug> origin/main`. The main checkout stays clean. See [iteration-cycle.md §3](../docs/workflows/iteration-cycle.md#section-3--implement-tdd) HARD STOP block. PRD #372 surfaced this as a process bug riding alongside four auth bugs.
 - ❌ Emitting metrics via raw `echo >> metrics.jsonl` or inline `jq -nc`. **Always use [`auto-iter/scripts/metric.sh`](scripts/metric.sh).** Prose checklists for emission discipline get skimmed past after context compaction — across cycles 81–86 in the May-17 stream, per-step metrics emission collapsed from 10 lines/cycle (cycles 77–79) to 0–1 lines/cycle. A shell invocation can't be skimmed.
 - ❌ Forcing `/compact` inside `/auto-iter` — trust Claude's automatic compaction.
+- ❌ Splitting an `*-AUDIT` scope into "audit cycle" + "fix cycle" when the audit produced exactly one finding that fits in ≤1 PR. See § AUDIT_CONTINUE below. Cycles 95 (UX-FLAG-AUDIT) and 96 (DEBUG-TRANSPORT-FLAG) shipped what should have been one cycle, costing an extra release and ~22 min wall time.
+
+---
+
+## AUDIT_CONTINUE — bundle audit→fix when the finding fits in one PR
+
+`*-AUDIT` scopes (e.g. `UX-FLAG-AUDIT`, `SCORECARD-AUDIT`) often surface findings that can be patched inside the same PR as the audit deliverable. When that's the case, the cycle must **not** end after the audit and let the loop pick the follow-up next cycle.
+
+**Trigger**: scope slug matches `*-AUDIT` AND the audit produced **exactly one** finding AND that finding fits in ≤1 PR (heuristic: ≤200 LOC across ≤8 files, single subsystem).
+
+**Action inside the same cycle**:
+1. The audit deliverable (audit table doc, BACKLOG row for the new sub-scope) lands first as commits on the same branch.
+2. The TDD subagent immediately implements the follow-up on the same branch.
+3. Both BACKLOG rows (the audit and the follow-up) flip 🔲 → ✅ in the same feat commit. Conventional Commit subject: `feat(<audit-area>): audit + <one-line fix description>`.
+4. Single PR, single release-please bump, single cycle entry.
+
+**Don't trigger** when:
+- Audit produced **zero** findings (cycle ends with the audit deliverable; outcome = `shipped`).
+- Audit produced **two or more** findings (file each as its own BACKLOG row; current cycle ships only the audit; follow-ups are picked normally — bundling >1 fix invites scope drift).
+- The follow-up fix would exceed the 1-PR heuristic (file the BACKLOG row, cycle ships the audit only).
+
+**Cycle log shape** when AUDIT_CONTINUE fires:
+
+```jsonl
+{"cycle":N,"scopes":["UX-FLAG-AUDIT","DEBUG-TRANSPORT-FLAG"],"prs":[394],"outcome":"shipped","bundled":true,...}
+```
+
+`bundled:true` distinguishes audit-continue from a vanilla `*-AUDIT` cycle; the two scope slugs in `scopes[]` make the bundle visible to post-hoc analysis.
 
 ---
 
