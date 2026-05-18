@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.78.0](https://github.com/proggarapsody/bitbottle/compare/v1.77.1...v1.78.0) (2026-05-18)
+
+
+### Features
+
+* **debug:** persistent --debug flag logs HTTP request/response details ([#396](https://github.com/proggarapsody/bitbottle/issues/396)) ([77d1d0e](https://github.com/proggarapsody/bitbottle/commit/77d1d0eb6b803b45815c623b475fe6e689343fa0))
+
 ## [1.77.1](https://github.com/proggarapsody/bitbottle/compare/v1.77.0...v1.77.1) (2026-05-18)
 
 
