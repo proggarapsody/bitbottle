@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.75.0](https://github.com/proggarapsody/bitbottle/compare/v1.74.0...v1.75.0) (2026-05-18)
+
+
+### Features
+
+* **pr:** add pr unready command to convert PR back to draft ([a80700b](https://github.com/proggarapsody/bitbottle/commit/a80700b5fa8b3038e1ab3552209eb60b9d989750)), closes [#380](https://github.com/proggarapsody/bitbottle/issues/380)
+
 ## [1.74.0](https://github.com/proggarapsody/bitbottle/compare/v1.73.1...v1.74.0) (2026-05-18)
 
 
