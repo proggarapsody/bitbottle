@@ -242,9 +242,9 @@ func newHTTPClient(skipTLSVerify, debug bool, errOut io.Writer) *http.Client {
 	if skipTLSVerify {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
 	}
-	var rt http.RoundTripper = bitbottleapi.WrapTransport(transport)
+	rt := bitbottleapi.WrapTransport(transport)
 	if debug {
-		rt = &debugRoundTripper{inner: rt, out: errOut}
+		return &http.Client{Transport: &debugRoundTripper{inner: rt, out: errOut}}
 	}
 	return &http.Client{Transport: rt}
 }
