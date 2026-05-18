@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.74.0](https://github.com/proggarapsody/bitbottle/compare/v1.73.1...v1.74.0) (2026-05-18)
+
+
+### Features
+
+* **security:** OpenSSF Scorecard score improvements (token-perms, SAST, signed releases) ([f7eb1bf](https://github.com/proggarapsody/bitbottle/commit/f7eb1bf749b9eb159a41e81787b783f9f085828b)), closes [#377](https://github.com/proggarapsody/bitbottle/issues/377)
+
 ## [1.73.1](https://github.com/proggarapsody/bitbottle/compare/v1.73.0...v1.73.1) (2026-05-18)
 
 
