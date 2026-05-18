@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/keyring"
 	"github.com/proggarapsody/bitbottle/internal/profiles"
 	"github.com/proggarapsody/bitbottle/internal/run"
+	"github.com/proggarapsody/bitbottle/internal/tlsprobe"
 	"github.com/proggarapsody/bitbottle/internal/userconfig"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
@@ -49,6 +51,11 @@ type Factory struct {
 	// by probing which URL format the instance accepts. Injected here so tests
 	// can stub it without real network calls. nil → default HEAD probe.
 	ServerPATURLProber func(hostname, username string, skipTLS bool) string
+	// TLSProber runs a handshake-only TLS dial against the host so
+	// `auth login` can detect a self-signed/corporate CA before
+	// pasting the PAT. Injected here for test substitution; nil → use
+	// internal/tlsprobe.Probe directly.
+	TLSProber func(ctx context.Context, host string, opts tlsprobe.Options) (*tlsprobe.Result, error)
 	// ConfigDir is the root config directory (e.g. ~/.config/bitbottle).
 	// Used by extension commands to locate the extensions subdirectory.
 	ConfigDir func() string
@@ -129,6 +136,7 @@ func New() *Factory {
 		BaseURL:    baseURL,
 		BaseRepo:   DefaultBaseRepo(gitRunner(), configFn),
 		Now:        time.Now,
+		TLSProber:  tlsprobe.Probe,
 		ConfigDir:  func() string { return configDir },
 	}
 	// Closures read f.SkipTLSOverride at call time so the persistent

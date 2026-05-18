@@ -16,6 +16,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/config"
+	"github.com/proggarapsody/bitbottle/internal/tlsprobe"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
@@ -187,6 +188,30 @@ func NewCmdAuthLogin(f *factory.Factory) *cobra.Command {
 				}
 			}
 
+			// TLS auto-trust probe (Server/DC only, and only when the
+			// user did not already pass --skip-tls-verify). If the
+			// host's cert chains to an OS-trusted CA the probe is a
+			// no-op; otherwise we show the cert and let the user
+			// trust it interactively — same UX as SSH known-hosts.
+			if !isCloud && !skipTLS && f.TLSProber != nil {
+				probeCtx, probeCancel := context.WithTimeout(cmd.Context(), 10*time.Second)
+				res, perr := f.TLSProber(probeCtx, hostname+":443", tlsprobe.Options{})
+				probeCancel()
+				switch {
+				case perr != nil:
+					// Network/DNS errors are not the probe's
+					// problem — keep going so the backend call
+					// surfaces the real error from the catalogue.
+					fmt.Fprintf(f.IOStreams.ErrOut, "warning: TLS pre-flight probe failed: %v\n", perr)
+				case res != nil && !res.TrustedByOS:
+					trusted, terr := confirmSelfSignedCert(f.IOStreams, scanner, hostname, res)
+					if terr != nil {
+						return terr
+					}
+					skipTLS = trusted
+				}
+			}
+
 			client, err := f.BackendWithOptions(hostname, backend.Options{
 				Token:         token,
 				SkipTLSVerify: skipTLS,
@@ -306,6 +331,46 @@ func normalizeHostname(s string) string {
 		s = s[len("http://"):]
 	}
 	return strings.TrimSuffix(s, "/")
+}
+
+// confirmSelfSignedCert renders the leaf cert from a TLS probe result
+// and asks the user whether to trust it. Returns (true, nil) when the
+// user confirms — caller should set skip_tls_verify=true. Returns
+// (false, error) when the user declines OR the environment is
+// non-interactive (no TTY, or BB_PROMPT_DISABLED set) — in that case
+// the error explains how to recover with --skip-tls-verify.
+func confirmSelfSignedCert(ios *iostreams.IOStreams, scanner *bufio.Scanner, hostname string, res *tlsprobe.Result) (bool, error) {
+	if !ios.IsStdoutTTY() || os.Getenv("BB_PROMPT_DISABLED") != "" {
+		return false, fmt.Errorf(
+			"certificate at %s is not trusted by the OS (issuer: %s, sha256: %s); re-run with --skip-tls-verify if you trust this host",
+			hostname,
+			res.LeafCert.Issuer.CommonName,
+			res.FingerprintSHA256,
+		)
+	}
+
+	fmt.Fprintln(ios.Out)
+	fmt.Fprintf(ios.Out, "TLS verification failed for %s — the certificate is not signed by any CA your OS trusts.\n", hostname)
+	fmt.Fprintf(ios.Out, "  Subject:     %s\n", res.LeafCert.Subject.CommonName)
+	fmt.Fprintf(ios.Out, "  Issuer:      %s\n", res.LeafCert.Issuer.CommonName)
+	if !res.LeafCert.NotBefore.IsZero() && !res.LeafCert.NotAfter.IsZero() {
+		fmt.Fprintf(ios.Out, "  Valid:       %s → %s\n",
+			res.LeafCert.NotBefore.UTC().Format("2006-01-02"),
+			res.LeafCert.NotAfter.UTC().Format("2006-01-02"),
+		)
+	}
+	fmt.Fprintf(ios.Out, "  SHA-256:     %s\n", res.FingerprintSHA256)
+	fmt.Fprintf(ios.Out, "Trust this certificate? [y/N]: ")
+
+	var answer string
+	if scanner.Scan() {
+		answer = strings.TrimSpace(scanner.Text())
+	}
+	if !strings.EqualFold(answer, "y") && !strings.EqualFold(answer, "yes") {
+		return false, fmt.Errorf("certificate not trusted by user; aborting login (re-run with --skip-tls-verify to force, or install the CA in your OS trust store)")
+	}
+	fmt.Fprintf(ios.ErrOut, "Trusting self-signed cert — installing the corporate CA into your OS trust store is strictly safer.\n")
+	return true, nil
 }
 
 // readSecret reads a secret from the terminal without echoing the input.

@@ -24,6 +24,15 @@ echo "$BBDC_PAT" | bitbottle auth login \
 `--skip-tls-verify` is set once at login and remembered per host in
 `hosts.yml` as `skip_tls_verify: true`.
 
+For Server/DC hosts, `auth login` also runs a TLS pre-flight: if the
+host's certificate is not signed by a CA your OS already trusts,
+bitbottle prints the cert (Subject CN, Issuer CN, validity window,
+SHA-256 fingerprint) and asks `Trust this certificate? [y/N]`. On
+confirm it sets `skip_tls_verify: true` automatically; on decline
+(or non-TTY / `BB_PROMPT_DISABLED=1`) it surfaces the `x509` error
+and expects you to re-run with `--skip-tls-verify`. The probe is
+skipped when `--skip-tls-verify` is already passed and for Cloud hosts.
+
 For a one-off override (e.g. recovering from a new self-signed cert on
 an already-configured host) pass the persistent root flag `-k` /
 `--skip-tls-verify` to any command:
