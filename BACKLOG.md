@@ -403,6 +403,8 @@ Current state of every command area against gh feature parity:
 | MCP-VALIDATION | **MCP input validation beyond nonempty check** | `pkg/cmd/mcp/handlers.go:124` (`requireString`) only rejects `""`. No enum validation (`state ∈ {open,closed,merged}`), no bounds check on numerics (`limit`), no path/URL shape check, no schema-level enforcement post-decode. Bad agent inputs reach the wire and produce server-side 400s with worse messaging than we could produce locally. Fix: add `validateEnum(field, value, allowed...)`, `validateRange(field, n, min, max)`, and use them at the top of every handler that takes constrained inputs. | N/A | DX | ✅ |
 | BACKEND-TYPE-STRICT | **Validate `backend_type` at write time** | `internal/bbinstance/bbinstance.go:25-34` `IsCloud`'s `default → false` is intentional (per docstring: "server", "datacenter" both legitimately map to Server). But typos like `backend_type: clud` silently become Server at read time, surfacing as confusing API path errors. Real fix is **input validation**: add `BackendType.IsValid()` covering `{cloud, server, datacenter, ""}`, and call it in the `auth login` / `profile create` flows so typos are rejected at config write. Don't change `IsCloud` read semantics. | N/A | DX | ✅ |
 | ERR-EMPTY-400 | **Stamp `Code` on bare 400/422 responses** | `api/internal/httpx/httpx.go:364-385` → `backend.ClassifyHTTPError` at `api/backend/errors.go:206-243` already maps 401/403/404/409/5xx to a `Kind`, but only 401 gets an auto-`Code` (`CodeAuthInvalidToken`). A 400 / 422 with an empty response body therefore has `Kind: ""`, `Code: ""` and falls through to the catch-all errfmt fallback — agents and scripts see "HTTP 400: Bad Request" with no actionable hint. Fix: add `Kind: ErrInvalidRequest` + `Code: CodeInvalidRequest` for 400/422 in `ClassifyHTTPError`, register a catalogue entry, and let adapters override via `StampCode` when they have a more specific reason. | N/A | DX | ✅ |
+| SCORECARD-PUSH | **OpenSSF Scorecard score push** | Bundle four reachable Scorecard wins into one mega-PR: (1) Token-Permissions — push `contents:write` / `pull-requests:write` from workflow-root to job-level on `release.yml`, `release-please.yml`, `dependabot-auto-merge.yml`; (2) Security-Policy — add `SECURITY.md` pointing at GitHub Private Vulnerability Reporting (PVR toggle flipped manually in repo settings); (3) SAST — `.github/workflows/codeql.yml` for Go (autobuild, push+PR+weekly cron, SARIF upload to Security tab); (4) Signed-Releases — GoReleaser cosign keyless signing of checksums, SLSA provenance via `slsa-github-generator` reusable workflow, `npm publish --provenance` for the npm wrapper. Code-Review (0), Contributors (0), Maintained (0, time-fixed) are knowingly capped — no fix in this scope. Projected: 4.9 → ~7.5+. — scope **SCORECARD-PUSH** | N/A | DX | 🔲 |
+| OSSF-BADGE | **OpenSSF Best Practices (CII) badge** | Apply at `https://www.bestpractices.dev` for the passing badge. Form-based; questions cover CI, license, security policy, signed releases — most answer "yes" once **SCORECARD-PUSH** lands. ~1h of form-filling + weeks of async review. Add the earned badge to README on receipt. Drives Scorecard's `CII-Best-Practices` check from 0 → passing. — scope **OSSF-BADGE** | N/A | DX | 🔲 |
 | PR-UNREADY | **Promote PR back to draft** | `pr unready PR_ID` (alias `pr ready --undo`) — convert an open PR back to draft state. Cloud: `PUT /repositories/{ws}/{slug}/pullrequests/{id}` with `{"draft": true}`. Server: marks the PR as draft via `PUT /rest/api/1.0/.../pull-requests/{id}` body `{"draft": true}` (Server 8.0+). Companion to existing `pr ready`. Both backends, with version probe on Server. Gap vs `bkt pr publish --undo`. | Both | 3 | 🔲 |
 | PR-EDIT-REVIEWER-RM | **Remove reviewers via `pr edit`** | `pr edit PR_ID --remove-reviewer USER` (repeatable) — drop reviewers from an open PR without rebuilding the full list. Today `pr request-review` only adds; removal requires raw API. Cloud: read current reviewers, `PUT /pullrequests/{id}` with filtered `reviewers` array. Server: `DELETE /rest/api/1.0/.../pull-requests/{id}/participants/{userSlug}` per removed user. Both backends. Gap vs `bkt pr edit --remove-reviewer`. | Both | 3 | 🔲 |
 | CMD-SUBPKG | **Subpackage-per-verb command layout** | `pkg/cmd/pr/` is a flat package with **78 files** (`list.go`, `view.go`, `comment.go` at 15 KB, `comment_test.go` at 19 KB, …). gh's canonical layout is `pkg/cmd/pr/<verb>/<verb>.go` (gh's `pkg/cmd/pr/` has 17 subdirs, each its own package). The flat layout invites accidental coupling between sibling commands (private helpers leak across verbs), bloats per-command test files, and produces merge conflicts on package-level state. Migrate the largest cmd groups (`pr/`, `repo/`, `pipeline/`) to `<group>/<verb>/<verb>.go` with shared helpers in `<group>/shared/`. Mechanical refactor; one PR per group. Pairs with the `REGISTRY-FINISH` cmdregistry migration. | N/A | DX | 🔲 |
@@ -2498,6 +2500,71 @@ Print `"already up to date"` if version matches.
 - [x] `extension upgrade --all` upgrades all installed extensions
 - [x] `extension remove` deletes binary + lockfile cleanly
 - [x] `extension upgrade` on a `--local` extension prints `"local install — skipping"`
+
+---
+
+### SCORECARD-PUSH — OpenSSF Scorecard score push
+
+**Problem**: current Scorecard score is **4.9/10** (see https://securityscorecards.dev/viewer/?uri=github.com/proggarapsody/bitbottle). Four checks at 0 are reachable with low-to-medium effort; fixing them in one mega-PR projects ~7.5+. Defers Fuzzing (low ROI for an HTTP API client) and accepts Code-Review / Contributors / Maintained as solo-maintainer / time-bound caps.
+
+**Changes** (all in `.github/workflows/` + repo root):
+
+1. **Token-Permissions (0 → ~9)** — Scorecard flags workflow-root `contents:write` / `pull-requests:write`. Push permissions down to the job that needs them in:
+   - `release.yml` — root drops to `contents: read`; the `release` job gets `contents: write`, `pull-requests: write`, `id-token: write` (last is needed for SLSA + cosign + npm provenance).
+   - `release-please.yml` — root `contents: read`; `release-please` job gets `contents: write`, `pull-requests: write`.
+   - `dependabot-auto-merge.yml` — root `contents: read`; `auto-merge` job gets `contents: write`, `pull-requests: write`.
+
+2. **Security-Policy (0 → 10)** — `SECURITY.md` at repo root pointing at GitHub Private Vulnerability Reporting (`/security/advisories/new`). Lists supported versions (`latest` only), 90-day disclosure target. **Manual step**: flip "Private vulnerability reporting" toggle in repo Settings → Code security (one click, outside CI).
+
+3. **SAST (0 → 10)** — new `.github/workflows/codeql.yml`:
+   - Triggers: push to main, PRs to main, weekly cron.
+   - Language: `go`; build mode: `autobuild` (plain `go build` works).
+   - Job permissions: `security-events: write`, `actions: read`, `contents: read`.
+   - Uses `step-security/harden-runner` (consistent with other workflows).
+   - Uploads SARIF to GitHub's Security tab.
+
+4. **Signed-Releases (0 → 10)** — three additions to the release pipeline:
+   - **Cosign keyless** — add `signs:` block to `.goreleaser.yml` using `cosign sign-blob --yes --output-signature ... --output-certificate ...` on `checksums.txt`. No secrets — uses GitHub OIDC. Verification: `cosign verify-blob --certificate-identity-regexp '^https://github.com/proggarapsody/bitbottle' --certificate-oidc-issuer https://token.actions.githubusercontent.com`.
+   - **SLSA provenance** — convert `release.yml` to call `slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml` as a reusable workflow on the GoReleaser artifacts. Each archive gets an `*.intoto.jsonl` attestation attached to the GitHub release.
+   - **npm provenance** — `npm publish --provenance` in the `packages/mcp-npm` publish step. Requires `id-token: write` on that job (already added in Token-Permissions item #1). Verification: `npm audit signatures`.
+
+**No Go code changes.** Pure CI / repo-config work.
+
+**Implementation notes**:
+1. **Staged commits inside the mega-PR** so a partial revert can keep the safe wins if SLSA misfires on first release. Suggested commit order: token-perms → SECURITY.md → CodeQL → cosign → SLSA → npm provenance.
+2. **SLSA generator restructures release.yml.** The reusable workflow must be called from a top-level job, not nested inside the existing `release` job. Cleanest split: keep `release` job for GoReleaser + npm publish; add `provenance` job that depends on `release` and runs the SLSA generator over the uploaded artifacts.
+3. **First release after merge will be the gate.** Cosign + SLSA + npm provenance only exercise on a real release. Plan: merge this PR, let the next feature PR trigger release-please, scrutinize that release in the Actions tab for signing failures. If cosign fails, revert just that commit and re-tag.
+4. **Scorecard rescan is async.** `scorecard.yml` runs weekly Monday 06:00 UTC + on push to main; the securityscorecards.dev viewer can lag hours-to-days behind the SARIF upload. Don't block PR merge on score change.
+5. **CodeQL SARIF requires `security-events: write` at job level**, not workflow root. Follow the same job-scoped permission discipline as the other workflows.
+
+**Definition of Done**:
+- [ ] No workflow has `contents: write` or `pull-requests: write` at workflow root (all pushed to job level).
+- [ ] `SECURITY.md` exists at repo root pointing at PVR; PVR toggle flipped in repo settings.
+- [ ] `.github/workflows/codeql.yml` exists; first run on main is green; SARIF visible in Security tab.
+- [ ] `.goreleaser.yml` has `signs:` block; release workflow has SLSA provenance job; npm publish uses `--provenance`.
+- [ ] All four new/changed workflows are SHA-pinned and use `step-security/harden-runner` (consistent with existing CIS-shipped workflows).
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit (per project convention).
+
+---
+
+### OSSF-BADGE — OpenSSF Best Practices (CII) badge
+
+**Problem**: Scorecard's `CII-Best-Practices` check is 0 because no badge effort exists. The OpenSSF Best Practices badge is a separate (older) program at https://www.bestpractices.dev, not the Scorecard itself. Earning the passing tier flips the Scorecard check from 0 to a passing score.
+
+**Changes** (all manual / out-of-band — no PR until badge is granted):
+
+1. Apply at https://www.bestpractices.dev for the project URL `https://github.com/proggarapsody/bitbottle`.
+2. Fill the form (~50 questions covering CI, license, security policy, signed releases, vulnerability disclosure, dependency management). Most answers are already "yes" once **SCORECARD-PUSH** lands.
+3. Submit and wait for OpenSSF review (typically 1–4 weeks).
+4. On grant: receive a badge ID (e.g. `BADGE_ID=12345`); add the badge to `README.md` near the existing Scorecard badge: `[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/BADGE_ID/badge)](https://www.bestpractices.dev/projects/BADGE_ID)`.
+
+**No code changes besides the README badge.** This scope is mostly waiting; the only artifact is the badge line in README. Land **SCORECARD-PUSH first** so the form's "signed releases / security policy / SAST" answers are honest.
+
+**Definition of Done**:
+- [ ] Application submitted at https://www.bestpractices.dev.
+- [ ] Badge granted (passing tier or higher).
+- [ ] Badge added to README.md.
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `chore(readme)` commit that adds the badge.
 
 ---
 
