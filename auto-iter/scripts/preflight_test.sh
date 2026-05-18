@@ -32,7 +32,7 @@ exit 1
 GH
 chmod +x "$STUBDIR/gh"
 export PATH="$STUBDIR:$PATH"
-trap "rm -rf '$TMPDIR' '$STUBDIR'" EXIT
+trap "rm -rf '$TMPDIR' '$STUBDIR' '${EXTRA_ROOT:-}'" EXIT
 
 # Case 1: clean tree, on main, no remote → exit 0
 if OUT="$(bash "$SCRIPT")"; then
@@ -76,6 +76,65 @@ if echo "$OUT" | jq -e '.on_main==false and .branch=="feature/x"' >/dev/null; th
   ok "reports branch name correctly"
 else
   fail "branch reporting failed: $OUT"
+fi
+
+# Case 4: behind origin on clean main → auto-reset, exit 0 (no halt).
+# Branch protection blocks direct pushes; local main is read-only at cycle
+# boundaries, so being behind origin is the EXPECTED state after the previous
+# cycle's PR merged. Preflight resolves by hard-reset, not by halting.
+git checkout -q main
+# Set up the bare remote + helper worktree OUTSIDE $TMPDIR so they don't
+# show up as untracked dirs in `git status --porcelain` of the fixture.
+EXTRA_ROOT="$(mktemp -d)"
+BARE="$EXTRA_ROOT/origin.git"
+git init -q --bare -b main "$BARE" 2>/dev/null || git init -q --bare "$BARE"
+git remote add origin "$BARE"
+git push -q origin main
+# Set HEAD on the bare to main so subsequent clones get the right default.
+git --git-dir="$BARE" symbolic-ref HEAD refs/heads/main
+# Add a commit on origin that local doesn't have.
+WORK="$EXTRA_ROOT/work-extra"
+git clone -q "$BARE" "$WORK"
+( cd "$WORK" && git config user.email "x@x.com" && git config user.name x \
+    && echo "extra" > extra.txt && git add extra.txt \
+    && git commit -q -m "extra commit on origin" \
+    && git push -q origin main )
+# Local main is now 1 behind, 0 ahead, clean.
+if OUT="$(bash "$SCRIPT" 2>/dev/null)"; then
+  ok "exits 0 when behind origin on clean main (auto-reset path)"
+else
+  fail "expected exit 0 (auto-reset), got non-zero: $OUT"
+fi
+if echo "$OUT" | jq -e '.behind==0 and (.findings | map(select(startswith("behind_origin_reset"))) | length > 0)' >/dev/null; then
+  ok "reports behind_origin_reset finding and behind=0 after reset"
+else
+  fail "expected behind_origin_reset finding, got: $OUT"
+fi
+# Confirm the working tree actually picked up the origin commit.
+if [[ -f extra.txt ]]; then
+  ok "hard-reset pulled in origin commit"
+else
+  fail "expected extra.txt after reset"
+fi
+
+# Case 5: behind AND ahead (diverged) → halt, do NOT auto-reset.
+echo "local change" > local.txt
+git add local.txt
+git commit -q -m "local commit not on origin"
+# Now: ahead=1, behind=0 — fast-forward origin first to recreate divergence.
+( cd "$WORK" && echo "another" > another.txt && git add another.txt \
+    && git commit -q -m "another on origin" && git push -q origin main )
+git fetch -q origin
+# Now: ahead=1, behind=1 → diverged.
+if OUT="$(bash "$SCRIPT" 2>/dev/null)"; then
+  fail "expected non-zero exit on diverged state"
+else
+  ok "exits non-zero when diverged (ahead + behind)"
+fi
+if echo "$OUT" | jq -e '(.findings | map(select(startswith("behind_origin:"))) | length > 0)' >/dev/null; then
+  ok "reports behind_origin (halt-class) when also ahead — does NOT auto-reset"
+else
+  fail "expected behind_origin halt finding on diverged state, got: $OUT"
 fi
 
 echo ""

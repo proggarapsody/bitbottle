@@ -58,9 +58,25 @@ if [[ "$on_main" == "false" ]]; then
   findings+=("not_on_main: currently on $branch")
   halt_class=1
 fi
+
+# Behind-origin handling: branch protection blocks direct pushes to main, so
+# local `main` is purely read-only at cycle boundaries. Being behind origin
+# is the EXPECTED state after the previous cycle's PR squash-merged. Resolve
+# by hard-reset, not by `git merge origin/main` (which the orchestrator
+# previously did inline, littering main with 7 merge commits across the
+# May-17 stream cycles 81–86).
+#
+# Halt-class only when local has unpushed commits (diverged state — could
+# represent in-progress work that hard-reset would destroy).
 if (( behind > 0 )); then
-  findings+=("behind_origin: $behind commit(s) behind origin/main")
-  halt_class=1
+  if [[ "$on_main" == "true" ]] && [[ "$clean" == "true" ]] && (( ahead == 0 )); then
+    git reset --hard "origin/main" >&2
+    behind=0
+    findings+=("behind_origin_reset: synced local main → origin/main (was $behind behind)")
+  else
+    findings+=("behind_origin: $behind commit(s) behind origin/main")
+    halt_class=1
+  fi
 fi
 if (( ahead > 0 )); then
   findings+=("ahead_origin: $ahead unpushed commit(s)")
