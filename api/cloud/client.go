@@ -12,11 +12,15 @@ import (
 	"github.com/proggarapsody/bitbottle/api/internal/httpx"
 )
 
-// hostFromURL returns the scheme://host portion of a URL, or the URL itself
-// if it cannot be parsed. Used to populate backend.DomainError.Host.
+// hostFromURL returns the bare hostname (no scheme) portion of a URL,
+// or the URL itself if it cannot be parsed. Used to populate
+// backend.DomainError.Host so the errfmt hint at pkg/errfmt/errfmt.go
+// renders `--hostname HOST` rather than `--hostname https://HOST`
+// (which would trip the scheme-stripping path in `auth login`).
+// See PRD #372 Bug D.
 func hostFromURL(rawURL string) string {
 	if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
-		return u.Scheme + "://" + u.Host
+		return u.Host
 	}
 	return rawURL
 }

@@ -102,6 +102,13 @@ func New() *Factory {
 
 	gitRunner := func() run.Runner { return &run.SystemRunner{} }
 
+	// kr is the keyring used by the Backend / BackendWithOptions closures
+	// to recover migrated tokens. After `auth migrate`, hostCfg.OAuthToken
+	// is empty (the field is zeroed and config.MarshalYAML strips it on
+	// save); the keyring is the only place the token still lives.
+	// See PRD #372 Bug B.
+	kr := keyring.New()
+
 	return &Factory{
 		IOStreams: iostreams.System(),
 		Config:    configFn,
@@ -110,6 +117,7 @@ func New() *Factory {
 				return nil, err
 			}
 			hostCfg, _ := cfg.Get(hostname)
+			hostCfg.OAuthToken = resolveToken(hostCfg, kr)
 			hc := newHTTPClient(hostCfg.SkipTLSVerify)
 			return newBackendClient(hc, hostname, hostCfg, baseURL), nil
 		},
@@ -120,6 +128,8 @@ func New() *Factory {
 			hostCfg, _ := cfg.Get(hostname)
 			if opts.Token != "" {
 				hostCfg.OAuthToken = opts.Token
+			} else {
+				hostCfg.OAuthToken = resolveToken(hostCfg, kr)
 			}
 			if opts.SkipTLSVerify {
 				hostCfg.SkipTLSVerify = true
@@ -145,7 +155,7 @@ func New() *Factory {
 		Aliases:    aliasesFn,
 		Profiles:   profilesFn,
 		GitRunner:  gitRunner,
-		Keyring:    &keyring.OSKeyring{},
+		Keyring:    kr,
 		Browser:    &cmdutil.SystemBrowser{},
 		Editor:     &cmdutil.SystemEditor{},
 		BaseURL:    baseURL,
@@ -208,6 +218,30 @@ func newHTTPClient(skipTLSVerify bool) *http.Client {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec
 	}
 	return &http.Client{Transport: bitbottleapi.WrapTransport(transport)}
+}
+
+// resolveToken returns the token to use for the given host. When the
+// config-file token is non-empty it wins (preserving the pre-migrate
+// shape and the in-memory --with-token override). Otherwise — the
+// canonical post-`auth migrate` shape — fall back to the keyring under
+// the user-slug key. An empty User slug means we can't form the
+// keyring key, so we return empty cleanly (the caller surfaces a
+// normal "not authenticated" error). Errors from the keyring (timeout,
+// not-found) are deliberately swallowed so a stuck keyring daemon
+// can't brick every command — the empty-token path produces the same
+// 401 the user would see without keyring at all. See PRD #372 Bug B.
+func resolveToken(hostCfg config.HostConfig, kr keyring.Keyring) string {
+	if hostCfg.OAuthToken != "" {
+		return hostCfg.OAuthToken
+	}
+	if hostCfg.User == "" {
+		return ""
+	}
+	tok, err := kr.Get("bitbottle", hostCfg.User)
+	if err != nil {
+		return ""
+	}
+	return tok
 }
 
 func newBackendClient(hc *http.Client, hostname string, hostCfg config.HostConfig, dcBaseURL func(string) string) backend.Client {

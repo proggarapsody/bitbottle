@@ -200,8 +200,27 @@ expected-files list embedded in the PRD.
 **Goal**: green tests + green lint on a feature branch, in an isolated
 worktree.
 
+> **HARD STOP — worktree is mandatory.** Never branch off `main` inside
+> the main checkout. Every iteration — single scope, bundle, parallel,
+> fix, docs, chore — runs in its own worktree.
+>
+> ```bash
+> # ❌ FORBIDDEN — pollutes the main checkout, traps in-flight work
+> git checkout -b feat/<slug> origin/main
+> git checkout -b fix/<slug> origin/main
+>
+> # ✅ REQUIRED — isolates the iteration, preserves the main checkout
+> git worktree add -b feat/<slug> ../bitbottle-worktrees/<slug> origin/main
+> git worktree add -b fix/<slug>  ../bitbottle-worktrees/<slug> origin/main
+> ```
+>
+> If the orchestrator (human or agent) catches itself about to
+> `git checkout -b` on `main`, that is a workflow violation — back out,
+> create the worktree, and retry. PRD #372 surfaced this as the
+> "Process bug" companion to four auth bugs.
+
 **Worktree (always — even for a single scope)**
-- `git worktree add -b feat/<short-slug> ../bitbottle-worktrees/<slug> main`
+- `git worktree add -b feat/<short-slug> ../bitbottle-worktrees/<slug> origin/main`
   (or `fix/...` / `docs/...` / `chore/...` per `AGENTS.md`). All
   implementation, commits, and pushes happen **inside the worktree**.
   The main checkout stays clean — agents and humans alike never edit
