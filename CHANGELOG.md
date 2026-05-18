@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.77.0](https://github.com/proggarapsody/bitbottle/compare/v1.76.2...v1.77.0) (2026-05-18)
+
+
+### Features
+
+* **auth:** auto-detect self-signed CA and prompt to trust on login ([#390](https://github.com/proggarapsody/bitbottle/issues/390)) ([b30ec09](https://github.com/proggarapsody/bitbottle/commit/b30ec09fe0f7f73f113ae25c48ee1a4bc3308f28))
+
+
+### Bug Fixes
+
+* **root:** wire global -k / --skip-tls-verify flag ([#387](https://github.com/proggarapsody/bitbottle/issues/387)) ([4e5b753](https://github.com/proggarapsody/bitbottle/commit/4e5b75357165716c88a0aef56b30b1e4b14dd6d4))
+
 ## [1.76.2](https://github.com/proggarapsody/bitbottle/compare/v1.76.1...v1.76.2) (2026-05-18)
 
 
