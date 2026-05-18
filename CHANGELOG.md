@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.76.1](https://github.com/proggarapsody/bitbottle/compare/v1.76.0...v1.76.1) (2026-05-18)
+
+
+### Bug Fixes
+
+* **release:** remove goreleaser signs block to fix cosign PATH issue ([#388](https://github.com/proggarapsody/bitbottle/issues/388)) ([0f0a7e2](https://github.com/proggarapsody/bitbottle/commit/0f0a7e2b166411e2e5c92c0d8a90b2978f375d81))
+
 ## [1.76.0](https://github.com/proggarapsody/bitbottle/compare/v1.75.0...v1.76.0) (2026-05-18)
 
 
