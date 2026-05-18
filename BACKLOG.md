@@ -38,6 +38,38 @@ README.md                → new command section
 
 ---
 
+## Testing Strategy
+
+**Premise.** Every bug shipped in cycles 90–99 lived at a seam between modules, not inside a unit. Unit coverage on `errfmt.go` was effectively 100%, yet [#387](https://github.com/proggarapsody/bitbottle/pull/387) (`-k` flag dead-end), [#394](https://github.com/proggarapsody/bitbottle/pull/394) (phantom `--debug` hint), [#384](https://github.com/proggarapsody/bitbottle/pull/384)/[#388](https://github.com/proggarapsody/bitbottle/pull/388)/[#391](https://github.com/proggarapsody/bitbottle/pull/391) (release-pipeline cascade), and the post-migrate auth bug ([`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a)) all shipped behind green tests. TDD proves the unit you wrote a test for; bugs live in the unit you didn't decide to write — the connector.
+
+**Pyramid (top tiers are explicitly enumerated for the first time):**
+
+| Tier | What it owns | Where it lives | Catches |
+|---|---|---|---|
+| 1. **Unit** | one function / one struct method | `api/cloud/**/*_test.go`, `api/server/**/*_test.go`, `internal/**/*_test.go` | logic bugs inside a leaf module |
+| 2. **Adapter / integration** | one cobra command against an `httptest` fake | `pkg/cmd/**/*_integration_test.go` | wire compatibility for one route + handler |
+| 3. **Script (TESTSCRIPT)** | whole binary, real argv/env/exit codes, hermetic by default | `test/script/testdata/*.txtar` | flag wiring, alias expansion, errfmt rendering, `bitbottle.host` defaulting, capability gaps, env handling, upgrade paths |
+| 4. **Contract** | cross-file invariants asserted in Go | one focused `*_contract_test.go` per invariant | "every flag named in an errfmt hint is registered on the failing command", "every backend exposes every feature in `AllFeatures`", `--json` field stability |
+| 5. **System / pipeline** | release tooling outside Go (`goreleaser`, `npm publish`, `cosign`, `slsa-generator`) | PR-gated dry-run GHA workflow on changes to `.goreleaser.yaml`, `.github/workflows/release.yml`, `packages/mcp-npm/` | release rework cascades like cycle 93 |
+| 6. **Live wire** | real Bitbucket Server + Cloud sandbox | nightly GHA gated by `BITBOTTLE_E2E=1`; reuses tier-3 `.txtar` corpus | wire-level drift the hermetic fake by construction cannot detect |
+
+**Priority order.** Tiers 3–5 are missing entirely and own every recent escape. They are P0:
+
+1. **TESTSCRIPT** (tier 3) — single biggest leverage; covers ~60% of recent escapes.
+2. **RELEASE-DRY-RUN** (tier 5) — covers the 30% release-pipeline rework cluster.
+3. **HINT-FLAG-CONTRACT** (tier 4) — five-line fixture, catches the entire #387/#394 class.
+4. **UPGRADE-PATH-TESTS** (tier 3 sub-corpus) — drops pre-migration state on disk inside `.txtar`, asserts the upgrade.
+
+**Principles for adding tests going forward:**
+
+- **No new feature ships without at least one `.txtar` script** once TESTSCRIPT lands. The script is the test that proves the feature works as a user sees it. Unit + adapter tests remain, but the script is the gate.
+- **Every error hint is a contract.** If a hint says "pass `--foo`", a contract test must prove `--foo` is reachable from the failing command. Treat hints as a tested surface, not free-form prose.
+- **Every release-pipeline change runs the pipeline.** No change to `.goreleaser.yaml`, release workflow, or `packages/mcp-npm/package.json` merges without `goreleaser release --snapshot` + `npm publish --dry-run --provenance` having passed on the PR.
+- **Upgrade is a tested operation.** Any change to on-disk config shape, keyring key shape, or `hosts.yml` schema requires a `.txtar` that drops the prior shape on disk and asserts the upgrade. The post-migrate auth bug stays solved.
+- **Coverage % is not the metric.** The metric is "what fraction of seams are observed at composition." TESTSCRIPT corpus size + contract-test count are better proxies than `go test -cover`.
+
+---
+
 ## Full Functionality Map
 
 Current state of every command area against gh feature parity:
@@ -320,6 +352,10 @@ Current state of every command area against gh feature parity:
 
 | ID | Scope | Commands | Backends | Tier | Status |
 |---|---|---|---|---|---|
+| **TESTSCRIPT** | **Whole-binary script tests (testscript)** — `test/script/` harness + `bb-fake` server/cloud testscript command + seed corpus of `.txtar` scripts covering high-value end-to-end flows (`auth status`, `repo list`/Cloud+Server, `pr list`/Cloud+Server, `pr view`, errfmt catalogue, `bitbottle.host` defaulting). Hermetic by default; opt-in real Bitbucket via `BITBOTTLE_E2E=1`. Issue [#399](https://github.com/proggarapsody/bitbottle/issues/399). **P0 — testing-tier 3.** | N/A | DX | 🔲 P0 |
+| **RELEASE-DRY-RUN** | **PR-gated release pipeline dry-run** — new `.github/workflows/release-dryrun.yml` triggered when a PR touches `.goreleaser.yaml`, `.github/workflows/release.yml`, `.github/workflows/scorecard.yml`, or `packages/mcp-npm/**`. Runs `goreleaser release --snapshot --clean` and `npm publish --dry-run --provenance` in the same matrix as the real release. Would have blocked [#384](https://github.com/proggarapsody/bitbottle/pull/384)/[#388](https://github.com/proggarapsody/bitbottle/pull/388)/[#391](https://github.com/proggarapsody/bitbottle/pull/391) at PR review (cycle 93's 75-min cascade → 0 min). **P0 — testing-tier 5.** | N/A | DX | 🔲 P0 |
+| **HINT-FLAG-CONTRACT** | **Hint↔flag cross-file contract test** — new `pkg/errfmt/contract_test.go` that walks every catalogue entry's `hints[]`, extracts every `--flag` / `` `-f` `` token, and asserts each is registered as a persistent/root/subcommand flag reachable from the command that surfaces the matching `ErrorCode`. Five-line fixture loop. Statically catches [#387](https://github.com/proggarapsody/bitbottle/pull/387) (`-k` promised, not wired on third command) and [#394](https://github.com/proggarapsody/bitbottle/pull/394) (phantom `--debug`) and every future hint drift. **P0 — testing-tier 4.** | N/A | DX | 🔲 P0 |
+| **UPGRADE-PATH-TESTS** | **Pre-migration state `.txtar` sub-corpus** — once TESTSCRIPT lands, add `test/script/testdata/upgrade/*.txtar` that drops a pre-migration on-disk shape (token-in-`hosts.yml`, pre-normalization hostname, pre-keyring-key-rename, deprecated `pipeline variable` config) into hermetic HOME, runs `bitbottle auth status` (or whichever flow triggers the upgrade), and asserts the resulting on-disk shape + observable behaviour. Pins the [`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a) post-migrate auth class of bugs. **P0 — testing-tier 3 sub-corpus (depends on TESTSCRIPT).** | N/A | DX | 🔲 P0 |
 | L | **Branch Create + Checkout** | `branch create`, `branch checkout` | Both | 1 | ✅ |
 | E | **Tags** | `tag list`, `tag create`, `tag delete` | Both | 1 | ✅ |
 | G | **PR Lifecycle** | `pr decline`, `pr unapprove`, `pr edit`, `pr ready`, `pr request-review`, `pr request-changes` | Both / Cloud | 1 | ✅ |
@@ -425,6 +461,108 @@ Current state of every command area against gh feature parity:
 ---
 
 ## Scope Details
+
+### TESTSCRIPT — Whole-binary script tests
+
+**Status:** 🔲 P0 — see issue [#399](https://github.com/proggarapsody/bitbottle/issues/399) for the full PRD.
+
+**Why P0:** Cycles 90–99 shipped four behaviour bugs ([#387](https://github.com/proggarapsody/bitbottle/pull/387), [#394](https://github.com/proggarapsody/bitbottle/pull/394), [#390](https://github.com/proggarapsody/bitbottle/pull/390), [`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a)) that every single existing unit/adapter test was green for. The shared trait: the failure only manifests when real argv, real env, real cobra dispatch, real factory wiring, and real errfmt rendering are composed end-to-end. No tier below tier 3 catches this class.
+
+**Shape (summarised; full PRD in #399):**
+
+1. New package `test/script/` exposes `Run(t *testing.T, dir string)` — single deep-module entry. Command-area test files become one-liners.
+2. `cmd/bitbottle/main.go` refactored so the real entry point is `Main() int`; `testscript.RunMain` dispatches in-process for parallel-safe per-script execution.
+3. Custom `bb-fake server|cloud` testscript command boots a fixture-backed `httptest.Server` (reuses `test/testhelpers.BitbucketCloudServer` / Server builders) and exports `BITBOTTLE_TEST_BASE_URL` + seeded credentials.
+4. Hermetic per script: temp `HOME`, scrubbed env (`BITBOTTLE_*`, `HTTPS_PROXY`, `GIT_*`, `XDG_*`), ephemeral ports rewritten in golden output.
+5. Seed corpus (8–10 `.txtar`): `auth_status.txtar`, `repo_list_cloud.txtar`, `repo_list_server.txtar`, `pr_list_cloud.txtar`, `pr_list_server.txtar`, `pr_view.txtar`, `errfmt_catalogue.txtar`, `bitbottle_host_defaulting.txtar`, `capability_gap.txtar`, `content_type_policy.txtar`.
+6. `Makefile` gets `make test-script`. Pre-merge gate runs `go test ./test/script -race`.
+7. Nightly GHA `BITBOTTLE_E2E=1` runs the same corpus against real Bitbucket Server (Alfa) + Cloud sandbox; failure opens a GitHub issue with the failing script name + diff.
+
+**Definition of Done:**
+
+- [ ] `test/script/script.go` — `Run(t, dir)` harness.
+- [ ] `cmd/bitbottle/main.go` — `Main() int` entry point.
+- [ ] `test/script/bbfake/` — `bb-fake` testscript command.
+- [ ] `test/script/testdata/*.txtar` — seed corpus (10 scripts).
+- [ ] `Makefile` — `test-script` target.
+- [ ] `.github/workflows/ci.yml` — script tier wired into CI.
+- [ ] `.github/workflows/e2e-nightly.yml` — opt-in real-host job.
+- [ ] `docs/testing.md` — testing-strategy doc (one source of truth, mirrored from BACKLOG.md § Testing Strategy).
+- [ ] `go test ./test/script -race` green; suite under 30 s wall.
+
+---
+
+### RELEASE-DRY-RUN — PR-gated release pipeline dry-run
+
+**Why P0:** Cycle 93 burned 75 minutes and three patch releases (v1.76.0 → v1.76.1 → v1.76.2) on a release pipeline that only fails on tag push. The cosign-installer / goreleaser / npm-provenance bugs ([#384](https://github.com/proggarapsody/bitbottle/pull/384), [#388](https://github.com/proggarapsody/bitbottle/pull/388), [#391](https://github.com/proggarapsody/bitbottle/pull/391)) live outside Go entirely — no Go-level test can ever reach them. The only correct tier is "run the pipeline against the PR before merge."
+
+**Shape:**
+
+1. New workflow `.github/workflows/release-dryrun.yml`. Trigger: `pull_request` with `paths:` filter on `.goreleaser.yaml`, `.github/workflows/release.yml`, `.github/workflows/scorecard.yml`, `packages/mcp-npm/**`.
+2. Job 1: `goreleaser release --snapshot --clean --skip=publish` — uses the same matrix (OS, Go version, action SHAs) as the real release workflow. Required to pass.
+3. Job 2: `cd packages/mcp-npm && npm publish --dry-run --provenance` — proves provenance config (the `repository.url` class of bugs).
+4. Job 3 (optional): `cosign sign-blob` end-to-end against `dist/checksums.txt` from job 1, using the GHA OIDC token. Confirms signing works without committing a real signature.
+5. Failure in any job blocks merge. Output is uploaded as artefacts (built binaries, npm tarball) for human inspection.
+
+**Definition of Done:**
+
+- [ ] `.github/workflows/release-dryrun.yml` — new workflow.
+- [ ] Required-status-check enabled on `main` for the dryrun jobs (path-conditional; only required when triggered).
+- [ ] One backfill PR that intentionally re-introduces the [#384](https://github.com/proggarapsody/bitbottle/pull/384) cosign-installer change in isolation to prove the dryrun catches it, then reverts. (Or: hand-verify against the history of [#384](https://github.com/proggarapsody/bitbottle/pull/384) in a throwaway branch.)
+- [ ] Docs: `docs/release-process.md` mentions the dryrun as the canonical gate before a tag.
+
+---
+
+### HINT-FLAG-CONTRACT — Hint↔flag cross-file contract test
+
+**Why P0:** [#387](https://github.com/proggarapsody/bitbottle/pull/387) and [#394](https://github.com/proggarapsody/bitbottle/pull/394) are the same bug class: an `errfmt` hint promises a flag, the flag isn't reachable on the failing command. Both are 100% statically detectable. Cost to fix: one test file, ~30 lines. Catches every future occurrence at compile-time-ish cost.
+
+**Shape:**
+
+1. New file `pkg/errfmt/contract_test.go`.
+2. Build the full cobra command tree via `pkg/cmd/root.NewCmdRoot(...)` (with a stub factory).
+3. For every entry in the errfmt catalogue (`pkg/errfmt/catalogue.go`):
+   - Concatenate `title + hints[]`.
+   - Regex `(?:^|\s)(--[a-z][a-z0-9\-]*|`[ -][a-z]`)`.
+   - For each token, find the cobra command(s) that produce the matching `ErrorCode` (via a static `CodeToCommands` map maintained alongside the catalogue, or via reflection over command annotations).
+   - Assert the flag is registered as persistent on root or on the producing command.
+4. Output on failure: `errfmt hint for CodeTransportTimeout references --debug but no command that returns ErrTransport registers --debug. Either wire the flag or remove the hint.`
+
+**Definition of Done:**
+
+- [ ] `pkg/errfmt/contract_test.go` — the walker.
+- [ ] `pkg/errfmt/code_to_commands.go` — explicit map (preferred over reflection; new commands must add an entry, which is itself a useful discipline).
+- [ ] Test fails on a deliberate regression introduced in a throwaway commit, passes after revert.
+- [ ] `pkg/errfmt/CONTRIBUTING.md` (or section in `docs/errfmt.md`) — "hint text is a tested contract" rule documented.
+
+---
+
+### UPGRADE-PATH-TESTS — Pre-migration state `.txtar` sub-corpus
+
+**Status:** 🔲 P0 — depends on TESTSCRIPT.
+
+**Why P0:** The post-migrate auth bug ([`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a)) was found by a real user upgrading. Pattern: every change to on-disk shape (token storage, hostname normalization, keyring key, config schema, deprecated subcommand removal) is a state migration, and migrations only break for users who hold the prior state. Greenfield tests by definition don't exercise this.
+
+**Shape:**
+
+1. New directory `test/script/testdata/upgrade/`.
+2. Each `.txtar` script lays down a fixture of the **prior** on-disk shape via `-- name --` sections (old `hosts.yml`, old keyring contents simulated via env, old git config, deprecated subcommand path).
+3. Runs the upgrade-trigger flow (typically `bitbottle auth status` or a re-login).
+4. Asserts: (a) commands succeed against the migrated state, (b) the on-disk shape now matches the current schema, (c) no warning leaks to stderr that the user would have to act on without instruction.
+5. Seed corpus targets the known migration points:
+   - `auth-migrate-token.txtar` — token in `hosts.yml` → keyring.
+   - `auth-hostname-scheme.txtar` — `https://git.example.com` → `git.example.com`.
+   - `keyring-key-rename.txtar` — old keyring entry name → new shape (the [`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a) bug exactly).
+   - `pipeline-variable-removed.txtar` — `pipeline variable` (PIPEVAR-DEPREC) is gone; user has shell scripts referencing it; assert the deprecation route or error message.
+6. Every future deprecation/migration scope MUST add one upgrade `.txtar` as part of its Definition of Done.
+
+**Definition of Done:**
+
+- [ ] `test/script/testdata/upgrade/` — directory + 4 seed scripts above.
+- [ ] DoD update in this BACKLOG.md: any scope that changes on-disk shape adds an `upgrade/` `.txtar`.
+- [ ] `pkg/cmd/auth/migrate.go` and friends carry a `// MIGRATION:` comment pointing at the relevant `.txtar` (cross-reference for future readers).
+
+---
 
 ### L — Branch Create + Checkout
 
@@ -2579,8 +2717,14 @@ Print `"already up to date"` if version matches.
 
 ## Implementation Order
 
+> **P0 testing-strategy tier added 2026-05-18 after deep analysis of cycles 90–99 (see § Testing Strategy).** Every behaviour bug shipped in that window — [#387](https://github.com/proggarapsody/bitbottle/pull/387), [#394](https://github.com/proggarapsody/bitbottle/pull/394), [#390](https://github.com/proggarapsody/bitbottle/pull/390), [#384](https://github.com/proggarapsody/bitbottle/pull/384)/[#388](https://github.com/proggarapsody/bitbottle/pull/388)/[#391](https://github.com/proggarapsody/bitbottle/pull/391), [`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a) — was a seam bug invisible to unit + adapter tiers. These four scopes close the gap. Land them before any further feature scope.
+
 | Order | Scope | Rationale |
 |---|---|---|
+| **P0.1** | **HINT-FLAG-CONTRACT** | Smallest fixture (~30 lines), catches [#387](https://github.com/proggarapsody/bitbottle/pull/387) + [#394](https://github.com/proggarapsody/bitbottle/pull/394) class statically. Land first — proves the contract-test pattern. |
+| **P0.2** | **RELEASE-DRY-RUN** | Independent of TESTSCRIPT (pure GHA workflow). Closes the 30% release-pipeline rework cluster (cycle 93). Land in parallel with P0.1. |
+| **P0.3** | **TESTSCRIPT** | Tier-3 harness — biggest engineering scope (issue [#399](https://github.com/proggarapsody/bitbottle/issues/399)). Unblocks P0.4 and changes the gate for every future feature. |
+| **P0.4** | **UPGRADE-PATH-TESTS** | Depends on P0.3. Pins the [`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a) class of migration bugs and locks the principle that every on-disk-shape change owns its upgrade test. |
 | 1 | **L** Branch Create + Checkout | Extends existing package; trivial |
 | 2 | **E** Tags | New domain template; both backends |
 | 3 | **G** PR Lifecycle | Extends existing pr; no new types |
