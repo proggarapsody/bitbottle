@@ -43,17 +43,6 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
-signs:
-  - cmd: cosign
-    args:
-      - sign-blob
-      - --yes
-      - --output-signature=${signature}
-      - --output-certificate=${certificate}
-      - ${artifact}
-    artifacts: checksum
-    output: true
-
 nfpms:
   - id: bitbottle
     package_name: bitbottle

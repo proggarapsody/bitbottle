@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write   # for OIDC (SLSA + cosign + npm provenance)
+      id-token: write   # for OIDC (SLSA + npm provenance)
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
     steps:
