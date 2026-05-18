@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.73.1](https://github.com/proggarapsody/bitbottle/compare/v1.73.0...v1.73.1) (2026-05-18)
+
+
+### Bug Fixes
+
+* **auth:** post-migrate auth + hostname scheme normalization + workflow rule ([08b3d9a](https://github.com/proggarapsody/bitbottle/commit/08b3d9a0a577dd9aa44d286b2603ff88d997b177))
+
 ## [1.73.0](https://github.com/proggarapsody/bitbottle/compare/v1.72.1...v1.73.0) (2026-05-17)
 
 
