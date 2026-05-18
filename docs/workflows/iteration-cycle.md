@@ -200,6 +200,15 @@ expected-files list embedded in the PRD.
 **Goal**: green tests + green lint on a feature branch, in an isolated
 worktree.
 
+> **AUDIT_CONTINUE rule** — see [`auto-iter/quickref.md` § AUDIT_CONTINUE](../../auto-iter/quickref.md#audit_continue--bundle-auditfix-when-the-finding-fits-in-one-pr).
+> When the scope slug matches `*-AUDIT` and the audit produces exactly
+> one finding that fits in ≤1 PR (≤200 LOC, ≤8 files, single
+> subsystem), the TDD subagent continues into the implementation in the
+> same cycle. Both BACKLOG rows flip in the same feat commit; the cycle
+> emits `bundled:true` with two scope slugs in `scopes[]`. This is the
+> answer to cycles 95 (UX-FLAG-AUDIT) + 96 (DEBUG-TRANSPORT-FLAG)
+> shipping what should have been one cycle.
+
 > **HARD STOP — worktree is mandatory.** Never branch off `main` inside
 > the main checkout. Every iteration — single scope, bundle, parallel,
 > fix, docs, chore — runs in its own worktree.
@@ -448,20 +457,19 @@ updated docs.
    reachable from `main`, which is normal for squash-merge — `-D` works
    only if Safety Net allows it).
 
-2. **Append to `auto-iter/metrics.csv`** — one row per cycle:
+2. **Cycle is logged automatically** — `auto-iter/scripts/log-cycle.sh`
+   appends one line to `.claude/auto-iter/cycles.jsonl` at cycle end
+   (per-step lines live in `metrics.jsonl`, written by `metric.sh` at
+   each step). Both are gitignored runtime state and the authoritative
+   record of "is the pipeline trending faster or slower." Inspect with:
 
-   ```
-   cycle,version,scope,pr,merged_at_utc,wall_minutes,ci_seconds,loc_added,loc_deleted,files_touched,subagent_tokens_k
+   ```bash
+   jq -s 'sort_by(.cycle) | .[-10:]' .claude/auto-iter/cycles.jsonl
    ```
 
-   Pull from `gh release view`, `gh pr view <N> --json
-   mergedAt,additions,deletions,changedFiles`, and `gh run view <run-id>
-   --json createdAt,updatedAt`. `subagent_tokens_k` is optional (leave
-   empty if you weren't tracking it). Commit the row on the chore branch
-   that ships the next iteration's backlog updates — never on the
-   feature branch. The series is the source of truth for "is the
-   pipeline trending faster or slower"; we stopped relying on memory
-   after the v1.29–v1.31 post-mortem.
+   Earlier versions of this doc instructed manually appending to
+   `auto-iter/metrics.csv`. That ledger was abandoned at cycle 14, became
+   misleading, and was removed in `chore(auto-iter): loop hardening`.
 
 3. **Compact** — if the iteration ran inside a long agent session
    (Claude Code, Cursor, etc.), use the agent's compact / clear command

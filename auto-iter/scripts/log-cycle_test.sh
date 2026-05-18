@@ -52,6 +52,39 @@ else
   fail "expected 2 lines in cycles.jsonl"
 fi
 
+# Case 6: cycle entries gain metrics_steps_count derived from metrics.jsonl.
+# With no metrics file: count == 0.
+OUT="$(bash "$SCRIPT" --cycle=70 --mode=iteration --scope=X --outcome=shipped)"
+if echo "$OUT" | jq -e '.metrics_steps_count==0' >/dev/null; then
+  ok "metrics_steps_count=0 when metrics.jsonl absent"
+else
+  fail "expected metrics_steps_count=0 with no metrics file, got: $OUT"
+fi
+
+# Seed metrics.jsonl with 5 entries (3 with .step on cycle 71, 1 without .step,
+# 1 on cycle 72) — log-cycle should count only .step entries for the queried cycle.
+cat > .claude/auto-iter/metrics.jsonl <<'METRICS'
+{"cycle":71,"step":"step0a_lock","ts":"2026-05-18T10:00:00Z","duration_ms":5}
+{"cycle":71,"step":"step0_preflight","ts":"2026-05-18T10:00:01Z","duration_ms":200}
+{"cycle":71,"step":"step1_mode_pick","ts":"2026-05-18T10:00:02Z","duration_ms":30}
+{"cycle":71,"ts":"2026-05-18T10:00:03Z","note":"no step field, should not count"}
+{"cycle":72,"step":"step0a_lock","ts":"2026-05-18T11:00:00Z","duration_ms":5}
+METRICS
+OUT="$(bash "$SCRIPT" --cycle=71 --mode=iteration --scope=Y --outcome=shipped)"
+if echo "$OUT" | jq -e '.metrics_steps_count==3' >/dev/null; then
+  ok "metrics_steps_count=3 (counts only .step entries for that cycle)"
+else
+  fail "expected metrics_steps_count=3, got: $OUT"
+fi
+
+# Stream rows do NOT carry metrics_steps_count.
+OUT="$(bash "$SCRIPT" --stream=completed --max=5 --ran=5)"
+if echo "$OUT" | jq -e 'has("metrics_steps_count") | not' >/dev/null; then
+  ok "stream rows omit metrics_steps_count"
+else
+  fail "stream row should not have metrics_steps_count, got: $OUT"
+fi
+
 echo ""
 if [[ $FAIL -eq 0 ]]; then
   echo "PASS: log-cycle.sh tests OK"

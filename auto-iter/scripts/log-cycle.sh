@@ -32,6 +32,31 @@ if [[ $seen_cycle -eq 1 && $seen_outcome -eq 0 ]]; then
 fi
 
 ensure_auto_iter_dir
-LINE="$(emit_json --ts="$(now_iso)" "$@")"
+
+# Count step entries this cycle wrote to metrics.jsonl so post-hoc analysis can
+# spot telemetry gaps. Cycle 93 (the 75-min release-cascade) wrote 4 step lines
+# total when a healthy shipped cycle writes 8-12. Surfacing the count alongside
+# the outcome makes drift visible in a single jq query instead of cross-file
+# diffing two JSONLs.
+#
+# Only computed for cycle entries (--cycle=N). Stream rows (--stream=...) skip.
+extra_args=()
+if [[ $seen_cycle -eq 1 ]]; then
+  cycle_value=""
+  for arg in "$@"; do
+    [[ "$arg" == --cycle=* ]] && cycle_value="${arg#--cycle=}"
+  done
+  metrics_file="$(auto_iter_dir)/metrics.jsonl"
+  steps_count=0
+  if [[ -n "$cycle_value" ]] && [[ -f "$metrics_file" ]]; then
+    steps_count="$(jq -s --argjson c "$cycle_value" \
+      'map(select(.cycle==$c and (.step // null) != null)) | length' \
+      "$metrics_file" 2>/dev/null || echo 0)"
+    [[ -z "$steps_count" || "$steps_count" == "null" ]] && steps_count=0
+  fi
+  extra_args+=(--metrics_steps_count="$steps_count")
+fi
+
+LINE="$(emit_json --ts="$(now_iso)" "$@" ${extra_args[@]+"${extra_args[@]}"})"
 printf '%s\n' "$LINE" >> "$(auto_iter_dir)/cycles.jsonl"
 printf '%s\n' "$LINE"

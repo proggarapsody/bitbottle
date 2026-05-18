@@ -137,6 +137,74 @@ else
   fail "expected behind_origin halt finding on diverged state, got: $OUT"
 fi
 
+# Case 6: .githooks/ exists + core.hooksPath unset → wired automatically.
+# Fresh fixture so the behind/ahead history from earlier cases doesn't interfere.
+HOOKS_REPO="$(mktemp -d)"
+cd "$HOOKS_REPO"
+git init -q -b main
+git config user.email "test@test.com"
+git config user.name "Test"
+echo "hello" > README.md
+git add README.md
+git commit -q -m "init"
+mkdir -p .githooks
+if [[ -n "$(git config core.hooksPath 2>/dev/null || true)" ]]; then
+  fail "fixture invariant: expected core.hooksPath unset at fixture start"
+fi
+if OUT="$(bash "$SCRIPT")"; then
+  ok "exits 0 when .githooks/ exists and hooksPath was unset"
+else
+  fail "expected exit 0 when wiring hooksPath, got non-zero: $OUT"
+fi
+if [[ "$(git config core.hooksPath)" == ".githooks" ]]; then
+  ok "preflight wired core.hooksPath=.githooks"
+else
+  fail "expected core.hooksPath=.githooks after preflight, got: $(git config core.hooksPath 2>/dev/null || echo unset)"
+fi
+if echo "$OUT" | jq -e '(.findings | map(select(startswith("hooks_path_wired"))) | length == 1)' >/dev/null; then
+  ok "reports hooks_path_wired finding on first wire"
+else
+  fail "expected hooks_path_wired finding, got: $OUT"
+fi
+# Re-run: idempotent, no finding the second time.
+if OUT="$(bash "$SCRIPT")"; then
+  ok "exits 0 on second run (idempotent)"
+else
+  fail "expected exit 0 on idempotent re-run: $OUT"
+fi
+if echo "$OUT" | jq -e '(.findings | map(select(startswith("hooks_path_wired"))) | length == 0)' >/dev/null; then
+  ok "no hooks_path_wired finding on idempotent re-run"
+else
+  fail "expected no hooks_path_wired finding on re-run, got: $OUT"
+fi
+rm -rf "$HOOKS_REPO"
+
+# Case 7: .githooks/ absent → no-op, no finding.
+NOHOOKS_REPO="$(mktemp -d)"
+cd "$NOHOOKS_REPO"
+git init -q -b main
+git config user.email "test@test.com"
+git config user.name "Test"
+echo "hello" > README.md
+git add README.md
+git commit -q -m "init"
+if OUT="$(bash "$SCRIPT")"; then
+  ok "exits 0 when .githooks/ absent"
+else
+  fail "expected exit 0 with no .githooks/, got: $OUT"
+fi
+if [[ -z "$(git config core.hooksPath 2>/dev/null || true)" ]]; then
+  ok "leaves core.hooksPath unset when .githooks/ absent"
+else
+  fail "expected core.hooksPath unset when no .githooks/, got: $(git config core.hooksPath)"
+fi
+if echo "$OUT" | jq -e '(.findings | map(select(startswith("hooks_path_wired"))) | length == 0)' >/dev/null; then
+  ok "no hooks_path_wired finding when .githooks/ absent"
+else
+  fail "unexpected hooks_path_wired finding: $OUT"
+fi
+rm -rf "$NOHOOKS_REPO"
+
 echo ""
 if [[ $FAIL -eq 0 ]]; then
   echo "PASS: preflight.sh tests OK"
