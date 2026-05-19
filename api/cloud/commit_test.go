@@ -1,6 +1,7 @@
 package cloud_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -62,4 +63,32 @@ func TestCloudClient_GetCommit_IssuesCorrectPath(t *testing.T) {
 	assert.Equal(t, "Fix null pointer in auth", commit.Message)
 	assert.Equal(t, "Alice", commit.Author.Slug)
 	assert.Contains(t, commit.WebURL, "commits/")
+}
+
+func TestCloudClient_ListCommits_FollowsNextPage(t *testing.T) {
+	t.Parallel()
+	page1Tmpl := `{"values":[{"hash":"aaa","message":"Commit A","author":{"raw":"Alice","user":{"display_name":"Alice"}},"date":"2026-01-01T00:00:00Z","links":{"html":{"href":""}}}],"next":"%s/page2"}`
+	page2 := `{"values":[{"hash":"bbb","message":"Commit B","author":{"raw":"Bob","user":{"display_name":"Bob"}},"date":"2026-01-02T00:00:00Z","links":{"html":{"href":""}}}]}`
+
+	var callCount int
+	var srvURL string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/page2" {
+			_, _ = w.Write([]byte(page2))
+		} else {
+			_, _ = fmt.Fprintf(w, page1Tmpl, srvURL)
+		}
+	}))
+	srvURL = srv.URL
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	commits, err := client.ListCommits("ws", "repo", "main", 0) // 0 = no cap
+	require.NoError(t, err)
+	assert.Equal(t, 2, callCount)
+	require.Len(t, commits, 2)
+	assert.Equal(t, "aaa", commits[0].Hash)
+	assert.Equal(t, "bbb", commits[1].Hash)
 }
