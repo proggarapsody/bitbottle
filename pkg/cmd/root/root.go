@@ -61,7 +61,7 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 				f.DebugHTTP = true
 			}
 
-			jsonMode, _ := c.Flags().GetBool("json")
+			jsonMode := c.Flags().Changed("json")
 			yamlMode, _ := c.Flags().GetBool("yaml")
 			jqExpr, _ := c.Flags().GetString("jq")
 			tmpl, _ := c.Flags().GetString("template")
@@ -89,7 +89,8 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().String("hostname", "", "Bitbucket hostname (overrides git remote)")
-	cmd.PersistentFlags().Bool("json", false, "Output as JSON")
+	cmd.PersistentFlags().String("json", "", "Output as JSON (optionally select fields: --json field1,field2)")
+	cmd.PersistentFlags().Lookup("json").NoOptDefVal = "*"
 	cmd.PersistentFlags().Bool("yaml", false, "Output as YAML")
 	cmd.PersistentFlags().String("jq", "", "Filter JSON output with a jq expression")
 	cmd.PersistentFlags().String("template", "", "Format output with a Go template")
