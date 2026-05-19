@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.85.1](https://github.com/proggarapsody/bitbottle/compare/v1.85.0...v1.85.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* **cloud:** migrate ListCommits and ListCommitStatuses to paging.Collect ([f06d2a1](https://github.com/proggarapsody/bitbottle/commit/f06d2a1fb0d19cbafd5886bc777f8c026bb203d6))
+
 ## [1.85.0](https://github.com/proggarapsody/bitbottle/compare/v1.84.0...v1.85.0) (2026-05-19)
 
 
