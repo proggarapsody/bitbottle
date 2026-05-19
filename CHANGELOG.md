@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.80.0](https://github.com/proggarapsody/bitbottle/compare/v1.79.0...v1.80.0) (2026-05-19)
+
+
+### Features
+
+* **testscript:** add whole-binary script test tier with testscript ([da97c1c](https://github.com/proggarapsody/bitbottle/commit/da97c1c1c97038468444f8e9423b7f11a2451026))
+
 ## [1.79.0](https://github.com/proggarapsody/bitbottle/compare/v1.78.0...v1.79.0) (2026-05-18)
 
 
