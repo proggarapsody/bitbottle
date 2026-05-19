@@ -175,6 +175,19 @@ func renderByKind(ios *iostreams.IOStreams, de *backend.DomainError) bool {
 	return true
 }
 
+// CatalogueHints returns the raw (un-expanded) hint templates for every error
+// code in the catalogue. Consumed by the hint↔flag contract test to verify
+// that every flag token in a hint is registered on the root cobra command.
+func CatalogueHints() map[backend.ErrorCode][]string {
+	out := make(map[backend.ErrorCode][]string, len(catalogue))
+	for code, e := range catalogue {
+		if len(e.hints) > 0 {
+			out[code] = e.hints
+		}
+	}
+	return out
+}
+
 // HintsFor returns the catalogue's hint strings for de.Code with
 // template placeholders ({{.Host}}, {{.ID}}, {{.Resource}}, {{.Feature}})
 // expanded against the DomainError. Returns nil when de is nil, when the

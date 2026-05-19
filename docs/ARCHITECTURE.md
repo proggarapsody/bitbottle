@@ -199,6 +199,7 @@ to its implementation size. Refactor — extract or collapse.
 | 1. **Unit** | one function / one struct method | `api/cloud/**/*_test.go`, `api/server/**/*_test.go`, `internal/**/*_test.go` | logic bugs inside a leaf module |
 | 2. **Adapter / integration** | one cobra command against an `httptest` fake | `pkg/cmd/**/*_integration_test.go` | wire compatibility for one route + handler |
 | 3. **Script (testscript)** | whole binary, real argv/env/exit codes | `test/script/testdata/*.txtar` | flag wiring, errfmt rendering, `bitbottle.host` defaulting, capability gaps |
+| 4. **Contract** | cross-package invariants that can't live in a leaf | `test/contract/*_test.go` | hint↔flag drift, future cross-cutting regressions |
 
 ### Tier 3 — testscript harness
 
