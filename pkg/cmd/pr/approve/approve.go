@@ -1,4 +1,4 @@
-package pr
+package approve
 
 import (
 	"fmt"
@@ -6,15 +6,16 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	prshared "github.com/proggarapsody/bitbottle/pkg/cmd/pr/shared"
 )
 
-func NewCmdPRApprove(f *factory.Factory) *cobra.Command {
+func NewCmdApprove(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "approve PR_ID",
 		Short: "Approve a pull request",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, prID, client, err := resolvePRTarget(f, args, "")
+			ref, prID, client, err := prshared.ResolvePRTarget(f, args, "")
 			if err != nil {
 				return err
 			}
