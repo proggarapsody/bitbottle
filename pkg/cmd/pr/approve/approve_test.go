@@ -1,25 +1,22 @@
-package pr_test
+package approve_test
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/approve"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
-// TestNewCmdPRApprove_RequiresArg and TestPRApprove_MissingArg_Errors were
-// identical (both verified cobra's ExactArgs(1) rejection); only one is kept.
-
-func TestNewCmdPRApprove_RequiresArg(t *testing.T) {
+func TestNewCmdApprove_RequiresArg(t *testing.T) {
 	t.Parallel()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
-	cmd := pr.NewCmdPRApprove(f)
+	cmd := approve.NewCmdApprove(f)
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -40,8 +37,8 @@ func TestPRApprove_CallsAPI(t *testing.T) {
 			return nil
 		},
 	}
-	f, out, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRApprove(f)
+	f, out, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := approve.NewCmdApprove(f)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 
@@ -61,8 +58,8 @@ func TestPRApprove_APIError_PropagatesError(t *testing.T) {
 			return apiErr
 		},
 	}
-	f, _, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRApprove(f)
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := approve.NewCmdApprove(f)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)

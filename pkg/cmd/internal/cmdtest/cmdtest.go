@@ -32,6 +32,27 @@ func NewFactory(t *testing.T, fake backend.Client, runner *testhelpers.FakeRunne
 	return f, out, errOut
 }
 
+// PRConfig is the shared single-host Bitbucket Server config used by pr command tests.
+const PRConfig = "bb.example.com:\n  oauth_token: tok\n  user: alice\n  git_protocol: ssh\n"
+
+// NewPRRunner returns a FakeRunner pre-seeded with the remote URL response
+// needed by PR sub-commands that operate on an existing PR.
+func NewPRRunner(extra ...testhelpers.RunResponse) *testhelpers.FakeRunner {
+	responses := []testhelpers.RunResponse{
+		{Stdout: "ssh://git@bb.example.com:7999/myproj/my-service.git\n"},
+	}
+	return testhelpers.NewFakeRunner(append(responses, extra...)...)
+}
+
+// NewPRFactory wires the shared PR Server config, a backend.Client, and a runner.
+func NewPRFactory(t *testing.T, fake backend.Client, runner *testhelpers.FakeRunner) (*factory.Factory, *bytes.Buffer, *bytes.Buffer) {
+	t.Helper()
+	f, out, errOut := factorytest.New(t, factorytest.Opts{InitialConfig: PRConfig})
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return runner }
+	return f, out, errOut
+}
+
 // NoPipelineFake wraps backend.Client without implementing
 // backend.PipelineClient — simulates a Bitbucket Server backend.
 // Embedding the interface (not the concrete FakeClient) prevents

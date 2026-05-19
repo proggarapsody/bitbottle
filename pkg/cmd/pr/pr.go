@@ -10,7 +10,13 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	cmdApprove "github.com/proggarapsody/bitbottle/pkg/cmd/pr/approve"
+	cmdDecline "github.com/proggarapsody/bitbottle/pkg/cmd/pr/decline"
+	cmdReady "github.com/proggarapsody/bitbottle/pkg/cmd/pr/ready"
+	cmdReopen "github.com/proggarapsody/bitbottle/pkg/cmd/pr/reopen"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/task"
+	cmdUnapprove "github.com/proggarapsody/bitbottle/pkg/cmd/pr/unapprove"
+	cmdUnready "github.com/proggarapsody/bitbottle/pkg/cmd/pr/unready"
 )
 
 func NewCmdPR(f *factory.Factory) *cobra.Command {
@@ -29,15 +35,15 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRView(f))
 	cmd.AddCommand(NewCmdPRCreate(f))
 	cmd.AddCommand(NewCmdPRMerge(f))
-	cmd.AddCommand(NewCmdPRApprove(f))
+	cmd.AddCommand(cmdApprove.NewCmdApprove(f))
 	cmd.AddCommand(NewCmdPRDiff(f))
 	cmd.AddCommand(NewCmdPRCheckout(f))
 	cmd.AddCommand(NewCmdPREdit(f))
-	cmd.AddCommand(NewCmdPRDecline(f))
-	cmd.AddCommand(NewCmdPRReopen(f))
-	cmd.AddCommand(NewCmdPRUnapprove(f))
-	cmd.AddCommand(NewCmdPRReady(f))
-	cmd.AddCommand(NewCmdPRUnready(f))
+	cmd.AddCommand(cmdDecline.NewCmdDecline(f))
+	cmd.AddCommand(cmdReopen.NewCmdReopen(f))
+	cmd.AddCommand(cmdUnapprove.NewCmdUnapprove(f))
+	cmd.AddCommand(cmdReady.NewCmdReady(f))
+	cmd.AddCommand(cmdUnready.NewCmdUnready(f))
 	cmd.AddCommand(NewCmdPRRequestReview(f))
 	cmd.AddCommand(NewCmdPRRequestChanges(f))
 	cmd.AddCommand(NewCmdPRReview(f))

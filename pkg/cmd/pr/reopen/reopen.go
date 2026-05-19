@@ -1,4 +1,12 @@
-package pr
+// Package reopen implements the `pr reopen` command.
+//
+// Reopen is the reverse of `pr decline` — it returns a previously declined PR
+// to the OPEN state.
+//
+// Bitbucket Server / Data Center exposes a dedicated /reopen endpoint.
+// Bitbucket Cloud has no reopen primitive (Atlassian BCLOUD-23807) and so
+// returns a typed ErrUnsupportedOnHost via backend.AsPRReopener.
+package reopen
 
 import (
 	"fmt"
@@ -7,15 +15,10 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	prshared "github.com/proggarapsody/bitbottle/pkg/cmd/pr/shared"
 )
 
-// NewCmdPRReopen builds the `pr reopen PR_ID` command. Reopen is the reverse
-// of `pr decline` — it returns a previously declined PR to the OPEN state.
-//
-// Bitbucket Server / Data Center exposes a dedicated /reopen endpoint.
-// Bitbucket Cloud has no reopen primitive (Atlassian BCLOUD-23807) and so
-// returns a typed ErrUnsupportedOnHost via backend.AsPRReopener.
-func NewCmdPRReopen(f *factory.Factory) *cobra.Command {
+func NewCmdReopen(f *factory.Factory) *cobra.Command {
 	var hostnameFlag string
 
 	cmd := &cobra.Command{
@@ -23,7 +26,7 @@ func NewCmdPRReopen(f *factory.Factory) *cobra.Command {
 		Short: "Reopen a declined pull request (Bitbucket Server / DC only)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, prID, client, err := resolvePRTarget(f, args, hostnameFlag)
+			ref, prID, client, err := prshared.ResolvePRTarget(f, args, hostnameFlag)
 			if err != nil {
 				return err
 			}

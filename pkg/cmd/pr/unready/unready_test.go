@@ -1,4 +1,4 @@
-package pr_test
+package unready_test
 
 import (
 	"errors"
@@ -8,7 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/unready"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -23,8 +24,8 @@ func TestPRUnready_PrintsConfirmation(t *testing.T) {
 			return backend.PullRequest{ID: id, WebURL: "https://example.com/pr/42"}, nil
 		},
 	}
-	f, out, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRUnready(f)
+	f, out, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := unready.NewCmdUnready(f)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "Converted pull request #42 back to draft")
@@ -39,8 +40,8 @@ func TestPRUnready_APIError_PropagatesError(t *testing.T) {
 			return errors.New("422 unprocessable")
 		},
 	}
-	f, _, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRUnready(f)
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := unready.NewCmdUnready(f)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)

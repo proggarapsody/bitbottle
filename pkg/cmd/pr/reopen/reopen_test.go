@@ -1,4 +1,4 @@
-package pr_test
+package reopen_test
 
 import (
 	"errors"
@@ -8,12 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/reopen"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
 // fakeReopenClient embeds FakeClient and additionally implements
-// backend.PRReopener, for use in reopen tests. Mirrors fakeChangesClient.
+// backend.PRReopener, for use in reopen tests.
 type fakeReopenClient struct {
 	*testhelpers.FakeClient
 	ReopenPRFn func(ns, slug string, id int) error
@@ -40,8 +41,8 @@ func TestPRReopen_PrintsConfirmation(t *testing.T) {
 			return nil
 		},
 	}
-	f, out, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRReopen(f)
+	f, out, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := reopen.NewCmdReopen(f)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "Reopened pull request #42")
@@ -58,11 +59,11 @@ func TestPRReopen_PassesProjectSlugAndID(t *testing.T) {
 			return nil
 		},
 	}
-	f, _, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRReopen(f)
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := reopen.NewCmdReopen(f)
 	cmd.SetArgs([]string{"7"})
 	require.NoError(t, cmd.Execute())
-	assert.Equal(t, "MYPROJ", gotNS, "project must be uppercased by resolvePRTarget")
+	assert.Equal(t, "MYPROJ", gotNS, "project must be uppercased by ResolvePRTarget")
 	assert.Equal(t, "my-service", gotSlug)
 	assert.Equal(t, 7, gotID)
 }
@@ -72,8 +73,8 @@ func TestPRReopen_UnsupportedOnCloud(t *testing.T) {
 	// Plain FakeClient does NOT implement PRReopener — simulates a Cloud
 	// backend, where reopen is unsupported.
 	fake := &testhelpers.FakeClient{T: t}
-	f, _, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRReopen(f)
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := reopen.NewCmdReopen(f)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -89,8 +90,8 @@ func TestPRReopen_APIError_PropagatesError(t *testing.T) {
 			return errors.New("409 conflict")
 		},
 	}
-	f, _, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRReopen(f)
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := reopen.NewCmdReopen(f)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -100,8 +101,8 @@ func TestPRReopen_APIError_PropagatesError(t *testing.T) {
 func TestPRReopen_RejectsNonNumericPRID(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{T: t}
-	f, _, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRReopen(f)
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := reopen.NewCmdReopen(f)
 	cmd.SetArgs([]string{"abc"})
 	err := cmd.Execute()
 	require.Error(t, err)

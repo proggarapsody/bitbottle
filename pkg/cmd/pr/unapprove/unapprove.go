@@ -1,4 +1,4 @@
-package pr
+package unapprove
 
 import (
 	"fmt"
@@ -6,9 +6,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	prshared "github.com/proggarapsody/bitbottle/pkg/cmd/pr/shared"
 )
 
-func NewCmdPRUnapprove(f *factory.Factory) *cobra.Command {
+func NewCmdUnapprove(f *factory.Factory) *cobra.Command {
 	var hostnameFlag string
 
 	cmd := &cobra.Command{
@@ -16,7 +17,7 @@ func NewCmdPRUnapprove(f *factory.Factory) *cobra.Command {
 		Short: "Remove approval from a pull request",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, prID, client, err := resolvePRTarget(f, args, hostnameFlag)
+			ref, prID, client, err := prshared.ResolvePRTarget(f, args, hostnameFlag)
 			if err != nil {
 				return err
 			}

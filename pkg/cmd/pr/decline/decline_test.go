@@ -1,4 +1,4 @@
-package pr_test
+package decline_test
 
 import (
 	"errors"
@@ -7,7 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/pr"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/decline"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
@@ -19,8 +20,8 @@ func TestPRDecline_PrintsConfirmation(t *testing.T) {
 			return nil
 		},
 	}
-	f, out, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRDecline(f)
+	f, out, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := decline.NewCmdDecline(f)
 	cmd.SetArgs([]string{"42"})
 	require.NoError(t, cmd.Execute())
 	assert.Contains(t, out.String(), "Declined pull request #42")
@@ -34,8 +35,8 @@ func TestPRDecline_APIError_PropagatesError(t *testing.T) {
 			return errors.New("409 conflict")
 		},
 	}
-	f, _, _ := newPRFactory(t, fake, newPRRunner())
-	cmd := pr.NewCmdPRDecline(f)
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := decline.NewCmdDecline(f)
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)
