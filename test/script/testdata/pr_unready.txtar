@@ -1,0 +1,5 @@
+# pr unready converts a pull request back to draft.
+bb-fake server
+
+bitbottle pr unready 1 -R $BB_HOST/PROJ/alpha-repo -k
+stdout 'Converted pull request #1 back to draft'

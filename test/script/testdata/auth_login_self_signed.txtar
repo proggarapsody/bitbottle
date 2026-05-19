@@ -1,0 +1,9 @@
+# auth login with --skip-tls-verify logs in to a self-signed TLS server.
+bb-fake server
+
+stdin token.txt
+bitbottle auth login --hostname $BB_HOST --username testuser --with-token --skip-tls-verify
+stdout 'Logged in to'
+
+-- token.txt --
+fake-test-token

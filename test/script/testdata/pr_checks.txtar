@@ -1,0 +1,7 @@
+# pr checks reports an error when the head commit hash is unavailable.
+# The fake server PR fixture has no latestCommit, so checks cannot fetch
+# build statuses and exits with a descriptive error.
+bb-fake server
+
+! bitbottle pr checks 1 -R $BB_HOST/PROJ/alpha-repo --json -k
+stderr 'head commit hash unavailable'

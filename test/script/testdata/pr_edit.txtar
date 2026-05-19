@@ -1,0 +1,5 @@
+# pr edit updates the title of a pull request.
+bb-fake server
+
+bitbottle pr edit 1 -R $BB_HOST/PROJ/alpha-repo --title 'New title' -k
+stdout 'Updated pull request #1'

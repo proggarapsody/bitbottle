@@ -222,6 +222,48 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusUnauthorized,
 			Body:       map[string]any{"errors": []any{map[string]any{"message": "Unauthorized"}}},
 		},
+		// REST API root — used by auth doctor reachability probe
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0",
+			Status:     http.StatusOK,
+			Body:       map[string]any{},
+		},
+		// PUT PR #1 — used by pr unready (GET-then-PUT) and pr edit --title
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/1",
+			Status:     http.StatusOK,
+			Body:       serverPR(1, "Fix the bug", "OPEN"),
+		},
+		// DELETE PR participant — used by pr edit --remove-reviewer
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/1/participants/alice",
+			Status:     http.StatusNoContent,
+		},
+		// GET reviewer-group conditions — used by pr reviewer-group list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/default-reviewers/1.0/projects/PROJ/repos/alpha-repo/conditions",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{
+					"id":                1,
+					"requiredApprovals": 1,
+					"reviewers":         []any{map[string]any{"slug": "bob", "displayName": "Bob"}},
+					"sourceMatcher":     map[string]any{"id": "team-reviews", "displayId": "team-reviews"},
+					"targetMatcher":     map[string]any{"id": "ANY_REF_MATCHER_ID", "displayId": "Any branch"},
+				},
+			}),
+		},
+		// POST suggestion apply — used by pr suggestion apply
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/1/comments/5/suggestions/3/apply",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"commitHash": "deadbeef1234", "commitMessage": "Apply suggestion"},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
