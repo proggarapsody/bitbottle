@@ -46,6 +46,7 @@ func NewCmdPRActivity(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&hostnameFlag, "hostname", "", "Bitbucket hostname")
 	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum number of events to return (0 = no limit)")
+	format.RegisterOutputFlags(cmd)
 	return cmd
 }
 

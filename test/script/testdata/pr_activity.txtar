@@ -1,0 +1,9 @@
+# pr activity --json emits structured events with type, actor, createdAt, detail.
+bb-fake server
+
+bitbottle pr activity 1 -R $BB_HOST/PROJ/alpha-repo --json -k
+stdout '"type"'
+stdout '"approval"'
+stdout '"actor"'
+stdout '"alice"'
+stdout '"createdAt"'
