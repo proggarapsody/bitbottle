@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.83.0](https://github.com/proggarapsody/bitbottle/compare/v1.82.0...v1.83.0) (2026-05-19)
+
+
+### Features
+
+* **pr:** wire --json/--yaml/--jq/--template flags on pr activity ([#416](https://github.com/proggarapsody/bitbottle/issues/416)) ([16f85e0](https://github.com/proggarapsody/bitbottle/commit/16f85e0501703adb7bdea2f9b10c8c705f78fb76))
+
 ## [1.82.0](https://github.com/proggarapsody/bitbottle/compare/v1.81.0...v1.82.0) (2026-05-19)
 
 
