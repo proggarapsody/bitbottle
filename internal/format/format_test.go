@@ -197,3 +197,53 @@ func TestPrinter_Template_EmptyExpr_Error(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--template")
 }
+
+// --- JSON field selection (JSON-WHITELIST) ---
+
+func TestPrinter_JSONFieldSelection(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := newPrinter(&buf, false, format.OutputConfig{
+		Format:     format.FormatJSON,
+		JSONFields: []string{"title", "state"},
+	})
+	p.AddItem(testItem{42, "Fix auth", "OPEN"})
+	require.NoError(t, p.Render())
+	out := strings.TrimSpace(buf.String())
+	// Should contain requested fields
+	assert.Contains(t, out, `"title":"Fix auth"`)
+	assert.Contains(t, out, `"state":"OPEN"`)
+	// Should NOT contain the omitted field
+	assert.NotContains(t, out, `"id"`)
+}
+
+func TestPrinter_JSONUnknownField_Error(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	p := newPrinter(&buf, false, format.OutputConfig{
+		Format:     format.FormatJSON,
+		JSONFields: []string{"badfield"},
+	})
+	p.AddItem(testItem{42, "Fix auth", "OPEN"})
+	err := p.Render()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown JSON field(s): badfield")
+	assert.Contains(t, err.Error(), "available:")
+	// available list should include all three canonical names
+	assert.Contains(t, err.Error(), "id")
+	assert.Contains(t, err.Error(), "title")
+	assert.Contains(t, err.Error(), "state")
+}
+
+func TestPrinter_JSON_NoFields_AllFields(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	// JSONFields nil = all fields (backward compat)
+	p := newPrinter(&buf, false, format.OutputConfig{Format: format.FormatJSON})
+	p.AddItem(testItem{42, "Fix auth", "OPEN"})
+	require.NoError(t, p.Render())
+	out := strings.TrimSpace(buf.String())
+	assert.Contains(t, out, `"id":42`)
+	assert.Contains(t, out, `"title":"Fix auth"`)
+	assert.Contains(t, out, `"state":"OPEN"`)
+}

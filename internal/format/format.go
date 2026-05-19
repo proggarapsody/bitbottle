@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
+	"strings"
 
 	"github.com/itchyny/gojq"
 	"github.com/spf13/cobra"
@@ -28,10 +30,13 @@ const (
 // OutputConfig captures the user-facing output-format selection — exactly
 // one Format is active per invocation. JQExpr is only meaningful when
 // Format == FormatJSON; Template only when Format == FormatTemplate.
+// JSONFields, when non-nil, restricts JSON output to only the named fields;
+// nil means all fields (backward compatible).
 type OutputConfig struct {
-	Format   OutputFormat
-	JQExpr   string
-	Template string
+	Format     OutputFormat
+	JQExpr     string
+	Template   string
+	JSONFields []string // nil = all fields; non-nil = only these fields
 }
 
 // RegisterOutputFlags registers --json, --yaml, --jq and --template as
@@ -41,11 +46,18 @@ type OutputConfig struct {
 // Exposed so tests that instantiate individual subcommands in isolation
 // (without going through the root) can still parse output-format flags
 // the same way production does.
+// jsonNoArgSentinel is the value set when --json is used without an argument
+// (e.g. --json alone). It signals "all fields" and must be non-empty so that
+// pflag's NoOptDefVal mechanism activates.
+const jsonNoArgSentinel = "*"
+
 func RegisterOutputFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().Bool("json", false, "Output as JSON")
-	cmd.PersistentFlags().Bool("yaml", false, "Output as YAML")
-	cmd.PersistentFlags().String("jq", "", "Filter JSON output with a jq expression")
-	cmd.PersistentFlags().String("template", "", "Format output with a Go template")
+	f := cmd.PersistentFlags()
+	f.String("json", "", "Output as JSON (optionally select fields: --json field1,field2)")
+	f.Lookup("json").NoOptDefVal = jsonNoArgSentinel
+	f.Bool("yaml", false, "Output as YAML")
+	f.String("jq", "", "Filter JSON output with a jq expression")
+	f.String("template", "", "Format output with a Go template")
 }
 
 // ConfigFromCmd reads the four output-format persistent flags from any
@@ -53,7 +65,8 @@ func RegisterOutputFlags(cmd *cobra.Command) {
 // flags from ancestors. Falls back to FormatTable when the flags are not
 // registered (e.g. a test calling a subcommand without a parent).
 func ConfigFromCmd(cmd *cobra.Command) OutputConfig {
-	jsonMode := lookupBool(cmd, "json")
+	jsonChanged := lookupChanged(cmd, "json")
+	jsonValue := lookupString(cmd, "json")
 	jqExpr := lookupString(cmd, "jq")
 	yamlMode := lookupBool(cmd, "yaml")
 	tmpl := lookupString(cmd, "template")
@@ -62,11 +75,33 @@ func ConfigFromCmd(cmd *cobra.Command) OutputConfig {
 		return OutputConfig{Format: FormatYAML}
 	case tmpl != "":
 		return OutputConfig{Format: FormatTemplate, Template: tmpl}
-	case jsonMode:
-		return OutputConfig{Format: FormatJSON, JQExpr: jqExpr}
+	case jsonChanged:
+		var jsonFields []string
+		if jsonValue != "" && jsonValue != jsonNoArgSentinel {
+			jsonFields = splitFields(jsonValue)
+		}
+		return OutputConfig{Format: FormatJSON, JQExpr: jqExpr, JSONFields: jsonFields}
 	default:
 		return OutputConfig{Format: FormatTable, JQExpr: jqExpr}
 	}
+}
+
+func splitFields(s string) []string {
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if f := strings.TrimSpace(p); f != "" {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+func lookupChanged(cmd *cobra.Command, name string) bool {
+	if cmd.Flags().Lookup(name) == nil {
+		return false
+	}
+	return cmd.Flags().Changed(name)
 }
 
 func lookupBool(cmd *cobra.Command, name string) bool {
@@ -137,10 +172,48 @@ func (p *Printer[T]) AddItem(item T) {
 	p.items = append(p.items, item)
 }
 
+// ValidateJSONFields returns an error if any requested field is unknown.
+// Only called when cfg.JSONFields is non-nil (i.e. --json field1,field2 was used).
+func (p *Printer[T]) ValidateJSONFields() error {
+	if len(p.cfg.JSONFields) == 0 {
+		return nil
+	}
+	valid := make(map[string]bool)
+	for _, f := range p.fields {
+		valid[f.Name] = true
+		for _, a := range f.Aliases {
+			valid[a] = true
+		}
+	}
+	var unknown []string
+	for _, req := range p.cfg.JSONFields {
+		if !valid[req] {
+			unknown = append(unknown, req)
+		}
+	}
+	if len(unknown) > 0 {
+		available := make([]string, 0, len(p.fields))
+		for _, f := range p.fields {
+			available = append(available, f.Name)
+		}
+		sort.Strings(available)
+		return fmt.Errorf("unknown JSON field(s): %s; available: %s",
+			strings.Join(unknown, ", "),
+			strings.Join(available, ", "))
+	}
+	return nil
+}
+
 // Render writes all items in the appropriate format.
 func (p *Printer[T]) Render() error {
 	if p.cfg.JQExpr != "" && p.cfg.Format != FormatJSON {
 		return fmt.Errorf("--jq requires --json")
+	}
+
+	if p.cfg.Format == FormatJSON && p.cfg.JSONFields != nil {
+		if err := p.ValidateJSONFields(); err != nil {
+			return err
+		}
 	}
 
 	switch p.cfg.Format {
@@ -249,8 +322,27 @@ func (p *Printer[T]) renderTemplate() error {
 }
 
 func (p *Printer[T]) itemToMap(item T) map[string]any {
+	wantAll := p.cfg.JSONFields == nil
+	wantSet := make(map[string]bool, len(p.cfg.JSONFields))
+	for _, f := range p.cfg.JSONFields {
+		wantSet[f] = true
+	}
 	m := make(map[string]any, len(p.fields))
 	for _, f := range p.fields {
+		if !wantAll {
+			wanted := wantSet[f.Name]
+			if !wanted {
+				for _, a := range f.Aliases {
+					if wantSet[a] {
+						wanted = true
+						break
+					}
+				}
+			}
+			if !wanted {
+				continue
+			}
+		}
 		v := f.Extract(item)
 		// Honour an "unknown" / "not applicable" signal from the field by
 		// omitting the key entirely when Extract returns nil — mirroring
