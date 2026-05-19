@@ -1,0 +1,17 @@
+# auth-migrate-token: token stored in hosts.yml triggers a warning on auth status.
+#
+# Pre-migration shape: hosts.yml contains oauth_token inline (pre-keyring
+# state). auth status should succeed (reads the token from the config file)
+# and emit a warning directing the user to run `auth migrate`.
+#
+# This pins the observable contract from internal/config/config.go Load():
+# see test/script/testdata/upgrade/auth-migrate-token.txtar (MIGRATION comment).
+
+bb-fake server
+
+# auth status must succeed when the token lives in hosts.yml.
+bitbottle auth status -k
+stdout 'Logged in as testuser'
+
+# The warning is emitted by config.Load() whenever oauth_token is present.
+stderr '! warning: token found in hosts.yml'

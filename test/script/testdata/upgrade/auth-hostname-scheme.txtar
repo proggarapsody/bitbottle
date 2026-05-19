@@ -1,0 +1,27 @@
+# auth-hostname-scheme: https://HOST is normalized to HOST on login.
+#
+# Pre-migration shape: a user passes --hostname https://HOST (with scheme).
+# auth login must strip the scheme so hosts.yml stores the bare hostname
+# (no double-scheme in subsequent API calls). See PRD #372 Bug A /
+# normalizeHostname in pkg/cmd/auth/login.go.
+
+bb-fake server
+
+# Remove the hosts.yml that bb-fake wrote so we start from a clean slate.
+rm $BB_CONFIG_DIR/hosts.yml
+
+# Log in by passing the scheme-prefixed hostname and token via stdin.
+# stdin reads from a file in $WORK; token-input.txt holds the PAT.
+# --with-token reads one line from stdin; --username is required for Server/DC.
+stdin token-input.txt
+bitbottle auth login --hostname https://$BB_HOST --username testuser --with-token --skip-tls-verify
+stdout 'Logged in to'
+stdout $BB_HOST
+
+# hosts.yml must store the bare hostname (no https:// prefix).
+exec cat $BB_CONFIG_DIR/hosts.yml
+stdout $BB_HOST
+! stdout 'https://'
+
+-- token-input.txt --
+fake-test-token
