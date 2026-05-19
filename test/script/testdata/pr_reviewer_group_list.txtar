@@ -1,0 +1,5 @@
+# pr reviewer-group list returns the configured reviewer groups for a repository.
+bb-fake server
+
+bitbottle pr reviewer-group list $BB_HOST/PROJ/alpha-repo -k
+stdout 'team-reviews'

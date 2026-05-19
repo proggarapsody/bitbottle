@@ -1,0 +1,5 @@
+# pr edit --remove-reviewer removes a reviewer from a pull request.
+bb-fake server
+
+bitbottle pr edit 1 -R $BB_HOST/PROJ/alpha-repo --remove-reviewer alice -k
+stdout 'Removed reviewer'
