@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.84.0](https://github.com/proggarapsody/bitbottle/compare/v1.83.0...v1.84.0) (2026-05-19)
+
+
+### Features
+
+* **cmd/pr:** migrate lifecycle commands to subpackages (CMD-SUBPKG-PR-LIFECYCLE) ([d32bddf](https://github.com/proggarapsody/bitbottle/commit/d32bddfa20bf915c87f9f9ffdcd5e212f98728ba))
+
 ## [1.83.0](https://github.com/proggarapsody/bitbottle/compare/v1.82.0...v1.83.0) (2026-05-19)
 
 
