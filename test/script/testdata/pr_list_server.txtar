@@ -1,0 +1,6 @@
+# pr list against Bitbucket Server returns two open PRs.
+bb-fake server
+
+bitbottle pr list -R $BB_HOST/PROJ/alpha-repo -k
+stdout 'Fix the bug'
+stdout 'Add feature'

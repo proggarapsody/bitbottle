@@ -68,4 +68,9 @@ const (
 	// UpdateGolden, when set to "1" or "true", causes test golden files to
 	// be rewritten in-place from the current output. Test-only.
 	UpdateGolden = "BITBOTTLE_UPDATE_GOLDEN"
+
+	// CloudBaseURL overrides the Bitbucket Cloud REST API base URL.
+	// Used in testscript scenarios to redirect Cloud requests to a local
+	// httptest server. Test-only; never set in production.
+	CloudBaseURL = "BB_CLOUD_BASE_URL"
 )

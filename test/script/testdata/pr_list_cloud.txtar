@@ -1,0 +1,6 @@
+# pr list against Bitbucket Cloud returns two open PRs.
+bb-fake cloud
+
+bitbottle pr list -R bitbucket.org/testworkspace/cloud-repo-a -k
+stdout 'Cloud fix'
+stdout 'Cloud feature'

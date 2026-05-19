@@ -1,0 +1,14 @@
+# bitbottle.host/project/slug git config keys default the repo for pr list.
+bb-fake server
+
+# Write a minimal git repo with bitbottle.* config so -R is not needed.
+mkdir myrepo
+cd myrepo
+exec git init -q
+exec git config bitbottle.host $BB_HOST
+exec git config bitbottle.project PROJ
+exec git config bitbottle.slug alpha-repo
+
+bitbottle pr list -k
+stdout 'Fix the bug'
+stdout 'Add feature'

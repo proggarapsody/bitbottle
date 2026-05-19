@@ -1,0 +1,5 @@
+# Cloud-only commands against a Server host surface a "not supported" error.
+bb-fake server
+
+! bitbottle issue list -R $BB_HOST/PROJ/alpha-repo -k
+stderr 'not supported'

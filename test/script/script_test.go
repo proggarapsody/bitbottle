@@ -1,0 +1,336 @@
+package script_test
+
+import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/rogpeppe/go-internal/testscript"
+
+	"github.com/proggarapsody/bitbottle/test/testhelpers"
+)
+
+var update = flag.Bool("update", false, "update golden files")
+
+func TestScript(t *testing.T) {
+	testscript.Run(t, testscript.Params{
+		Dir:           "testdata",
+		Setup:         setup,
+		Cmds:          customCmds(),
+		UpdateScripts: *update,
+	})
+}
+
+// setup runs before each script: scrubs env and provides a hermetic HOME.
+func setup(env *testscript.Env) error {
+	// Scrub env vars that could bleed state between tests.
+	// BB_ prefix covers BB_TOKEN, BB_HOST, BB_CLOUD_BASE_URL, BB_CONFIG_DIR, etc.
+	scrubPrefixes := []string{"BB_", "BITBOTTLE_", "HTTPS_PROXY", "GIT_"}
+	scrubExact := []string{
+		"XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME",
+		"NO_COLOR", "HOME",
+	}
+	for i, kv := range env.Vars {
+		k, _, _ := strings.Cut(kv, "=")
+		for _, pfx := range scrubPrefixes {
+			if strings.HasPrefix(k, pfx) {
+				env.Vars[i] = k + "="
+			}
+		}
+		for _, exact := range scrubExact {
+			if k == exact {
+				env.Vars[i] = k + "="
+			}
+		}
+	}
+
+	// Point HOME at the per-test work dir so config + keyring are hermetic.
+	env.Vars = append(env.Vars, "HOME="+env.WorkDir)
+	// Use file-based keyring so tests never touch the OS keyring daemon.
+	env.Vars = append(env.Vars, "BITBOTTLE_ALLOW_INSECURE_STORE=1")
+	// Disable interactive prompts.
+	env.Vars = append(env.Vars, "BB_PROMPT_DISABLED=1")
+	// Point config dir at a subdir of the test work dir.
+	cfgDir := env.WorkDir + "/.config/bitbottle"
+	if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+		return err
+	}
+	env.Vars = append(env.Vars, "BB_CONFIG_DIR="+cfgDir)
+	// Export the config dir path so scripts can reference it.
+	env.Setenv("BB_CONFIG_DIR", cfgDir)
+	return nil
+}
+
+// customCmds returns the extra testscript commands available in scripts.
+func customCmds() map[string]func(ts *testscript.TestScript, neg bool, args []string) {
+	return map[string]func(ts *testscript.TestScript, neg bool, args []string){
+		"bb-fake": bbFakeCmd,
+	}
+}
+
+// bbFakeCmd implements the bb-fake testscript command.
+//
+// Usage:
+//
+//	bb-fake server   — start a fake Bitbucket Server (DC) and set env:
+//	                     BB_FAKE_SERVER_URL, BB_TOKEN, BB_HOST
+//	bb-fake cloud    — start a fake Bitbucket Cloud and set env:
+//	                     BB_FAKE_CLOUD_URL, BB_TOKEN, BB_HOST
+//
+// The server writes its URL into the script env and also writes a minimal
+// hosts.yml so bitbottle can resolve the host without interactive login.
+func bbFakeCmd(ts *testscript.TestScript, neg bool, args []string) {
+	if len(args) < 1 {
+		ts.Fatalf("bb-fake: missing subcommand (server|cloud)")
+	}
+	sub := args[0]
+	var srv *httptest.Server
+	var hostname string
+	const fakeToken = "fake-test-token"
+	const fakeUser = "testuser"
+
+	cfgDir := ts.Getenv("BB_CONFIG_DIR")
+	if cfgDir == "" {
+		ts.Fatalf("bb-fake: BB_CONFIG_DIR not set")
+	}
+
+	switch sub {
+	case "server":
+		srv = buildServerStubs(ts)
+		hostname = extractHost(srv.URL)
+		ts.Setenv("BB_FAKE_SERVER_URL", srv.URL)
+		ts.Setenv("BB_HOST", hostname)
+		ts.Setenv("BB_TOKEN", fakeToken)
+		writeHostsYML(ts, cfgDir, hostname, fakeUser, fakeToken, "server")
+	case "cloud":
+		srv = buildCloudStubs(ts)
+		hostname = "bitbucket.org"
+		ts.Setenv("BB_FAKE_CLOUD_URL", srv.URL)
+		ts.Setenv("BB_HOST", hostname)
+		ts.Setenv("BB_TOKEN", fakeToken)
+		writeHostsYML(ts, cfgDir, hostname, fakeUser, fakeToken, "cloud")
+		// Redirect all Cloud API calls to the fake server.
+		ts.Setenv("BB_CLOUD_BASE_URL", srv.URL+"/2.0")
+	default:
+		ts.Fatalf("bb-fake: unknown subcommand %q; want server|cloud", sub)
+	}
+
+	// Propagate the fake server's TLS client cert so bitbottle accepts it.
+	// We pass --skip-tls-verify in the scripts instead to keep it simple.
+	ts.Setenv("BB_FAKE_TLS_URL", srv.URL)
+}
+
+// extractHost returns host:port from an https URL.
+func extractHost(u string) string {
+	u = strings.TrimPrefix(u, "https://")
+	u = strings.TrimSuffix(u, "/")
+	return u
+}
+
+// writeHostsYML writes a minimal hosts.yml so bitbottle treats the fake as
+// authenticated. The token goes inline (pre-migrate format) so the tests
+// don't need to touch the OS keyring. oauth_token in hosts.yml is valid for
+// BITBOTTLE_ALLOW_INSECURE_STORE=1 contexts.
+func writeHostsYML(ts *testscript.TestScript, cfgDir, hostname, user, token, backendType string) {
+	content := fmt.Sprintf("%s:\n  user: %s\n  oauth_token: %s\n  git_protocol: https\n  backend_type: %s\n  skip_tls_verify: true\n",
+		hostname, user, token, backendType)
+	if err := os.WriteFile(cfgDir+"/hosts.yml", []byte(content), 0o600); err != nil {
+		ts.Fatalf("bb-fake: writing hosts.yml: %v", err)
+	}
+}
+
+// buildServerStubs constructs a TLS httptest.Server with Bitbucket Server
+// fixture responses.
+func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
+	stubs := []testhelpers.StubResponse{
+		// application-properties — version probe called on first request
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/application-properties",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"version":     "8.0.0",
+				"buildNumber": "8000000",
+				"displayName": "Bitbucket",
+			},
+		},
+		// whoami — used by auth status
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/plugins/servlet/applinks/whoami",
+			Status:     http.StatusOK,
+			Body:       "testuser",
+		},
+		// user profile
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/users/testuser",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"slug": "testuser", "displayName": "Test User", "emailAddress": "test@example.com"},
+		},
+		// repo list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/repos",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"slug": "alpha-repo", "project": map[string]any{"key": "PROJ"}},
+				map[string]any{"slug": "beta-repo", "project": map[string]any{"key": "PROJ"}},
+			}),
+		},
+		// PR list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				serverPR(1, "Fix the bug", "OPEN"),
+				serverPR(2, "Add feature", "OPEN"),
+			}),
+		},
+		// PR view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/1",
+			Status:     http.StatusOK,
+			Body:       serverPR(1, "Fix the bug", "OPEN"),
+		},
+		// 404 — for errfmt_not_found
+		{
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/missing-repo/pull-requests",
+			Status:     http.StatusNotFound,
+			Body:       map[string]any{"errors": []any{map[string]any{"message": "Repository not found"}}},
+		},
+		// 401 — for errfmt_auth
+		{
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/bad-auth/pull-requests",
+			Status:     http.StatusUnauthorized,
+			Body:       map[string]any{"errors": []any{map[string]any{"message": "Unauthorized"}}},
+		},
+	}
+	return newTLSServer(ts, stubs...)
+}
+
+// buildCloudStubs constructs a TLS httptest.Server with Bitbucket Cloud
+// fixture responses.
+func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
+	stubs := []testhelpers.StubResponse{
+		// current user
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/user",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"uuid": "{uuid}", "username": "testuser", "display_name": "Test User"},
+		},
+		// repo list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"full_name": "testworkspace/cloud-repo-a", "scm": "git", "is_private": false},
+				map[string]any{"full_name": "testworkspace/cloud-repo-b", "scm": "git", "is_private": true},
+			}),
+		},
+		// PR list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pullrequests",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				cloudPR(10, "Cloud fix", "OPEN"),
+				cloudPR(11, "Cloud feature", "OPEN"),
+			}),
+		},
+		// PR view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pullrequests/10",
+			Status:     http.StatusOK,
+			Body:       cloudPR(10, "Cloud fix", "OPEN"),
+		},
+		// 404 — for errfmt_not_found
+		{
+			PathSuffix: "/repositories/testworkspace/no-such-repo/pullrequests",
+			Status:     http.StatusNotFound,
+			Body:       map[string]any{"type": "error", "error": map[string]any{"message": "Repository not found"}},
+		},
+		// 401 — for errfmt_auth
+		{
+			PathSuffix: "/repositories/testworkspace/bad-auth/pullrequests",
+			Status:     http.StatusUnauthorized,
+			Body:       map[string]any{"type": "error", "error": map[string]any{"message": "Unauthorized"}},
+		},
+	}
+	return newTLSServer(ts, stubs...)
+}
+
+// newTLSServer starts a TLS server dispatching to the given stubs.
+// Unmatched requests call ts.Fatalf.
+func newTLSServer(ts *testscript.TestScript, stubs ...testhelpers.StubResponse) *httptest.Server {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for _, s := range stubs {
+			if s.Method != "" && !strings.EqualFold(s.Method, r.Method) {
+				continue
+			}
+			if s.PathSuffix != "" && !strings.HasSuffix(r.URL.Path, s.PathSuffix) {
+				continue
+			}
+			if s.Handler != nil {
+				s.Handler(w, r)
+				return
+			}
+			status := s.Status
+			if status == 0 {
+				status = http.StatusOK
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(status)
+			if s.Body != nil {
+				if err := json.NewEncoder(w).Encode(s.Body); err != nil {
+					ts.Fatalf("newTLSServer: encode stub: %v", err)
+				}
+			}
+			return
+		}
+		ts.Fatalf("newTLSServer: unmatched request %s %s", r.Method, r.URL.Path)
+		http.Error(w, "unmatched", http.StatusNotImplemented)
+	}))
+	ts.Defer(srv.Close)
+	return srv
+}
+
+func serverPR(id int, title, state string) map[string]any {
+	return map[string]any{
+		"id":    id,
+		"title": title,
+		"state": state,
+		"author": map[string]any{
+			"user": map[string]any{"slug": "alice", "displayName": "Alice"},
+		},
+		"fromRef": map[string]any{"displayId": "feature/fix", "id": "refs/heads/feature/fix"},
+		"toRef":   map[string]any{"displayId": "main", "id": "refs/heads/main"},
+		"links":   map[string]any{"self": []any{map[string]any{"href": "https://bitbucket.example.com/pr/" + fmt.Sprint(id)}}},
+		"version": 0,
+	}
+}
+
+func cloudPR(id int, title, state string) map[string]any {
+	return map[string]any{
+		"id":    id,
+		"title": title,
+		"state": state,
+		"author": map[string]any{
+			"display_name": "Alice",
+			"uuid":         "{alice-uuid}",
+		},
+		"source":      map[string]any{"branch": map[string]any{"name": "feature/fix"}},
+		"destination": map[string]any{"branch": map[string]any{"name": "main"}},
+		"links":       map[string]any{"html": map[string]any{"href": "https://bitbucket.org/pr/" + fmt.Sprint(id)}},
+	}
+}

@@ -1,0 +1,5 @@
+# A 401 response renders as an authentication error with exit code 1.
+bb-fake server
+
+! bitbottle pr list -R $BB_HOST/PROJ/bad-auth -k
+stderr 'Authentication'
