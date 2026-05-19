@@ -12,7 +12,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/aliases"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/root"
-	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
+	"github.com/proggarapsody/bitbottle/pkg/errfmt"
 )
 
 // Injected at link time from cmd/bitbottle/main.go via the Version field.
@@ -36,7 +36,7 @@ func Run() int {
 	cmd.SetArgs(args)
 
 	if err := cmd.Execute(); err != nil {
-		cmdutil.ExplainError(f.IOStreams, err)
+		errfmt.Render(f.IOStreams, err)
 		return 1
 	}
 	return 0
