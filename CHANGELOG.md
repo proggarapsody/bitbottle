@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.85.0](https://github.com/proggarapsody/bitbottle/compare/v1.84.0...v1.85.0) (2026-05-19)
+
+
+### Features
+
+* **repo:** add set-default-branch command (REPO-DEFAULT-BRANCH) ([b03533b](https://github.com/proggarapsody/bitbottle/commit/b03533b674f62cf55e05f5f35655302b50deaacd))
+
 ## [1.84.0](https://github.com/proggarapsody/bitbottle/compare/v1.83.0...v1.84.0) (2026-05-19)
 
 
