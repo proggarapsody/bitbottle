@@ -2,6 +2,7 @@ package bbinstance
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -47,7 +48,11 @@ func IsCloud(hostname, backendType string) bool {
 const cloudAPIHostname = "api.bitbucket.org"
 
 // CloudRESTBase returns the Bitbucket Cloud REST API v2.0 base URL.
+// BB_CLOUD_BASE_URL overrides the default for test scenarios.
 func CloudRESTBase() string {
+	if override := os.Getenv("BB_CLOUD_BASE_URL"); override != "" {
+		return override
+	}
 	return "https://" + cloudAPIHostname + "/2.0"
 }
 

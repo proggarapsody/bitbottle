@@ -1,0 +1,6 @@
+# repo list against Bitbucket Server returns two repos.
+bb-fake server
+
+bitbottle repo list -k
+stdout 'alpha-repo'
+stdout 'beta-repo'

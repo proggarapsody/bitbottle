@@ -1,0 +1,5 @@
+# A 404 response renders as a "not found" error with exit code 1.
+bb-fake server
+
+! bitbottle pr list -R $BB_HOST/PROJ/missing-repo -k
+stderr 'not found'

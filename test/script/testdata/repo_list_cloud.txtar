@@ -1,0 +1,6 @@
+# repo list against Bitbucket Cloud returns two repos.
+bb-fake cloud
+
+bitbottle repo list testworkspace -k
+stdout 'cloud-repo-a'
+stdout 'cloud-repo-b'

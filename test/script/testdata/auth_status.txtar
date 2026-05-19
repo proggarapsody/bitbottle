@@ -1,0 +1,5 @@
+# auth status shows the logged-in host and user.
+bb-fake server
+
+bitbottle auth status -k
+stdout 'Logged in as testuser'

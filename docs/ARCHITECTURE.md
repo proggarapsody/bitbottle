@@ -189,3 +189,22 @@ to its implementation size. Refactor — extract or collapse.
   explicitly. Real example: cyc 55 / PR #292 shipped
   `if state == "CHANGES_REQUESTED" { state = "CHANGES_REQUESTED" }` in
   `api/cloud/pr_participants.go` (removed in PR #295).
+
+---
+
+## Test tiers
+
+| Tier | What it owns | Location | Catches |
+|---|---|---|---|
+| 1. **Unit** | one function / one struct method | `api/cloud/**/*_test.go`, `api/server/**/*_test.go`, `internal/**/*_test.go` | logic bugs inside a leaf module |
+| 2. **Adapter / integration** | one cobra command against an `httptest` fake | `pkg/cmd/**/*_integration_test.go` | wire compatibility for one route + handler |
+| 3. **Script (testscript)** | whole binary, real argv/env/exit codes | `test/script/testdata/*.txtar` | flag wiring, errfmt rendering, `bitbottle.host` defaulting, capability gaps |
+
+### Tier 3 — testscript harness
+
+- **Entry point**: `test/script/main_test.go` registers `bitbottle: app.Run` via `testscript.RunMain`.
+- **Env isolation**: each script gets a fresh `HOME`, scrubbed `BB_*`/`GIT_*`/`XDG_*` env, and its own config dir at `$WORK/.config/bitbottle`.
+- **Fake servers**: `bb-fake server` / `bb-fake cloud` in a script start an `httptest.TLSServer` with fixture stubs and write `hosts.yml` so `bitbottle` authenticates without touching the OS keyring.
+- **Cloud override**: `BB_CLOUD_BASE_URL` redirects Cloud API calls to the fake server (see `internal/bbinstance/bbinstance.go`).
+- **Run**: `make test-script` or `go test ./test/script/... -race`.
+- **New feature gate**: every new user-visible command must add at least one `.txtar` script before merge.

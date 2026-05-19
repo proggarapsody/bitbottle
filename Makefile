@@ -12,6 +12,9 @@ build:
 test:
 	$(GO) test ./... -race
 
+test-script:
+	$(GO) test ./test/script/... -race
+
 test-scripts:
 	@set -e; for t in auto-iter/scripts/*_test.sh; do echo "--- $$t ---"; bash "$$t" || exit 1; done
 

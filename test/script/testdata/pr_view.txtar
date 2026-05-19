@@ -1,0 +1,5 @@
+# pr view shows basic PR fields.
+bb-fake server
+
+bitbottle pr view 1 -R $BB_HOST/PROJ/alpha-repo -k
+stdout 'Fix the bug'
