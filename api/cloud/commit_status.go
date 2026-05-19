@@ -1,11 +1,13 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
+	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
 func toCommitStatusDomain(w cloudgen.CloudCommitStatus) backend.CommitStatus {
@@ -30,14 +32,17 @@ func (c *Client) ReportCommitStatus(ns, slug, hash string, input backend.CommitS
 }
 
 func (c *Client) ListCommitStatuses(ns, slug, hash string) ([]backend.CommitStatus, error) {
-	var page cloudPagedResponse[cloudgen.CloudCommitStatus]
-	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/statuses?pagelen=100", ns, slug, hash)
-	if err := c.getJSON(path, &page); err != nil {
-		return nil, err
-	}
-	out := make([]backend.CommitStatus, 0, len(page.Values))
-	for _, w := range page.Values {
-		out = append(out, toCommitStatusDomain(w))
-	}
-	return out, nil
+	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/statuses",
+		url.PathEscape(ns), url.PathEscape(slug), url.PathEscape(hash))
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.CommitStatus, error) {
+		var page cloudPagedResponse[cloudgen.CloudCommitStatus]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.CommitStatus, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, toCommitStatusDomain(w))
+		}
+		return out, nil
+	}, 0)
 }
