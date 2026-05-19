@@ -1,0 +1,10 @@
+# auth doctor runs diagnostics and reports each check result.
+# In the test harness the token lives in hosts.yml (not the keyring), so
+# the "token stored" check fails and the command exits non-zero.
+bb-fake server
+
+! bitbottle auth doctor --hostname $BB_HOST -k
+stdout 'Diagnostics for'
+stdout 'keyring backend'
+stdout 'token stored'
+stderr 'auth doctor: one or more checks failed'

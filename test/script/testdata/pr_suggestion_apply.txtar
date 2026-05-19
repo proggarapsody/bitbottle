@@ -1,0 +1,5 @@
+# pr suggestion apply commits an inline suggestion to the PR source branch.
+bb-fake server
+
+bitbottle pr suggestion apply 1 5 3 -R $BB_HOST/PROJ/alpha-repo -k
+stdout 'Applied suggestion as commit deadbeef1234'
