@@ -151,19 +151,20 @@ Output table: ROLE | DISPLAY_NAME | USERNAME | APPROVED. Cloud `state` values
 Whenever the agent is feeding PR data into another step, prefer JSON:
 
 ```bash
-# All open PRs by IDs and titles, as a stream of objects
-bitbottle pr list --json id,title --jq '.[]'
+# All open PRs as a stream of objects
+bitbottle pr list --json --jq '.[]|{id,title}'
 
 # A single PR's body for inspection
-bitbottle pr view 42 --json id,title,body --jq '.body'
+bitbottle pr view 42 --json --jq '.body'
 
 # Conditional: merge if mergeable
-bitbottle pr view 42 --json mergeable --jq '.mergeable' \
+bitbottle pr view 42 --json --jq '.mergeable' \
   | grep -q true && bitbottle pr merge 42 --squash --delete-branch
 ```
 
-Field discovery applies to every command, not just PR — see SKILL.md
-safety rule 4 (pass a bogus `--json X` to list supported fields).
+`--json` is boolean (emits the full object). Use `--jq EXPR` to filter
+fields. Don't pass `--json title,body` — that's a positional arg, not a
+field selector. See SKILL.md safety rule 4.
 
 ## Destructive ops
 

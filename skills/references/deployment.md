@@ -1,7 +1,8 @@
 # bitbottle deployments & environments _(Cloud only)_
 
-All `list` commands support `--limit N`, `--json fields`, and
-`--jq 'expr'` (see SKILL.md safety rule 4 for field discovery).
+All `list` commands support `--limit N`, `--json` (boolean), and
+`--jq 'EXPR'` to filter fields. `--json field1,field2` doesn't work —
+see SKILL.md safety rule 4.
 
 Deployment and environment commands require Bitbucket Cloud. Invocations
 against a Server / DC host return a typed "unsupported on host" error.

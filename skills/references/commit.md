@@ -33,7 +33,7 @@ MCP tool: `list_commit_files(repo, hash)` — returns JSON array of
 ## Command matrix
 
 ```bash
-bitbottle commit comment list    PROJECT/REPO HASH [--reactions] [--json fields] [--jq expr]
+bitbottle commit comment list    PROJECT/REPO HASH [--reactions] [--json] [--jq EXPR]
 bitbottle commit comment add     PROJECT/REPO HASH --body "text"
 bitbottle commit comment edit    PROJECT/REPO HASH COMMENT_ID --body "text"
 bitbottle commit comment delete  PROJECT/REPO HASH COMMENT_ID

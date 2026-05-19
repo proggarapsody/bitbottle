@@ -1,7 +1,8 @@
 # bitbottle repos / branches / tags / commits
 
-All `list` commands below support `--limit N`, `--json fields`, and
-`--jq 'expr'` (see SKILL.md safety rule 4 for field discovery).
+All `list` commands below support `--limit N`, `--json` (full object as
+JSON), and `--jq 'EXPR'` to filter fields. `--json` is boolean — don't
+pass `--json field1,field2`.
 
 ## Repos
 
@@ -16,14 +17,14 @@ bitbottle repo rename   PROJ/repo NEW-NAME [--confirm]              # both backe
 bitbottle repo fork     WS/repo --into TARGET-WS [--name NAME]       # Cloud only
 bitbottle repo transfer PROJ/repo --to TARGET-PROJ                   # both backends; moves repo to another project (Server) or workspace (Cloud)
 bitbottle repo file get PROJ/repo PATH --ref REF [--out FILE]        # read file content at a ref
-bitbottle repo tree PROJ/repo [PATH] --ref REF [--json fields]       # list directory at a ref
+bitbottle repo tree PROJ/repo [PATH] --ref REF [--json]       # list directory at a ref
 bitbottle repo watcher list PROJ/repo                                 # list users watching a repo
 bitbottle repo visibility PROJ/repo                                   # get visibility: "public" or "private"
 bitbottle repo visibility PROJ/repo public                            # set repo public
 bitbottle repo visibility PROJ/repo private                           # set repo private
 ```
 
-`repo rename`, `repo fork`, and `repo transfer` accept `--json fields` and
+`repo rename`, `repo fork`, and `repo transfer` accept `--json` and
 `--jq expr` for structured output, like every other mutation.
 `repo rename --confirm` is required on non-TTY: the slug change breaks
 existing clones' `origin` URL, so users must run
@@ -50,7 +51,7 @@ commands require `--ref` (branch / tag / commit hash) and accept
 
 `repo watcher list` lists all users watching a repository. Works on
 both Cloud and Server/DC. Columns: DISPLAY_NAME, USERNAME. Supports
-`--json fields`, `--jq expr`, `--hostname`. MCP tool: `list_repo_watchers(repo)`.
+`--json`, `--jq expr`, `--hostname`. MCP tool: `list_repo_watchers(repo)`.
 
 `repo visibility PROJ/repo` prints `public` or `private`. With a second
 argument (`public` or `private`) it sets the visibility. Works on both
