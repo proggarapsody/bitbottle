@@ -63,6 +63,9 @@ func (c *Config) Load() error {
 	}
 	for hostname, hc := range m {
 		if hc.OAuthToken != "" {
+			// MIGRATION: this warning is the observable contract tested by
+			// test/script/testdata/upgrade/auth-migrate-token.txtar —
+			// do not change the message prefix without updating that script.
 			fmt.Fprintf(os.Stderr, "! warning: token found in hosts.yml for %s — run `bitbottle auth migrate` to move it to the keyring\n", hostname)
 		}
 	}

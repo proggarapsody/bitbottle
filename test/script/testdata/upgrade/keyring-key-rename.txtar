@@ -1,0 +1,26 @@
+# keyring-key-rename: token keyed by user slug (not hostname) is found.
+#
+# Pre-bug (08b3d9a): the keyring entry was stored under the hostname key
+# ("bitbottle:git.example.com"), so every read by user slug would miss it.
+# Post-fix: key is ("bitbottle", user_slug).
+#
+# This test verifies the current canonical shape: hosts.yml has no inline
+# token (post-migrate shape), but the keyring holds the token under the
+# user slug. auth status must succeed by falling back to the keyring.
+
+bb-fake server
+
+# Simulate the post-migrate shape: remove the inline token from hosts.yml
+# by running auth migrate, which moves the token to the keyring under the
+# user slug key.
+bitbottle auth migrate -k
+stdout 'token migrated to keyring'
+
+# Now hosts.yml has no inline token. auth status must still succeed by
+# finding the token in the keyring under key ("bitbottle", "testuser").
+bitbottle auth status -k
+stdout 'Logged in as testuser'
+stdout 'Token in keyring: yes'
+
+# No warning now — the token is no longer in hosts.yml.
+! stderr 'warning: token found in hosts.yml'

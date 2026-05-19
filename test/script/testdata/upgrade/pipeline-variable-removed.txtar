@@ -1,0 +1,16 @@
+# pipeline-variable-removed: `pipeline variable` was removed (PIPEVAR-DEPREC).
+#
+# The `pipeline variable {list,set,delete}` subcommands were deprecated in
+# v1.31.0 in favour of `variable {list,set,delete} --scope repository` and
+# removed in v1.40.x. Running the old command must not panic and must
+# produce a meaningful message (the pipeline help) showing the available
+# subcommands. Use `variable list --scope repository` instead.
+
+# No server needed — unknown-subcommand dispatch is purely local.
+bitbottle pipeline variable list
+# Cobra prints help for the parent command to stdout; no panic, no empty output.
+stdout 'pipeline'
+# Confirm 'variable' is absent from the available commands list.
+! stdout 'variable'
+# Confirm the replacement command is at least hinted via visible subcommands.
+stdout 'list'

@@ -24,6 +24,16 @@ func TestScript(t *testing.T) {
 		Cmds:          customCmds(),
 		UpdateScripts: *update,
 	})
+	// upgrade sub-corpus lives in testdata/upgrade/ so the filter
+	// -run TestScript/upgrade matches all four migration-path scripts.
+	t.Run("upgrade", func(t *testing.T) {
+		testscript.Run(t, testscript.Params{
+			Dir:           "testdata/upgrade",
+			Setup:         setup,
+			Cmds:          customCmds(),
+			UpdateScripts: *update,
+		})
+	})
 }
 
 // setup runs before each script: scrubs env and provides a hermetic HOME.
