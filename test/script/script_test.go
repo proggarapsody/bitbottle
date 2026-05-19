@@ -264,6 +264,24 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusOK,
 			Body:       map[string]any{"commitHash": "deadbeef1234", "commitMessage": "Apply suggestion"},
 		},
+		// GET PR activity — used by pr activity --json
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/1/activities",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{
+					"action":      "APPROVED",
+					"createdDate": int64(1714550400000),
+					"user":        map[string]any{"slug": "alice", "displayName": "Alice"},
+				},
+				map[string]any{
+					"action":      "COMMENTED",
+					"createdDate": int64(1714554000000),
+					"user":        map[string]any{"slug": "bob", "displayName": "Bob"},
+				},
+			}),
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
