@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.81.0](https://github.com/proggarapsody/bitbottle/compare/v1.80.0...v1.81.0) (2026-05-19)
+
+
+### Features
+
+* **ci:** add release pipeline dry-run workflow on PR ([#410](https://github.com/proggarapsody/bitbottle/issues/410)) ([2ece498](https://github.com/proggarapsody/bitbottle/commit/2ece498958eaac1d9860dd25295a38b6a8f162b4)), closes [#409](https://github.com/proggarapsody/bitbottle/issues/409)
+* **test:** add hint↔flag contract test ([#412](https://github.com/proggarapsody/bitbottle/issues/412)) ([6837cdf](https://github.com/proggarapsody/bitbottle/commit/6837cdf4895275bdfd2232bd56ff26e174e58752))
+
 ## [1.80.0](https://github.com/proggarapsody/bitbottle/compare/v1.79.0...v1.80.0) (2026-05-19)
 
 
