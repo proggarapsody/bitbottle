@@ -31,6 +31,11 @@ type RepoVisibilitySetter interface {
 	SetRepoVisibility(ns, slug string, isPrivate bool) error
 }
 
+// RepoDefaultBranchSetter sets the default branch of a repository.
+type RepoDefaultBranchSetter interface {
+	SetRepoDefaultBranch(ns, slug, branch string) error
+}
+
 // SourceReader reads file content and directory listings at a ref. Both
 // backends implement it (Cloud via /src/{ref}/{path}, Server via
 // /raw/{path}?at={ref} and /browse/{path}?at={ref}).

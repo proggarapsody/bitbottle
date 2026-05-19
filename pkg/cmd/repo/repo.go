@@ -35,5 +35,6 @@ disambiguate when multiple Bitbucket hosts are configured.`,
 	cmd.AddCommand(NewCmdRepoTree(f))
 	cmd.AddCommand(NewCmdRepoWatcher(f))
 	cmd.AddCommand(NewCmdRepoVisibility(f))
+	cmd.AddCommand(NewCmdRepoSetDefaultBranch(f))
 	return cmd
 }
