@@ -17,6 +17,7 @@ type Client interface {
 	RepoDeleter
 	RepoRenamer
 	RepoVisibilitySetter
+	RepoDefaultBranchSetter
 	SourceReader
 	PRLister
 	PRReader
