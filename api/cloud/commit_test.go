@@ -78,7 +78,7 @@ func TestCloudClient_ListCommits_FollowsNextPage(t *testing.T) {
 		if r.URL.Path == "/page2" {
 			_, _ = w.Write([]byte(page2))
 		} else {
-			_, _ = w.Write([]byte(fmt.Sprintf(page1Tmpl, srvURL)))
+			_, _ = fmt.Fprintf(w, page1Tmpl, srvURL)
 		}
 	}))
 	srvURL = srv.URL

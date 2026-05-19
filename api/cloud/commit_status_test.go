@@ -48,8 +48,7 @@ func TestCloudClient_ListCommitStatuses_FollowsNextPage(t *testing.T) {
 		if r.URL.Path == "/page2" {
 			_, _ = w.Write([]byte(page2JSON))
 		} else {
-			page1 := fmt.Sprintf(`{"values":[{"key":"build-100","state":"FAILED","name":"CI","description":"err","url":"https://ci.example.com/100"}],"next":"%s/page2"}`, srvURL)
-			_, _ = w.Write([]byte(page1))
+			_, _ = fmt.Fprintf(w, `{"values":[{"key":"build-100","state":"FAILED","name":"CI","description":"err","url":"https://ci.example.com/100"}],"next":"%s/page2"}`, srvURL)
 		}
 	}))
 	srvURL = srv.URL
