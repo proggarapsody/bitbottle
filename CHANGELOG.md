@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.86.0](https://github.com/proggarapsody/bitbottle/compare/v1.85.1...v1.86.0) (2026-05-20)
+
+
+### Features
+
+* **cmdutil:** add per-command JSON field whitelist (JSON-WHITELIST) ([c6985b2](https://github.com/proggarapsody/bitbottle/commit/c6985b226d103b5737c30daa0605bad5eb0a540d))
+
+
+### Bug Fixes
+
+* **hooks:** add golangci-lint fmt check to pre-push hook ([1b55fd7](https://github.com/proggarapsody/bitbottle/commit/1b55fd7b0501ee3c3ade938176ce3618bf6915fc))
+
 ## [1.85.1](https://github.com/proggarapsody/bitbottle/compare/v1.85.0...v1.85.1) (2026-05-19)
 
 
