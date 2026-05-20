@@ -1,5 +1,9 @@
 # bitbottle Backlog
 
+## Up Next
+
+1. **PIPELINE-OBSERVABILITY** — fix the metrics-dropout, then accounting + schema lock-in — [PRD #423](https://github.com/proggarapsody/bitbottle/issues/423). Headline problem: **15 of the last 21 cycles wrote zero rows to `metrics.jsonl`** — observability is dropping silently most of the time, which makes every downstream claim about gate cost or token efficiency speak from ≤6 cycles of data. Investigate the dropout first; then automate the manual `tokens` rollup into `cycle-summary.sh` (deep module) so cycles 110/111's working rollup stops being a discretionary LLM step; then split `duration_min` into `duration_wall_min` + `duration_active_min` (cycle 110 logged 96 min vs 9.5 min of real work); then add a `scopes`/`prs` array-shape regression test (the emitter itself is already fixed since the May-19 hardening); then add `pipeline_version`; retire `taste_check` (zero findings ever in recent history); narrow `pre_merge_gate` to two assertions. The `design_judge` skip rule is **deferred** until the dropout is fixed and ≥10 more cycles of metrics exist to decide on. Touches `auto-iter/scripts/log-cycle.sh`, new `auto-iter/scripts/cycle-summary.sh`, `auto-iter/quickref.md`, `docs/workflows/iteration-cycle.md`.
+
 ## Philosophy
 
 Follow [GitHub CLI](https://github.com/cli/cli) conventions throughout:
