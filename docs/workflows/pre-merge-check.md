@@ -34,12 +34,18 @@ Cache the diff file list — later checks key off it. Don't re-run.
 - Branch name matches `^(feature|fix|docs|chore)/`. `main` itself is a
   BLOCKER (never merge from main into main).
 - `git status --porcelain` is empty.
-- Branch is not behind `origin/main`:
-  `git rev-list --count HEAD..origin/main` is `0`. If non-zero, rebase or
-  `gh pr update-branch <N>`.
 - If a PR exists (`gh pr view --json baseRefName,number,title,isDraft`):
   - `baseRefName` is `main`. Other base is BLOCKER.
   - `isDraft` is false (WARN if draft).
+
+> **Note**: a PR being behind `origin/main` is **no longer a BLOCKER**.
+> Branch protection has `required_status_checks.strict = false`, so
+> GitHub permits merging without an up-to-date branch. Semantic-conflict
+> risk is bounded for this repo (solo dev, sequential `/auto-iter`,
+> squash merges); when it ever bites, main CI catches it within one
+> push and a `git revert` PR is the fix. The previous "rebase or
+> `gh pr update-branch <N>`" dance burned a full CI cycle per merge
+> (~5.5 min) at near-zero benefit.
 
 ## 2. Conventional Commits + PR title — BLOCKER
 
