@@ -35,11 +35,22 @@ ensure_auto_iter_dir() {
 # Variants for explicit typing:
 #   --str key=value   force STRING typing (use for enum fields like tier="2")
 #   --raw key=expr    inject a pre-formatted JSON value verbatim
+#   --arr key=value   accumulate repeated occurrences into a JSON array.
+#                     Each --arr key=value call appends value to the array for
+#                     that key. Integers and booleans are typed; other values
+#                     are string-quoted. Repeated --arr key=val calls build the
+#                     array in order. Use this for scopes/prs fields.
+#                     Plural output key: scope->scopes, pr->prs, else key+"s".
 #
 # Example:
 #   emit_json --cycle=42 --step=step2_tdd --str tier=2 --raw findings='["a","b"]'
+#   emit_json --arr scope=FOO --arr scope=BAR   # -> {"scopes":["FOO","BAR"]}
 emit_json() {
   local jq_args=() filter='.'
+  # Accumulate --arr entries as "out_key\tvalue" lines in a single variable.
+  # bash 3.2-compatible (no associative arrays).
+  local arr_entries=""
+
   while [[ $# -gt 0 ]]; do
     local arg="$1"
     if [[ "$arg" == "--raw" ]]; then
@@ -52,6 +63,29 @@ emit_json() {
       local key="${1%%=*}" val="${1#*=}"
       jq_args+=(--arg "$key" "$val")
       filter="$filter | .${key}=\$${key}"
+    elif [[ "$arg" == "--arr" ]]; then
+      shift
+      local key="${1%%=*}" val="${1#*=}"
+      # Derive plural output key
+      local out_key
+      case "$key" in
+        scope) out_key="scopes" ;;
+        pr)    out_key="prs" ;;
+        *)     out_key="${key}s" ;;
+      esac
+      # Encode value as a jq-ready literal
+      local jq_val
+      if [[ "$val" =~ ^(true|false|null)$ ]] || [[ "$val" =~ ^-?[0-9]+$ ]]; then
+        jq_val="$val"
+      else
+        jq_val="$(printf '%s' "$val" | jq -Rs '.')"
+      fi
+      # Append "out_key<TAB>jq_val" to accumulator
+      if [[ -n "$arr_entries" ]]; then
+        arr_entries="${arr_entries}"$'\n'"${out_key}"$'\t'"${jq_val}"
+      else
+        arr_entries="${out_key}"$'\t'"${jq_val}"
+      fi
     elif [[ "$arg" == --*=* ]]; then
       local key="${arg#--}"; key="${key%%=*}"
       local val="${arg#*=}"
@@ -67,6 +101,27 @@ emit_json() {
     fi
     shift
   done
+
+  # Process accumulated --arr entries: group by out_key, build JSON array per key.
+  if [[ -n "$arr_entries" ]]; then
+    # Extract distinct out_keys (preserve order of first occurrence)
+    local seen_keys=""
+    while IFS=$'\t' read -r out_key jq_val; do
+      if ! printf '%s\n' "$seen_keys" | grep -qxF "$out_key"; then
+        seen_keys="${seen_keys:+$seen_keys$'\n'}${out_key}"
+      fi
+    done <<<"$arr_entries"
+
+    while IFS= read -r out_key; do
+      [[ -z "$out_key" ]] && continue
+      # Collect all values for this key (tab-separated field 2)
+      local arr_json
+      arr_json="$(printf '%s\n' "$arr_entries" | awk -F'\t' -v k="$out_key" '$1==k{print $2}' | jq -sc '.')"
+      jq_args+=(--argjson "$out_key" "$arr_json")
+      filter="$filter | .${out_key}=\$${out_key}"
+    done <<<"$seen_keys"
+  fi
+
   jq -nc "${jq_args[@]}" "$filter"
 }
 

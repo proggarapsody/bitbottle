@@ -194,7 +194,6 @@ Output line shape:
 | `step2_brainstorm` | `subagent_tokens`, `rows_added`, `rows_dropped_by_overlap`, `rows_dropped_by_feasibility` |
 | `step2_audit_run` | `subagent_tokens`, `findings` |
 | `step2_design_judge` | `subagent_tokens`, `findings_count`, `blocker_count` |
-| `step2_taste_check` | `violations_count`, `fixagent_dispatched` |
 | `step2_prd` | `prd_issue` |
 | `step2_worktree` | `worktree_path`, `branch` |
 | `step2_tdd` | `subagent_tokens`, `commits_count` |

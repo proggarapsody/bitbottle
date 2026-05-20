@@ -106,5 +106,36 @@ else
   fail "got: $OUT"
 fi
 
+# Cases 8-9: use a fresh branch to avoid CHANGELOG noise from case 7
+git checkout -q origin/main
+git checkout -q -b feat/backlog-test
+
+# Case 8: BACKLOG.md flip in standalone commit -> backlog_flip_isolated BLOCKER
+echo "feat code" > myfile.go
+git add myfile.go
+git commit -q -m "feat(x): add feature code"
+echo "| PIPELINE-OBSERVABILITY | ✅ |" > BACKLOG.md
+git add BACKLOG.md
+git commit -q -m "chore: mark shipped in BACKLOG"  # standalone BACKLOG-only commit
+OUT="$(bash "$SCRIPT")"
+if echo "$OUT" | jq -e '.findings | map(.check) | index("backlog_flip_isolated") != null' >/dev/null; then
+  ok "standalone BACKLOG-only commit -> backlog_flip_isolated finding"
+else
+  fail "expected backlog_flip_isolated, got: $OUT"
+fi
+
+# Case 9: BACKLOG.md flip in same feat commit -> no backlog_flip_isolated
+git reset --hard HEAD~2 -q  # back to origin/main equivalent
+echo "feat code" > myfile.go
+echo "| PIPELINE-OBSERVABILITY | ✅ |" > BACKLOG.md
+git add myfile.go BACKLOG.md
+git commit -q -m "feat(x): ship scope and flip BACKLOG"
+OUT="$(bash "$SCRIPT")"
+if echo "$OUT" | jq -e '[.findings[] | select(.check=="backlog_flip_isolated")] | length == 0' >/dev/null; then
+  ok "BACKLOG flip co-located in feat commit -> no backlog_flip_isolated"
+else
+  fail "expected no backlog_flip_isolated, got: $OUT"
+fi
+
 echo ""
 [[ $FAIL -eq 0 ]] && echo "PASS: pre-merge-mechanical.sh tests OK" || { echo "FAIL: assertions failed"; exit 1; }
