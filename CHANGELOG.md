@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.88.0](https://github.com/proggarapsody/bitbottle/compare/v1.87.0...v1.88.0) (2026-05-20)
+
+
+### Features
+
+* **tests:** add --json golden-file tests to 7 command groups (JSON-GOLDEN-COVERAGE) ([e1bf0cb](https://github.com/proggarapsody/bitbottle/commit/e1bf0cb3e81c0e9386d1b10ba1c7811011bb6492)), closes [#439](https://github.com/proggarapsody/bitbottle/issues/439)
+
 ## [1.87.0](https://github.com/proggarapsody/bitbottle/compare/v1.86.0...v1.87.0) (2026-05-20)
 
 
