@@ -66,6 +66,9 @@ formatters:
   enable:
     - gofmt
     - goimports
+  exclusions:
+    paths:
+      - "reference/"
   settings:
     gofmt:
       simplify: true
