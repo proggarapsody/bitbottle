@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.87.0](https://github.com/proggarapsody/bitbottle/compare/v1.86.0...v1.87.0) (2026-05-20)
+
+
+### Features
+
+* **pipeline-observability:** split active/wall duration, automate token rollup, retire taste_check, narrow pre_merge_gate, fix scope/pr array shape ([6d9f866](https://github.com/proggarapsody/bitbottle/commit/6d9f866d0b0fa030d89b17b990bfd2abab63c2c1))
+
 ## [1.86.0](https://github.com/proggarapsody/bitbottle/compare/v1.85.1...v1.86.0) (2026-05-20)
 
 
