@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	cmdArtifact "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/artifact"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/list"
 	cmdLogs "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
 	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
@@ -28,6 +29,7 @@ directory.`,
 		},
 	}
 	factory.EnableRepoOverride(cmd, f)
+	cmd.AddCommand(cmdArtifact.NewCmdArtifact(f))
 	cmd.AddCommand(cmdList.NewCmdList(f, nil))
 	cmd.AddCommand(cmdView.NewCmdView(f, nil))
 	cmd.AddCommand(cmdRun.NewCmdRun(f, nil))

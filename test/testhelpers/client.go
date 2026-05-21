@@ -69,6 +69,10 @@ type FakeClient struct {
 	SetPipelineVariableFn    func(ns, slug string, in backend.PipelineVariableInput) (backend.PipelineVariable, error)
 	DeletePipelineVariableFn func(ns, slug, key string) error
 
+	// Pipeline artifact methods (Cloud-only; satisfies backend.PipelineArtifactClient when set)
+	ListPipelineArtifactsFn    func(ws, slug, pipelineUUID, stepUUID string, limit int) ([]backend.PipelineArtifact, error)
+	DownloadPipelineArtifactFn func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error
+
 	// Commit methods
 	ListCommitsFn func(ns, slug, branch string, limit int) ([]backend.Commit, error)
 	GetCommitFn   func(ns, slug, hash string) (backend.Commit, error)
@@ -710,6 +714,28 @@ func (c *FakeClient) DeletePipelineVariable(ns, slug, key string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeletePipelineVariable; set DeletePipelineVariableFn in your test")
+	}
+	return nil
+}
+
+// ── PipelineArtifactClient ───────────────────────────────────────────────────
+
+func (c *FakeClient) ListPipelineArtifacts(ws, slug, pipelineUUID, stepUUID string, limit int) ([]backend.PipelineArtifact, error) {
+	if c.ListPipelineArtifactsFn != nil {
+		return c.ListPipelineArtifactsFn(ws, slug, pipelineUUID, stepUUID, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelineArtifacts; set ListPipelineArtifactsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) DownloadPipelineArtifact(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error {
+	if c.DownloadPipelineArtifactFn != nil {
+		return c.DownloadPipelineArtifactFn(ws, slug, pipelineUUID, stepUUID, name, out)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DownloadPipelineArtifact; set DownloadPipelineArtifactFn in your test")
 	}
 	return nil
 }

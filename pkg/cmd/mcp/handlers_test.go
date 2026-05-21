@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -3076,4 +3077,177 @@ func TestSearchCode_LimitOutOfRange_ReturnsError(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	assertErrorResult(t, result, "limit must be between 1 and 100")
+}
+
+// ---- list_pipeline_artifacts ----
+
+func TestListPipelineArtifacts_CallsClientWithCorrectParams(t *testing.T) {
+	t.Parallel()
+	var gotWS, gotSlug, gotPipe, gotStep string
+	var gotLimit int
+	fake := &testhelpers.FakeClient{
+		ListPipelineArtifactsFn: func(ws, slug, pipelineUUID, stepUUID string, limit int) ([]backend.PipelineArtifact, error) {
+			gotWS = ws
+			gotSlug = slug
+			gotPipe = pipelineUUID
+			gotStep = stepUUID
+			gotLimit = limit
+			return []backend.PipelineArtifact{
+				{Name: "build.tar.gz", SizeBytes: 1024, URL: "https://dl/build.tar.gz"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listPipelineArtifacts(context.Background(), makeReq(map[string]any{
+		"project":       "myws",
+		"slug":          "my-repo",
+		"pipeline_uuid": "pipe-uuid",
+		"step_uuid":     "step-uuid",
+		"limit":         float64(10),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "myws", gotWS)
+	assert.Equal(t, "my-repo", gotSlug)
+	assert.Equal(t, "pipe-uuid", gotPipe)
+	assert.Equal(t, "step-uuid", gotStep)
+	assert.Equal(t, 10, gotLimit)
+	assertJSONContains(t, result, "build.tar.gz", "")
+}
+
+func TestListPipelineArtifacts_NotCloudCapable_ReturnsError(t *testing.T) {
+	t.Parallel()
+	type serverOnlyFake struct{ backend.Client }
+	fake := &serverOnlyFake{Client: &testhelpers.FakeClient{}}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	factorytest.UseBackend(f, fake)
+	h := newHandlers(f)
+	result, err := h.listPipelineArtifacts(context.Background(), makeReq(map[string]any{
+		"project": "myws", "slug": "my-repo",
+		"pipeline_uuid": "pipe-uuid", "step_uuid": "step-uuid",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "pipeline artifacts")
+}
+
+func TestListPipelineArtifacts_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelineArtifacts(context.Background(), makeReq(map[string]any{
+		"slug": "my-repo", "pipeline_uuid": "p", "step_uuid": "s",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestListPipelineArtifacts_MissingSlug_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelineArtifacts(context.Background(), makeReq(map[string]any{
+		"project": "myws", "pipeline_uuid": "p", "step_uuid": "s",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+func TestListPipelineArtifacts_MissingPipelineUUID_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelineArtifacts(context.Background(), makeReq(map[string]any{
+		"project": "myws", "slug": "my-repo", "step_uuid": "s",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "pipeline_uuid")
+}
+
+func TestListPipelineArtifacts_MissingStepUUID_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.listPipelineArtifacts(context.Background(), makeReq(map[string]any{
+		"project": "myws", "slug": "my-repo", "pipeline_uuid": "p",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "step_uuid")
+}
+
+// ---- download_pipeline_artifact ----
+
+func TestDownloadPipelineArtifact_ReturnsBase64Content(t *testing.T) {
+	t.Parallel()
+	content := "artifact content"
+	fake := &testhelpers.FakeClient{
+		ListPipelineArtifactsFn: func(ws, slug, pipelineUUID, stepUUID string, limit int) ([]backend.PipelineArtifact, error) {
+			return []backend.PipelineArtifact{
+				{Name: "build.zip", SizeBytes: int64(len(content)), URL: "https://dl/build.zip"},
+			}, nil
+		},
+		DownloadPipelineArtifactFn: func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error {
+			_, err := io.WriteString(out, content)
+			return err
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.downloadPipelineArtifact(context.Background(), makeReq(map[string]any{
+		"project":       "myws",
+		"slug":          "my-repo",
+		"pipeline_uuid": "pipe-uuid",
+		"step_uuid":     "step-uuid",
+		"name":          "build.zip",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "content_base64", "")
+	text := extractText(t, result)
+	assert.Contains(t, text, "build.zip")
+	// Verify the base64 is actually the content
+	var got map[string]string
+	require.NoError(t, json.Unmarshal([]byte(text), &got))
+	decoded, decErr := base64.StdEncoding.DecodeString(got["content_base64"])
+	require.NoError(t, decErr)
+	assert.Equal(t, content, string(decoded))
+}
+
+func TestDownloadPipelineArtifact_LargeFile_ReturnsError(t *testing.T) {
+	t.Parallel()
+	const sixMB = 6 * 1024 * 1024
+	fake := &testhelpers.FakeClient{
+		T: t,
+		DownloadPipelineArtifactFn: func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error {
+			_, err := out.Write(make([]byte, sixMB))
+			return err
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.downloadPipelineArtifact(context.Background(), makeReq(map[string]any{
+		"project":       "myws",
+		"slug":          "my-repo",
+		"pipeline_uuid": "pipe-uuid",
+		"step_uuid":     "step-uuid",
+		"name":          "huge.tar.gz",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "use pipeline artifact download --out PATH instead")
+}
+
+func TestDownloadPipelineArtifact_NotCloudCapable_ReturnsError(t *testing.T) {
+	t.Parallel()
+	type serverOnlyFake struct{ backend.Client }
+	fake := &serverOnlyFake{Client: &testhelpers.FakeClient{}}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: singleHostConfig})
+	factorytest.UseBackend(f, fake)
+	h := newHandlers(f)
+	result, err := h.downloadPipelineArtifact(context.Background(), makeReq(map[string]any{
+		"project": "myws", "slug": "my-repo",
+		"pipeline_uuid": "pipe-uuid", "step_uuid": "step-uuid", "name": "f.zip",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "pipeline artifacts")
+}
+
+func TestDownloadPipelineArtifact_MissingName_ReturnsError(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleHostConfig, nil)
+	result, err := h.downloadPipelineArtifact(context.Background(), makeReq(map[string]any{
+		"project": "myws", "slug": "my-repo", "pipeline_uuid": "p", "step_uuid": "s",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "name")
 }

@@ -240,6 +240,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "PipelineArtifactClient",
+		HumanLabel:    "pipeline artifacts",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(PipelineArtifactClient); return ok },
+		Feature:       FeaturePipelineArtifacts,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "PipelineTriggerClient",
 		HumanLabel:    "pipeline trigger",
 		Check:         func(c Client) bool { _, ok := c.(PipelineTriggerClient); return ok },
