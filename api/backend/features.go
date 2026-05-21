@@ -236,6 +236,13 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "SnippetClient",
+		Check:         func(c Client) bool { _, ok := c.(SnippetClient); return ok },
+		Feature:       FeatureSnippets,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "SSHKeyClient",
 		Check:         func(c Client) bool { _, ok := c.(SSHKeyClient); return ok },
 		Feature:       FeatureSSHKeys,

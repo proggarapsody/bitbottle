@@ -27,6 +27,7 @@ disagrees with this doc; the binary wins.
 | Pipelines, schedules, caches, watch, trigger (Cloud only) | `references/pipeline.md` |
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
 | Issues, comments (Cloud only) | `references/issues.md` |
+| snippet list/view/create/delete (snippet snippet group, Cloud only) | `references/snippet.md` |
 | Deployments + environments + variables (Cloud only) | `references/deployment.md`, `references/variable.md` |
 | Deploy keys (both), branch-rules / ssh-keys (Cloud only) | `references/deploy-key.md`, `references/branch-rule.md`, `references/ssh-key.md` |
 | Diff between refs, `diff REF1..REF2` | `references/diff.md` |
@@ -95,7 +96,7 @@ on the host entry in `hosts.yml` (see `references/auth.md`).
 | Auth context flag | `--email you@…` | `--username your.user` |
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
-| Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable), `issue *`, `pr request-changes`, `pr comment resolve`, `ssh-key *`, `branch-rule *`, `workspace *`, `search`, `project` | — |
+| Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable), `issue *`, `snippet list [--workspace W]`, `snippet view`, `snippet create`, `snippet delete`, `pr request-changes`, `pr comment resolve`, `ssh-key *`, `branch-rule *`, `workspace *`, `search`, `project` | — |
 | Server-only | — | `code-insights *`, `pr task *`, `pr suggestion apply`, `pr/commit comment react/unreact`, `pr reviewer-group *` |
 
 For custom-hostname Bitbucket Data Center, force routing with
