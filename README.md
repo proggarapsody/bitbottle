@@ -89,6 +89,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `webhook` | `list` `view` `create` `delete` |
 | `deploy-key` | `list` `add` `delete` |
 | `branch-rule` | `list` `add` `delete` _(Cloud only)_ |
+| `branch-model` | `get` `set` _(Cloud only)_ |
 | `ssh-key` | `list` `add` `delete` _(Cloud only)_ |
 | `commit` | `log` `view` `status` `status report` `files` `comment {list\|add\|edit\|delete}` |
 | `pipeline` | `list` `view` `run` _(Cloud only)_ |
