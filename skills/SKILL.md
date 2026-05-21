@@ -22,7 +22,7 @@ disagrees with this doc; the binary wins.
 |---|---|
 | Auth, hosts.yml, env vars, multi-host, `auth migrate`, `auth doctor` | `references/auth.md` |
 | PR lifecycle (list/view/create/merge/approve/comment/activity/review/commits/files/participants/ready/unready/task/suggestion/comment-react/default-reviewer/reviewer-group/…) | `references/pr.md` |
-| Repos, branches, tags, file/tree, visibility, transfer, watcher | `references/repos.md` |
+| Repos, branches, tags, file/tree, visibility, edit, transfer, watcher | `references/repos.md` |
 | Commits (view/files/status/comment/comment-react) | `references/commit.md` |
 | Pipelines, schedules, caches, watch, trigger (Cloud only) | `references/pipeline.md` |
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
@@ -78,6 +78,7 @@ Outside any Bitbucket checkout, the relevant positional/`-R` is mandatory.
 # Outside one (or to override):
 bitbottle pr list      -R git.example.com/PROJ/repo
 bitbottle repo view    PROJ/repo --hostname git.example.com
+bitbottle repo edit    PROJ/repo --description "new description"
 
 # Pin a default for the current checkout (writes .git/config):
 bitbottle repo set-default HOST/PROJ/repo
