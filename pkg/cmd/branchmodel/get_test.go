@@ -7,7 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	branchmodel "github.com/proggarapsody/bitbottle/pkg/cmd/branch-model"
+	"github.com/proggarapsody/bitbottle/internal/format"
+	branchmodel "github.com/proggarapsody/bitbottle/pkg/cmd/branchmodel"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -16,8 +17,10 @@ func TestNewCmdGet_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdGet(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("hostname"))
 	assert.NotNil(t, cmd.Flag("json"))
+	assert.NotNil(t, cmd.Flag("jq"))
 }
 
 func TestGet_PrintsBranchModel(t *testing.T) {
@@ -40,6 +43,7 @@ func TestGet_PrintsBranchModel(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdGet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
@@ -62,11 +66,12 @@ func TestGet_JSONOutput(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdGet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--json"})
 	require.NoError(t, cmd.Execute())
 	got := out.String()
-	assert.Contains(t, got, `"name":"develop"`)
-	assert.Contains(t, got, `"kind":"bugfix"`)
+	assert.Contains(t, got, `"development":"develop"`)
+	assert.Contains(t, got, `"bugfix"`)
 }
 
 func TestGet_UnsupportedBackend(t *testing.T) {
@@ -74,6 +79,7 @@ func TestGet_UnsupportedBackend(t *testing.T) {
 	fake := &cmdtest.NoBranchModelFake{Client: &testhelpers.FakeClient{T: t}}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdGet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service"})
 	err := cmd.Execute()
 	require.Error(t, err)

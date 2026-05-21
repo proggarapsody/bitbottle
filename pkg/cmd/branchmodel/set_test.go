@@ -7,7 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	branchmodel "github.com/proggarapsody/bitbottle/pkg/cmd/branch-model"
+	"github.com/proggarapsody/bitbottle/internal/format"
+	branchmodel "github.com/proggarapsody/bitbottle/pkg/cmd/branchmodel"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -16,12 +17,14 @@ func TestNewCmdSet_HasFlags(t *testing.T) {
 	t.Parallel()
 	f, _, _ := cmdtest.NewFactory(t, &testhelpers.FakeClient{T: t}, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdSet(f)
+	format.RegisterOutputFlags(cmd)
 	assert.NotNil(t, cmd.Flag("hostname"))
 	assert.NotNil(t, cmd.Flag("dev-branch"))
 	assert.NotNil(t, cmd.Flag("prod-branch"))
 	assert.NotNil(t, cmd.Flag("prod-enabled"))
 	assert.NotNil(t, cmd.Flag("branch-type-prefix"))
 	assert.NotNil(t, cmd.Flag("json"))
+	assert.NotNil(t, cmd.Flag("jq"))
 }
 
 func TestSet_UpdatesDevBranch(t *testing.T) {
@@ -49,6 +52,7 @@ func TestSet_UpdatesDevBranch(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdSet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--dev-branch", "develop"})
 	require.NoError(t, cmd.Execute())
 	require.NotNil(t, gotInput.Development)
@@ -76,6 +80,7 @@ func TestSet_BranchTypePrefixes_Merged(t *testing.T) {
 	}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdSet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--branch-type-prefix", "feature=feat/,hotfix=hf/"})
 	require.NoError(t, cmd.Execute())
 	require.Len(t, gotBranchTypes, 2)
@@ -102,9 +107,10 @@ func TestSet_JSONOutput(t *testing.T) {
 	}
 	f, out, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdSet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--dev-branch", "main", "--json"})
 	require.NoError(t, cmd.Execute())
-	assert.Contains(t, out.String(), `"name":"main"`)
+	assert.Contains(t, out.String(), `"development":"main"`)
 }
 
 func TestSet_UnsupportedBackend(t *testing.T) {
@@ -112,6 +118,7 @@ func TestSet_UnsupportedBackend(t *testing.T) {
 	fake := &cmdtest.NoBranchModelFake{Client: &testhelpers.FakeClient{T: t}}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdSet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--dev-branch", "main"})
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -131,8 +138,34 @@ func TestParseBranchTypePrefixes_Invalid(t *testing.T) {
 	}
 	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
 	cmd := branchmodel.NewCmdSet(f)
+	format.RegisterOutputFlags(cmd)
 	cmd.SetArgs([]string{"myworkspace/my-service", "--branch-type-prefix", "no-equals-sign"})
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "kind=prefix")
+}
+
+func TestSet_ProdBranchDefaultsEnabled(t *testing.T) {
+	t.Parallel()
+	var gotInput backend.BranchModelSettingsInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetBranchModelSettingsFn: func(ws, slug string) (backend.BranchModelSettings, error) {
+			return backend.BranchModelSettings{}, nil
+		},
+		UpdateBranchModelSettingsFn: func(ws, slug string, in backend.BranchModelSettingsInput) (backend.BranchModelSettings, error) {
+			gotInput = in
+			return backend.BranchModelSettings{
+				Production: backend.BranchModelSettingsBranch{Name: "main", IsValid: true},
+			}, nil
+		},
+	}
+	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := branchmodel.NewCmdSet(f)
+	format.RegisterOutputFlags(cmd)
+	// --prod-branch set without --prod-enabled: IsValid must default to true.
+	cmd.SetArgs([]string{"myworkspace/my-service", "--prod-branch", "main"})
+	require.NoError(t, cmd.Execute())
+	require.NotNil(t, gotInput.Production)
+	assert.True(t, gotInput.Production.IsValid, "IsValid should default to true when --prod-branch is set without --prod-enabled")
 }

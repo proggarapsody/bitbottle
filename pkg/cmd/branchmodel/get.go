@@ -1,19 +1,18 @@
 package branchmodel
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
 // NewCmdGet builds the `branch-model get` cobra command.
 func NewCmdGet(f *factory.Factory) *cobra.Command {
 	var hostname string
-	var jsonFlag bool
 	cmd := &cobra.Command{
 		Use:   "get [PROJECT/REPO]",
 		Short: "Show branching model for a repository",
@@ -35,14 +34,38 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonFlag || cmd.Flags().Changed("json") {
-				return json.NewEncoder(f.IOStreams.Out).Encode(model)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := format.New[backend.BranchModel](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
+				p.SetSingleItem()
+				p.AddField(format.Field[backend.BranchModel]{
+					Name:    "development",
+					Header:  "DEVELOPMENT",
+					Extract: func(m backend.BranchModel) any { return m.Development.Name },
+				})
+				p.AddField(format.Field[backend.BranchModel]{
+					Name:   "production",
+					Header: "PRODUCTION",
+					Extract: func(m backend.BranchModel) any {
+						if m.Production != nil {
+							return m.Production.Name
+						}
+						return nil
+					},
+				})
+				p.AddField(format.Field[backend.BranchModel]{
+					Name:     "branch_types",
+					Header:   "BRANCH_TYPES",
+					JSONOnly: true,
+					Extract:  func(m backend.BranchModel) any { return m.BranchTypes },
+				})
+				p.AddItem(model)
+				return p.Render()
 			}
 			return printBranchModel(f, model)
 		},
 	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname")
-	cmd.Flags().BoolVar(&jsonFlag, "json", false, "Output as JSON")
 	return cmd
 }
 

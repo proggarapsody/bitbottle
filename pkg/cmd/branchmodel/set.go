@@ -1,13 +1,13 @@
 package branchmodel
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -19,7 +19,6 @@ func NewCmdSet(f *factory.Factory) *cobra.Command {
 		prodBranch      string
 		prodEnabled     bool
 		branchTypePairs []string
-		jsonFlag        bool
 	)
 	cmd := &cobra.Command{
 		Use:   "set [PROJECT/REPO]",
@@ -55,10 +54,17 @@ func NewCmdSet(f *factory.Factory) *cobra.Command {
 			}
 
 			if cmd.Flags().Changed("prod-branch") || cmd.Flags().Changed("prod-enabled") {
+				// When --prod-branch is set but --prod-enabled is not explicitly
+				// given, default IsValid to true — omitting it would silently
+				// disable the production branch.
+				isValid := prodEnabled
+				if cmd.Flags().Changed("prod-branch") && !cmd.Flags().Changed("prod-enabled") {
+					isValid = true
+				}
 				pb := backend.BranchModelSettingsBranch{
 					Name:          prodBranch,
 					UseMainbranch: prodBranch == "",
-					IsValid:       prodEnabled,
+					IsValid:       isValid,
 				}
 				in.Production = &pb
 			}
@@ -93,8 +99,28 @@ func NewCmdSet(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if jsonFlag || cmd.Flags().Changed("json") {
-				return json.NewEncoder(f.IOStreams.Out).Encode(updated)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := format.New[backend.BranchModelSettings](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
+				p.SetSingleItem()
+				p.AddField(format.Field[backend.BranchModelSettings]{
+					Name:    "development",
+					Header:  "DEVELOPMENT",
+					Extract: func(s backend.BranchModelSettings) any { return s.Development.Name },
+				})
+				p.AddField(format.Field[backend.BranchModelSettings]{
+					Name:    "production",
+					Header:  "PRODUCTION",
+					Extract: func(s backend.BranchModelSettings) any { return s.Production.Name },
+				})
+				p.AddField(format.Field[backend.BranchModelSettings]{
+					Name:     "branch_types",
+					Header:   "BRANCH_TYPES",
+					JSONOnly: true,
+					Extract:  func(s backend.BranchModelSettings) any { return s.BranchTypes },
+				})
+				p.AddItem(updated)
+				return p.Render()
 			}
 			return printBranchModelSettings(f, updated)
 		},
@@ -104,7 +130,6 @@ func NewCmdSet(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&prodBranch, "prod-branch", "", "Production branch name")
 	cmd.Flags().BoolVar(&prodEnabled, "prod-enabled", false, "Enable production branch")
 	cmd.Flags().StringArrayVar(&branchTypePairs, "branch-type-prefix", nil, "Branch type prefix as kind=prefix (repeatable or comma-separated)")
-	cmd.Flags().BoolVar(&jsonFlag, "json", false, "Output as JSON")
 	return cmd
 }
 
