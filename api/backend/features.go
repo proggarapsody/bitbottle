@@ -194,6 +194,13 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "RepoEditor",
+		Check:         func(c Client) bool { _, ok := c.(RepoEditor); return ok },
+		Feature:       FeatureRepoEdit,
+		CloudSupport:  true,
+		ServerSupport: true,
+	},
+	{
 		Name:          "RepoForker",
 		Check:         func(c Client) bool { _, ok := c.(RepoForker); return ok },
 		Feature:       FeatureRepoFork,

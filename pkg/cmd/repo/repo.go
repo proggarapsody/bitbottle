@@ -7,6 +7,7 @@ import (
 	cmdClone "github.com/proggarapsody/bitbottle/pkg/cmd/repo/clone"
 	cmdCreate "github.com/proggarapsody/bitbottle/pkg/cmd/repo/create"
 	cmdDelete "github.com/proggarapsody/bitbottle/pkg/cmd/repo/delete"
+	cmdEdit "github.com/proggarapsody/bitbottle/pkg/cmd/repo/edit"
 	cmdFile "github.com/proggarapsody/bitbottle/pkg/cmd/repo/file"
 	cmdFork "github.com/proggarapsody/bitbottle/pkg/cmd/repo/fork"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/repo/list"
@@ -30,6 +31,7 @@ disambiguate when multiple Bitbucket hosts are configured.`,
 		},
 	}
 	factory.EnableRepoOverride(cmd, f)
+	cmd.AddCommand(cmdEdit.NewCmdEdit(f))
 	cmd.AddCommand(cmdList.NewCmdList(f))
 	cmd.AddCommand(cmdView.NewCmdView(f))
 	cmd.AddCommand(cmdCreate.NewCmdCreate(f))

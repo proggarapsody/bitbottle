@@ -22,6 +22,12 @@ bitbottle repo watcher list PROJ/repo                                 # list use
 bitbottle repo visibility PROJ/repo                                   # get visibility: "public" or "private"
 bitbottle repo visibility PROJ/repo public                            # set repo public
 bitbottle repo visibility PROJ/repo private                           # set repo private
+bitbottle repo edit PROJ/repo --description "new desc"                # update description (both backends)
+bitbottle repo edit PROJ/repo --website https://example.com           # update website (Cloud only)
+bitbottle repo edit PROJ/repo --language Go                           # update language (Cloud only)
+bitbottle repo edit PROJ/repo --fork-policy allow_forks               # set fork policy (Cloud only)
+bitbottle repo edit PROJ/repo --enable-issues                         # enable issue tracker (Cloud only)
+bitbottle repo edit PROJ/repo --disable-wiki                          # disable wiki (Cloud only)
 ```
 
 `repo rename`, `repo fork`, and `repo transfer` accept `--json` and
@@ -56,6 +62,14 @@ both Cloud and Server/DC. Columns: DISPLAY_NAME, USERNAME. Supports
 `repo visibility PROJ/repo` prints `public` or `private`. With a second
 argument (`public` or `private`) it sets the visibility. Works on both
 Cloud and Server/DC. MCP tool: `repo_visibility(repo[, visibility])`.
+
+`repo edit PROJ/repo` updates mutable metadata fields. On Bitbucket Server /
+Data Center only `--description` is forwarded; Cloud-only flags (`--website`,
+`--language`, `--fork-policy`, `--enable-issues`, `--disable-issues`,
+`--enable-wiki`, `--disable-wiki`) are accepted but silently ignored on Server
+hosts. At least one flag is required. `--enable-issues` and `--disable-issues`
+are mutually exclusive; same for `--enable-wiki` and `--disable-wiki`. MCP
+tool: `edit_repo(repo, [description, website, language, fork_policy, has_issues, has_wiki])`.
 
 ## Branches
 

@@ -243,6 +243,9 @@ type FakeClient struct {
 
 	// Repo forks methods (both backends; satisfies backend.RepoForksLister when set)
 	ListRepoForksFn func(ns, slug string, limit int) ([]backend.Repository, error)
+
+	// Repo edit methods (both backends; satisfies backend.RepoEditor when set)
+	EditRepoFn func(ns, slug string, in backend.EditRepoInput) (backend.Repository, error)
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -275,6 +278,7 @@ var (
 	_ backend.PRFileClient             = (*FakeClient)(nil)
 	_ backend.PRParticipantClient      = (*FakeClient)(nil)
 	_ backend.PRStatusLister           = (*FakeClient)(nil)
+	_ backend.RepoEditor               = (*FakeClient)(nil)
 	_ backend.RepoForker               = (*FakeClient)(nil)
 	_ backend.RepoForksLister          = (*FakeClient)(nil)
 	_ backend.RepoTransferClient       = (*FakeClient)(nil)
@@ -373,6 +377,16 @@ func (c *FakeClient) SetRepoDefaultBranch(ns, slug, branch string) error {
 		c.T.Fatalf("unexpected call to FakeClient.SetRepoDefaultBranch; set SetRepoDefaultBranchFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) EditRepo(ns, slug string, in backend.EditRepoInput) (backend.Repository, error) {
+	if c.EditRepoFn != nil {
+		return c.EditRepoFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.EditRepo; set EditRepoFn in your test")
+	}
+	return backend.Repository{}, nil
 }
 
 func (c *FakeClient) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
