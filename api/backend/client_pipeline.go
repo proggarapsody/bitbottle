@@ -1,9 +1,6 @@
 package backend
 
-import (
-	"fmt"
-	"io"
-)
+import "io"
 
 // PipelineClient is implemented only by Bitbucket Cloud clients.
 type PipelineClient interface {
@@ -25,15 +22,5 @@ const FeaturePipelines Feature = "pipelines"
 // *DomainError (Kind=ErrUnsupportedOnHost) if the backend at host does not
 // implement the Pipelines capability.
 func AsPipelineClient(c Client, host string) (PipelineClient, error) {
-	pc, ok := c.(PipelineClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeaturePipelines),
-			Message: fmt.Sprintf("pipelines are not supported on %s (Bitbucket Cloud only)", host),
-		}
-	}
-	return pc, nil
+	return requireFeature[PipelineClient](c, host, specFor(FeaturePipelines))
 }

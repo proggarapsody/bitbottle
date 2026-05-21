@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // PRLister lists pull requests.
 type PRLister interface {
 	ListPRs(ns, slug, state string, limit int) ([]PullRequest, error)
@@ -127,17 +125,7 @@ type PRCommentStateSetter interface {
 // *DomainError (Kind=ErrUnsupportedOnHost) when the backend has no task-state
 // primitive (currently Bitbucket Cloud).
 func AsPRCommentStateSetter(c Client, host string) (PRCommentStateSetter, error) {
-	r, ok := c.(PRCommentStateSetter)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeaturePRCommentStateSet),
-			Message: fmt.Sprintf("pr task resolve/reopen is not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return r, nil
+	return requireFeature[PRCommentStateSetter](c, host, specFor(FeaturePRCommentStateSet))
 }
 
 // PRCommentDeleter removes a comment from a pull request.
@@ -168,17 +156,7 @@ const FeaturePRCommentResolve Feature = "pr-comment-resolve"
 // *DomainError (Kind=ErrUnsupportedOnHost) when the backend at host has no
 // resolution primitive (currently Bitbucket Server / Data Center).
 func AsPRCommentResolver(c Client, host string) (PRCommentResolver, error) {
-	r, ok := c.(PRCommentResolver)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeaturePRCommentResolve),
-			Message: fmt.Sprintf("pr comment resolve is not supported on %s (Bitbucket Cloud only)", host),
-		}
-	}
-	return r, nil
+	return requireFeature[PRCommentResolver](c, host, specFor(FeaturePRCommentResolve))
 }
 
 // CommentReactor manages emoji reactions on pull-request comments.
@@ -198,17 +176,7 @@ const FeatureCommentReactions Feature = "pr-comment-reactions"
 // *DomainError (Kind=ErrUnsupportedOnHost) when the backend at host has no
 // reaction primitive (currently Bitbucket Cloud).
 func AsCommentReactor(c Client, host string) (CommentReactor, error) {
-	r, ok := c.(CommentReactor)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureCommentReactions),
-			Message: fmt.Sprintf("pr comment reactions are not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return r, nil
+	return requireFeature[CommentReactor](c, host, specFor(FeatureCommentReactions))
 }
 
 // PRBranchUpdater syncs a PR's source branch with its base branch.
@@ -230,15 +198,5 @@ const FeaturePRReopen Feature = "pr-reopen"
 // (Kind=ErrUnsupportedOnHost) when the backend at host has no reopen
 // primitive (currently Bitbucket Cloud).
 func AsPRReopener(c Client, host string) (PRReopener, error) {
-	r, ok := c.(PRReopener)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeaturePRReopen),
-			Message: fmt.Sprintf("pr reopen is not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return r, nil
+	return requireFeature[PRReopener](c, host, specFor(FeaturePRReopen))
 }

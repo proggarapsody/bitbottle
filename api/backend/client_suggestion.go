@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // SuggestionApplyResult is returned when a suggested change is successfully applied.
 type SuggestionApplyResult struct {
 	CommitHash    string
@@ -29,15 +27,5 @@ const FeaturePRSuggestion Feature = "pr-suggestion"
 // *DomainError (Kind=ErrUnsupportedOnHost) when the backend has no suggestion
 // apply primitive (currently Bitbucket Cloud).
 func AsSuggestionApplier(c Client, host string) (SuggestionApplier, error) {
-	r, ok := c.(SuggestionApplier)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeaturePRSuggestion),
-			Message: fmt.Sprintf("pr suggestion apply is not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return r, nil
+	return requireFeature[SuggestionApplier](c, host, specFor(FeaturePRSuggestion))
 }

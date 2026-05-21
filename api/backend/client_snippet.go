@@ -1,9 +1,6 @@
 package backend
 
-import (
-	"fmt"
-	"time"
-)
+import "time"
 
 // SnippetClient is implemented only by Bitbucket Cloud clients. Bitbucket
 // Server / Data Center has no snippets API, so the entire snippet surface is
@@ -21,17 +18,7 @@ const FeatureSnippets Feature = "snippets"
 // AsSnippetClient returns the SnippetClient view of c, or a typed *DomainError
 // (Kind=ErrUnsupportedOnHost) when called against a Server/DC backend.
 func AsSnippetClient(c Client, host string) (SnippetClient, error) {
-	sc, ok := c.(SnippetClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureSnippets),
-			Message: fmt.Sprintf("snippets are not supported on %s (Bitbucket Cloud only)", host),
-		}
-	}
-	return sc, nil
+	return requireFeature[SnippetClient](c, host, specFor(FeatureSnippets))
 }
 
 // Snippet is the domain representation of a Bitbucket Cloud snippet.

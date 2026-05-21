@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // DefaultReviewersResolver looks up the configured "default reviewers" for a
 // repository given a source/target ref pair. Only Bitbucket Server / Data
 // Center exposes this — Cloud has a similar feature with a different,
@@ -22,15 +20,5 @@ const FeatureDefaultReviewers Feature = "default-reviewers"
 // Cloud). Callers use the returned error to decide whether to skip the
 // auto-apply step entirely.
 func AsDefaultReviewersResolver(c Client, host string) (DefaultReviewersResolver, error) {
-	r, ok := c.(DefaultReviewersResolver)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureDefaultReviewers),
-			Message: fmt.Sprintf("default reviewers lookup is not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return r, nil
+	return requireFeature[DefaultReviewersResolver](c, host, specFor(FeatureDefaultReviewers))
 }

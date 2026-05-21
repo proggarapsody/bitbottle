@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // WorkspaceWebhookLister lists webhooks scoped to a workspace.
 type WorkspaceWebhookLister interface {
 	ListWorkspaceWebhooks(workspace string) ([]Webhook, error)
@@ -30,15 +28,5 @@ const FeatureWorkspaceWebhooks Feature = "workspace-webhooks"
 // AsWorkspaceWebhookClient returns the WorkspaceWebhookClient view of c,
 // or a typed *DomainError (ErrUnsupportedOnHost) if the backend is not Cloud.
 func AsWorkspaceWebhookClient(c Client, host string) (WorkspaceWebhookClient, error) {
-	wc, ok := c.(WorkspaceWebhookClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureWorkspaceWebhooks),
-			Message: fmt.Sprintf("workspace webhooks are not supported on %s (Bitbucket Cloud only)", host),
-		}
-	}
-	return wc, nil
+	return requireFeature[WorkspaceWebhookClient](c, host, specFor(FeatureWorkspaceWebhooks))
 }

@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // PRParticipantClient is implemented by both Cloud and Server backends.
 type PRParticipantClient interface {
 	ListPRParticipants(ns, slug string, prID int) ([]PRParticipant, error)
@@ -14,15 +12,5 @@ const FeaturePRParticipants Feature = "pr_participants"
 // *DomainError (Kind=ErrUnsupportedOnHost) if the backend at host does not
 // implement the PRParticipants capability.
 func AsPRParticipantClient(c Client, host string) (PRParticipantClient, error) {
-	pp, ok := c.(PRParticipantClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeaturePRParticipants),
-			Message: fmt.Sprintf("PR participants are not supported on %s", host),
-		}
-	}
-	return pp, nil
+	return requireFeature[PRParticipantClient](c, host, specFor(FeaturePRParticipants))
 }

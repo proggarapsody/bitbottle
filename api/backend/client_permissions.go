@@ -1,9 +1,6 @@
 package backend
 
-import (
-	"context"
-	"fmt"
-)
+import "context"
 
 // PermissionsClient exposes Bitbucket Server / Data Center permission
 // management for projects and repositories. Bitbucket Cloud has a different
@@ -26,15 +23,5 @@ const FeaturePermissions Feature = "permissions"
 // *DomainError (Kind=ErrUnsupportedOnHost) when called against a backend that
 // doesn't implement permissions management (currently Bitbucket Cloud).
 func AsPermissionsClient(c Client, host string) (PermissionsClient, error) {
-	pc, ok := c.(PermissionsClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeaturePermissions),
-			Message: fmt.Sprintf("permission management is not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return pc, nil
+	return requireFeature[PermissionsClient](c, host, specFor(FeaturePermissions))
 }

@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // RepoWatcherClient is implemented by both Cloud and Server backends.
 type RepoWatcherClient interface {
 	ListRepoWatchers(ns, slug string) ([]User, error)
@@ -14,15 +12,5 @@ const FeatureRepoWatchers Feature = "repo_watchers"
 // *DomainError (Kind=ErrUnsupportedOnHost) if the backend at host does not
 // implement the RepoWatchers capability.
 func AsRepoWatcherClient(c Client, host string) (RepoWatcherClient, error) {
-	rw, ok := c.(RepoWatcherClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureRepoWatchers),
-			Message: fmt.Sprintf("repo watchers are not supported on %s", host),
-		}
-	}
-	return rw, nil
+	return requireFeature[RepoWatcherClient](c, host, specFor(FeatureRepoWatchers))
 }

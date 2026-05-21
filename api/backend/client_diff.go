@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // DiffClient is implemented by both Cloud and Server backends.
 type DiffClient interface {
 	GetDiff(ns, slug, from, to string) (string, error)
@@ -15,15 +13,5 @@ const FeatureDiff Feature = "diff"
 // (Kind=ErrUnsupportedOnHost) if the backend at host does not implement the
 // Diff capability.
 func AsDiffClient(c Client, host string) (DiffClient, error) {
-	dc, ok := c.(DiffClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureDiff),
-			Message: fmt.Sprintf("diff is not supported on %s", host),
-		}
-	}
-	return dc, nil
+	return requireFeature[DiffClient](c, host, specFor(FeatureDiff))
 }
