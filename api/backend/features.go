@@ -44,6 +44,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "BranchModelClient",
+		HumanLabel:    "branching model",
+		Check:         func(c Client) bool { _, ok := c.(BranchModelClient); return ok },
+		Feature:       FeatureBranchModel,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "BranchRuleClient",
 		HumanLabel:    "branch restriction rules",
 		Plural:        true,

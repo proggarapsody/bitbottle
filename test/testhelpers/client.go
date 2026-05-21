@@ -186,6 +186,11 @@ type FakeClient struct {
 	GetMergeCheckFn     func(project, slug, key string) (backend.MergeCheck, error)
 	DeleteMergeCheckFn  func(project, slug, key string) error
 
+	// Branch model methods (Cloud-only; satisfies backend.BranchModelClient when set)
+	GetBranchModelFn            func(ws, slug string) (backend.BranchModel, error)
+	GetBranchModelSettingsFn    func(ws, slug string) (backend.BranchModelSettings, error)
+	UpdateBranchModelSettingsFn func(ws, slug string, in backend.BranchModelSettingsInput) (backend.BranchModelSettings, error)
+
 	// Branch rule methods (Cloud-only; satisfies backend.BranchRuleClient when set)
 	ListBranchRulesFn  func(ns, slug string) ([]backend.BranchRule, error)
 	AddBranchRuleFn    func(ns, slug string, input backend.BranchRuleInput) (backend.BranchRule, error)
@@ -264,6 +269,7 @@ var (
 
 	// Optional interfaces — FakeClient implements all of these.
 	_ backend.AdminClient              = (*FakeClient)(nil)
+	_ backend.BranchModelClient        = (*FakeClient)(nil)
 	_ backend.BranchProtector          = (*FakeClient)(nil)
 	_ backend.BranchRuleClient         = (*FakeClient)(nil)
 	_ backend.CodeInsightsClient       = (*FakeClient)(nil)
@@ -1403,6 +1409,36 @@ func (c *FakeClient) RevokeRepoPermission(ctx context.Context, project, slug str
 }
 
 // ── BranchRuleClient ─────────────────────────────────────────────────────────
+
+func (c *FakeClient) GetBranchModel(ws, slug string) (backend.BranchModel, error) {
+	if c.GetBranchModelFn != nil {
+		return c.GetBranchModelFn(ws, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetBranchModel; set GetBranchModelFn in your test")
+	}
+	return backend.BranchModel{}, nil
+}
+
+func (c *FakeClient) GetBranchModelSettings(ws, slug string) (backend.BranchModelSettings, error) {
+	if c.GetBranchModelSettingsFn != nil {
+		return c.GetBranchModelSettingsFn(ws, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetBranchModelSettings; set GetBranchModelSettingsFn in your test")
+	}
+	return backend.BranchModelSettings{}, nil
+}
+
+func (c *FakeClient) UpdateBranchModelSettings(ws, slug string, in backend.BranchModelSettingsInput) (backend.BranchModelSettings, error) {
+	if c.UpdateBranchModelSettingsFn != nil {
+		return c.UpdateBranchModelSettingsFn(ws, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdateBranchModelSettings; set UpdateBranchModelSettingsFn in your test")
+	}
+	return backend.BranchModelSettings{}, nil
+}
 
 func (c *FakeClient) ListBranchRules(ns, slug string) ([]backend.BranchRule, error) {
 	if c.ListBranchRulesFn != nil {

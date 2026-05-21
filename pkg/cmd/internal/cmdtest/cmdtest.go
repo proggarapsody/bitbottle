@@ -92,6 +92,12 @@ type NoSSHKeyFake struct {
 	backend.Client
 }
 
+// NoBranchModelFake wraps backend.Client without implementing
+// backend.BranchModelClient — simulates a Bitbucket Server backend.
+type NoBranchModelFake struct {
+	backend.Client
+}
+
 // NoBranchRuleFake wraps backend.Client without implementing
 // backend.BranchRuleClient — simulates a Bitbucket Server backend.
 type NoBranchRuleFake struct {
