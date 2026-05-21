@@ -71,17 +71,7 @@ const FeatureRepoFork Feature = "repo-fork"
 // (Kind=ErrUnsupportedOnHost) if the backend at host has no fork primitive
 // (Bitbucket Server / Data Center).
 func AsRepoForker(c Client, host string) (RepoForker, error) {
-	rf, ok := c.(RepoForker)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureRepoFork),
-			Message: "repo fork is not supported on " + host + " (Bitbucket Cloud only)",
-		}
-	}
-	return rf, nil
+	return requireFeature[RepoForker](c, host, specFor(FeatureRepoFork))
 }
 
 // RepoForksLister lists forks of a repository. Both Cloud and Server support this.
@@ -94,15 +84,5 @@ const FeatureRepoForks Feature = "repo-forks"
 
 // AsRepoForksLister returns the RepoForksLister view of c, or a typed *DomainError.
 func AsRepoForksLister(c Client, host string) (RepoForksLister, error) {
-	rfl, ok := c.(RepoForksLister)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureRepoForks),
-			Message: "repo fork list is not supported on " + host,
-		}
-	}
-	return rfl, nil
+	return requireFeature[RepoForksLister](c, host, specFor(FeatureRepoForks))
 }

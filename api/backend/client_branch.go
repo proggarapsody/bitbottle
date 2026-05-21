@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // BranchLister lists branches in a repository.
 type BranchLister interface {
 	ListBranches(ns, slug string, limit int) ([]Branch, error)
@@ -35,15 +33,5 @@ const FeatureBranchProtect Feature = "branch-protect"
 // *DomainError (Kind=ErrUnsupportedOnHost) when called against a backend
 // that doesn't model branch protections (currently Cloud).
 func AsBranchProtector(c Client, host string) (BranchProtector, error) {
-	bp, ok := c.(BranchProtector)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureBranchProtect),
-			Message: fmt.Sprintf("branch protection is not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return bp, nil
+	return requireFeature[BranchProtector](c, host, specFor(FeatureBranchProtect))
 }

@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // CodeInsightsClient exposes Bitbucket Server / Data Center Code Insights
 // management. Cloud has no native equivalent — AsCodeInsightsClient returns
 // ErrUnsupportedOnHost when called against a Cloud backend.
@@ -37,15 +35,5 @@ const FeatureCodeInsights Feature = "code-insights"
 // *DomainError (Kind=ErrUnsupportedOnHost) when called against a backend that
 // doesn't implement Code Insights (currently Bitbucket Cloud).
 func AsCodeInsightsClient(c Client, host string) (CodeInsightsClient, error) {
-	ci, ok := c.(CodeInsightsClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureCodeInsights),
-			Message: fmt.Sprintf("code insights is not supported on %s (Bitbucket Server / Data Center only)", host),
-		}
-	}
-	return ci, nil
+	return requireFeature[CodeInsightsClient](c, host, specFor(FeatureCodeInsights))
 }

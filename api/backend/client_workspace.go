@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // WorkspaceClient is implemented only by Bitbucket Cloud clients. Bitbucket
 // Server / Data Center has no workspace concept — its projects live directly
 // under the instance — so the workspace and project list operations are
@@ -19,15 +17,5 @@ const FeatureWorkspaces Feature = "workspaces"
 // *DomainError (Kind=ErrUnsupportedOnHost) if the backend at host does not
 // support workspaces.
 func AsWorkspaceClient(c Client, host string) (WorkspaceClient, error) {
-	wc, ok := c.(WorkspaceClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureWorkspaces),
-			Message: fmt.Sprintf("workspaces are not supported on %s (Bitbucket Cloud only)", host),
-		}
-	}
-	return wc, nil
+	return requireFeature[WorkspaceClient](c, host, specFor(FeatureWorkspaces))
 }

@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // DeploymentClient is implemented by Cloud only; Server returns ErrUnsupportedOnHost.
 type DeploymentClient interface {
 	ListDeployments(ns, slug string, limit int) ([]Deployment, error)
@@ -23,15 +21,5 @@ const FeatureDeployments Feature = "deployments"
 // *DomainError (Kind=ErrUnsupportedOnHost) if the backend at host does not
 // implement the Deployments capability.
 func AsDeploymentClient(c Client, host string) (DeploymentClient, error) {
-	dc, ok := c.(DeploymentClient)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureDeployments),
-			Message: fmt.Sprintf("deployments are not supported on %s (Bitbucket Cloud only)", host),
-		}
-	}
-	return dc, nil
+	return requireFeature[DeploymentClient](c, host, specFor(FeatureDeployments))
 }

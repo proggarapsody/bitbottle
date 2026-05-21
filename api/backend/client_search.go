@@ -1,7 +1,5 @@
 package backend
 
-import "fmt"
-
 // CodeSearcher performs workspace-scoped code search on Bitbucket Cloud.
 // Bitbucket Server / Data Center does not expose a first-class REST code-
 // search endpoint (search there is provided by the separate Sourcegraph
@@ -21,15 +19,5 @@ const FeatureCodeSearch Feature = "code-search"
 // (Kind=ErrUnsupportedOnHost) when called against a backend that doesn't
 // model code search (currently Server/DC).
 func AsCodeSearcher(c Client, host string) (CodeSearcher, error) {
-	cs, ok := c.(CodeSearcher)
-	if !ok {
-		return nil, &DomainError{
-			Kind:    ErrUnsupportedOnHost,
-			Code:    CodeHostUnsupported,
-			Host:    host,
-			Feature: string(FeatureCodeSearch),
-			Message: fmt.Sprintf("code search is not supported on %s (Bitbucket Cloud only)", host),
-		}
-	}
-	return cs, nil
+	return requireFeature[CodeSearcher](c, host, specFor(FeatureCodeSearch))
 }
