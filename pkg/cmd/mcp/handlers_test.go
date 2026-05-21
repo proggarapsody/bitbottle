@@ -3207,11 +3207,12 @@ func TestDownloadPipelineArtifact_ReturnsBase64Content(t *testing.T) {
 
 func TestDownloadPipelineArtifact_LargeFile_ReturnsError(t *testing.T) {
 	t.Parallel()
+	const sixMB = 6 * 1024 * 1024
 	fake := &testhelpers.FakeClient{
-		ListPipelineArtifactsFn: func(ws, slug, pipelineUUID, stepUUID string, limit int) ([]backend.PipelineArtifact, error) {
-			return []backend.PipelineArtifact{
-				{Name: "huge.tar.gz", SizeBytes: 6 * 1024 * 1024, URL: "https://dl/huge.tar.gz"},
-			}, nil
+		T: t,
+		DownloadPipelineArtifactFn: func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error {
+			_, err := out.Write(make([]byte, sixMB))
+			return err
 		},
 	}
 	h := newHandlersWithFake(t, singleHostConfig, fake)
@@ -3223,7 +3224,7 @@ func TestDownloadPipelineArtifact_LargeFile_ReturnsError(t *testing.T) {
 		"name":          "huge.tar.gz",
 	}))
 	require.NoError(t, err)
-	assertErrorResult(t, result, "use `pipeline artifact download --out PATH` instead")
+	assertErrorResult(t, result, "use pipeline artifact download --out PATH instead")
 }
 
 func TestDownloadPipelineArtifact_NotCloudCapable_ReturnsError(t *testing.T) {

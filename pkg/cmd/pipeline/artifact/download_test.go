@@ -2,6 +2,8 @@ package artifact_test
 
 import (
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -152,4 +154,58 @@ func TestDownload_DownloadError_ReturnsError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.True(t, strings.Contains(err.Error(), "artifact not found") || strings.Contains(err.Error(), "not found"))
+}
+
+func TestDownload_ExistingFile_WithoutClobber_ReturnsError(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	existing := filepath.Join(dir, "build.zip")
+	require.NoError(t, os.WriteFile(existing, []byte("old"), 0o644))
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		DownloadPipelineArtifactFn: func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error {
+			_, err := io.WriteString(out, "new")
+			return err
+		},
+	}
+	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := artifact.NewCmdDownload(f, func(opts *artifact.DownloadOptions) error {
+		// Override dest to use temp dir path
+		opts.Out = ""
+		opts.Name = existing
+		opts.Clobber = false
+		return artifact.RunDownload(f, opts)
+	})
+	cmd.SetArgs([]string{"pipe-uuid", "myws/repo", "--step", "s", "--name", "build.zip"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
+}
+
+func TestDownload_ExistingFile_WithClobber_Succeeds(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	existing := filepath.Join(dir, "build.zip")
+	require.NoError(t, os.WriteFile(existing, []byte("old"), 0o644))
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		DownloadPipelineArtifactFn: func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error {
+			_, err := io.WriteString(out, "new-content")
+			return err
+		},
+	}
+	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := artifact.NewCmdDownload(f, func(opts *artifact.DownloadOptions) error {
+		opts.Out = ""
+		opts.Name = existing
+		opts.Clobber = true
+		return artifact.RunDownload(f, opts)
+	})
+	cmd.SetArgs([]string{"pipe-uuid", "myws/repo", "--step", "s", "--name", "build.zip", "--clobber"})
+	require.NoError(t, cmd.Execute())
+	got, err := os.ReadFile(existing)
+	require.NoError(t, err)
+	assert.Equal(t, "new-content", string(got))
 }

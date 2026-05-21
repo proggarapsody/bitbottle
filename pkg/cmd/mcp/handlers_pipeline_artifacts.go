@@ -76,7 +76,6 @@ func (h *handlers) downloadPipelineArtifact(_ context.Context, req mcplib.CallTo
 		return errResultErr(err), nil
 	}
 
-	// Check artifact size first by listing artifacts.
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
 		return errResultErr(err), nil
@@ -86,23 +85,15 @@ func (h *handlers) downloadPipelineArtifact(_ context.Context, req mcplib.CallTo
 		return errResultErr(err), nil
 	}
 
-	// List artifacts to find the size of the requested artifact.
-	artifacts, err := ac.ListPipelineArtifacts(project, slug, pipelineUUID, stepUUID, 100)
-	if err != nil {
-		return errResultErr(err), nil
-	}
-	for _, a := range artifacts {
-		if a.Name == name && a.SizeBytes > artifactSizeWarningBytes {
-			return errResult(fmt.Sprintf(
-				"artifact %q is %.1f MB; use `pipeline artifact download --out PATH` instead",
-				name, float64(a.SizeBytes)/float64(1024*1024),
-			)), nil
-		}
-	}
-
 	var buf bytes.Buffer
 	if err := ac.DownloadPipelineArtifact(project, slug, pipelineUUID, stepUUID, name, &buf); err != nil {
 		return errResultErr(err), nil
+	}
+	if buf.Len() > artifactSizeWarningBytes {
+		return errResult(fmt.Sprintf(
+			"artifact %s is too large (%d bytes) for MCP download; use pipeline artifact download --out PATH instead",
+			name, buf.Len(),
+		)), nil
 	}
 
 	return jsonResult(map[string]any{

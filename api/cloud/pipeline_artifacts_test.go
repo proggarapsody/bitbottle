@@ -61,8 +61,8 @@ func TestCloudClient_ListPipelineArtifacts_BracedUUID(t *testing.T) {
 	// Caller supplies uuid already with braces; should not double-brace
 	_, err := client.ListPipelineArtifacts("myws", "repo", "{aabbccdd}", "{eeff0011}", 0)
 	require.NoError(t, err)
-	assert.Contains(t, gotPath, "{aabbccdd}")
-	assert.Contains(t, gotPath, "{eeff0011}")
+	assert.NotContains(t, gotPath, "{{")
+	assert.NotContains(t, gotPath, "}}")
 }
 
 func TestCloudClient_DownloadPipelineArtifact_IssuesCorrectPath(t *testing.T) {

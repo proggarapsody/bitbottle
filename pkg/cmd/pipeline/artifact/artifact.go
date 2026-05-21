@@ -11,7 +11,7 @@ import (
 func NewCmdArtifact(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "artifact",
-		Short: "Manage pipeline artifacts",
+		Short: "List and download pipeline artifacts",
 		Annotations: map[string]string{
 			"help:arguments": `A repository can be supplied as WORKSPACE/REPO. When omitted, the
 repository is inferred from the "origin" git remote in the current

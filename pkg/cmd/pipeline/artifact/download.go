@@ -18,6 +18,7 @@ type DownloadOptions struct {
 	StepUUID     string
 	Name         string
 	Out          string
+	Clobber      bool
 	Args         []string
 }
 
@@ -34,7 +35,7 @@ func NewCmdDownload(f *factory.Factory, runF func(*DownloadOptions) error) *cobr
 			if runF != nil {
 				return runF(opts)
 			}
-			return downloadRun(f, opts)
+			return RunDownload(f, opts)
 		},
 	}
 	cmd.Flags().StringVar(&opts.StepUUID, "step", "", "Step UUID (required)")
@@ -42,11 +43,13 @@ func NewCmdDownload(f *factory.Factory, runF func(*DownloadOptions) error) *cobr
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Artifact name (required)")
 	_ = cmd.MarkFlagRequired("name")
 	cmd.Flags().StringVar(&opts.Out, "out", "", `Output path ("-" for stdout, default: artifact name in current directory)`)
+	cmd.Flags().BoolVar(&opts.Clobber, "clobber", false, "Overwrite existing file without error")
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }
 
-func downloadRun(f *factory.Factory, opts *DownloadOptions) error {
+// RunDownload executes the download logic. Exported for testing.
+func RunDownload(f *factory.Factory, opts *DownloadOptions) error {
 	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
 	if err != nil {
 		return err
@@ -69,6 +72,11 @@ func downloadRun(f *factory.Factory, opts *DownloadOptions) error {
 		dest = ""
 	case "":
 		dest = opts.Name
+		if !opts.Clobber {
+			if _, err := os.Stat(dest); err == nil {
+				return fmt.Errorf("%s already exists; use --out PATH to write elsewhere or --clobber to overwrite", dest)
+			}
+		}
 		fh, err := os.Create(dest)
 		if err != nil {
 			return fmt.Errorf("create %s: %w", dest, err)
