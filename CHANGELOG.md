@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.92.0](https://github.com/proggarapsody/bitbottle/compare/v1.91.0...v1.92.0) (2026-05-21)
+
+
+### Features
+
+* **branch-model:** add branch-model get/set commands and MCP tools ([570654f](https://github.com/proggarapsody/bitbottle/commit/570654f02e612f570fc0b3197231def80d406692))
+
 ## [1.91.0](https://github.com/proggarapsody/bitbottle/compare/v1.90.0...v1.91.0) (2026-05-21)
 
 
