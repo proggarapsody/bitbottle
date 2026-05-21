@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.91.0](https://github.com/proggarapsody/bitbottle/compare/v1.90.0...v1.91.0) (2026-05-21)
+
+
+### Features
+
+* **snippets:** add snippet list/view/create/delete commands for Cloud snippets ([1ae30fb](https://github.com/proggarapsody/bitbottle/commit/1ae30fbc04ca4a2a5dd649062108ad3da94e413f))
+
 ## [1.90.0](https://github.com/proggarapsody/bitbottle/compare/v1.89.0...v1.90.0) (2026-05-21)
 
 
