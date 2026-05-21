@@ -125,3 +125,30 @@ func TestCloudClient_RunPipeline_PostsCorrectBody(t *testing.T) {
 	assert.Equal(t, "branch", target["ref_type"])
 	assert.Equal(t, "main", target["ref_name"])
 }
+
+func TestCloudClient_StopPipeline_Success(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	err := client.StopPipeline("myworkspace", "my-service", "aabbccdd-1234-5678-abcd-000000000001")
+	require.NoError(t, err)
+	assert.Equal(t, http.MethodPost, gotMethod)
+	assert.Equal(t, "/repositories/myworkspace/my-service/pipelines/{aabbccdd-1234-5678-abcd-000000000001}/stopPipeline", gotPath)
+}
+
+func TestCloudClient_StopPipeline_Error(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	err := client.StopPipeline("myworkspace", "my-service", "aabbccdd-1234-5678-abcd-000000000001")
+	require.Error(t, err)
+}
