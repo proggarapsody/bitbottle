@@ -446,6 +446,11 @@ Current state of every command area against gh feature parity:
 | ERR-EMPTY-400 | **Stamp `Code` on bare 400/422 responses** | `api/internal/httpx/httpx.go:364-385` → `backend.ClassifyHTTPError` at `api/backend/errors.go:206-243` already maps 401/403/404/409/5xx to a `Kind`, but only 401 gets an auto-`Code` (`CodeAuthInvalidToken`). A 400 / 422 with an empty response body therefore has `Kind: ""`, `Code: ""` and falls through to the catch-all errfmt fallback — agents and scripts see "HTTP 400: Bad Request" with no actionable hint. Fix: add `Kind: ErrInvalidRequest` + `Code: CodeInvalidRequest` for 400/422 in `ClassifyHTTPError`, register a catalogue entry, and let adapters override via `StampCode` when they have a more specific reason. | N/A | DX | ✅ |
 | SCORECARD-PUSH | **OpenSSF Scorecard score push** | Bundle four reachable Scorecard wins into one mega-PR: (1) Token-Permissions — push `contents:write` / `pull-requests:write` from workflow-root to job-level on `release.yml`, `release-please.yml`, `dependabot-auto-merge.yml`; (2) Security-Policy — add `SECURITY.md` pointing at GitHub Private Vulnerability Reporting (PVR toggle flipped manually in repo settings); (3) SAST — `.github/workflows/codeql.yml` for Go (autobuild, push+PR+weekly cron, SARIF upload to Security tab); (4) Signed-Releases — GoReleaser cosign keyless signing of checksums, SLSA provenance via `slsa-github-generator` reusable workflow, `npm publish --provenance` for the npm wrapper. Code-Review (0), Contributors (0), Maintained (0, time-fixed) are knowingly capped — no fix in this scope. Projected: 4.9 → ~7.5+. — scope **SCORECARD-PUSH** | N/A | DX | ✅ |
 | OSSF-BADGE | **OpenSSF Best Practices (CII) badge** | Apply at `https://www.bestpractices.dev` for the passing badge. Form-based; questions cover CI, license, security policy, signed releases — most answer "yes" once **SCORECARD-PUSH** lands. ~1h of form-filling + weeks of async review. Add the earned badge to README on receipt. Drives Scorecard's `CII-Best-Practices` check from 0 → passing. — scope **OSSF-BADGE** | N/A | DX | 🔲 |
+| REPO-EDIT | **Repository metadata edit** | `repo edit [PROJECT/REPO] --description STR --website URL --language LANG [--enable-issues] [--disable-wiki]` — update mutable repository fields without a rename or visibility toggle. Cloud: `PUT /repositories/{ws}/{slug}` accepts `description`, `website`, `language`, `fork_policy`, `has_issues`, `has_wiki`. Server: `PUT /rest/api/1.0/projects/{ns}/repos/{slug}` accepts `description` only (other fields return typed `host.unsupported`). New optional interface `RepoEditor` with `EditRepo(ns, slug string, in EditRepoInput) (Repository, error)`; `EditRepoInput` uses `*string`/`*bool` nullable pointer fields. MCP tool `edit_repo`. Complements `repo rename`, `repo visibility`, `repo set-default-branch` — together covers `gh repo edit`. | Both | 2 | 🔲 |
+| PIPE-STOP | **Pipeline stop** | `pipeline stop PIPELINE_UUID [PROJECT/REPO] [--confirm]` — stop a running Cloud pipeline. Cloud: `POST /repositories/{ws}/{slug}/pipelines/{uuid}/stopPipeline` (empty body, 204). Server: typed `host.unsupported`. New method `StopPipeline(ws, slug, uuid string) error` on the existing `PipelineClient` interface (cloud-only capability pattern). MCP tool `stop_pipeline`. Pairs with `pipeline trigger` + `pipeline watch` to give agents full lifecycle control — trigger, observe, abort. `--confirm` required on non-TTY to prevent accidental stops. | Cloud | 2 | 🔲 |
+| SNIPPETS | **Cloud Snippets (gist parity)** | `snippet list/view/create/delete` — Bitbucket Cloud's gist equivalent. Cloud: `GET /snippets/{workspace}` (list, paginated), `GET /snippets/{workspace}/{id}` (view), `POST /snippets/{workspace}` (multipart: `title` + `is_private` + file parts), `DELETE /snippets/{workspace}/{id}`. New optional interface `SnippetClient` with `ListSnippets`, `GetSnippet`, `CreateSnippet`, `DeleteSnippet`. Domain type `Snippet{ID, Title, Owner, IsPrivate, CreatedOn, Files []SnippetFile, WebURL}`. MCP tools `list_snippets`, `view_snippet`, `create_snippet`, `delete_snippet`. Server returns `host.unsupported`. | Cloud | 3 | 🔲 |
+| BRANCH-MODEL | **Cloud branching model** | `branch-model get [PROJECT/REPO]` and `branch-model set [PROJECT/REPO] --dev-branch NAME --prod-branch NAME [--prod-enabled] [--branch-type-prefix feature=feat/,hotfix=hf/]` — read and update the per-repo branching model (development/production branch + branch-type naming prefixes used by Bitbucket's in-UI "Create branch" wizard). Cloud: `GET /repositories/{ws}/{slug}/branching-model`, `GET/PUT /repositories/{ws}/{slug}/branching-model/settings`. Server returns `host.unsupported`. New optional interface `BranchModelClient` with `GetBranchModel`, `GetBranchModelSettings`, `UpdateBranchModelSettings`. MCP tools `get_branch_model`, `set_branch_model`. Distinct from BRANCH-RULE (restrictions); this controls the naming convention layer. | Cloud | 2 | 🔲 |
+| PIPE-ARTIFACTS | **Pipeline artifacts** | `pipeline artifact list PIPELINE_UUID --step STEP_UUID [PROJECT/REPO]` and `pipeline artifact download PIPELINE_UUID --step STEP_UUID --name FILE [--out PATH]` — list and download per-step build artifacts declared via `artifacts:` in `bitbucket-pipelines.yml`. Cloud: `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/artifacts` (paginated list), `GET` against `links.self.href` (binary download). New optional interface `PipelineArtifactClient` with `ListPipelineArtifacts` and `DownloadPipelineArtifact(…, out io.Writer) error`. Domain type `PipelineArtifact{Name, SizeBytes, URL}`. MCP tools `list_pipeline_artifacts`, `download_pipeline_artifact` (base64 envelope). Closes a real agent gap: today agents that trigger pipelines cannot retrieve their outputs without raw `api` calls. | Cloud | 2 | 🔲 |
 | PR-UNREADY | **Promote PR back to draft** | `pr unready PR_ID` (alias `pr ready --undo`) — convert an open PR back to draft state. Cloud: `PUT /repositories/{ws}/{slug}/pullrequests/{id}` with `{"draft": true}`. Server: marks the PR as draft via `PUT /rest/api/1.0/.../pull-requests/{id}` body `{"draft": true}` (Server 8.0+). Companion to existing `pr ready`. Both backends, with version probe on Server. Gap vs `bkt pr publish --undo`. | Both | 3 | ✅ |
 | PR-EDIT-REVIEWER-RM | **Remove reviewers via `pr edit`** | `pr edit PR_ID --remove-reviewer USER` (repeatable) — drop reviewers from an open PR without rebuilding the full list. Today `pr request-review` only adds; removal requires raw API. Cloud: read current reviewers, `PUT /pullrequests/{id}` with filtered `reviewers` array. Server: `DELETE /rest/api/1.0/.../pull-requests/{id}/participants/{userSlug}` per removed user. Both backends. Gap vs `bkt pr edit --remove-reviewer`. | Both | 3 | ✅ |
 | CMD-SUBPKG | **Subpackage-per-verb command layout** | `pkg/cmd/pr/` is a flat package with **78 files** (`list.go`, `view.go`, `comment.go` at 15 KB, `comment_test.go` at 19 KB, …). gh's canonical layout is `pkg/cmd/pr/<verb>/<verb>.go` (gh's `pkg/cmd/pr/` has 17 subdirs, each its own package). The flat layout invites accidental coupling between sibling commands (private helpers leak across verbs), bloats per-command test files, and produces merge conflicts on package-level state. Migrate the largest cmd groups (`pr/`, `repo/`, `pipeline/`) to `<group>/<verb>/<verb>.go` with shared helpers in `<group>/shared/`. Mechanical refactor; one PR per group. Pairs with the `REGISTRY-FINISH` cmdregistry migration. | N/A | DX | ✅ |
@@ -2721,6 +2726,177 @@ Print `"already up to date"` if version matches.
 - [ ] Badge granted (passing tier or higher).
 - [ ] Badge added to README.md.
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `chore(readme)` commit that adds the badge.
+
+---
+
+### REPO-EDIT — Repository metadata edit
+
+**Status:** 🔲
+
+Update mutable repository fields — description, website, language, fork policy, issues/wiki toggles — without performing a rename or visibility toggle. Complements the existing `repo rename`, `repo visibility`, and `repo set-default-branch` commands to cover full parity with `gh repo edit`.
+
+**Interface:**
+```go
+type RepoEditor interface {
+    EditRepo(ns, slug string, in EditRepoInput) (Repository, error)
+}
+type EditRepoInput struct {
+    Description *string
+    Website     *string
+    Language    *string
+    ForkPolicy  *string
+    HasIssues   *bool
+    HasWiki     *bool
+}
+```
+
+**Commands:** `repo edit [PROJECT/REPO] --description STR --website URL --language LANG --fork-policy POLICY --enable-issues --disable-issues --enable-wiki --disable-wiki`
+
+**Backends:** Cloud (`PUT /repositories/{ws}/{slug}` — all fields); Server (`PUT /rest/api/1.0/projects/{ns}/repos/{slug}` — `description` only; other fields return typed `host.unsupported` with `field=website` etc.).
+
+**MCP tools:** `edit_repo`
+
+**Definition of Done:**
+- [ ] `api/backend/client_repo_edit.go` — `RepoEditor` interface + `EditRepoInput`
+- [ ] `api/cloud/repo_edit.go` + `api/cloud/repo_edit_test.go`
+- [ ] `api/server/repo_edit.go` + `api/server/repo_edit_test.go` (description only; other fields → `host.unsupported`)
+- [ ] `pkg/cmd/repo/edit/edit.go` + `pkg/cmd/repo/edit/edit_test.go`
+- [ ] `pkg/cmd/mcp/tools_repo.go` entry + `pkg/cmd/mcp/handlers.go` method + `pkg/cmd/mcp/handlers_test.go` test
+- [ ] `skills/SKILL.md` + `skills/references/repo.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PIPE-STOP — Pipeline stop
+
+**Status:** 🔲
+
+Stop a running or pending Cloud pipeline. Useful for agents that trigger pipelines via `pipeline trigger`, watch them, and need to abort on undesired behaviour. `--confirm` required on non-TTY to prevent accidental stops.
+
+**Interface method** (extension of existing `PipelineClient`):
+```go
+StopPipeline(ws, slug, pipelineUUID string) error
+```
+
+**Commands:** `pipeline stop PIPELINE_UUID [PROJECT/REPO] [--confirm]`
+
+**Backends:** Cloud only (`POST /repositories/{ws}/{slug}/pipelines/{uuid}/stopPipeline`, empty body, 204). Server returns typed `host.unsupported`.
+
+**MCP tools:** `stop_pipeline`
+
+**Definition of Done:**
+- [ ] `StopPipeline` added to `PipelineClient` interface in `api/backend/client_pipeline.go`
+- [ ] `api/cloud/pipelines.go` — `StopPipeline` impl + test
+- [ ] `api/server/pipelines.go` — `StopPipeline` → `host.unsupported` + test
+- [ ] `pkg/cmd/pipeline/stop/stop.go` + test
+- [ ] MCP triplet
+- [ ] `skills/SKILL.md` + `skills/references/pipeline.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### SNIPPETS — Cloud Snippets (gist parity)
+
+**Status:** 🔲
+
+Bitbucket Cloud's analogue of GitHub Gists. Snippets let users share short code or text files with optional privacy. Server has no primitive.
+
+**Interface:**
+```go
+type SnippetClient interface {
+    ListSnippets(workspace string, limit int) ([]Snippet, error)
+    GetSnippet(workspace, id string) (Snippet, error)
+    CreateSnippet(workspace string, in CreateSnippetInput) (Snippet, error)
+    DeleteSnippet(workspace, id string) error
+}
+type Snippet struct {
+    ID, Title, Owner string
+    IsPrivate        bool
+    CreatedOn        time.Time
+    Files            []SnippetFile
+    WebURL           string
+}
+```
+
+**Commands:** `snippet list [--workspace W] [--json]`, `snippet view ID`, `snippet create --title T --file PATH[,PATH...] [--private]`, `snippet delete ID [--confirm]`
+
+**Backends:** Cloud (`GET/POST/DELETE /snippets/{workspace}`, `GET /snippets/{workspace}/{id}`). Server → `host.unsupported`.
+
+**MCP tools:** `list_snippets`, `view_snippet`, `create_snippet`, `delete_snippet`
+
+**Definition of Done:**
+- [ ] `api/backend/client_snippet.go` — `SnippetClient`, `Snippet`, `SnippetFile`, `CreateSnippetInput`
+- [ ] `api/cloud/snippets.go` + `api/cloud/snippets_test.go`
+- [ ] `pkg/cmd/snippet/` (list, view, create, delete) + tests
+- [ ] MCP quadruplet
+- [ ] `skills/SKILL.md` + `skills/references/snippet.md`
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### BRANCH-MODEL — Cloud branching model
+
+**Status:** 🔲
+
+Read and update a repository's branching model — the development/production branch configuration and branch-type naming prefixes used by Bitbucket's in-UI "Create branch" wizard and by `pipelines.yml` `branches:` triggers. Distinct from BRANCH-RULE (which controls restrictions/enforcement policies).
+
+**Interface:**
+```go
+type BranchModelClient interface {
+    GetBranchModel(ws, slug string) (BranchModel, error)
+    GetBranchModelSettings(ws, slug string) (BranchModelSettings, error)
+    UpdateBranchModelSettings(ws, slug string, in BranchModelSettingsInput) (BranchModelSettings, error)
+}
+```
+
+**Commands:** `branch-model get [PROJECT/REPO] [--json]`, `branch-model set [PROJECT/REPO] --dev-branch NAME --prod-branch NAME [--prod-enabled] [--branch-type-prefix feature=feat/,hotfix=hf/]`
+
+**Backends:** Cloud (`GET /repositories/{ws}/{slug}/branching-model`, `GET/PUT /repositories/{ws}/{slug}/branching-model/settings`). Server → `host.unsupported`.
+
+**MCP tools:** `get_branch_model`, `set_branch_model`
+
+**Definition of Done:**
+- [ ] `api/backend/client_branch_model.go`
+- [ ] `api/cloud/branch_model.go` + `api/cloud/branch_model_test.go`
+- [ ] `pkg/cmd/branch-model/` (get, set) + tests
+- [ ] MCP pair
+- [ ] `skills/SKILL.md` + `skills/references/branch.md`
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PIPE-ARTIFACTS — Pipeline artifacts
+
+**Status:** 🔲
+
+List and download per-step build artifacts declared via `artifacts:` in `bitbucket-pipelines.yml`. Today agents that trigger pipelines via `pipeline trigger` cannot retrieve their outputs without raw `api` calls — this closes that gap.
+
+**Interface:**
+```go
+type PipelineArtifactClient interface {
+    ListPipelineArtifacts(ws, slug, pipelineUUID, stepUUID string, limit int) ([]PipelineArtifact, error)
+    DownloadPipelineArtifact(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error
+}
+type PipelineArtifact struct {
+    Name      string
+    SizeBytes int64
+    URL       string
+}
+```
+
+**Commands:** `pipeline artifact list PIPELINE_UUID --step STEP_UUID [PROJECT/REPO] [--json]`, `pipeline artifact download PIPELINE_UUID --step STEP_UUID --name FILE [--out PATH]` (defaults to filename in cwd; `--out -` for stdout)
+
+**Backends:** Cloud (`GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/artifacts`, download via `links.self.href`). Server → `host.unsupported`.
+
+**MCP tools:** `list_pipeline_artifacts`, `download_pipeline_artifact` (base64 envelope for small files)
+
+**Definition of Done:**
+- [ ] `api/backend/client_pipeline_artifacts.go`
+- [ ] `api/cloud/pipeline_artifacts.go` + `api/cloud/pipeline_artifacts_test.go`
+- [ ] `pkg/cmd/pipeline/artifact/` (list, download) + tests
+- [ ] MCP pair
+- [ ] `skills/SKILL.md` + `skills/references/pipeline.md`
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---
 
