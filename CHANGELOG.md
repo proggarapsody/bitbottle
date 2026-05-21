@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.90.0](https://github.com/proggarapsody/bitbottle/compare/v1.89.0...v1.90.0) (2026-05-21)
+
+
+### Features
+
+* **pipeline:** add `pipeline stop` command to stop running pipelines ([b99ce0f](https://github.com/proggarapsody/bitbottle/commit/b99ce0f40aaef24c8170c1f62baf74c75fe12880))
+
 ## [1.89.0](https://github.com/proggarapsody/bitbottle/compare/v1.88.0...v1.89.0) (2026-05-21)
 
 
