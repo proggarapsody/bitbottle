@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.89.0](https://github.com/proggarapsody/bitbottle/compare/v1.88.0...v1.89.0) (2026-05-21)
+
+
+### Features
+
+* **repo-edit:** add `repo edit` command for updating repository metadata ([579a8aa](https://github.com/proggarapsody/bitbottle/commit/579a8aa2e8cbb66bf97f1fb5b6848f1eafb5bf09))
+
 ## [1.88.0](https://github.com/proggarapsody/bitbottle/compare/v1.87.0...v1.88.0) (2026-05-20)
 
 
