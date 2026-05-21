@@ -1,17 +1,15 @@
 package auth
 
 import (
-	"context"
+	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/internal/bbinstance"
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -92,43 +90,31 @@ func runDoctor(f *factory.Factory, hostnameFlag string) error {
 		})
 	}
 
-	// 4. Connectivity — unauthenticated GET to the API base URL
-	isCloud := bbinstance.IsCloud(host, hostCfg.BackendType)
-	var apiBase string
-	if isCloud {
-		apiBase = bbinstance.CloudRESTBase()
-	} else {
-		apiBase = bbinstance.RESTBase(host)
+	// 4+5. Single backend call covers both reachability and auth.
+	// GetCurrentUser acts as the probe: transport errors → unreachable,
+	// ErrAuth → reachable but token invalid, nil → fully authenticated.
+	client, clientErr := f.Backend(host)
+	if clientErr != nil {
+		return fmt.Errorf("auth doctor: failed to build backend client: %w", clientErr)
 	}
 
-	hc, err := f.HTTPClient(host)
-	if err != nil {
-		return fmt.Errorf("auth doctor: failed to build HTTP client: %w", err)
-	}
-
-	reachable, reachDetail := checkReachability(hc, apiBase)
-	reachCheck := doctorCheck{
-		label:  "reachable",
-		passed: reachable,
-		detail: reachDetail,
-	}
-	if !reachable {
-		allPassed = false
-	}
-	checks = append(checks, reachCheck)
-
-	// 5. Auth round-trip — authenticated GET /user or GET /rest/api/1.0/users/{slug}
 	if tokenStored {
-		authed, authDetail := checkAuthRoundTrip(hc, host, hostCfg.User, token, isCloud)
-		authCheck := doctorCheck{
-			label:  "authenticated",
-			passed: authed,
-			detail: authDetail,
-		}
-		if !authed {
+		reachCheck, authCheck, passed := probeViaGetCurrentUser(client)
+		if !passed {
 			allPassed = false
 		}
-		checks = append(checks, authCheck)
+		checks = append(checks, reachCheck, authCheck)
+	} else {
+		// No token — still attempt a reachability probe (GetCurrentUser will
+		// return ErrAuth since the backend uses a placeholder token, which still
+		// means the host is reachable).
+		reachCheck, _, _ := probeViaGetCurrentUser(client)
+		checks = append(checks, reachCheck)
+		checks = append(checks, doctorCheck{
+			label:  "authenticated",
+			passed: false,
+			detail: "(skipped — no token)",
+		})
 	}
 
 	// Output
@@ -142,6 +128,45 @@ func runDoctor(f *factory.Factory, hostnameFlag string) error {
 		return fmt.Errorf("auth doctor: one or more checks failed")
 	}
 	return nil
+}
+
+// probeViaGetCurrentUser calls GetCurrentUser on the backend client and
+// returns (reachCheck, authCheck, allPassed). It interprets the result as:
+//   - nil error       → reachable: yes, authenticated: yes
+//   - ErrTransport    → reachable: no, authenticated: unknown
+//   - ErrAuth         → reachable: yes, authenticated: no (auth error)
+//   - other DomainErr → reachable: yes, authenticated: no (<msg>)
+//   - plain error     → reachable: unknown, authenticated: no
+func probeViaGetCurrentUser(client backend.UserGetter) (reachCheck, authCheck doctorCheck, allPassed bool) {
+	_, err := client.GetCurrentUser()
+	if err == nil {
+		return doctorCheck{label: "reachable", passed: true, detail: "yes"},
+			doctorCheck{label: "authenticated", passed: true, detail: "yes"},
+			true
+	}
+
+	var de *backend.DomainError
+	if errors.As(err, &de) {
+		switch {
+		case errors.Is(de.Kind, backend.ErrTransport):
+			return doctorCheck{label: "reachable", passed: false, detail: fmt.Sprintf("no (%s)", de.Error())},
+				doctorCheck{label: "authenticated", passed: false, detail: "unknown"},
+				false
+		case errors.Is(de.Kind, backend.ErrAuth):
+			return doctorCheck{label: "reachable", passed: true, detail: "yes"},
+				doctorCheck{label: "authenticated", passed: false, detail: "no (auth error)"},
+				false
+		default:
+			return doctorCheck{label: "reachable", passed: true, detail: "yes"},
+				doctorCheck{label: "authenticated", passed: false, detail: fmt.Sprintf("no (%s)", de.Error())},
+				false
+		}
+	}
+
+	// Plain (non-domain) error — transport-level failure with no DomainError wrapping.
+	return doctorCheck{label: "reachable", passed: false, detail: fmt.Sprintf("unknown (%s)", err.Error())},
+		doctorCheck{label: "authenticated", passed: false, detail: "no"},
+		false
 }
 
 // keyringBackendName returns a human-readable label for the active keyring backend.
@@ -169,65 +194,4 @@ func tokenFormat(token string) string {
 	default:
 		return "unknown / app-password"
 	}
-}
-
-// checkReachability performs an unauthenticated GET to baseURL and returns
-// whether it succeeded along with a human-readable detail string.
-func checkReachability(client factory.HTTPClient, baseURL string) (bool, string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL, nil)
-	if err != nil {
-		return false, fmt.Sprintf("failed to build request: %v", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return false, fmt.Sprintf("unreachable: %v", err)
-	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	// Any HTTP response means the network layer works (even 401/403/404).
-	return true, fmt.Sprintf("yes (HTTP %d)", resp.StatusCode)
-}
-
-// checkAuthRoundTrip calls the current-user endpoint with the stored token and
-// reports whether authentication succeeded.
-func checkAuthRoundTrip(client factory.HTTPClient, host, username, token string, isCloud bool) (bool, string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var endpoint string
-	var useBasicAuth bool
-	if isCloud {
-		endpoint = bbinstance.CloudRESTBase() + "/user"
-		useBasicAuth = false
-	} else {
-		endpoint = bbinstance.RESTBase(host) + "/users/" + username
-		useBasicAuth = true
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return false, fmt.Sprintf("failed to build request: %v", err)
-	}
-
-	if useBasicAuth {
-		req.SetBasicAuth(username, token)
-	} else {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return false, fmt.Sprintf("request failed: %v", err)
-	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	if resp.StatusCode == http.StatusOK {
-		return true, "yes"
-	}
-	return false, fmt.Sprintf("no (HTTP %d)", resp.StatusCode)
 }

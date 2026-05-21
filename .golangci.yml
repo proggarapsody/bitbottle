@@ -56,6 +56,19 @@ linters:
           deny:
             - pkg: "github.com/proggarapsody/bitbottle/api/cloud/gen"
               desc: "gen packages are adapter-internal; api/server must not import api/cloud/gen"
+        no-raw-http-in-cmd:
+          # pkg/cmd/** production code must not use net/http directly — use api/internal/httpx
+          # Transport or backend interfaces. See docs/ARCHITECTURE.md §Anti-patterns.
+          # Test files are exempted: httptest servers in tests are legitimate.
+          files:
+            - "**/pkg/cmd/**/*.go"
+            - "!**/*_test.go"               # test files may use httptest for local stubs
+            - "!**/pkg/cmd/api/**"          # raw API passthrough — product feature
+            - "!**/pkg/cmd/auth/login.go"   # pre-auth TLS probe — no host config yet
+            - "!**/pkg/cmd/factory/**"       # composition root — instantiates concrete adapters
+          deny:
+            - pkg: "net/http"
+              desc: "Use api/internal/httpx Transport or backend interfaces. See docs/ARCHITECTURE.md §Anti-patterns."
     errcheck:
       exclude-functions:
         - fmt.Fprint

@@ -182,6 +182,12 @@ to its implementation size. Refactor — extract or collapse.
 - ❌ A package whose API surface is the same size as its implementation
   (shallow module — collapse or extract).
 - ❌ `pkg/cmd/**` importing `api/cloud` or `api/server` directly.
+- ❌ `pkg/cmd/**` production code using `net/http` directly (enforced by depguard rule
+  `no-raw-http-in-cmd`). Test files (`*_test.go`) are exempt — `httptest` servers in tests
+  are fine. Three production carve-outs exist: `pkg/cmd/api/` (raw passthrough is the
+  feature), `pkg/cmd/auth/login.go` (pre-auth TLS probe — no host config yet), and
+  `pkg/cmd/factory/` (composition root). Any new exception requires a matching
+  `!**/pkg/cmd/<path>/**` exclusion in `.golangci.yml` with a comment explaining why.
 - ❌ **Tautological / dead-branch logic.** Conditional whose body assigns
   the same value the condition already pins (`if x == "Y" { x = "Y" }`),
   or whose branches return identical values, or whose work is undone on
