@@ -70,8 +70,8 @@ type FakeClient struct {
 	DeletePipelineVariableFn func(ns, slug, key string) error
 
 	// Pipeline artifact methods (Cloud-only; satisfies backend.PipelineArtifactClient when set)
-	ListPipelineArtifactsFn     func(ws, slug, pipelineUUID, stepUUID string, limit int) ([]backend.PipelineArtifact, error)
-	DownloadPipelineArtifactFn  func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error
+	ListPipelineArtifactsFn    func(ws, slug, pipelineUUID, stepUUID string, limit int) ([]backend.PipelineArtifact, error)
+	DownloadPipelineArtifactFn func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error
 
 	// Commit methods
 	ListCommitsFn func(ns, slug, branch string, limit int) ([]backend.Commit, error)
