@@ -62,6 +62,7 @@ type FakeClient struct {
 	ListPipelinesFn          func(ns, slug string, limit int) ([]backend.Pipeline, error)
 	GetPipelineFn            func(ns, slug, uuid string) (backend.Pipeline, error)
 	RunPipelineFn            func(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error)
+	StopPipelineFn           func(ws, slug, pipelineUUID string) error
 	ListPipelineStepsFn      func(ns, slug, uuid string) ([]backend.PipelineStep, error)
 	GetPipelineStepLogFn     func(ns, slug, pipelineUUID, stepUUID string) (io.ReadCloser, error)
 	ListPipelineVariablesFn  func(ns, slug string) ([]backend.PipelineVariable, error)
@@ -638,6 +639,16 @@ func (c *FakeClient) RunPipeline(ns, slug string, in backend.RunPipelineInput) (
 		c.T.Fatalf("unexpected call to FakeClient.RunPipeline; set RunPipelineFn in your test")
 	}
 	return backend.Pipeline{}, nil
+}
+
+func (c *FakeClient) StopPipeline(ws, slug, pipelineUUID string) error {
+	if c.StopPipelineFn != nil {
+		return c.StopPipelineFn(ws, slug, pipelineUUID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.StopPipeline; set StopPipelineFn in your test")
+	}
+	return nil
 }
 
 func (c *FakeClient) ListPipelineSteps(ns, slug, uuid string) ([]backend.PipelineStep, error) {

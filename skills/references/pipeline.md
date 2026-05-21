@@ -73,3 +73,42 @@ Delete returns HTTP 204. The UUID must be wrapped in curly braces in the
 URL path (e.g. `{abc-123}`); the CLI handles this automatically.
 
 **Server/DC** — not supported. Commands return a `host.unsupported` error.
+
+---
+
+# Pipeline Stop
+
+Stop a running pipeline. This feature is **Cloud only**.
+
+## Commands
+
+```bash
+# Stop a pipeline by UUID (TTY — no --confirm needed)
+bitbottle pipeline stop UUID WORKSPACE/REPO
+
+# Stop a pipeline in a non-TTY environment (CI, scripts)
+bitbottle pipeline stop UUID WORKSPACE/REPO --confirm
+
+# When BaseRepo is configured, WORKSPACE/REPO is optional
+bitbottle pipeline stop UUID --confirm
+```
+
+## Flags
+
+| Flag | Description |
+|---|---|
+| `--confirm` | Required when stdout is not a TTY (e.g. CI scripts) |
+| `--hostname HOST` | Override the Bitbucket host |
+
+## MCP tools
+
+| Tool | Description |
+|---|---|
+| `stop_pipeline` | Stop a running pipeline. Params: `repo` (required), `uuid` (required), `hostname` |
+
+## Backend details
+
+**Cloud** — `POST /2.0/repositories/{workspace}/{slug}/pipelines/{uuid}/stopPipeline` (empty body, returns HTTP 204).
+The UUID is automatically wrapped in curly braces (e.g. `{abc-123}`) as required by the Cloud API.
+
+**Server/DC** — not supported. Returns a `host.unsupported` error.

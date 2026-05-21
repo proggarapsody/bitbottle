@@ -48,6 +48,7 @@ func (f *fakePipelineClient) ListPipelineVariables(ns, slug string) ([]backend.P
 func (f *fakePipelineClient) SetPipelineVariable(ns, slug string, in backend.PipelineVariableInput) (backend.PipelineVariable, error) {
 	return f.setFn(ns, slug, in)
 }
+func (f *fakePipelineClient) StopPipeline(string, string, string) error { return nil }
 func (f *fakePipelineClient) DeletePipelineVariable(ns, slug, key string) error {
 	return f.deleteFn(ns, slug, key)
 }

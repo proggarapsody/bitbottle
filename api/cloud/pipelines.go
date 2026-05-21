@@ -71,6 +71,13 @@ func stripBraces(uuid string) string {
 	return strings.Trim(uuid, "{}")
 }
 
+// StopPipeline stops a running pipeline. The Bitbucket Cloud API returns
+// HTTP 204 with an empty body on success.
+func (c *Client) StopPipeline(ws, slug, uuid string) error {
+	path := fmt.Sprintf("/repositories/%s/%s/pipelines/%s/stopPipeline", ws, slug, braceUUID(uuid))
+	return c.http.PostJSON(path, nil, nil)
+}
+
 // RunPipeline triggers a new pipeline run on a branch.
 func (c *Client) RunPipeline(ns, slug string, in backend.RunPipelineInput) (backend.Pipeline, error) {
 	body := cloudgen.CloudRunPipelineInput{
