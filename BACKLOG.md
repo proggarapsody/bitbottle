@@ -448,7 +448,7 @@ Current state of every command area against gh feature parity:
 | OSSF-BADGE | **OpenSSF Best Practices (CII) badge** | Apply at `https://www.bestpractices.dev` for the passing badge. Form-based; questions cover CI, license, security policy, signed releases — most answer "yes" once **SCORECARD-PUSH** lands. ~1h of form-filling + weeks of async review. Add the earned badge to README on receipt. Drives Scorecard's `CII-Best-Practices` check from 0 → passing. — scope **OSSF-BADGE** | N/A | DX | 🔲 |
 | REPO-EDIT | **Repository metadata edit** | `repo edit [PROJECT/REPO] --description STR --website URL --language LANG [--enable-issues] [--disable-wiki]` — update mutable repository fields without a rename or visibility toggle. Cloud: `PUT /repositories/{ws}/{slug}` accepts `description`, `website`, `language`, `fork_policy`, `has_issues`, `has_wiki`. Server: `PUT /rest/api/1.0/projects/{ns}/repos/{slug}` accepts `description` only (other fields return typed `host.unsupported`). New optional interface `RepoEditor` with `EditRepo(ns, slug string, in EditRepoInput) (Repository, error)`; `EditRepoInput` uses `*string`/`*bool` nullable pointer fields. MCP tool `edit_repo`. Complements `repo rename`, `repo visibility`, `repo set-default-branch` — together covers `gh repo edit`. | Both | 2 | ✅ |
 | PIPE-STOP | **Pipeline stop** | `pipeline stop PIPELINE_UUID [PROJECT/REPO] [--confirm]` — stop a running Cloud pipeline. Cloud: `POST /repositories/{ws}/{slug}/pipelines/{uuid}/stopPipeline` (empty body, 204). Server: typed `host.unsupported`. New method `StopPipeline(ws, slug, uuid string) error` on the existing `PipelineClient` interface (cloud-only capability pattern). MCP tool `stop_pipeline`. Pairs with `pipeline trigger` + `pipeline watch` to give agents full lifecycle control — trigger, observe, abort. `--confirm` required on non-TTY to prevent accidental stops. | Cloud | 2 | ✅ |
-| SNIPPETS | **Cloud Snippets (gist parity)** | `snippet list/view/create/delete` — Bitbucket Cloud's gist equivalent. Cloud: `GET /snippets/{workspace}` (list, paginated), `GET /snippets/{workspace}/{id}` (view), `POST /snippets/{workspace}` (multipart: `title` + `is_private` + file parts), `DELETE /snippets/{workspace}/{id}`. New optional interface `SnippetClient` with `ListSnippets`, `GetSnippet`, `CreateSnippet`, `DeleteSnippet`. Domain type `Snippet{ID, Title, Owner, IsPrivate, CreatedOn, Files []SnippetFile, WebURL}`. MCP tools `list_snippets`, `view_snippet`, `create_snippet`, `delete_snippet`. Server returns `host.unsupported`. | Cloud | 3 | 🔲 |
+| SNIPPETS | **Cloud Snippets (gist parity)** | `snippet list/view/create/delete` — Bitbucket Cloud's gist equivalent. Cloud: `GET /snippets/{workspace}` (list, paginated), `GET /snippets/{workspace}/{id}` (view), `POST /snippets/{workspace}` (multipart: `title` + `is_private` + file parts), `DELETE /snippets/{workspace}/{id}`. New optional interface `SnippetClient` with `ListSnippets`, `GetSnippet`, `CreateSnippet`, `DeleteSnippet`. Domain type `Snippet{ID, Title, Owner, IsPrivate, CreatedOn, Files []SnippetFile, WebURL}`. MCP tools `list_snippets`, `view_snippet`, `create_snippet`, `delete_snippet`. Server returns `host.unsupported`. | Cloud | 3 | ✅ |
 | BRANCH-MODEL | **Cloud branching model** | `branch-model get [PROJECT/REPO]` and `branch-model set [PROJECT/REPO] --dev-branch NAME --prod-branch NAME [--prod-enabled] [--branch-type-prefix feature=feat/,hotfix=hf/]` — read and update the per-repo branching model (development/production branch + branch-type naming prefixes used by Bitbucket's in-UI "Create branch" wizard). Cloud: `GET /repositories/{ws}/{slug}/branching-model`, `GET/PUT /repositories/{ws}/{slug}/branching-model/settings`. Server returns `host.unsupported`. New optional interface `BranchModelClient` with `GetBranchModel`, `GetBranchModelSettings`, `UpdateBranchModelSettings`. MCP tools `get_branch_model`, `set_branch_model`. Distinct from BRANCH-RULE (restrictions); this controls the naming convention layer. | Cloud | 2 | 🔲 |
 | PIPE-ARTIFACTS | **Pipeline artifacts** | `pipeline artifact list PIPELINE_UUID --step STEP_UUID [PROJECT/REPO]` and `pipeline artifact download PIPELINE_UUID --step STEP_UUID --name FILE [--out PATH]` — list and download per-step build artifacts declared via `artifacts:` in `bitbucket-pipelines.yml`. Cloud: `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/artifacts` (paginated list), `GET` against `links.self.href` (binary download). New optional interface `PipelineArtifactClient` with `ListPipelineArtifacts` and `DownloadPipelineArtifact(…, out io.Writer) error`. Domain type `PipelineArtifact{Name, SizeBytes, URL}`. MCP tools `list_pipeline_artifacts`, `download_pipeline_artifact` (base64 envelope). Closes a real agent gap: today agents that trigger pipelines cannot retrieve their outputs without raw `api` calls. | Cloud | 2 | 🔲 |
 | PR-UNREADY | **Promote PR back to draft** | `pr unready PR_ID` (alias `pr ready --undo`) — convert an open PR back to draft state. Cloud: `PUT /repositories/{ws}/{slug}/pullrequests/{id}` with `{"draft": true}`. Server: marks the PR as draft via `PUT /rest/api/1.0/.../pull-requests/{id}` body `{"draft": true}` (Server 8.0+). Companion to existing `pr ready`. Both backends, with version probe on Server. Gap vs `bkt pr publish --undo`. | Both | 3 | ✅ |
@@ -2797,7 +2797,7 @@ StopPipeline(ws, slug, pipelineUUID string) error
 
 ### SNIPPETS — Cloud Snippets (gist parity)
 
-**Status:** 🔲
+**Status:** ✅
 
 Bitbucket Cloud's analogue of GitHub Gists. Snippets let users share short code or text files with optional privacy. Server has no primitive.
 
@@ -2825,12 +2825,12 @@ type Snippet struct {
 **MCP tools:** `list_snippets`, `view_snippet`, `create_snippet`, `delete_snippet`
 
 **Definition of Done:**
-- [ ] `api/backend/client_snippet.go` — `SnippetClient`, `Snippet`, `SnippetFile`, `CreateSnippetInput`
-- [ ] `api/cloud/snippets.go` + `api/cloud/snippets_test.go`
-- [ ] `pkg/cmd/snippet/` (list, view, create, delete) + tests
-- [ ] MCP quadruplet
-- [ ] `skills/SKILL.md` + `skills/references/snippet.md`
-- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+- [x] `api/backend/client_snippet.go` — `SnippetClient`, `Snippet`, `SnippetFile`, `CreateSnippetInput`
+- [x] `api/cloud/snippets.go` + `api/cloud/snippets_test.go`
+- [x] `pkg/cmd/snippet/` (list, view, create, delete) + tests
+- [x] MCP quadruplet
+- [x] `skills/SKILL.md` + `skills/references/snippet.md`
+- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---
 

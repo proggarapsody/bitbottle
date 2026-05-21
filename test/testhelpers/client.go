@@ -247,6 +247,12 @@ type FakeClient struct {
 
 	// Repo edit methods (both backends; satisfies backend.RepoEditor when set)
 	EditRepoFn func(ns, slug string, in backend.EditRepoInput) (backend.Repository, error)
+
+	// Snippet methods (Cloud-only; satisfies backend.SnippetClient when set)
+	ListSnippetsFn  func(workspace string, limit int) ([]backend.Snippet, error)
+	GetSnippetFn    func(workspace, id string) (backend.Snippet, error)
+	CreateSnippetFn func(workspace string, in backend.CreateSnippetInput) (backend.Snippet, error)
+	DeleteSnippetFn func(workspace, id string) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -285,6 +291,7 @@ var (
 	_ backend.RepoTransferClient       = (*FakeClient)(nil)
 	_ backend.RepoWatcherClient        = (*FakeClient)(nil)
 	_ backend.ReviewerGroupClient      = (*FakeClient)(nil)
+	_ backend.SnippetClient            = (*FakeClient)(nil)
 	_ backend.SSHKeyClient             = (*FakeClient)(nil)
 	_ backend.WorkspaceClient          = (*FakeClient)(nil)
 	_ backend.WorkspaceMemberClient    = (*FakeClient)(nil)
@@ -1749,6 +1756,46 @@ func (c *FakeClient) DeleteWorkspaceWebhook(workspace, uuid string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteWorkspaceWebhook; set DeleteWorkspaceWebhookFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListSnippets(workspace string, limit int) ([]backend.Snippet, error) {
+	if c.ListSnippetsFn != nil {
+		return c.ListSnippetsFn(workspace, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListSnippets; set ListSnippetsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetSnippet(workspace, id string) (backend.Snippet, error) {
+	if c.GetSnippetFn != nil {
+		return c.GetSnippetFn(workspace, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetSnippet; set GetSnippetFn in your test")
+	}
+	return backend.Snippet{}, nil
+}
+
+func (c *FakeClient) CreateSnippet(workspace string, in backend.CreateSnippetInput) (backend.Snippet, error) {
+	if c.CreateSnippetFn != nil {
+		return c.CreateSnippetFn(workspace, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateSnippet; set CreateSnippetFn in your test")
+	}
+	return backend.Snippet{}, nil
+}
+
+func (c *FakeClient) DeleteSnippet(workspace, id string) error {
+	if c.DeleteSnippetFn != nil {
+		return c.DeleteSnippetFn(workspace, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteSnippet; set DeleteSnippetFn in your test")
 	}
 	return nil
 }
