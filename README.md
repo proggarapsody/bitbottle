@@ -92,7 +92,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `branch-model` | `get` `set` _(Cloud only)_ |
 | `ssh-key` | `list` `add` `delete` _(Cloud only)_ |
 | `commit` | `log` `view` `status` `status report` `files` `comment {list\|add\|edit\|delete}` |
-| `pipeline` | `list` `view` `run` _(Cloud only)_ |
+| `pipeline` | `list` `view` `run` `steps` `logs` `stop` `trigger` `watch` `schedule {list\|create\|delete}` `cache {list\|delete}` `artifact {list\|download}` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
 | `user` | `view` |
@@ -261,6 +261,23 @@ bitbottle pipeline cache list MYWORKSPACE/my-service
 
 # Delete a cache by UUID
 bitbottle pipeline cache delete MYWORKSPACE/my-service {uuid}
+```
+
+### Pipeline Artifacts _(Cloud only)_
+
+```bash
+# List artifacts produced by a pipeline step
+bitbottle pipeline artifact list {pipeline-uuid} MYWORKSPACE/my-service --step {step-uuid}
+
+# Download an artifact to the current directory
+bitbottle pipeline artifact download {pipeline-uuid} MYWORKSPACE/my-service \
+  --step {step-uuid} --name build.tar.gz
+
+# Download to a specific path, or pipe to stdout
+bitbottle pipeline artifact download {pipeline-uuid} MYWORKSPACE/my-service \
+  --step {step-uuid} --name build.tar.gz --out /tmp/build.tar.gz
+bitbottle pipeline artifact download {pipeline-uuid} MYWORKSPACE/my-service \
+  --step {step-uuid} --name build.tar.gz --out -
 ```
 
 ### Deployments & Environments _(Cloud only)_

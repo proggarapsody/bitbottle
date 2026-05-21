@@ -134,6 +134,13 @@ bitbottle pipeline trigger WORKSPACE/REPO --branch main
 bitbottle pipeline watch WORKSPACE/REPO UUID
 bitbottle pipeline stop UUID WORKSPACE/REPO --confirm
 bitbottle pipeline view UUID WORKSPACE/REPO
+
+# List and download step artifacts
+bitbottle pipeline artifact list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID
+bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
+  --step STEP_UUID --name build.tar.gz
+bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
+  --step STEP_UUID --name build.tar.gz --out -   # stdout
 ```
 
 ## Dashboard

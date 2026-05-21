@@ -112,3 +112,52 @@ bitbottle pipeline stop UUID --confirm
 The UUID is automatically wrapped in curly braces (e.g. `{abc-123}`) as required by the Cloud API.
 
 **Server/DC** — not supported. Returns a `host.unsupported` error.
+
+---
+
+## Pipeline Artifacts (Cloud only)
+
+List and download per-step build artifacts declared via `artifacts:` in `bitbucket-pipelines.yml`.
+
+```bash
+# List artifacts for a step
+bitbottle pipeline artifact list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID
+bitbottle pipeline artifact list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID --json
+bitbottle pipeline artifact list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID --limit 20
+
+# Download an artifact (writes to current directory by default)
+bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
+  --step STEP_UUID --name build.tar.gz
+
+# Download to a specific path
+bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
+  --step STEP_UUID --name build.tar.gz --out /tmp/build.tar.gz
+
+# Write to stdout
+bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
+  --step STEP_UUID --name build.tar.gz --out -
+```
+
+## Flags
+
+| Command | Flag | Description |
+|---|---|---|
+| `artifact list` | `--step STEP_UUID` | Step UUID (required) |
+| `artifact list` | `--limit N` | Max results (default 50) |
+| `artifact list` | `--json` / `--jq` | JSON/jq output |
+| `artifact download` | `--step STEP_UUID` | Step UUID (required) |
+| `artifact download` | `--name FILE` | Artifact filename (required) |
+| `artifact download` | `--out PATH` | Output path; `-` for stdout |
+
+## MCP tools
+
+| Tool | Description |
+|---|---|
+| `list_pipeline_artifacts` | List artifacts for a step. Params: `project`, `slug`, `pipeline_uuid`, `step_uuid` (all required), `limit`, `hostname` |
+| `download_pipeline_artifact` | Download artifact as base64. Params: `project`, `slug`, `pipeline_uuid`, `step_uuid`, `name` (all required), `hostname`. Returns `{"name": "...", "content_base64": "..."}`. Artifacts > 5 MB return an error — use the CLI `--out PATH` instead. |
+
+## Backend details
+
+**Cloud** — List: `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/artifacts` (paginated). Download: `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/artifacts/{name}` (binary stream). UUIDs are automatically wrapped in curly braces.
+
+**Server/DC** — not supported. Returns a `host.unsupported` error.

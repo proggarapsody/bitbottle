@@ -96,4 +96,42 @@ func registerPipelineTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.getPipelineStepLog,
 	)
+
+	reqPipelineUUID := mcplib.WithString("pipeline_uuid",
+		mcplib.Description("Pipeline UUID"),
+		mcplib.Required(),
+	)
+	reqStepUUID := mcplib.WithString("step_uuid",
+		mcplib.Description("Step UUID"),
+		mcplib.Required(),
+	)
+
+	s.AddTool(
+		mcplib.NewTool("list_pipeline_artifacts",
+			mcplib.WithDescription("List artifacts for a pipeline step (Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqPipelineUUID,
+			reqStepUUID,
+			optLimit,
+		),
+		h.listPipelineArtifacts,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("download_pipeline_artifact",
+			mcplib.WithDescription("Download a pipeline step artifact as base64-encoded content (Bitbucket Cloud only)"),
+			optHostname,
+			reqProject,
+			reqSlug,
+			reqPipelineUUID,
+			reqStepUUID,
+			mcplib.WithString("name",
+				mcplib.Description("Artifact name"),
+				mcplib.Required(),
+			),
+		),
+		h.downloadPipelineArtifact,
+	)
 }
