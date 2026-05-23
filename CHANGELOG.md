@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.93.0](https://github.com/proggarapsody/bitbottle/compare/v1.92.0...v1.93.0) (2026-05-21)
+
+
+### Features
+
+* **pipe-artifacts:** list and download pipeline step artifacts (Cloud only) ([5516ac8](https://github.com/proggarapsody/bitbottle/commit/5516ac82a468ed413f5d30234f41cd0ee39c8b7f))
+
 ## [1.92.0](https://github.com/proggarapsody/bitbottle/compare/v1.91.0...v1.92.0) (2026-05-21)
 
 
