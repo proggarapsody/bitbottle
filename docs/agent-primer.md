@@ -108,9 +108,9 @@ Read your scope's PRD (linked GitHub issue) for what to build.
 
 - [`AGENTS.md`](../AGENTS.md) — Workflow section ("required architectural
   reading for any subagent implementing a new scope").
-- [`docs/workflows/iteration-cycle.md`](workflows/iteration-cycle.md) —
-  the parallel-mode section (Section 11), shared-primer-reference
-  requirement for subagent prompts.
+- [`docs/workflows/iteration-cycle/`](workflows/iteration-cycle/) —
+  the parallel-mode section ([`parallel-mode.md`](workflows/iteration-cycle/parallel-mode.md)),
+  shared-primer-reference requirement for subagent prompts.
 - Parallel-mode subagent prompt template — passed as required reading in
   lieu of re-listing architecture inline.
 

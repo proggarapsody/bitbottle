@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manage auto-iter worktrees. Convention from docs/workflows/iteration-cycle.md:
+# Manage auto-iter worktrees. Convention from docs/workflows/iteration-cycle/README.md:
 #   git worktree add -b feat/<short-slug> ../bitbottle-worktrees/<slug> main
 #
 # Usage:

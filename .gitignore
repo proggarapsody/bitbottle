@@ -16,9 +16,12 @@
 *.swp
 /2026-04-24-*.md
 
-# Agent tooling — local-only, defers to docs/workflows/ and AGENTS.md
-.claude/
+# Agent tooling — runtime state and per-user config are local-only
+.claude/auto-iter/
+.claude/settings.json
+.claude/settings.local.json
 .full-review/
+# .claude/commands/ is tracked — canonical procedure wrappers
 
 # Git worktrees
 .worktrees/

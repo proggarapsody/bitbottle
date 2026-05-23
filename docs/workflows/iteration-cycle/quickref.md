@@ -2,8 +2,8 @@
 
 Declarative reference for the bitbottle autonomous iteration loop. Read
 this when designing or troubleshooting `/auto-iter`. Procedural details
-live in the gitignored `.claude/commands/auto-iter.md`; canonical
-workflow lives in [`docs/workflows/iteration-cycle.md`](../workflows/iteration-cycle.md).
+live in agent-specific command files (e.g. `.claude/commands/auto-iter.md`);
+canonical workflow lives in [`README.md`](README.md).
 
 > **Mantra**: one `/auto-iter` invocation = one cycle = exits at end.
 > `/loop` provides the cadence between cycles. Halt for anything
@@ -14,14 +14,14 @@ workflow lives in [`docs/workflows/iteration-cycle.md`](../workflows/iteration-c
 ## Architecture
 
 ```
-laptop (caffeinated, Claude desktop with Remote Control paired)
+laptop (caffeinated, remote human notification channel active)
   └── /loop 30m /auto-iter
         └── /auto-iter (one cycle)
               ├── §0a re-entry lock check     → auto-iter/scripts/lock.sh
               ├── §0  preflight + workspace inventory → auto-iter/scripts/preflight.sh
               ├── §1  pick mode + scope (+ bundle-check)  ▲ scripted (planned)
               ├── §2  execute mode (iteration | architecture | brainstorm | stop)
-              ├── §3  halt routing (auto-confirm safe; phone for risky)
+              ├── §3  halt routing (auto-confirm safe; out-of-band notification for risky)
               ├── §4  append to cycles.jsonl + metrics.jsonl → auto-iter/scripts/{metric,log-cycle}.sh
               └── §5  release lock, exit       → auto-iter/scripts/lock.sh release
 ```
@@ -40,33 +40,35 @@ Three sibling files in `.claude/auto-iter/` (all gitignored):
 
 ## Model tier per phase
 
-Default to **Sonnet**. Escalate to **Opus** only for genuinely judgment-heavy phases.
+Default to the **code-generation model**. Escalate to the **judgment-heavy model** only for genuinely judgment-heavy phases.
 
-| Phase | Model | Why |
+| Phase | Model tier | Why |
 |---|---|---|
-| §0a re-entry lock | Sonnet | Mechanical file check |
-| §0 preflight + workspace inventory | Sonnet | Shell-driven, deterministic |
-| §0 open-PR overlap (decision halt) | Sonnet | Routes to phone for judgment; agent itself just frames the question |
-| §1 mode pick + scope pick | Sonnet | Algorithm-driven; BACKLOG-driven scope-pick is deterministic |
-| §1 bundle-check | Sonnet | Algorithm-driven |
-| §2 PRD drafting | Sonnet | Mechanical fill from BACKLOG scope-detail |
-| §2 worktree creation | Sonnet | Shell command |
-| §2 TDD implementation | **Sonnet** (subagent) | Code generation. Dispatch via `Task` tool with `isolation: "worktree"` — keeps orchestrator context light. Opus only if scope is genuinely complex (rare). |
-| §2 doc sync | Sonnet | Mechanical doc updates per §5 doc-sync table |
-| §2 pre-merge gate | Sonnet | Reads CI status, runs grep checks |
-| §6 design-judge | **Sonnet** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Checklist includes a dead-branch / tautological-assignment scan (off-the-shelf linters don't catch semantic no-ops like `if x == "Y" { x = "Y" }`). Returns findings; runs in parallel with CI. |
-| §2 PR open + CI wait | Sonnet | Polling |
-| §2 halt (ship) | Sonnet | Frame the question, wait for tap |
-| §2 fix-after-CI-red | **Sonnet** (subagent) | Targeted code change against existing branch |
-| §7 merge feature + release PRs | Sonnet | `gh pr merge` mechanical |
-| §7 release publish wait | Sonnet | Polling `gh release view` + `npm view` |
-| §8 close PRD | Sonnet | `gh issue` mechanical |
-| §9 manual-test refresh | Sonnet | Per §9 decision flow |
-| **§2 brainstorm** (when BACKLOG empty) | **Opus** | Open-ended judgment, BACKLOG-pattern matching, scope generation. Runs autonomously (no phone halt) — see brainstorm rules below. |
-| **§2 architecture audit** (every 5th cycle) | **Opus** | Architectural reasoning, pattern recognition |
-| §5 release lock | Sonnet | File removal |
+| §0a re-entry lock | mechanical | Mechanical file check |
+| §0 preflight + workspace inventory | mechanical | Shell-driven, deterministic |
+| §0 open-PR overlap (decision halt) | mechanical | Routes to out-of-band notification for judgment; agent itself just frames the question |
+| §1 mode pick + scope pick | mechanical | Algorithm-driven; BACKLOG-driven scope-pick is deterministic |
+| §1 bundle-check | mechanical | Algorithm-driven |
+| §2 PRD drafting | code-generation | Mechanical fill from BACKLOG scope-detail |
+| §2 worktree creation | mechanical | Shell command |
+| §2 TDD implementation | **code-generation** (subagent) | Code generation. Dispatch via `Task` tool with `isolation: "worktree"` — keeps orchestrator context light. Judgment-heavy model only if scope is genuinely complex (rare). |
+| §2 doc sync | mechanical | Mechanical doc updates per §5 doc-sync table |
+| §2 pre-merge gate | mechanical | Reads CI status, runs grep checks |
+| §6 design-judge | **code-generation** (subagent) | Read-only review against `TASTE.md` + `ARCHITECTURE.md` + diff. Checklist includes a dead-branch / tautological-assignment scan (off-the-shelf linters don't catch semantic no-ops like `if x == "Y" { x = "Y" }`). Returns findings; runs in parallel with CI. |
+| §2 PR open + CI wait | mechanical | Polling |
+| §2 halt (ship) | mechanical | Frame the question, wait for tap |
+| §2 fix-after-CI-red | **code-generation** (subagent) | Targeted code change against existing branch |
+| §7 merge feature + release PRs | mechanical | `gh pr merge` mechanical |
+| §7 release publish wait | mechanical | Polling `gh release view` + `npm view` |
+| §8 close PRD | mechanical | `gh issue` mechanical |
+| §9 manual-test refresh | mechanical | Per §9 decision flow |
+| **§2 brainstorm** (when BACKLOG empty) | **judgment-heavy** | Open-ended judgment, BACKLOG-pattern matching, scope generation. Runs autonomously (no phone halt) — see brainstorm rules below. |
+| **§2 architecture audit** (every 5th cycle) | **judgment-heavy** | Architectural reasoning, pattern recognition |
+| §5 release lock | mechanical | File removal |
 
-Two phases legitimately need Opus: brainstorm and architecture-audit. Everything else — including design-judge — is pattern-matching against a concrete checklist where Sonnet is equally effective.
+Two phases legitimately need the judgment-heavy model: brainstorm and architecture-audit. Everything else — including design-judge — is pattern-matching against a concrete checklist where the code-generation model is equally effective.
+
+Agent-specific tool names for each tier (e.g. which Claude model maps to which tier) live in the agent's command file, not here.
 
 ---
 
@@ -76,7 +78,7 @@ Two categories — **mid-cycle** (pause-and-continue) and **chain-breaking** (ex
 
 ### Mid-cycle halt (fires when release-please opens a new release PR, not per feat)
 
-| Halt | Phone format | Required reply |
+| Halt | Notification format | Required reply |
 |---|---|---|
 | HALT — Ship | `🚀 release PR #N bundles K feat/fix → v<X.Y.Z>. ship?` | tap `ship` / `hold` |
 
@@ -90,7 +92,7 @@ For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trig
 
 ### Chain-breaking halts (rare — exit and wait for human)
 
-| Halt | Phone format | Reply |
+| Halt | Notification format | Reply |
 |---|---|---|
 | Workspace must-resolve | `⚠️ workspace requires manual cleanup: <details>` | exit cleanly |
 | Open-PR overlap | `⚠️ PR #N overlaps scope. resolve / skip / close?` | tap `resolve` / `skip` / `close` |
@@ -99,11 +101,11 @@ For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trig
 | Merge conflict (during resolve) | `❌ PR #N merge conflict beyond union rule: <files>` | exit cleanly |
 | Stop confirmation (BACKLOG empty + 3 empty brainstorms) | `🏁 confirm shutdown` | tap `confirm` / `continue` |
 
-> **Brainstorm runs autonomously** — no phone halt. Empirically validated across cycles 34–53 (5 brainstorms, 14/16 scopes shipped, 1 false positive, 1 pending). See "Brainstorm rules" below for the constraints that keep this honest.
+> **Brainstorm runs autonomously** — no halt notification. Empirically validated across cycles 34–53 (5 brainstorms, 14/16 scopes shipped, 1 false positive, 1 pending). See "Brainstorm rules" below for the constraints that keep this honest.
 
 ### Halt protocol rules
 
-- **No diff in halt messages.** Reference PR URL, not embedded diff. Halt messages stay <500 chars so phone push notifications display cleanly.
+- **No diff in halt messages.** Reference PR URL, not embedded diff. Halt messages stay <500 chars so out-of-band notifications display cleanly.
 - **Halt-response timeout**: 2 hours. After that, log `halt_no_response`, exit. Matches the cycle wall-clock cap (see below) so there's a single ceiling.
 - **Cycle wall-clock cap**: 2 hours per cycle. Hard ceiling; orchestrator force-exits with `halt_cycle_timeout` if exceeded. Covers the historical worst-case (~90 min) with margin; anything longer is almost certainly stuck.
 - **Auto-confirm**: scope-pick (BACKLOG-driven), bundle-check (algorithm-driven), workspace-clean preflight, mechanical doc-sync, secret-leak scan, build-artifacts scan, lint+test-via-CI, PRD close confirmation, manual-test refresh decision, worktree removal.
@@ -112,13 +114,13 @@ For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trig
 
 ## Brainstorm rules
 
-Brainstorm runs autonomously (Opus, ~1–2 min, ~3 new BACKLOG rows per run). To keep autonomous brainstorms honest, every emitted row must satisfy **all** of the following or be dropped before it lands in `BACKLOG.md`:
+Brainstorm runs autonomously (judgment-heavy model, ~1–2 min, ~3 new BACKLOG rows per run). To keep autonomous brainstorms honest, every emitted row must satisfy **all** of the following or be dropped before it lands in `BACKLOG.md`:
 
 1. **No-overlap.** Scan existing ✅ rows and the Functionality Map. Reject anything redundant with already-shipped scope. _(This is the single load-bearing rule — it killed PR-TEMPLATE retroactively at cyc 39 because `repo file get` already covered it.)_
 2. **Backend declared.** Each row marks `Cloud` / `Server` / `Both`. If `Both`, both endpoints must be named.
 3. **Shape match.** Each row declares which canonical pattern it follows (`List*` via `paging.Collect`, write op with typed errors, MCP triplet, etc.). New shapes require a §architecture-audit cycle, not a brainstorm row.
 
-Soft rules (Opus uses for ordering, no auto-reject):
+Soft rules (judgment-heavy model uses for ordering, no auto-reject):
 
 - Prefer scopes that exercise an under-instrumented adapter.
 - Prefer scopes that mirror a recently-shipped pattern (compounds tooling familiarity).
@@ -130,7 +132,7 @@ The brainstorm emits its full output to `metrics.jsonl` as `step2_brainstorm` wi
 
 ## Cycle log schema (`cycles.jsonl`)
 
-One line per cycle, append-only. **Write via [`scripts/log-cycle.sh`](scripts/log-cycle.sh)**:
+One line per cycle, append-only. **Write via [`auto-iter/scripts/log-cycle.sh`](../../../auto-iter/scripts/log-cycle.sh)**:
 
 ```bash
 auto-iter/scripts/log-cycle.sh --cycle=55 --mode=iteration \
@@ -170,7 +172,7 @@ Output line shape:
 
 ## Metrics log schema (`metrics.jsonl`)
 
-One line per **step** within a cycle, append-only. **Write via [`scripts/metric.sh`](scripts/metric.sh)** — it sets `ts`, validates required fields, and appends atomically:
+One line per **step** within a cycle, append-only. **Write via [`auto-iter/scripts/metric.sh`](../../../auto-iter/scripts/metric.sh)** — it sets `ts`, validates required fields, and appends atomically:
 
 ```bash
 auto-iter/scripts/metric.sh --cycle=42 --step=step2_tdd \
@@ -244,15 +246,15 @@ jq -s 'map(select(.step | startswith("step2_halt")) | .duration_ms / 1000)' \
 - ❌ Skipping pre-merge-check or design-judge "because the change is small".
 - ❌ Editing `CHANGELOG.md`, `.release-please-manifest.json`, or `<!-- x-release-please-version -->` lines on a non-release branch.
 - ❌ Force-pushing or `--no-verify`.
-- ❌ Opening a separate `chore: mark X shipped in BACKLOG` PR after the feat PR merges. **The BACKLOG status flip belongs in the feat commit itself** (see iteration-cycle §4). Across cycles 77–86 the post-merge chore-PR pattern produced 8 extra PRs and 4 duplicate commits on `main` (MCP-VALIDATION, JSON-STABILITY, ERR-EMPTY-400, BACKEND-TYPE-STRICT each landed twice).
+- ❌ Opening a separate `chore: mark X shipped in BACKLOG` PR after the feat PR merges. **The BACKLOG status flip belongs in the feat commit itself** (see [README.md §4](README.md#section-4--sync-docs-and-tooling-neutral-context)). Across cycles 77–86 the post-merge chore-PR pattern produced 8 extra PRs and 4 duplicate commits on `main` (MCP-VALIDATION, JSON-STABILITY, ERR-EMPTY-400, BACKEND-TYPE-STRICT each landed twice).
 - ❌ Marking a `BACKLOG.md` row ✅ before the corresponding feat PR has merged. (Flipping in the same commit is correct; flipping in a separate earlier PR is not.)
-- ❌ Multiple feature PRs in one cycle without §1 bundle-check or §11 parallel-mode rules being satisfied.
+- ❌ Multiple feature PRs in one cycle without §1 bundle-check or parallel-mode rules being satisfied.
 - ❌ Embedding diff content in halt messages — reference PR URL only.
-- ❌ Running TDD inline in the orchestrator instead of dispatching to a Sonnet `Task` subagent. Across the May-17 stream this produced `dispatch_violation:true` on cycles 77 and 79 — both were "scope already shipped historically" cases that should have been caught earlier (see §1.5 already-shipped check).
+- ❌ Running TDD inline in the orchestrator instead of dispatching to a code-generation model `Task` subagent. Across the May-17 stream this produced `dispatch_violation:true` on cycles 77 and 79 — both were "scope already shipped historically" cases that should have been caught earlier (see §1.5 already-shipped check in [`autonomous.md`](autonomous.md)).
 - ❌ Running a full §2 pipeline for a scope already present in `main`. The §1.5 already-shipped check (`git log --all --grep="$SCOPE_TAG"` matched against a `feat:`/`fix:`/`refactor:` commit) must run before TDD dispatch. Cycles 77 (DEPGUARD-CI) and 79 (FAKECLIENT-SAFETY) re-did work shipped two days earlier (PR #338 and #334).
 - ❌ `git merge origin/main` at cycle boundaries on local `main`. Branch protection blocks direct pushes to `main` so the local branch is read-only at cycle boundaries — `git reset --hard origin/main` is the correct operation. The May-17 stream littered `main` with 7 `Merge remote-tracking branch` commits because the orchestrator chose merge over reset.
-- ❌ `git checkout -b feat/<slug> origin/main` inside the **main checkout**. Every iteration runs in its own worktree — use `git worktree add -b feat/<slug> ../bitbottle-worktrees/<slug> origin/main`. The main checkout stays clean. See [iteration-cycle.md §3](../docs/workflows/iteration-cycle.md#section-3--implement-tdd) HARD STOP block. PRD #372 surfaced this as a process bug riding alongside four auth bugs.
-- ❌ Emitting metrics via raw `echo >> metrics.jsonl` or inline `jq -nc`. **Always use [`auto-iter/scripts/metric.sh`](scripts/metric.sh).** Prose checklists for emission discipline get skimmed past after context compaction — across cycles 81–86 in the May-17 stream, per-step metrics emission collapsed from 10 lines/cycle (cycles 77–79) to 0–1 lines/cycle. A shell invocation can't be skimmed.
+- ❌ `git checkout -b feat/<slug> origin/main` inside the **main checkout**. Every iteration runs in its own worktree — use `git worktree add -b feat/<slug> ../bitbottle-worktrees/<slug> origin/main`. The main checkout stays clean. See [README.md §3](README.md#section-3--implement-tdd) HARD STOP block. PRD #372 surfaced this as a process bug riding alongside four auth bugs.
+- ❌ Emitting metrics via raw `echo >> metrics.jsonl` or inline `jq -nc`. **Always use [`auto-iter/scripts/metric.sh`](../../../auto-iter/scripts/metric.sh).** Prose checklists for emission discipline get skimmed past after context compaction — across cycles 81–86 in the May-17 stream, per-step metrics emission collapsed from 10 lines/cycle (cycles 77–79) to 0–1 lines/cycle. A shell invocation can't be skimmed.
 - ❌ Forcing `/compact` inside `/auto-iter` — trust Claude's automatic compaction.
 - ❌ Splitting an `*-AUDIT` scope into "audit cycle" + "fix cycle" when the audit produced exactly one finding that fits in ≤1 PR. See § AUDIT_CONTINUE below. Cycles 95 (UX-FLAG-AUDIT) and 96 (DEBUG-TRANSPORT-FLAG) shipped what should have been one cycle, costing an extra release and ~22 min wall time.
 

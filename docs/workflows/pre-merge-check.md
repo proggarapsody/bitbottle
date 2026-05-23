@@ -121,7 +121,7 @@ Match against the changed-file list from §0. Multiple rules can fire.
 | Backlog item is now done | `BACKLOG.md` (mark complete / remove) | BLOCKER |
 | Auth, hosts.yml, or token handling | `skills/references/auth.md` | BLOCKER |
 | `api/backend/{client,types,errors}.go` changed | `docs/agent-primer.md` still accurate (architecture vocabulary, invariants, exemplar-file table) | BLOCKER |
-| `docs/workflows/iteration-cycle.md` changed | `AGENTS.md` and `.claude/skills/iteration-cycle/SKILL.md` (per-user, gitignored — flag as WARN; contributor's responsibility) still reference correct section numbers | WARN |
+| `docs/workflows/iteration-cycle/` changed | `AGENTS.md` still references correct file paths; agent command files (e.g. `.claude/commands/auto-iter.md`) still point at correct sections | WARN |
 
 If `skills/references/*.md` was edited, also check `skills/SKILL.md`'s
 router table still points at the right file.

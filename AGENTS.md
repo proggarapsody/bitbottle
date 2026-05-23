@@ -15,19 +15,20 @@ Read before designing any new command, interface, package, transport, MCP tool, 
 
 ## Automation
 
-The autonomous iteration loop spec — for designing or troubleshooting `/auto-iter`-driven runs.
-
-- [`auto-iter/`](auto-iter/) — self-contained auto-iter library: [`quickref.md`](auto-iter/quickref.md) (declarative contract — model tier per phase, halt routing, cycle/metrics log schemas, anti-patterns), [`scripts.md`](auto-iter/scripts.md) (script catalog), and `scripts/` (implementation + tests). Read this when changing how `/auto-iter` makes decisions.
+The autonomous iteration loop is documented in `docs/workflows/iteration-cycle/`.
+Agent-specific wrappers (e.g. `.claude/commands/auto-iter.md`) inherit one-way from
+these canonical docs — they add delivery details (model names, tool invocation syntax)
+without duplicating procedural content.
 
 ## Workflow
 
 End-to-end procedures live in [`docs/workflows/`](docs/workflows/) and are tool-neutral — humans, Codex, Cursor, Aider, and Claude all follow them.
 
 - [`docs/agent-primer.md`](docs/agent-primer.md) — required architectural reading for any subagent implementing a new scope.
-- [`docs/workflows/iteration-cycle.md`](docs/workflows/iteration-cycle.md) — pick a scope → spec → TDD → docs → pre-merge-check → PR → release → close PRD → manual tests. The full loop.
+- [`docs/workflows/iteration-cycle/`](docs/workflows/iteration-cycle/) — the iteration loop: [`README.md`](docs/workflows/iteration-cycle/README.md) (canonical procedure), [`quickref.md`](docs/workflows/iteration-cycle/quickref.md) (halt routing, outcome enum, cadence), [`scripts.md`](docs/workflows/iteration-cycle/scripts.md) (script catalog), [`autonomous.md`](docs/workflows/iteration-cycle/autonomous.md) (autonomous-mode deltas), [`parallel-mode.md`](docs/workflows/iteration-cycle/parallel-mode.md) (multi-scope iteration).
 - [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — the merge gate (sections 0–9). Must pass before any branch lands on `main`.
 
-Tool-specific auto-trigger wrappers (e.g. `.claude/skills/`) defer to these docs and stay local-only — they're not committed.
+Agent-specific wrappers (e.g., `.claude/commands/`) are tracked in git and inherit one-way from these docs — see `.claude/commands/` for Claude-specific delivery details.
 
 ## Key rules for AI agents
 
@@ -56,9 +57,8 @@ pkg/cmd/            — Cobra commands (one package per noun)
 pkg/cmd/mcp/        — MCP stdio server (tools + handlers)
 skills/SKILL.md     — Claude skill file for bitbottle (all commands in one file)
 docs/manual-tests/  — manual test guides
-docs/workflows/     — contributor + agent workflow checklists (pre-merge-check, iteration-cycle)
+docs/workflows/     — contributor + agent workflow checklists (pre-merge-check, iteration-cycle/)
 packages/mcp-npm/   — npm wrapper (downloads Go binary on postinstall, bundles README)
-conductor/          — project-context scaffolding from the Conductor plugin (product, tech stack, workflow, styleguides) — read for orientation, not authoritative for code rules
 ```
 
 ## Wire types

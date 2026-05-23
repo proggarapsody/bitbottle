@@ -14,7 +14,7 @@
 # Adds: ts=<now>, pipeline_version, tokens, duration_active_min (from cycle-summary.sh),
 #       metrics_steps_count.
 #
-# Canonical schema: auto-iter/quickref.md § Cycle log schema.
+# Canonical schema: docs/workflows/iteration-cycle/quickref.md § Cycle log schema.
 set -euo pipefail
 
 PIPELINE_VERSION="2026.05.20"
