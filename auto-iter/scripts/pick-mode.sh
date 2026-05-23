@@ -9,7 +9,7 @@
 #   {"cycle":N,"mode":"iteration|architecture|brainstorm|stop",
 #    "open_scopes":N,"consecutive_empty_brainstorms":N,"reason":"..."}
 #
-# Algorithm (canonical — see auto-iter/quickref.md § Mode tier per phase):
+# Algorithm (canonical — see docs/workflows/iteration-cycle/quickref.md § Model tier per phase):
 #   counter = max(cycle) over non-skip rows, +1
 #   open    = grep 🔲 in BACKLOG.md ## Backlog table
 #   empties = consecutive brainstorm_added_0 rows from the tail

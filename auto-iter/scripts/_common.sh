@@ -6,7 +6,7 @@
 #   - Exit 0 on success, write a single JSON object to stdout.
 #   - Exit non-zero on failure, write {"halt":"<reason>","details":"..."} to stdout.
 #   - Never write progress/log lines to stdout (use stderr for that).
-# Canonical contract: auto-iter/scripts.md.
+# Canonical contract: docs/workflows/iteration-cycle/scripts.md.
 
 set -euo pipefail
 

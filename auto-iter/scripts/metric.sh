@@ -9,7 +9,7 @@
 # Optional: any number of --key=value pairs (typed per emit_json rules).
 # Adds: ts=<now>.
 #
-# Canonical schema list: auto-iter/quickref.md § Metrics log schema.
+# Canonical schema list: docs/workflows/iteration-cycle/quickref.md § Metrics log schema.
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")" && pwd)"

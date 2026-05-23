@@ -46,18 +46,18 @@ Status legend: ✅ implemented · 🔲 planned · 🟡 partial.
 
 | Script | Status | Inputs | Output (success) |
 |---|---|---|---|
-| [`_common.sh`](scripts/_common.sh) | ✅ | n/a (sourced) | helpers: `emit_json`, `halt`, `repo_root`, `auto_iter_dir`, `now_iso`. Typing variants: `--str key=val` (force string), `--raw key=expr` (raw JSON). |
-| [`metric.sh`](scripts/metric.sh) | ✅ | `--cycle=N --step=NAME [--key=val ...]` | `{"cycle":N,"step":"...","ts":"...",...}` — also appended to `metrics.jsonl` |
-| [`log-cycle.sh`](scripts/log-cycle.sh) | ✅ | `--cycle=N --outcome=... [...]` or `--stream=started\|completed [...]` | `{...}` — also appended to `cycles.jsonl` |
-| [`lock.sh`](scripts/lock.sh) | ✅ | `acquire \| release \| status` | `{"acquired":true,"age_min":0}` or `{"halt":"recent_lock","age_min":N}` or `{"held":bool,"age_min":N}` or `{"released":true}` |
-| [`preflight.sh`](scripts/preflight.sh) | ✅ | (none) | `{"clean":bool,"branch":"...","on_main":bool,"ahead":N,"behind":N,"open_prs":[{...}],"findings":[...]}`. Exit 1 if any finding is halt-class. |
-| [`pick-mode.sh`](scripts/pick-mode.sh) | ✅ | (none — reads `cycles.jsonl` + `BACKLOG.md`) | `{"cycle":N,"mode":"iteration\|architecture\|brainstorm\|stop","open_scopes":N,"consecutive_empty_brainstorms":N,"reason":"..."}`. Honors the documented algorithm: cycle%5 → architecture, empty backlog + 3 trailing empty brainstorms → stop. |
-| [`pick-scope.sh`](scripts/pick-scope.sh) | ✅ | (none — reads `BACKLOG.md`) | `{"slug":"...","scope_name":"...","summary":"...","backend":"Cloud\|Server\|Both","tier":"1\|2\|3\|DX","has_scope_details":bool,"details_anchor":"#..."\|null}`. Halts `backlog_empty` if no 🔲 rows. |
-| [`overlap-check.sh`](scripts/overlap-check.sh) | ✅ | `<scope-slug>` | `{"scope":"...","overlapping_pr":N\|null,"matched_keywords":[...],"all_open_prs":[{num,title,score}]}`. Detection only — resolution decision (resolve/skip/close) stays in the orchestrator. |
-| [`worktree.sh`](scripts/worktree.sh) | ✅ | `create <slug> [--prefix=feat\|fix\|...]` or `remove <path>` | `{"path":"../bitbottle-worktrees/<slug>","branch":"<prefix>/<slug>","created":true}` or `{"path":"...","removed":true}` |
-| [`await-ci.sh`](scripts/await-ci.sh) | ✅ | `<pr-number> [--timeout-min=30] [--interval-sec=30]` | `{"pr":N,"all_passed":bool,"failed":[...],"skipped":[...],"elapsed_min":N}`. Halt `timeout` if CI still pending after deadline. |
-| [`await-publish.sh`](scripts/await-publish.sh) | ✅ | `<version> [--timeout-min=15]` | `{"version":"1.61.0","github":bool,"npm":bool,"elapsed_min":N}`. Accepts plain or `v`-prefixed versions. |
-| [`pre-merge-mechanical.sh`](scripts/pre-merge-mechanical.sh) | ✅ | (none — runs on current branch) | `{"findings":[{section,check,message,severity}],"blocker":bool}`. Covers `pre-merge-check.md` §1 (branch/tree), §2 (Conventional Commits + squash-merge title gotcha), §3 (build artifacts), §7 (release-please boundaries). Judgment sections stay LLM/CI. |
+| [`_common.sh`](../../../auto-iter/scripts/_common.sh) | ✅ | n/a (sourced) | helpers: `emit_json`, `halt`, `repo_root`, `auto_iter_dir`, `now_iso`. Typing variants: `--str key=val` (force string), `--raw key=expr` (raw JSON). |
+| [`metric.sh`](../../../auto-iter/scripts/metric.sh) | ✅ | `--cycle=N --step=NAME [--key=val ...]` | `{"cycle":N,"step":"...","ts":"...",...}` — also appended to `metrics.jsonl` |
+| [`log-cycle.sh`](../../../auto-iter/scripts/log-cycle.sh) | ✅ | `--cycle=N --outcome=... [...]` or `--stream=started\|completed [...]` | `{...}` — also appended to `cycles.jsonl` |
+| [`lock.sh`](../../../auto-iter/scripts/lock.sh) | ✅ | `acquire \| release \| status` | `{"acquired":true,"age_min":0}` or `{"halt":"recent_lock","age_min":N}` or `{"held":bool,"age_min":N}` or `{"released":true}` |
+| [`preflight.sh`](../../../auto-iter/scripts/preflight.sh) | ✅ | (none) | `{"clean":bool,"branch":"...","on_main":bool,"ahead":N,"behind":N,"open_prs":[{...}],"findings":[...]}`. Exit 1 if any finding is halt-class. |
+| [`pick-mode.sh`](../../../auto-iter/scripts/pick-mode.sh) | ✅ | (none — reads `cycles.jsonl` + `BACKLOG.md`) | `{"cycle":N,"mode":"iteration\|architecture\|brainstorm\|stop","open_scopes":N,"consecutive_empty_brainstorms":N,"reason":"..."}`. Honors the documented algorithm: cycle%5 → architecture, empty backlog + 3 trailing empty brainstorms → stop. |
+| [`pick-scope.sh`](../../../auto-iter/scripts/pick-scope.sh) | ✅ | (none — reads `BACKLOG.md`) | `{"slug":"...","scope_name":"...","summary":"...","backend":"Cloud\|Server\|Both","tier":"1\|2\|3\|DX","has_scope_details":bool,"details_anchor":"#..."\|null}`. Halts `backlog_empty` if no 🔲 rows. |
+| [`overlap-check.sh`](../../../auto-iter/scripts/overlap-check.sh) | ✅ | `<scope-slug>` | `{"scope":"...","overlapping_pr":N\|null,"matched_keywords":[...],"all_open_prs":[{num,title,score}]}`. Detection only — resolution decision (resolve/skip/close) stays in the orchestrator. |
+| [`worktree.sh`](../../../auto-iter/scripts/worktree.sh) | ✅ | `create <slug> [--prefix=feat\|fix\|...]` or `remove <path>` | `{"path":"../bitbottle-worktrees/<slug>","branch":"<prefix>/<slug>","created":true}` or `{"path":"...","removed":true}` |
+| [`await-ci.sh`](../../../auto-iter/scripts/await-ci.sh) | ✅ | `<pr-number> [--timeout-min=30] [--interval-sec=30]` | `{"pr":N,"all_passed":bool,"failed":[...],"skipped":[...],"elapsed_min":N}`. Halt `timeout` if CI still pending after deadline. |
+| [`await-publish.sh`](../../../auto-iter/scripts/await-publish.sh) | ✅ | `<version> [--timeout-min=15]` | `{"version":"1.61.0","github":bool,"npm":bool,"elapsed_min":N}`. Accepts plain or `v`-prefixed versions. |
+| [`pre-merge-mechanical.sh`](../../../auto-iter/scripts/pre-merge-mechanical.sh) | ✅ | (none — runs on current branch) | `{"findings":[{section,check,message,severity}],"blocker":bool}`. Covers `pre-merge-check.md` §1 (branch/tree), §2 (Conventional Commits + squash-merge title gotcha), §3 (build artifacts), §7 (release-please boundaries). Judgment sections stay LLM/CI. |
 
 ### Planned
 
@@ -100,8 +100,7 @@ is unaffected.
 
 ## How the orchestrator dispatches
 
-The local `.claude/commands/auto-iter.md` (gitignored) replaces inline shell
-blocks with one-liners:
+The orchestrator replaces inline shell blocks with one-liners:
 
 ```bash
 # §0a — lock
