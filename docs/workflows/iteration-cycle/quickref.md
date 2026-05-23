@@ -208,6 +208,37 @@ Output line shape:
 | `step2_release_publish` | `version`, `npm_published` |
 | `step5_cleanup` | (none) |
 
+### Hard sanity rules
+
+Before emitting any metrics line, the orchestrator (or `metric.sh` itself)
+must verify:
+
+- **`duration_ms` ∈ [0, 3_600_000]**. Anything outside ≤ 1 hour is a bug —
+  cycle 5 once recorded `1778303966000` (56 years) from a bad `date`
+  subtraction. Typed `--argjson` catches this kind of overflow immediately;
+  the bound is a defense-in-depth check.
+- **`ts` is non-empty** (derived from `now | todateiso8601`; never `""`).
+- **`cycle` may be `null` only for `step0a_lock` and `step0_preflight`** —
+  the cycle counter isn't known until §1 mode-pick. Every other step must
+  carry a real cycle number.
+- **If a step ends without writing a metrics line**, the next step's
+  emission must include `--previous_step_no_metric=<step_name>` so the
+  omission surfaces in post-cycle analysis.
+
+Post-cycle sanity check (run manually during break-in periods):
+
+```bash
+jq -s 'map(select(
+  (.duration_ms > 3600000) or
+  (.duration_ms < 0) or
+  (.ts == "") or
+  (.metrics_bug)
+))' .claude/auto-iter/metrics.jsonl
+```
+
+Should return `[]`. Anything else is an emission bug to fix before drawing
+conclusions from the metrics.
+
 ### Token-accounting honesty
 
 - `subagent_tokens`: ✅ reliable (Task tool returns it).

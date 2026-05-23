@@ -66,6 +66,82 @@ Without this check each took ~6 min instead of ~30 sec.
 
 ---
 
+## §3.5 — Mechanical taste-check (post-TDD, pre-gate)
+
+After the TDD subagent returns and before opening the PR, run a mechanical
+shell sweep inside the worktree to catch recurring BLOCKERs that the inline
+TDD checklist has historically failed to prevent. This is the agent-neutral
+mechanical encoding of the rules in [`docs/TASTE.md`](../../TASTE.md) that can
+be expressed as `grep` patterns.
+
+**Why mechanical, not checklist**: across cycles 23–24, the inline checklist
+was treated as scenery; recurring BLOCKERs landed in PRs anyway. A script
+can't be skimmed — it exits non-zero or it doesn't.
+
+```bash
+# Run inside the TDD worktree:
+cd "$WORKTREE"
+violations=""
+
+# 1. Cobra Short ≤ 60 chars + non-empty + no trailing period
+#    (skip MCP tool-registration files; they have no cobra Short field)
+while IFS= read -r f; do
+    [[ "$f" =~ /tools_.*\.go$ || "$f" =~ /handlers.*\.go$ ]] && continue
+    short=$(grep -oE 'Short:\s*"[^"]*"' "$f" | sed 's/Short:\s*"//;s/"$//')
+    [ -z "$short" ] && violations+="$f: empty Short\n" && continue
+    [ "${#short}" -gt 60 ] && violations+="$f: Short=${#short} chars (>60)\n"
+    echo "$short" | grep -qE '\.$' && violations+="$f: Short has trailing period\n"
+done < <(git diff --name-only origin/main...HEAD -- 'pkg/cmd/**/*.go' ':!*_test.go')
+
+# 2. New command files have SKILL.md + skills/references/<group>.md entries
+while IFS= read -r f; do
+    verb=$(basename "$f" .go)
+    group=$(echo "$f" | awk -F/ '{print $3}')
+    grep -q "$group $verb" skills/SKILL.md \
+        || violations+="$f: skills/SKILL.md missing '$group $verb' entry\n"
+    [ -f "skills/references/${group}.md" ] && \
+        ! grep -q "$verb" "skills/references/${group}.md" && \
+        violations+="$f: skills/references/${group}.md missing '$verb' entry\n"
+done < <(git diff --name-only --diff-filter=A origin/main...HEAD -- 'pkg/cmd/**/*.go' ':!*_test.go' ':!**/*_fields.go')
+
+# 3. Forbidden imports
+git diff origin/main...HEAD -- 'pkg/cmd/**/*.go' | \
+    grep -E '^\+.*"github.com/[^"]*/(api/cloud|api/server)' \
+    && violations+="forbidden: pkg/cmd/** importing api/cloud or api/server directly\n"
+
+# 4. No raw net/http outside api/internal/httpx.
+#    Use xargs grep on filtered files — do NOT use `git diff | grep '"net/http"'`,
+#    which can't tell which diff hunk a matching line belongs to (false positives).
+#    Also exclude test files (legitimate to import net/http for httptest).
+git diff origin/main...HEAD --name-only -- '*.go' | grep -v '_test\.go' | \
+    xargs grep -l '"net/http"' 2>/dev/null | grep -v 'api/internal/httpx' | \
+    grep -q . && violations+="forbidden: net/http used outside api/internal/httpx\n"
+
+if [ -n "$violations" ]; then
+    echo "TASTE-CHECK BLOCKERS:"
+    echo -e "$violations"
+    # → dispatch a fix-agent (code-generation tier) with this specific violation
+    #   list (NOT the full PRD; targeted fixes only). Re-run this script after
+    #   the fix-agent returns. If still violations after 1 fix attempt, halt
+    #   for human triage.
+fi
+```
+
+**False-positive prevention rules** (each is load-bearing — earlier versions
+of the sweep produced spurious failures without them):
+- Skip MCP tool-registration files (`tools_*.go`, `handlers*.go`) — they have
+  no cobra `Short` field and are not cobra commands.
+- The `net/http` check must exclude `*_test.go` (legitimate to import for
+  `httptest`).
+- For `net/http`, use `xargs grep -l` on filtered files, never raw
+  `git diff | grep '"net/http"'` — the latter can't tell which file a
+  matching line belongs to.
+
+**Metric**: emit `step2_taste_check` with `violations_count` (and
+`fixagent_dispatched: true|false`).
+
+---
+
 ## §7 — Auto-merge feature PR (skip halt for non-feat commits)
 
 In autonomous mode, the feature PR is **auto-merged without a halt** once all
@@ -91,6 +167,38 @@ feat cycle. When cycles run faster than release-please reacts, one
 release-please PR bundles multiple `feat:` commits. See
 [quickref.md § Mid-cycle halt](quickref.md#mid-cycle-halt-fires-when-release-please-opens-a-new-release-pr-not-per-feat)
 for the full rationale.
+
+---
+
+## §7 — Release publish (trust-don't-wait override)
+
+In autonomous mode, the release PR merge command returning is treated as
+**cycle end**. The cycle does NOT wait for GoReleaser to publish binaries or
+for `npm publish` to complete.
+
+Canonical [README.md §7](README.md#section-7--merge-the-pr-then-merge-the-release-pr)
+step 5 says: "Verify: `gh release view --json tagName,publishedAt` shows the
+new tag." That verification is the **serial** procedure. Autonomous mode
+overrides it:
+
+```bash
+gh pr merge "$RELEASE_PR" --squash
+# Log "release": "v1.X.Y" in cycles.jsonl. Do NOT poll await-publish.sh.
+# Cycle ends; outcome = "shipped".
+```
+
+**Why no wait**: GoReleaser publishes reliably ~3–5 min after the release-PR
+merge. Blocking the cycle on verification is ~3–5 min of pure idle per
+release-firing cycle (~9–15 min per stream of 3). If GoReleaser fails (rare),
+the GitHub Actions tab surfaces it via the normal channels — the cycle is
+"merged, publish happens async", not "failed".
+
+**The human verifies manually whenever they want**: `npm view @proggarapsody/bitbottle version`
+or check the Actions tab. The cycle log records the merge, not the publish.
+
+**When this override does NOT apply**: serial (`/iteration-cycle`) mode, where
+a human is present and the verification adds confidence at near-zero
+opportunity cost.
 
 ---
 
