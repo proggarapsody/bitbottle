@@ -36,6 +36,42 @@ Orchestrator-inline (NOT dispatched): §0a lock, §0 preflight, §1 mode/scope p
 
 **If a step listed above as dispatched is run inline by mistake**, record `dispatch_violation: true` in the metrics line so post-cycle analysis catches it.
 
+## In-cycle parallel block (§3.6)
+
+After the §3.5 mechanical taste-check passes ([`autonomous.md` §3.5](../../docs/workflows/iteration-cycle/autonomous.md#35--mechanical-taste-check-post-tdd-pre-gate)), three activities run **concurrently** inside one cycle:
+
+1. **Push branch + open PR** (orchestrator-inline) — `git push -u`, then `gh pr create` with the PR body (see § "PRD-close enforcement" below for the `Closes #<PRD>` requirement).
+2. **Design-judge subagent** (`Task(model: "sonnet")`) — runs in parallel with CI. Inputs: diff URL, `docs/TASTE.md`, `docs/ARCHITECTURE.md`. Returns findings_count + subagent_tokens.
+3. **Mechanical pre-merge gate** (orchestrator-inline) — §0 scope, §1 branch, §2 conventional commits, §3 no artifacts, §7 no CHANGELOG edits, §8 secrets grep. Emits one `§N name: PASS/BLOCKER` line per section.
+
+**Convergence**: wait for (a) CI green AND (b) design-judge returned AND (c) mechanical gate clean. Then:
+- If CI red → halt with check name + log URL.
+- If any mechanical gate BLOCKER → halt: `❌ PR #N: <finding>`.
+- If design-judge returns BLOCKER findings (layer / security) → halt.
+- If design-judge returns style/informational findings → log and continue.
+
+**Why concurrent**: CI takes ~2 min, design-judge ~2 min, mechanical gate ~5 sec. Serializing adds ~2 min per cycle. Running them in parallel keeps the cycle's wall-clock at max(CI, design-judge) ≈ 2 min.
+
+## PRD-close enforcement
+
+The PR body's last line MUST be `Closes #<PRD-issue-number>` so GitHub auto-closes the PRD on squash-merge. Belt-and-suspenders with the [README §6 rule](../../docs/workflows/iteration-cycle/README.md#section-6--open-the-pr): the README is the rule, the command file is the enforcement for autonomous mode.
+
+Before `gh pr create`, programmatically append the close keyword if not already present:
+
+```bash
+PRD_NUM="$PRD_ISSUE"  # captured at §2 PRD filing
+if ! echo "$PR_BODY" | grep -q "Closes #${PRD_NUM}"; then
+  PR_BODY="${PR_BODY}
+
+Closes #${PRD_NUM}"
+fi
+gh pr create --title "$PR_TITLE" --body "$PR_BODY"
+```
+
+**Why it matters**: PRDs #448 (REPO-EDIT), #451 (PIPELINE-STOP), #454 (SNIPPETS) all shipped in v1.90.0–v1.92.0 but stayed open for 2+ days because their PR bodies omitted the close keyword. PRD #464 was filed to fix this recurrence; this enforcement is the load-bearing half.
+
+**Post-merge verification** (§8): `gh issue view "$PRD_NUM" --json state | jq -r .state`. If `OPEN`, close manually with a comment linking the merge commit, and record `dispatch_violation: true` on the cycle's `step8_close_prd` metric so the failure mode stays visible.
+
 ## Halt delivery
 
 | Condition | Channel |

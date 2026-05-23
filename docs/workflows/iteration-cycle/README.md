@@ -360,9 +360,14 @@ resolved on the local branch.
      `fix(scope): ...`). Squash-merge uses the PR title as the commit
      subject; getting this wrong forces a follow-up empty commit (see
      #48 → #49 → #50).
-   - **Body** — link the PRD issue (`Closes #NNN`), short summary, and a
-     test plan checklist mirroring the manual tests touched in Section
-     9.
+   - **Body** — short summary and a test plan checklist mirroring the
+     manual tests touched in Section 9. **The body's last line MUST be
+     `Closes #<PRD-issue-number>`** so GitHub auto-closes the PRD on
+     squash-merge. Verify this is present before running `gh pr create`
+     (or `gh pr edit` to add post-hoc if forgotten). Section 8 verifies
+     the PRD actually closed after merge — PRDs #448, #451, #454 stayed
+     orphan-open in v1.90.0–v1.92.0 because their PR bodies omitted this
+     keyword.
 3. Wait for CI to go green. Do not request review or push more commits
    while CI is running unless something is actually broken. **Running
    design-judge here is a workflow violation** — it belongs in §5,
@@ -405,13 +410,24 @@ deleted, they are closed with a comment linking to the released
 version, which preserves history.
 
 **Actions**
-1. If the squash-merge subject didn't auto-close the issue, do it
-   manually: `gh issue close NNN --comment "Shipped in v<version>."`.
+1. **Verify the PRD is closed.** Run `gh issue view NNN --json state | jq -r .state`.
+   If `state == OPEN`, the PR body was missing the `Closes #NNN` keyword
+   (see [Section 6](#section-6--open-the-pr)) — close manually with a
+   comment linking the merge commit, and (autonomous mode) record
+   `dispatch_violation: true` on the cycle's `step8_close_prd` metric so
+   the failure mode stays visible in post-cycle analysis.
 2. If a local PRD draft was written to disk during Section 2 (e.g., a
    scratch markdown file outside the repo), delete it. Do not delete
    anything tracked by git.
 3. Confirm `gh issue view NNN` shows `state: CLOSED` with the close
    comment in place.
+
+**Why this verification step exists**: PRDs #448 (REPO-EDIT), #451
+(PIPELINE-STOP), #454 (SNIPPETS) all shipped in v1.90.0–v1.92.0 but stayed
+open for 2+ days because their PR bodies omitted `Closes #NNN`. GitHub's
+auto-close fires only when the keyword is in the PR body or squash-merge
+commit body. The verification here catches the missed keyword before it
+becomes an orphan-shipped PRD.
 
 **Exit**: PRD issue closed; no orphan PRD files on disk.
 
