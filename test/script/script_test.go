@@ -282,6 +282,38 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 				},
 			}),
 		},
+		// GET pr-settings — used by repo pr-settings get and by set (GET-then-POST merge)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/settings/pull-requests",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"requiredApprovers":        2,
+				"requiredAllApprovers":     false,
+				"requiredAllTasksComplete": false,
+				"requiredSuccessfulBuilds": 1,
+				"mergeConfig": map[string]any{
+					"defaultStrategy": map[string]any{"id": "no-ff"},
+					"strategies":      []any{map[string]any{"id": "no-ff"}, map[string]any{"id": "squash"}},
+				},
+			},
+		},
+		// POST pr-settings — used by repo pr-settings set
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/settings/pull-requests",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"requiredApprovers":        3,
+				"requiredAllApprovers":     false,
+				"requiredAllTasksComplete": false,
+				"requiredSuccessfulBuilds": 1,
+				"mergeConfig": map[string]any{
+					"defaultStrategy": map[string]any{"id": "no-ff"},
+					"strategies":      []any{map[string]any{"id": "no-ff"}, map[string]any{"id": "squash"}},
+				},
+			},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

@@ -1,0 +1,8 @@
+# repo pr-settings set updates PR gate settings and confirms with a success message.
+bb-fake server
+
+bitbottle repo pr-settings set -R $BB_HOST/PROJ/alpha-repo -k --required-approvers 3
+stdout 'updated'
+
+bitbottle repo pr-settings set -R $BB_HOST/PROJ/alpha-repo -k --required-approvers 3 --json
+stdout '"requiredApprovers"'

@@ -265,6 +265,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "RepoPRSettingsClient",
+		HumanLabel:    "repo PR settings",
+		Check:         func(c Client) bool { _, ok := c.(RepoPRSettingsClient); return ok },
+		Feature:       FeatureRepoPRSettings,
+		CloudSupport:  false,
+		ServerSupport: true,
+	},
+	{
 		Name:          "RepoForker",
 		HumanLabel:    "repo fork",
 		Check:         func(c Client) bool { _, ok := c.(RepoForker); return ok },
