@@ -34,7 +34,7 @@ disagrees with this doc; the binary wins.
 | Workspaces + webhooks (Cloud only), `user view` | `references/workspace.md`, `references/user.md` |
 | Named credential profiles (`profile create/use/list/delete`) | `references/profile.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
-| Extensions (`extension install/list/upgrade/remove/exec`, extension scaffold scaffold) | `references/extension.md` |
+| Extensions (`extension install/list/upgrade/remove/exec`, extension scaffold) | `references/extension.md` |
 | Group management — group list, group create, group delete, group member list, group member add, group member remove (Server/DC only) | `references/groups.md` |
 
 Load both when a task spans areas. Don't load speculatively.
