@@ -96,7 +96,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
 | `user` | `view` |
 | `workspace` | `list` `member list` `hook list` `hook create` `hook delete` _(Cloud only)_ |
-| `project` | `list WORKSPACE` _(Cloud only)_ |
+| `project` | `list WORKSPACE` _(Cloud only)_ · `server-list` `create` `view` `edit` `delete` _(Server/DC only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
 | `search` | `code QUERY` _(Cloud only)_ |
 | `api` | Raw REST passthrough with pagination, `--jq`, variable expansion |
