@@ -1614,3 +1614,10 @@ components:
             type: string
         configuration:
           $ref: "#/components/schemas/RestWebhookConfig"
+
+    RestEditRepoInput:
+      type: object
+      description: Request body for editing a Server repository's metadata
+      properties:
+        description:
+          type: string

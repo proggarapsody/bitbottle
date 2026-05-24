@@ -351,6 +351,16 @@ type CloudDiffStatPath struct {
 	Path string `json:"path"`
 }
 
+// CloudEditRepoInput Request body for editing a Cloud repository's metadata
+type CloudEditRepoInput struct {
+	Description *string `json:"description,omitempty"`
+	ForkPolicy  *string `json:"fork_policy,omitempty"`
+	HasIssues   *bool   `json:"has_issues,omitempty"`
+	HasWiki     *bool   `json:"has_wiki,omitempty"`
+	Language    *string `json:"language,omitempty"`
+	Website     *string `json:"website,omitempty"`
+}
+
 // CloudEffectiveDefaultReviewer An effective default reviewer entry
 type CloudEffectiveDefaultReviewer struct {
 	User CloudEffectiveDefaultReviewerUser `json:"user"`

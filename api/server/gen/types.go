@@ -337,6 +337,11 @@ type RestEditPRComment struct {
 	Version int    `json:"version"`
 }
 
+// RestEditRepoInput Request body for editing a Server repository's metadata
+type RestEditRepoInput struct {
+	Description *string `json:"description,omitempty"`
+}
+
 // RestInboxPR A PR from the Server inbox endpoint
 type RestInboxPR struct {
 	Author  RestInboxPRAuthor  `json:"author"`

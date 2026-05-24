@@ -1616,3 +1616,20 @@ components:
           type: string
         links:
           $ref: "#/components/schemas/CloudProjectLinks"
+
+    CloudEditRepoInput:
+      type: object
+      description: Request body for editing a Cloud repository's metadata
+      properties:
+        description:
+          type: string
+        website:
+          type: string
+        language:
+          type: string
+        fork_policy:
+          type: string
+        has_issues:
+          type: boolean
+        has_wiki:
+          type: boolean
