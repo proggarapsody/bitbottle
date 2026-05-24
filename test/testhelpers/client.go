@@ -257,6 +257,10 @@ type FakeClient struct {
 	// Repo edit methods (both backends; satisfies backend.RepoEditor when set)
 	EditRepoFn func(ns, slug string, in backend.EditRepoInput) (backend.Repository, error)
 
+	// Repo PR settings methods (Server-only; satisfies backend.RepoPRSettingsClient when set)
+	GetRepoPRSettingsFn    func(ns, slug string) (backend.RepoPRSettings, error)
+	UpdateRepoPRSettingsFn func(ns, slug string, in backend.RepoPRSettingsInput) (backend.RepoPRSettings, error)
+
 	// Snippet methods (Cloud-only; satisfies backend.SnippetClient when set)
 	ListSnippetsFn  func(workspace string, limit int) ([]backend.Snippet, error)
 	GetSnippetFn    func(workspace, id string) (backend.Snippet, error)
@@ -296,6 +300,7 @@ var (
 	_ backend.PRParticipantClient      = (*FakeClient)(nil)
 	_ backend.PRStatusLister           = (*FakeClient)(nil)
 	_ backend.RepoEditor               = (*FakeClient)(nil)
+	_ backend.RepoPRSettingsClient     = (*FakeClient)(nil)
 	_ backend.RepoForker               = (*FakeClient)(nil)
 	_ backend.RepoForksLister          = (*FakeClient)(nil)
 	_ backend.RepoTransferClient       = (*FakeClient)(nil)
@@ -405,6 +410,28 @@ func (c *FakeClient) EditRepo(ns, slug string, in backend.EditRepoInput) (backen
 		c.T.Fatalf("unexpected call to FakeClient.EditRepo; set EditRepoFn in your test")
 	}
 	return backend.Repository{}, nil
+}
+
+// ── RepoPRSettingsClient ──────────────────────────────────────────────────────
+
+func (c *FakeClient) GetRepoPRSettings(ns, slug string) (backend.RepoPRSettings, error) {
+	if c.GetRepoPRSettingsFn != nil {
+		return c.GetRepoPRSettingsFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetRepoPRSettings; set GetRepoPRSettingsFn in your test")
+	}
+	return backend.RepoPRSettings{}, nil
+}
+
+func (c *FakeClient) UpdateRepoPRSettings(ns, slug string, in backend.RepoPRSettingsInput) (backend.RepoPRSettings, error) {
+	if c.UpdateRepoPRSettingsFn != nil {
+		return c.UpdateRepoPRSettingsFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdateRepoPRSettings; set UpdateRepoPRSettingsFn in your test")
+	}
+	return backend.RepoPRSettings{}, nil
 }
 
 func (c *FakeClient) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {

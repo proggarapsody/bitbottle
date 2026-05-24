@@ -71,6 +71,33 @@ hosts. At least one flag is required. `--enable-issues` and `--disable-issues`
 are mutually exclusive; same for `--enable-wiki` and `--disable-wiki`. MCP
 tool: `edit_repo(repo, [description, website, language, fork_policy, has_issues, has_wiki])`.
 
+## PR gate settings (Server/DC only)
+
+```bash
+bitbottle repo pr-settings get PROJ/repo              # show PR gate settings
+bitbottle repo pr-settings get PROJ/repo --json       # as JSON
+
+bitbottle repo pr-settings set PROJ/repo \
+  --required-approvers 2 \
+  --required-all-approvers \
+  --required-successful-builds 1 \
+  --merge-strategy no-ff \
+  --allowed-strategies squash,no-ff
+```
+
+`repo pr-settings get` returns the current PR merge gate configuration:
+required approvers, all-approvers flag, all-tasks-complete flag, required
+successful builds, default merge strategy, and allowed merge strategies.
+
+`repo pr-settings set` accepts any subset of the above flags; omitted flags
+leave the current value unchanged (fetch-then-merge semantics). At least one
+flag is required.
+
+**Server/DC only.** Bitbucket Cloud does not expose this API; both commands
+return a typed `host.unsupported` error on Cloud hosts.
+
+MCP tools: `get_repo_pr_settings(project, repo)`, `set_repo_pr_settings(project, repo, [required_approvers, required_all_approvers, required_all_tasks_complete, required_successful_builds, merge_strategy, allowed_strategies])`.
+
 ## Branches
 
 ```bash

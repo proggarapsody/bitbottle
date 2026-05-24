@@ -1,0 +1,9 @@
+# repo pr-settings get shows current PR gate settings in table and JSON format.
+bb-fake server
+
+bitbottle repo pr-settings get -R $BB_HOST/PROJ/alpha-repo -k
+stdout 'no-ff'
+
+bitbottle repo pr-settings get -R $BB_HOST/PROJ/alpha-repo -k --json
+stdout '"requiredApprovers"'
+stdout '"mergeStrategy"'
