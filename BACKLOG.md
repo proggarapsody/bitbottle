@@ -471,6 +471,11 @@ Current state of every command area against gh feature parity:
 | AUTH-TLS-PROBE | **Auto-detect self-signed CA during `auth login` and prompt to trust** | Today the Server/DC user must remember `--skip-tls-verify` at login time, or paste `-k` per invocation. UX is poor: the corporate-CA host fails with `x509: certificate signed by unknown authority` *after* the user has already pasted their PAT, with no obvious recovery short of re-running with a new flag. Fix: during `bitbottle auth login` (Server/DC only — Cloud uses Atlassian-managed certs), run a pre-flight TLS handshake against the target hostname with verification ON. On `x509.UnknownAuthorityError` (or related self-signed/hostname-mismatch errors), display the leaf cert's Subject CN, Issuer CN, NotBefore/NotAfter, and SHA-256 fingerprint, then prompt `Trust this certificate? [y/N]` (SSH known-hosts UX). On confirm → set `skip_tls_verify: true` in `hosts.yml` automatically and print a one-line warning that installing the corporate CA is strictly safer. On decline or non-TTY (or `BB_PROMPT_DISABLED=1`) → surface the current `x509` error so explicit `--skip-tls-verify` is still required. Skip the probe when `--skip-tls-verify` was already passed. Architecture: new `internal/tlsprobe/` package (handshake-only TLS dial that captures the leaf cert on `UnknownAuthorityError` via a second dial with `InsecureSkipVerify=true`), wired via `f.TLSProber` for test injection (mirrors the existing `f.ServerPATURLProber` pattern). Touches: `internal/tlsprobe/{tlsprobe.go,tlsprobe_test.go}`, `pkg/cmd/factory/factory.go` (inject prober), `pkg/cmd/auth/login.go` (call probe + prompt), `skills/references/auth.md`. Stretch goal **AUTH-TLS-PIN**: store `tls_fingerprint_sha256` in `hosts.yml` and verify against it via a custom `tls.Config.VerifyConnection` on every request — strictly safer than `InsecureSkipVerify` and removes the need for the flag on corporate-CA hosts. | Server/DC | DX | ✅ |
 | PIPELINE-OBSERVABILITY | **Pipeline observability hardening** — fix metrics dropout, add `cycle-summary.sh` token+active-duration rollup, split `duration_min` into `duration_wall_min`+`duration_active_min`, fix `scope`/`pr` scalar→array shape in `emit_json`, add `pipeline_version` field, retire `taste_check`, narrow `pre_merge_gate` to BACKLOG-flip-isolation + dist/large-file assertions. PRD [#423](https://github.com/proggarapsody/bitbottle/issues/423). | N/A | DX | ✅ |
 | WORKFLOW-DOCS-RESTRUCTURE | Restructure auto-iter/iteration-cycle docs under one-way inheritance, bounded contexts, and progressive disclosure | N/A | DX | ✅ |
+| GROUP-MGMT | **Server/DC Group Management** | `group list [--filter PREFIX]`, `group create NAME`, `group delete NAME`, `group member list NAME`, `group member add NAME USER`, `group member remove NAME USER` — manage Bitbucket Server/DC internal groups and their memberships (the unit referenced by `perms project grant --group` and `pr reviewer-group`). Server: `GET /rest/api/1.0/admin/groups`, `POST /rest/api/1.0/admin/groups`, `DELETE /rest/api/1.0/admin/groups`, `GET /rest/api/1.0/admin/groups/more-members?context=NAME`, `POST /rest/api/1.0/admin/users/add-group`, `POST /rest/api/1.0/admin/users/remove-group`. Cloud → typed `host.unsupported` (Cloud uses workspace groups under a separate `workspaces/{ws}/permissions/repositories` model that this scope intentionally does not cover). New optional interface `GroupClient` + `GroupMemberClient`. Follows `List*` paging pattern + write-op pattern. MCP triplet for all six tools. — scope **GROUP-MGMT** | Server/DC | 3 | 🔲 |
+| PR-SETTINGS | **Per-Repo PR Settings** | `repo pr-settings get [PROJECT/REPO]`, `repo pr-settings set [PROJECT/REPO] [--required-approvers N] [--required-all-approvers] [--required-all-tasks-complete] [--required-successful-builds N] [--merge-strategy ff\|ff-only\|rebase\|squash\|merge-commit] [--allowed-strategies s1,s2,...]` — read/write the per-repo PR merge configuration (distinct from BRANCH-MODEL ✅ which is the branching-model layer, and from BRANCH-RULE ✅ / BRANCH-PROTECT ✅ which gate ref pushes). Server: `GET/POST /rest/api/1.0/projects/{ns}/repos/{slug}/settings/pull-requests`. Cloud: `GET/PUT /repositories/{ws}/{slug}` (subset — `fork_policy` + project-level merge strategies); fields unsupported by Cloud return typed `host.unsupported` on `set`. New optional interface `RepoPRSettingsClient` with `GetRepoPRSettings`, `UpdateRepoPRSettings`. Follows single-read + write-op pattern. MCP pair `get_repo_pr_settings`, `set_repo_pr_settings`. — scope **PR-SETTINGS** | Both | 2 | 🔲 |
+| EXT-SCAFFOLD | **Extension Scaffold** | `extension scaffold NAME [--lang go\|bash] [--dir DIR]` — initialize a new bitbottle extension project from a template (matches `gh extension create`). Generates `bitbottle-NAME/` with: (a) `bitbottle-NAME` executable stub (Go `main.go` + `go.mod` for `--lang go`, or POSIX-sh script for `--lang bash`), (b) `README.md` with install/usage notes, (c) `.github/workflows/release.yml` releasing a binary asset named `bitbottle-NAME-<os>-<arch>` recognised by `extension install USER/REPO`, (d) `LICENSE` (MIT default). Default `--dir` is cwd. Pure-local command — no Bitbucket API calls (no backend) and no `host.unsupported`. Completes the extension ecosystem alongside shipped EXT-CORE / EXT-RUNTIME / EXT-MGMT. No MCP exposure (template generation is a per-developer one-shot, not an agent loop). Embedded templates live under `pkg/cmd/extension/scaffold/templates/`. — scope **EXT-SCAFFOLD** | N/A | DX | 🔲 |
+| NIGHTLY-E2E | **Nightly live-wire E2E workflow** | `.github/workflows/nightly-e2e.yml` running on a 02:00 UTC cron + manual `workflow_dispatch`. Runs the existing `test/script/` testscript corpus with `BITBOTTLE_E2E=1` against (a) real Bitbucket Cloud (workspace + repo + PAT via `secrets.BB_CLOUD_*`) and (b) real Bitbucket Server (URL + PAT via `secrets.BB_SERVER_*`), in a job matrix of `{cloud, server}`. Closes the explicit tier-6 gap called out in `docs/ARCHITECTURE.md` "Test tiers" and `docs/TESTING-PYRAMID.md`. On failure: open (or update) a `nightly-e2e: <date>` GitHub issue with the failing scripts + run URL; never block `main`. Reuses the same hermetic txtar files — the env flag flips the harness from `bb-fake` to real backends. Touches: new workflow file, `auto-iter/scripts/preflight.sh` skip note ("nightly-e2e PRs gated separately"), `docs/TESTING-PYRAMID.md` tier-6 status flip. — scope **NIGHTLY-E2E** | N/A | DX | 🔲 |
+| CI-BADGE | **Fix CI status badge permanently showing "failing"** | The README CI badge reports `failing` even when all GitHub Actions workflows are green. Diagnose root cause: likely the badge URL references a workflow `name:` field or branch that doesn't exactly match, or the badge points at a workflow that legitimately fails on some triggers (e.g. a skipped path-filtered job counted as failed). Fix: (1) verify the badge URL's `workflow=` parameter matches the exact `name:` in the `.github/workflows/ci.yml` file and the `branch=` matches `main`; (2) if a workflow is expected to conditionally fail, split it out or add a dedicated always-passing status job; (3) switch to the shields.io `workflow` badge format if the GitHub native badge continues to flicker. Update `README.md` with the corrected badge URL. | N/A | DX | 🔲 |
 
 
 ---
@@ -2897,6 +2902,153 @@ type PipelineArtifact struct {
 - [ ] `pkg/cmd/pipeline/artifact/` (list, download) + tests
 - [ ] MCP pair
 - [ ] `skills/SKILL.md` + `skills/references/pipeline.md`
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### GROUP-MGMT — Server/DC Group Management
+
+**Status:** 🔲
+
+Bitbucket Server/DC has a first-class internal group primitive used everywhere — `perms project grant --group ENG`, `pr reviewer-group add --users …`, branch-restriction grants — but bitbottle has no surface for managing the groups themselves. Today admins must drop into the Bitbucket web UI (or raw `bitbottle api`) to create a new group or add a user to it. This scope closes the gap and lands the standard `gh org member`-shaped CRUD on the existing peer concept. Cloud's authorization model is workspace-permission-shaped rather than group-shaped, so Cloud returns typed `host.unsupported` from every method on this interface (consistent with PERMS, BRANCH-PROTECT, TASK).
+
+**Interface:**
+```go
+// api/backend/client_group.go
+type GroupClient interface {
+    ListGroups(filter string, limit int) ([]Group, error)
+    CreateGroup(name string) (Group, error)
+    DeleteGroup(name string) error
+}
+
+type GroupMemberClient interface {
+    ListGroupMembers(group string, limit int) ([]User, error)
+    AddGroupMember(group, userSlug string) error
+    RemoveGroupMember(group, userSlug string) error
+}
+
+type Group struct {
+    Name      string
+    Deletable bool
+}
+```
+
+**Commands:** `bitbottle group list [--filter PREFIX] [--limit N] [--json]`, `bitbottle group create NAME`, `bitbottle group delete NAME [--confirm]`, `bitbottle group member list NAME [--limit N] [--json]`, `bitbottle group member add NAME USER`, `bitbottle group member remove NAME USER`
+
+**Backends:** Server (`GET /rest/api/1.0/admin/groups`, `POST /rest/api/1.0/admin/groups`, `DELETE /rest/api/1.0/admin/groups`, `GET /rest/api/1.0/admin/groups/more-members?context=NAME`, `POST /rest/api/1.0/admin/users/add-group`, `POST /rest/api/1.0/admin/users/remove-group`). Cloud → `host.unsupported`.
+
+**MCP tools:** `list_groups`, `create_group`, `delete_group`, `list_group_members`, `add_group_member`, `remove_group_member`
+
+**Definition of Done:**
+- [ ] `api/backend/client_group.go` — `GroupClient` + `GroupMemberClient` + `Group` type
+- [ ] `api/server/groups.go` + `api/server/groups_test.go` (uses `paging.Collect[Group]` and `paging.Collect[User]`)
+- [ ] `api/cloud/groups.go` returning `host.unsupported` (`unsupported_groups_test.go`)
+- [ ] `pkg/cmd/group/` (list, create, delete, member/list, member/add, member/remove) + tests
+- [ ] MCP triplet (`tools.go` + `handlers.go` + `handlers_test.go`) — six tools
+- [ ] `test/script/testdata/group_*.txtar` covering list + create-then-delete + member add+remove
+- [ ] `skills/SKILL.md` + `skills/references/admin.md` (or new `skills/references/group.md`)
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PR-SETTINGS — Per-Repo PR Settings
+
+**Status:** 🔲
+
+Bitbucket exposes per-repo pull-request configuration that's distinct from branch protections and from the branching model: required number of approvers, "all approvers must approve", "all tasks must be resolved", required green builds, and which merge strategies are allowed. Today these can only be set in the web UI (Server) or by hand-rolling a `PUT /repositories/{ws}/{slug}` payload (Cloud). This scope ships the read/write CLI surface that completes the trio: BRANCH-RULE (Cloud ref restrictions ✅), BRANCH-PROTECT (Server ref restrictions ✅), PR-SETTINGS (PR merge gate, both backends).
+
+**Interface:**
+```go
+// api/backend/client_repo_pr_settings.go
+type RepoPRSettingsClient interface {
+    GetRepoPRSettings(ns, slug string) (RepoPRSettings, error)
+    UpdateRepoPRSettings(ns, slug string, in RepoPRSettingsInput) (RepoPRSettings, error)
+}
+
+type RepoPRSettings struct {
+    RequiredApprovers           int
+    RequiredAllApprovers        bool
+    RequiredAllTasksComplete    bool
+    RequiredSuccessfulBuilds    int
+    MergeStrategy               string   // default
+    AllowedStrategies           []string // subset of {ff, ff-only, rebase, squash, merge-commit}
+}
+
+// Pointer fields → only set the ones the user passed.
+type RepoPRSettingsInput struct {
+    RequiredApprovers           *int
+    RequiredAllApprovers        *bool
+    RequiredAllTasksComplete    *bool
+    RequiredSuccessfulBuilds    *int
+    MergeStrategy               *string
+    AllowedStrategies           *[]string
+}
+```
+
+**Commands:** `bitbottle repo pr-settings get [PROJECT/REPO] [--json]`, `bitbottle repo pr-settings set [PROJECT/REPO] [--required-approvers N] [--required-all-approvers[=false]] [--required-all-tasks-complete[=false]] [--required-successful-builds N] [--merge-strategy STRAT] [--allowed-strategies s1,s2,...]`
+
+**Backends:** Server (`GET /rest/api/1.0/projects/{ns}/repos/{slug}/settings/pull-requests`, `POST` same path with merge config body). Cloud (`GET /repositories/{ws}/{slug}` for read, `PUT /repositories/{ws}/{slug}` for the subset Cloud supports — `fork_policy` + the project-level merge defaults; fields not honoured by Cloud return `ErrUnsupportedOnHost` per-field rather than failing the whole call).
+
+**MCP tools:** `get_repo_pr_settings`, `set_repo_pr_settings`
+
+**Definition of Done:**
+- [ ] `api/backend/client_repo_pr_settings.go` — interface + `RepoPRSettings` + `RepoPRSettingsInput`
+- [ ] `api/cloud/repo_pr_settings.go` + `api/cloud/repo_pr_settings_test.go` (subset support + typed errors on Cloud-unsupported fields)
+- [ ] `api/server/repo_pr_settings.go` + `api/server/repo_pr_settings_test.go`
+- [ ] `pkg/cmd/repo/pr-settings/` (get, set) + tests
+- [ ] MCP pair (`tools.go` + `handlers.go` + `handlers_test.go`)
+- [ ] `test/script/testdata/repo_pr_settings_*.txtar` for both backends
+- [ ] `skills/SKILL.md` + `skills/references/repo.md`
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### EXT-SCAFFOLD — Extension Scaffold
+
+**Status:** 🔲
+
+EXT-CORE / EXT-RUNTIME / EXT-MGMT shipped the install + exec + upgrade + remove half of the extension ecosystem, but there's still no `bitbottle extension scaffold NAME` to seed a new extension project — equivalent to `gh extension create`. Today an author has to read the EXT-CORE spec, hand-write the binary-naming convention (`bitbottle-NAME-<os>-<arch>`), and hand-write the GitHub release workflow that EXT-MGMT's auto-upgrade lockfile expects. This scope closes the on-ramp. Pure-local: no Bitbucket API, no backend interface, no MCP exposure (template generation is a one-shot per-developer act, not an agent loop).
+
+**Interface:** No new backend interface. New scaffold package `pkg/cmd/extension/scaffold/` with embedded templates under `pkg/cmd/extension/scaffold/templates/` consumed via `embed.FS`.
+
+**Commands:** `bitbottle extension scaffold NAME [--lang go|bash] [--dir DIR]` (default `--lang go`, default `--dir .`)
+
+**Backends:** N/A — pure-local file generation. No `host.unsupported`.
+
+**MCP tools:** none
+
+**Definition of Done:**
+- [ ] `pkg/cmd/extension/scaffold/scaffold.go` + `scaffold_test.go` (golden-file assertions on emitted tree)
+- [ ] `pkg/cmd/extension/scaffold/templates/go/{main.go.tmpl,go.mod.tmpl,README.md.tmpl,release.yml.tmpl,LICENSE.tmpl}`
+- [ ] `pkg/cmd/extension/scaffold/templates/bash/{bitbottle-NAME.tmpl,README.md.tmpl,release.yml.tmpl,LICENSE.tmpl}`
+- [ ] Generated `release.yml` produces an asset named `bitbottle-NAME-<os>-<arch>` recognised by EXT-CORE's installer (round-trip-tested with a fake release)
+- [ ] `test/script/testdata/extension_scaffold_*.txtar` for both `--lang` values, plus a round-trip script that scaffolds → builds → installs locally → execs
+- [ ] `skills/SKILL.md` + `skills/references/extension.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### NIGHTLY-E2E — Nightly live-wire E2E workflow
+
+**Status:** 🔲
+
+`docs/ARCHITECTURE.md` ("Test tiers") and `docs/TESTING-PYRAMID.md` both call out tier 6 — nightly live-wire E2E against real Bitbucket Cloud + real Bitbucket Server — as an explicit gap. The TESTSCRIPT corpus (✅) and TESTSCRIPT-BACKFILL (✅) already carry `BITBOTTLE_E2E=1` opt-in, so the harness is wired; the missing piece is a scheduled workflow that flips the flag and runs against real backends with secrets-based credentials. This catches the class of bug that's invisible to hermetic `bb-fake` runs: real auth flows, real rate-limit shaping, real Bitbucket version drift, real CSRF/content-type policy regressions.
+
+**Interface:** No new code interface. New GHA workflow + secrets contract.
+
+**Commands:** none (CI-only)
+
+**Backends:** N/A — exercises both via the existing testscript corpus.
+
+**MCP tools:** none
+
+**Definition of Done:**
+- [ ] `.github/workflows/nightly-e2e.yml` — `schedule: '0 2 * * *'` + `workflow_dispatch`, matrix `{cloud, server}`, runs `go test ./test/script/... -run TestScript -tags e2e` with `BITBOTTLE_E2E=1` and the per-backend secrets exported
+- [ ] Secrets contract documented: `BB_CLOUD_WORKSPACE`, `BB_CLOUD_REPO`, `BB_CLOUD_TOKEN`, `BB_SERVER_URL`, `BB_SERVER_PROJECT`, `BB_SERVER_REPO`, `BB_SERVER_TOKEN` (documented in `docs/RELEASE.md` or a new `docs/CI-SECRETS.md`)
+- [ ] On failure: a single rolling GitHub issue is opened or updated (title `nightly-e2e: failing as of <date>`) with the failing script names + run URL; closes on next green run
+- [ ] Failures never block `main` (workflow is not a required check)
+- [ ] `test/script/scripts.go` (or the testscript bootstrap) reads the env vars and skips Cloud-only scripts on the server matrix leg and vice versa
+- [ ] `docs/TESTING-PYRAMID.md` tier-6 status flipped from "not shipped" to "shipped"
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---
