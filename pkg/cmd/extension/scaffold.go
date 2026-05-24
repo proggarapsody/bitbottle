@@ -1,5 +1,4 @@
-// Package scaffold implements the `bitbottle extension scaffold` command.
-package scaffold
+package extension
 
 import (
 	"embed"
@@ -13,14 +12,15 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
-//go:embed templates
-var templateFS embed.FS
+//go:embed scaffold/templates
+var scaffoldTemplateFS embed.FS
 
-// templateData holds the values substituted into every template file.
-type templateData struct {
+// scaffoldTemplateData holds the values substituted into every template file.
+type scaffoldTemplateData struct {
 	Name       string
 	BinaryName string
 	Year       int
@@ -58,18 +58,49 @@ Examples:
 }
 
 func runScaffold(f *factory.Factory, name, lang, dir string) error {
+	// Validate name to prevent path traversal.
+	if name == "" {
+		return &backend.DomainError{
+			Kind:    backend.ErrInvalidRequest,
+			Code:    backend.CodeInvalidRequest,
+			Message: "extension name must not be empty",
+		}
+	}
+	if strings.Contains(name, "/") || strings.Contains(name, `\`) {
+		return &backend.DomainError{
+			Kind:    backend.ErrInvalidRequest,
+			Code:    backend.CodeInvalidRequest,
+			Message: fmt.Sprintf("extension name %q must not contain path separators", name),
+		}
+	}
+	if name == ".." || strings.HasPrefix(name, "../") || strings.HasPrefix(name, `..\ `) {
+		return &backend.DomainError{
+			Kind:    backend.ErrInvalidRequest,
+			Code:    backend.CodeInvalidRequest,
+			Message: fmt.Sprintf("extension name %q is not allowed", name),
+		}
+	}
+
 	if lang != "go" && lang != "bash" {
-		return fmt.Errorf("unsupported language %q: must be go or bash", lang)
+		return &backend.DomainError{
+			Kind:    backend.ErrInvalidRequest,
+			Code:    backend.CodeInvalidRequest,
+			Message: fmt.Sprintf("unsupported language %q: must be go or bash", lang),
+		}
 	}
 
 	binaryName := "bitbottle-" + name
 	destRoot := filepath.Join(dir, binaryName)
 
 	if _, err := os.Stat(destRoot); err == nil {
-		return fmt.Errorf("directory %s already exists", destRoot)
+		return &backend.DomainError{
+			Kind:    backend.ErrInvalidRequest,
+			Code:    backend.CodeInvalidRequest,
+			Message: fmt.Sprintf("directory %s already exists", destRoot),
+		}
 	}
 
-	data := templateData{
+	data := scaffoldTemplateData{
 		Name:       name,
 		BinaryName: binaryName,
 		Year:       time.Now().Year(),
@@ -80,13 +111,13 @@ func runScaffold(f *factory.Factory, name, lang, dir string) error {
 	}
 
 	// Render shared templates (README.md, LICENSE, .github/workflows/release.yml).
-	if err := renderDir(templateFS, "templates/shared", destRoot, data, sharedDestPath); err != nil {
+	if err := scaffoldRenderDir(scaffoldTemplateFS, "scaffold/templates/shared", destRoot, data, scaffoldSharedDestPath); err != nil {
 		return err
 	}
 
 	// Render language-specific templates.
-	langDir := "templates/" + lang
-	if err := renderDir(templateFS, langDir, destRoot, data, langDestPath(lang, name)); err != nil {
+	langDir := "scaffold/templates/" + lang
+	if err := scaffoldRenderDir(scaffoldTemplateFS, langDir, destRoot, data, scaffoldLangDestPath(lang, name)); err != nil {
 		return err
 	}
 
@@ -94,9 +125,9 @@ func runScaffold(f *factory.Factory, name, lang, dir string) error {
 	return nil
 }
 
-// sharedDestPath maps a shared template path to its output path relative to destRoot.
-func sharedDestPath(tmplPath string) string {
-	// tmplPath example: "templates/shared/README.md.tmpl"
+// scaffoldSharedDestPath maps a shared template path to its output path relative to destRoot.
+func scaffoldSharedDestPath(tmplPath string) string {
+	// tmplPath example: "scaffold/templates/shared/README.md.tmpl"
 	base := filepath.Base(tmplPath)
 	out := strings.TrimSuffix(base, ".tmpl")
 	switch out {
@@ -107,8 +138,8 @@ func sharedDestPath(tmplPath string) string {
 	}
 }
 
-// langDestPath maps a language-specific template path to its output path.
-func langDestPath(lang, name string) func(string) string {
+// scaffoldLangDestPath maps a language-specific template path to its output path.
+func scaffoldLangDestPath(lang, name string) func(string) string {
 	return func(tmplPath string) string {
 		base := filepath.Base(tmplPath)
 		out := strings.TrimSuffix(base, ".tmpl")
@@ -120,9 +151,9 @@ func langDestPath(lang, name string) func(string) string {
 	}
 }
 
-// renderDir walks srcDir inside fsys, renders each .tmpl file via text/template,
+// scaffoldRenderDir walks srcDir inside fsys, renders each .tmpl file via text/template,
 // and writes the result to destRoot using destPath to compute the relative output path.
-func renderDir(fsys embed.FS, srcDir, destRoot string, data templateData, destPath func(string) string) error {
+func scaffoldRenderDir(fsys embed.FS, srcDir, destRoot string, data scaffoldTemplateData, destPath func(string) string) error {
 	return fs.WalkDir(fsys, srcDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err

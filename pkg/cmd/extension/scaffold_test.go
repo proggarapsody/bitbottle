@@ -1,4 +1,4 @@
-package scaffold_test
+package extension_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/extension/scaffold"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/extension"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 )
 
@@ -14,7 +14,7 @@ func TestScaffold_Go_CreatesExpectedFiles(t *testing.T) {
 	dir := t.TempDir()
 	f, out, _ := factorytest.New(t, factorytest.Opts{})
 
-	cmd := scaffold.NewCmdScaffold(f)
+	cmd := extension.NewCmdScaffold(f)
 	cmd.SetOut(out)
 	cmd.SetArgs([]string{"myplugin", "--lang", "go", "--dir", dir})
 
@@ -45,7 +45,7 @@ func TestScaffold_Bash_CreatesExpectedFiles(t *testing.T) {
 	dir := t.TempDir()
 	f, out, _ := factorytest.New(t, factorytest.Opts{})
 
-	cmd := scaffold.NewCmdScaffold(f)
+	cmd := extension.NewCmdScaffold(f)
 	cmd.SetOut(out)
 	cmd.SetArgs([]string{"myplugin", "--lang", "bash", "--dir", dir})
 
@@ -80,7 +80,7 @@ func TestScaffold_DefaultLang_IsGo(t *testing.T) {
 	dir := t.TempDir()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 
-	cmd := scaffold.NewCmdScaffold(f)
+	cmd := extension.NewCmdScaffold(f)
 	cmd.SetArgs([]string{"defaultlang", "--dir", dir})
 
 	if err := cmd.Execute(); err != nil {
@@ -97,7 +97,7 @@ func TestScaffold_InvalidLang_ReturnsError(t *testing.T) {
 	dir := t.TempDir()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 
-	cmd := scaffold.NewCmdScaffold(f)
+	cmd := extension.NewCmdScaffold(f)
 	cmd.SetArgs([]string{"myplugin", "--lang", "python", "--dir", dir})
 
 	err := cmd.Execute()
@@ -118,7 +118,7 @@ func TestScaffold_ExistingDir_ReturnsError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := scaffold.NewCmdScaffold(f)
+	cmd := extension.NewCmdScaffold(f)
 	cmd.SetArgs([]string{"clash", "--dir", dir})
 
 	err := cmd.Execute()
@@ -134,7 +134,7 @@ func TestScaffold_TemplateVariablesSubstituted(t *testing.T) {
 	dir := t.TempDir()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 
-	cmd := scaffold.NewCmdScaffold(f)
+	cmd := extension.NewCmdScaffold(f)
 	cmd.SetArgs([]string{"demo", "--lang", "go", "--dir", dir})
 
 	if err := cmd.Execute(); err != nil {
@@ -164,7 +164,7 @@ func TestScaffold_BashScriptContent(t *testing.T) {
 	dir := t.TempDir()
 	f, _, _ := factorytest.New(t, factorytest.Opts{})
 
-	cmd := scaffold.NewCmdScaffold(f)
+	cmd := extension.NewCmdScaffold(f)
 	cmd.SetArgs([]string{"greet", "--lang", "bash", "--dir", dir})
 
 	if err := cmd.Execute(); err != nil {
@@ -181,5 +181,20 @@ func TestScaffold_BashScriptContent(t *testing.T) {
 	}
 	if !strings.Contains(content, "bitbottle-greet") {
 		t.Errorf("bash script missing BinaryName: %s", content)
+	}
+}
+
+func TestScaffold_PathTraversal_ReturnsError(t *testing.T) {
+	dir := t.TempDir()
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+
+	cases := []string{"../evil", "foo/bar", `foo\bar`, ".."}
+	for _, name := range cases {
+		cmd := extension.NewCmdScaffold(f)
+		cmd.SetArgs([]string{name, "--dir", dir})
+		err := cmd.Execute()
+		if err == nil {
+			t.Errorf("expected error for name %q; got nil", name)
+		}
 	}
 }
