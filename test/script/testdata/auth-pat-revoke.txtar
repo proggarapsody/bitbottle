@@ -1,0 +1,5 @@
+# auth pat revoke with --confirm flag removes a token.
+bb-fake server
+
+bitbottle auth pat revoke 1 -k --hostname $BB_HOST --confirm
+stdout 'Revoked PAT 1'

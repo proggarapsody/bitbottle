@@ -123,3 +123,49 @@ know which one. Three ways, in precedence order:
 
 If none of those resolves a single host, you'll see *"multiple hosts
 configured; specify hostname"*. Pick one of the three.
+
+## Personal Access Tokens (Server/DC)
+
+Manage Bitbucket Server/DC PATs via the `auth pat` subgroup.
+Bitbucket Cloud API token management is not available via the REST API;
+manage tokens at https://id.atlassian.com/manage-profile/security/api-tokens instead.
+
+```bash
+# List tokens for the current user
+bitbottle auth pat list --hostname git.example.com
+
+# JSON output
+bitbottle auth pat list --hostname git.example.com --json
+
+# Create a new token (secret printed once — store it immediately)
+bitbottle auth pat create \
+  --hostname git.example.com \
+  --name "CI Token" \
+  --scopes repo:read,repo:write
+
+# Create with expiry (30 days)
+bitbottle auth pat create \
+  --hostname git.example.com \
+  --name "Short-lived" \
+  --scopes pr:read \
+  --expires-in 30
+
+# Revoke a token by ID (non-interactive: --confirm required)
+bitbottle auth pat revoke TOKEN_ID --hostname git.example.com --confirm
+
+# Interactive revoke (TTY: prompts for confirmation)
+bitbottle auth pat revoke TOKEN_ID --hostname git.example.com
+```
+
+**Scope aliases** accepted by `--scopes` (comma-separated):
+
+| Alias | Canonical |
+|---|---|
+| `repo:read` | `REPO_READ` |
+| `repo:write` | `REPO_WRITE` |
+| `pr:read` | `PR_READ` |
+| `pr:write` | `PR_WRITE` |
+| `project:read` | `PROJECT_READ` |
+| `project:write` | `PROJECT_WRITE` |
+
+Both alias form and canonical form (e.g. `REPO_READ`) are accepted.

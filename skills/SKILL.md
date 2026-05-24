@@ -37,6 +37,7 @@ disagrees with this doc; the binary wins.
 | Extensions (`extension install/list/upgrade/remove/exec`, extension scaffold) | `references/extension.md` |
 | Group management — group list, group create, group delete, group member list, group member add, group member remove (Server/DC only) | `references/groups.md` |
 | Project CRUD — project server-list, project create, project view, project edit, project delete (Server/DC only); project list WORKSPACE (Cloud only) | `references/project.md` |
+| auth pat list/create/revoke (Server/DC only) | `references/auth.md` |
 
 Load both when a task spans areas. Don't load speculatively.
 
@@ -99,7 +100,7 @@ on the host entry in `hosts.yml` (see `references/auth.md`).
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable), `issue *`, `snippet list [--workspace W]`, `snippet view`, `snippet create`, `snippet delete`, `pr request-changes`, `pr comment resolve`, `ssh-key *`, `branch-rule *`, `branch-model *`, `workspace *`, `search`, `project list WORKSPACE` | — |
-| Server-only | — | `code-insights *`, `pr task *`, `pr suggestion apply`, `pr/commit comment react/unreact`, `pr reviewer-group *`, `repo pr-settings get`, `repo pr-settings set`, `group list`, `group create`, `group delete`, `group member list`, `group member add`, `group member remove`, `project server-list`, `project create`, `project view`, `project edit`, `project delete` |
+| Server-only | — | `code-insights *`, `pr task *`, `pr suggestion apply`, `pr/commit comment react/unreact`, `pr reviewer-group *`, `repo pr-settings get`, `repo pr-settings set`, `group list`, `group create`, `group delete`, `group member list`, `group member add`, `group member remove`, `project server-list`, `project create`, `project view`, `project edit`, `project delete`, `auth pat list`, `auth pat create`, `auth pat revoke` |
 
 For custom-hostname Bitbucket Data Center, force routing with
 `backend_type: cloud|server` in `hosts.yml`.

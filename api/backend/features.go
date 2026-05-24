@@ -330,6 +330,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "PATClient",
+		HumanLabel:    "personal access token management",
+		Check:         func(c Client) bool { _, ok := c.(PATClient); return ok },
+		Feature:       FeaturePAT,
+		CloudSupport:  false,
+		ServerSupport: true,
+	},
+	{
 		Name:          "ServerProjectClient",
 		HumanLabel:    "server project management",
 		Check:         func(c Client) bool { _, ok := c.(ServerProjectClient); return ok },

@@ -1,0 +1,11 @@
+# auth pat list shows personal access tokens in table and JSON format.
+bb-fake server
+
+bitbottle auth pat list -k --hostname $BB_HOST
+stdout 'CI Token'
+stdout 'REPO_READ'
+
+bitbottle auth pat list -k --hostname $BB_HOST --json
+stdout '"id"'
+stdout '"name"'
+stdout '"permissions"'

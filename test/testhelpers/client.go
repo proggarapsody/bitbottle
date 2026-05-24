@@ -283,6 +283,11 @@ type FakeClient struct {
 	CreateServerProjectFn func(in backend.CreateServerProjectInput) (backend.ServerProject, error)
 	UpdateServerProjectFn func(key string, in backend.UpdateServerProjectInput) (backend.ServerProject, error)
 	DeleteServerProjectFn func(key string) error
+
+	// PAT methods (Server-only; satisfies backend.PATClient when set)
+	ListPATsFn  func(userSlug string, limit int) ([]backend.PAT, error)
+	CreatePATFn func(userSlug string, in backend.CreatePATInput) (backend.PATWithSecret, error)
+	RevokePATFn func(userSlug, tokenID string) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -333,6 +338,7 @@ var (
 	_ backend.GroupClient              = (*FakeClient)(nil)
 	_ backend.GroupMemberClient        = (*FakeClient)(nil)
 	_ backend.ServerProjectClient      = (*FakeClient)(nil)
+	_ backend.PATClient                = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2021,6 +2027,38 @@ func (c *FakeClient) DeleteServerProject(key string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteServerProject; set DeleteServerProjectFn in your test")
+	}
+	return nil
+}
+
+// ── PATClient ─────────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListPATs(userSlug string, limit int) ([]backend.PAT, error) {
+	if c.ListPATsFn != nil {
+		return c.ListPATsFn(userSlug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPATs; set ListPATsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreatePAT(userSlug string, in backend.CreatePATInput) (backend.PATWithSecret, error) {
+	if c.CreatePATFn != nil {
+		return c.CreatePATFn(userSlug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreatePAT; set CreatePATFn in your test")
+	}
+	return backend.PATWithSecret{}, nil
+}
+
+func (c *FakeClient) RevokePAT(userSlug, tokenID string) error {
+	if c.RevokePATFn != nil {
+		return c.RevokePATFn(userSlug, tokenID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RevokePAT; set RevokePATFn in your test")
 	}
 	return nil
 }

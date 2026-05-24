@@ -1,0 +1,7 @@
+# auth pat create prints token to stdout and warns about secrecy.
+bb-fake server
+
+bitbottle auth pat create -k --hostname $BB_HOST --name 'CI Token' --scopes repo:read,repo:write
+stdout 'Store this token now'
+stdout 'Token: BBDC-'
+stdout 'Created PAT'

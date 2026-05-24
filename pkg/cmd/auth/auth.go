@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/internal/config"
+	cmdPAT "github.com/proggarapsody/bitbottle/pkg/cmd/auth/pat"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -21,6 +22,7 @@ func NewCmdAuth(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewCmdAuthRefresh(f))
 	cmd.AddCommand(NewCmdAuthMigrate(f))
 	cmd.AddCommand(NewCmdDoctor(f))
+	cmd.AddCommand(cmdPAT.NewCmdPAT(f))
 	return cmd
 }
 
