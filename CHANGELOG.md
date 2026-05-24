@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.94.0](https://github.com/proggarapsody/bitbottle/compare/v1.93.2...v1.94.0) (2026-05-24)
+
+
+### Features
+
+* **pr-settings:** add repo pr-settings get/set command ([37fbc09](https://github.com/proggarapsody/bitbottle/commit/37fbc09dd40b6ea68da53ae7f7952084291c3f03)), closes [#473](https://github.com/proggarapsody/bitbottle/issues/473)
+
 ## [1.93.2](https://github.com/proggarapsody/bitbottle/compare/v1.93.1...v1.93.2) (2026-05-24)
 
 
