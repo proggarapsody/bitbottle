@@ -8,19 +8,11 @@ import (
 	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
 )
 
-// wireServerEditRepoInput is the Server wire shape for
-// PUT /rest/api/1.0/projects/{ns}/repos/{slug}.
-// Server only supports description; all other fields from EditRepoInput
-// are silently ignored (not an error — they are simply not sent).
-type wireServerEditRepoInput struct {
-	Description *string `json:"description,omitempty"`
-}
-
 // EditRepo updates mutable repository metadata on a Bitbucket Server / Data
 // Center instance. Only Description is forwarded; Cloud-only fields
 // (Website, Language, ForkPolicy, HasIssues, HasWiki) are silently dropped.
 func (c *Client) EditRepo(ns, slug string, in backend.EditRepoInput) (backend.Repository, error) {
-	body := wireServerEditRepoInput{
+	body := servergen.RestEditRepoInput{
 		Description: in.Description,
 	}
 	var w servergen.RestRepository
