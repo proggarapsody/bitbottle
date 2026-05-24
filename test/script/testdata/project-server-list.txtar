@@ -1,0 +1,11 @@
+# project server-list shows projects in table format and JSON.
+bb-fake server
+
+bitbottle project server-list -k --hostname $BB_HOST
+stdout 'PRJ'
+stdout 'DEV'
+stdout 'My Project'
+
+bitbottle project server-list -k --hostname $BB_HOST --json
+stdout '"key"'
+stdout '"name"'

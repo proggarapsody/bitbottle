@@ -1,0 +1,9 @@
+# project view shows project details.
+bb-fake server
+
+bitbottle project view PRJ -k --hostname $BB_HOST
+stdout 'PRJ'
+stdout 'My Project'
+
+bitbottle project view PRJ -k --hostname $BB_HOST --json
+stdout '"key"'

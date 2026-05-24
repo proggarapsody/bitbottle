@@ -276,6 +276,13 @@ type FakeClient struct {
 	ListGroupMembersFn  func(groupName string, limit int) ([]backend.GroupMember, error)
 	AddGroupMemberFn    func(groupName, user string) error
 	RemoveGroupMemberFn func(groupName, user string) error
+
+	// Server project methods (Server-only; satisfies backend.ServerProjectClient when set)
+	ListServerProjectsFn  func(filter string, limit int) ([]backend.ServerProject, error)
+	GetServerProjectFn    func(key string) (backend.ServerProject, error)
+	CreateServerProjectFn func(in backend.CreateServerProjectInput) (backend.ServerProject, error)
+	UpdateServerProjectFn func(key string, in backend.UpdateServerProjectInput) (backend.ServerProject, error)
+	DeleteServerProjectFn func(key string) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -325,6 +332,7 @@ var (
 	_ backend.WorkspaceWebhookClient   = (*FakeClient)(nil)
 	_ backend.GroupClient              = (*FakeClient)(nil)
 	_ backend.GroupMemberClient        = (*FakeClient)(nil)
+	_ backend.ServerProjectClient      = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -1961,6 +1969,58 @@ func (c *FakeClient) RemoveGroupMember(groupName, user string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RemoveGroupMember; set RemoveGroupMemberFn in your test")
+	}
+	return nil
+}
+
+// ── ServerProjectClient ───────────────────────────────────────────────────────
+
+func (c *FakeClient) ListServerProjects(filter string, limit int) ([]backend.ServerProject, error) {
+	if c.ListServerProjectsFn != nil {
+		return c.ListServerProjectsFn(filter, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListServerProjects; set ListServerProjectsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetServerProject(key string) (backend.ServerProject, error) {
+	if c.GetServerProjectFn != nil {
+		return c.GetServerProjectFn(key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetServerProject; set GetServerProjectFn in your test")
+	}
+	return backend.ServerProject{}, nil
+}
+
+func (c *FakeClient) CreateServerProject(in backend.CreateServerProjectInput) (backend.ServerProject, error) {
+	if c.CreateServerProjectFn != nil {
+		return c.CreateServerProjectFn(in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateServerProject; set CreateServerProjectFn in your test")
+	}
+	return backend.ServerProject{}, nil
+}
+
+func (c *FakeClient) UpdateServerProject(key string, in backend.UpdateServerProjectInput) (backend.ServerProject, error) {
+	if c.UpdateServerProjectFn != nil {
+		return c.UpdateServerProjectFn(key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdateServerProject; set UpdateServerProjectFn in your test")
+	}
+	return backend.ServerProject{}, nil
+}
+
+func (c *FakeClient) DeleteServerProject(key string) error {
+	if c.DeleteServerProjectFn != nil {
+		return c.DeleteServerProjectFn(key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteServerProject; set DeleteServerProjectFn in your test")
 	}
 	return nil
 }

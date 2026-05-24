@@ -359,6 +359,54 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/rest/api/1.0/admin/users/remove-group",
 			Status:     http.StatusNoContent,
 		},
+		// GET projects list — used by project server-list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"key": "PRJ", "name": "My Project", "description": "A project", "public": false,
+					"links": map[string]any{"self": []any{map[string]any{"href": "https://example.com/projects/PRJ"}}}},
+				map[string]any{"key": "DEV", "name": "Dev Project", "description": "", "public": true,
+					"links": map[string]any{"self": []any{map[string]any{"href": "https://example.com/projects/DEV"}}}},
+			}),
+		},
+		// GET project view — used by project view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PRJ",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"key": "PRJ", "name": "My Project", "description": "A project", "public": false,
+				"links": map[string]any{"self": []any{map[string]any{"href": "https://example.com/projects/PRJ"}}},
+			},
+		},
+		// POST project create — used by project create
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/projects",
+			Status:     http.StatusCreated,
+			Body: map[string]any{
+				"key": "NEWPRJ", "name": "New Project", "description": "", "public": false,
+				"links": map[string]any{"self": []any{map[string]any{"href": "https://example.com/projects/NEWPRJ"}}},
+			},
+		},
+		// PUT project edit — used by project edit (GET-then-PUT)
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/rest/api/1.0/projects/PRJ",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"key": "PRJ", "name": "Updated Project", "description": "A project", "public": false,
+				"links": map[string]any{"self": []any{map[string]any{"href": "https://example.com/projects/PRJ"}}},
+			},
+		},
+		// DELETE project — used by project delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/rest/api/1.0/projects/DELPRJ",
+			Status:     http.StatusNoContent,
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

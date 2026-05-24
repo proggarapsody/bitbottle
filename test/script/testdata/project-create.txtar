@@ -1,0 +1,6 @@
+# project create creates a project and prints confirmation.
+bb-fake server
+
+bitbottle project create NEWPRJ --name 'New Project' -k --hostname $BB_HOST
+stdout 'NEWPRJ'
+stdout 'New Project'
