@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.98.0](https://github.com/proggarapsody/bitbottle/compare/v1.97.1...v1.98.0) (2026-05-24)
+
+
+### Features
+
+* **project:** add Server/DC project CRUD (create/view/edit/delete/server-list) ([36a6287](https://github.com/proggarapsody/bitbottle/commit/36a6287d93274b0045096841bc29fdf09d3e46b6)), closes [#490](https://github.com/proggarapsody/bitbottle/issues/490)
+
 ## [1.97.1](https://github.com/proggarapsody/bitbottle/compare/v1.97.0...v1.97.1) (2026-05-24)
 
 
