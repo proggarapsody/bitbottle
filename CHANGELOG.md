@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.99.0](https://github.com/proggarapsody/bitbottle/compare/v1.98.0...v1.99.0) (2026-05-24)
+
+
+### Features
+
+* **auth:** add PAT management commands (auth pat list/create/revoke) ([fe3797c](https://github.com/proggarapsody/bitbottle/commit/fe3797c061dfe8f1bd4fd56cdebfdd24b76e86d0)), closes [#494](https://github.com/proggarapsody/bitbottle/issues/494)
+
 ## [1.98.0](https://github.com/proggarapsody/bitbottle/compare/v1.97.1...v1.98.0) (2026-05-24)
 
 
