@@ -1,0 +1,13 @@
+# extension scaffold creates a Go extension project in the current directory.
+
+bitbottle extension scaffold myplugin --lang go --dir $WORK
+stdout 'bitbottle-myplugin'
+exists $WORK/bitbottle-myplugin/main.go
+exists $WORK/bitbottle-myplugin/go.mod
+exists $WORK/bitbottle-myplugin/.github/workflows/release.yml
+exists $WORK/bitbottle-myplugin/README.md
+exists $WORK/bitbottle-myplugin/LICENSE
+
+# Running scaffold again into the same dir must fail.
+! bitbottle extension scaffold myplugin --lang go --dir $WORK
+stderr 'already exists'

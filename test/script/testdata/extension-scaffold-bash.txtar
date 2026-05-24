@@ -1,0 +1,12 @@
+# extension scaffold creates a bash extension project.
+
+bitbottle extension scaffold greet --lang bash --dir $WORK
+stdout 'bitbottle-greet'
+exists $WORK/bitbottle-greet/bitbottle-greet
+exists $WORK/bitbottle-greet/.github/workflows/release.yml
+exists $WORK/bitbottle-greet/README.md
+exists $WORK/bitbottle-greet/LICENSE
+
+# Unsupported lang must fail.
+! bitbottle extension scaffold foo --lang python --dir $WORK
+stderr 'python'
