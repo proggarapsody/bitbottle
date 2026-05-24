@@ -1,0 +1,6 @@
+# group member list shows members of an admin group.
+bb-fake server
+
+bitbottle group member list developers -k --hostname $BB_HOST
+stdout 'alice'
+stdout 'bob'

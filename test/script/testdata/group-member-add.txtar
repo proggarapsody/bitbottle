@@ -1,0 +1,5 @@
+# group member add adds a user to an admin group.
+bb-fake server
+
+bitbottle group member add developers alice -k --hostname $BB_HOST
+stdout 'alice'

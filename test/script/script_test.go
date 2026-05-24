@@ -314,6 +314,51 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 				},
 			},
 		},
+		// GET admin groups — used by group list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/admin/groups",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"name": "developers"},
+				map[string]any{"name": "admins"},
+			}),
+		},
+		// POST admin groups — used by group create
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/admin/groups",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"name": "newgroup"},
+		},
+		// DELETE admin groups — used by group delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/rest/api/1.0/admin/groups",
+			Status:     http.StatusNoContent,
+		},
+		// GET admin groups more-members — used by group member list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/admin/groups/more-members",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"name": "alice", "displayName": "Alice", "emailAddress": "alice@example.com"},
+				map[string]any{"name": "bob", "displayName": "Bob", "emailAddress": "bob@example.com"},
+			}),
+		},
+		// POST admin users add-group — used by group member add
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/admin/users/add-group",
+			Status:     http.StatusNoContent,
+		},
+		// POST admin users remove-group — used by group member remove
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/admin/users/remove-group",
+			Status:     http.StatusNoContent,
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

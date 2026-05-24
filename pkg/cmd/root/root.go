@@ -22,6 +22,7 @@ import (
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/environment"  // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/extension"    // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/group"     // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/issue"     // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"       // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"  // self-registers via init()
