@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.97.1](https://github.com/proggarapsody/bitbottle/compare/v1.97.0...v1.97.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* **ci-badge:** fix CI badge by running CI on push to main, remove stale placeholder badge ([320c262](https://github.com/proggarapsody/bitbottle/commit/320c26218871ecf812fb1522948f9bfeb10baa21)), closes [#486](https://github.com/proggarapsody/bitbottle/issues/486)
+
 ## [1.97.0](https://github.com/proggarapsody/bitbottle/compare/v1.96.0...v1.97.0) (2026-05-24)
 
 
