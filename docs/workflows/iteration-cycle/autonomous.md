@@ -79,29 +79,38 @@ was treated as scenery; recurring BLOCKERs landed in PRs anyway. A script
 can't be skimmed — it exits non-zero or it doesn't.
 
 ```bash
+#!/bin/bash
+# Bash (not POSIX sh) — uses [[ ... =~ ]] and process substitution.
 # Run inside the TDD worktree:
 cd "$WORKTREE"
 violations=""
 
 # 1. Cobra Short ≤ 60 chars + non-empty + no trailing period
 #    (skip MCP tool-registration files; they have no cobra Short field)
+#    Use [[:space:]] not \s — BSD grep (macOS default) treats \s as literal 's'.
 while IFS= read -r f; do
     [[ "$f" =~ /tools_.*\.go$ || "$f" =~ /handlers.*\.go$ ]] && continue
-    short=$(grep -oE 'Short:\s*"[^"]*"' "$f" | sed 's/Short:\s*"//;s/"$//')
+    short=$(grep -oE 'Short:[[:space:]]*"[^"]*"' "$f" | sed 's/Short:[[:space:]]*"//;s/"$//')
     [ -z "$short" ] && violations+="$f: empty Short\n" && continue
     [ "${#short}" -gt 60 ] && violations+="$f: Short=${#short} chars (>60)\n"
     echo "$short" | grep -qE '\.$' && violations+="$f: Short has trailing period\n"
 done < <(git diff --name-only origin/main...HEAD -- 'pkg/cmd/**/*.go' ':!*_test.go')
 
-# 2. New command files have SKILL.md + skills/references/<group>.md entries
+# 2. New command files have SKILL.md + skills/references/<top-group>.md entries.
+#    Build the group path dynamically so nested subcommands work:
+#      pkg/cmd/pr/list.go         → group="pr",         verb="list"
+#      pkg/cmd/pr/comment/list.go → group="pr comment", verb="list"
 while IFS= read -r f; do
     verb=$(basename "$f" .go)
-    group=$(echo "$f" | awk -F/ '{print $3}')
-    grep -q "$group $verb" skills/SKILL.md \
+    rel=${f#pkg/cmd/}                       # e.g. pr/comment/list.go
+    group=$(dirname "$rel" | tr / ' ')      # "pr comment" or "pr"
+    grep -qF "$group $verb" skills/SKILL.md \
         || violations+="$f: skills/SKILL.md missing '$group $verb' entry\n"
-    [ -f "skills/references/${group}.md" ] && \
-        ! grep -q "$verb" "skills/references/${group}.md" && \
-        violations+="$f: skills/references/${group}.md missing '$verb' entry\n"
+    # references/ files are organized by top-level group only
+    top=${group%% *}
+    [ -f "skills/references/${top}.md" ] && \
+        ! grep -qF "$verb" "skills/references/${top}.md" && \
+        violations+="$f: skills/references/${top}.md missing '$verb' entry\n"
 done < <(git diff --name-only --diff-filter=A origin/main...HEAD -- 'pkg/cmd/**/*.go' ':!*_test.go' ':!**/*_fields.go')
 
 # 3. Forbidden imports
@@ -119,7 +128,7 @@ git diff origin/main...HEAD --name-only -- '*.go' | grep -v '_test\.go' | \
 
 if [ -n "$violations" ]; then
     echo "TASTE-CHECK BLOCKERS:"
-    echo -e "$violations"
+    printf '%b' "$violations"   # printf %b expands \n in $violations; echo -e is non-POSIX.
     # → dispatch a fix-agent (code-generation tier) with this specific violation
     #   list (NOT the full PRD; targeted fixes only). Re-run this script after
     #   the fix-agent returns. If still violations after 1 fix attempt, halt
@@ -136,6 +145,16 @@ of the sweep produced spurious failures without them):
 - For `net/http`, use `xargs grep -l` on filtered files, never raw
   `git diff | grep '"net/http"'` — the latter can't tell which file a
   matching line belongs to.
+- Use `[[:space:]]` not `\s` in `grep -E` patterns. BSD grep (the macOS
+  default) treats `\s` as a literal `s`, silently breaking the check on the
+  primary dev environment.
+- Build the cobra-command group path with `dirname "${f#pkg/cmd/}" | tr / ' '`,
+  not `awk -F/ '{print $3}'`. The latter only sees the top-level group and
+  produces a false-positive "missing SKILL.md entry" for every nested
+  subcommand (e.g. `pkg/cmd/pr/comment/list.go`).
+- Use `printf '%b'` not `echo -e` to expand `\n` escapes in collected
+  violation strings — `-e` is a bash builtin, not POSIX, and `dash` prints
+  it literally.
 
 **Metric**: emit `step2_taste_check` with `violations_count` (and
 `fixagent_dispatched: true|false`).
