@@ -1,0 +1,5 @@
+# group member remove with --confirm removes a user from an admin group.
+bb-fake server
+
+bitbottle group member remove developers alice --confirm -k --hostname $BB_HOST
+stdout 'Removed alice'

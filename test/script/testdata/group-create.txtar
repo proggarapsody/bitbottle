@@ -1,0 +1,5 @@
+# group create creates an admin group and prints confirmation.
+bb-fake server
+
+bitbottle group create newgroup -k --hostname $BB_HOST
+stdout 'newgroup'

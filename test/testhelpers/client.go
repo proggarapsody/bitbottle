@@ -266,6 +266,16 @@ type FakeClient struct {
 	GetSnippetFn    func(workspace, id string) (backend.Snippet, error)
 	CreateSnippetFn func(workspace string, in backend.CreateSnippetInput) (backend.Snippet, error)
 	DeleteSnippetFn func(workspace, id string) error
+
+	// Group methods (Server-only; satisfies backend.GroupClient when set)
+	ListGroupsFn  func(filter string, limit int) ([]backend.Group, error)
+	CreateGroupFn func(name string) (backend.Group, error)
+	DeleteGroupFn func(name string) error
+
+	// Group member methods (Server-only; satisfies backend.GroupMemberClient when set)
+	ListGroupMembersFn  func(groupName string, limit int) ([]backend.GroupMember, error)
+	AddGroupMemberFn    func(groupName, user string) error
+	RemoveGroupMemberFn func(groupName, user string) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -313,6 +323,8 @@ var (
 	_ backend.WorkspaceVariableClient  = (*FakeClient)(nil)
 	_ backend.PRReviewerRemover        = (*FakeClient)(nil)
 	_ backend.WorkspaceWebhookClient   = (*FakeClient)(nil)
+	_ backend.GroupClient              = (*FakeClient)(nil)
+	_ backend.GroupMemberClient        = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -1885,6 +1897,70 @@ func (c *FakeClient) DeleteSnippet(workspace, id string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteSnippet; set DeleteSnippetFn in your test")
+	}
+	return nil
+}
+
+// ── GroupClient ───────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListGroups(filter string, limit int) ([]backend.Group, error) {
+	if c.ListGroupsFn != nil {
+		return c.ListGroupsFn(filter, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListGroups; set ListGroupsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateGroup(name string) (backend.Group, error) {
+	if c.CreateGroupFn != nil {
+		return c.CreateGroupFn(name)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateGroup; set CreateGroupFn in your test")
+	}
+	return backend.Group{}, nil
+}
+
+func (c *FakeClient) DeleteGroup(name string) error {
+	if c.DeleteGroupFn != nil {
+		return c.DeleteGroupFn(name)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteGroup; set DeleteGroupFn in your test")
+	}
+	return nil
+}
+
+// ── GroupMemberClient ─────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListGroupMembers(groupName string, limit int) ([]backend.GroupMember, error) {
+	if c.ListGroupMembersFn != nil {
+		return c.ListGroupMembersFn(groupName, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListGroupMembers; set ListGroupMembersFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddGroupMember(groupName, user string) error {
+	if c.AddGroupMemberFn != nil {
+		return c.AddGroupMemberFn(groupName, user)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddGroupMember; set AddGroupMemberFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RemoveGroupMember(groupName, user string) error {
+	if c.RemoveGroupMemberFn != nil {
+		return c.RemoveGroupMemberFn(groupName, user)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RemoveGroupMember; set RemoveGroupMemberFn in your test")
 	}
 	return nil
 }

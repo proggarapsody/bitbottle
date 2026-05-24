@@ -1,0 +1,5 @@
+# group delete with --confirm deletes an admin group.
+bb-fake server
+
+bitbottle group delete oldgroup --confirm -k --hostname $BB_HOST
+stdout 'Deleted group'

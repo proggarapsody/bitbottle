@@ -145,6 +145,22 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "GroupClient",
+		HumanLabel:    "group management",
+		Check:         func(c Client) bool { _, ok := c.(GroupClient); return ok },
+		Feature:       FeatureGroup,
+		CloudSupport:  false,
+		ServerSupport: true,
+	},
+	{
+		Name:          "GroupMemberClient",
+		HumanLabel:    "group member management",
+		Check:         func(c Client) bool { _, ok := c.(GroupMemberClient); return ok },
+		Feature:       FeatureGroupMember,
+		CloudSupport:  false,
+		ServerSupport: true,
+	},
+	{
 		Name:          "IssueClient",
 		HumanLabel:    "issues",
 		Plural:        true,

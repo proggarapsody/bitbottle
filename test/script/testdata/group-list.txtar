@@ -1,0 +1,9 @@
+# group list shows admin groups in table format and JSON.
+bb-fake server
+
+bitbottle group list -k --hostname $BB_HOST
+stdout 'developers'
+stdout 'admins'
+
+bitbottle group list -k --hostname $BB_HOST --json
+stdout '"name"'
