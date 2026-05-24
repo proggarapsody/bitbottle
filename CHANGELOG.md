@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.95.0](https://github.com/proggarapsody/bitbottle/compare/v1.94.0...v1.95.0) (2026-05-24)
+
+
+### Features
+
+* **group-mgmt:** add group list/create/delete and member management commands ([30f7ca8](https://github.com/proggarapsody/bitbottle/commit/30f7ca8914bf399a4dcfaea3bfc53b4cdb4ab542))
+
 ## [1.94.0](https://github.com/proggarapsody/bitbottle/compare/v1.93.2...v1.94.0) (2026-05-24)
 
 
