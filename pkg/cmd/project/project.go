@@ -1,7 +1,8 @@
 // Package project implements the `bitbottle project` command group.
-// Projects here mean Bitbucket Cloud projects (logical groupings of repos
-// inside a workspace) — not Bitbucket Server projects, which are the
-// namespace itself and don't need a separate listing command.
+// The group contains:
+//   - `list WORKSPACE` — Cloud-only, lists projects inside a workspace.
+//   - `server-list` / `view` / `create` / `edit` / `delete` — Server/DC only,
+//     manage the project namespace on Bitbucket Server / Data Center.
 package project
 
 import (
@@ -14,8 +15,13 @@ import (
 func NewCmdProject(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "project",
-		Short: "List Bitbucket Cloud projects within a workspace (Cloud only)",
+		Short: "Manage Bitbucket projects",
 	}
 	cmd.AddCommand(cmdList.NewCmdList(f, nil))
+	cmd.AddCommand(NewCmdCreate(f))
+	cmd.AddCommand(NewCmdView(f))
+	cmd.AddCommand(NewCmdEdit(f))
+	cmd.AddCommand(NewCmdDelete(f))
+	cmd.AddCommand(NewCmdServerList(f))
 	return cmd
 }

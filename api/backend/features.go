@@ -330,6 +330,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "ServerProjectClient",
+		HumanLabel:    "server project management",
+		Check:         func(c Client) bool { _, ok := c.(ServerProjectClient); return ok },
+		Feature:       FeatureServerProject,
+		CloudSupport:  false,
+		ServerSupport: true,
+	},
+	{
 		Name:          "SnippetClient",
 		HumanLabel:    "snippets",
 		Plural:        true,

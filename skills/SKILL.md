@@ -36,6 +36,7 @@ disagrees with this doc; the binary wins.
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Extensions (`extension install/list/upgrade/remove/exec`, extension scaffold) | `references/extension.md` |
 | Group management — group list, group create, group delete, group member list, group member add, group member remove (Server/DC only) | `references/groups.md` |
+| Project CRUD — project server-list, project create, project view, project edit, project delete (Server/DC only); project list WORKSPACE (Cloud only) | `references/project.md` |
 
 Load both when a task spans areas. Don't load speculatively.
 

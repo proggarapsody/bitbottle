@@ -1,0 +1,5 @@
+# project edit updates a project and prints confirmation.
+bb-fake server
+
+bitbottle project edit PRJ --name 'Updated Project' -k --hostname $BB_HOST
+stdout 'Updated project PRJ'

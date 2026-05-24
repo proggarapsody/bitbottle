@@ -1,0 +1,5 @@
+# project delete with --confirm deletes a project.
+bb-fake server
+
+bitbottle project delete DELPRJ --confirm -k --hostname $BB_HOST
+stdout 'Deleted project'
