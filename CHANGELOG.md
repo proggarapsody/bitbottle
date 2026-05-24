@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.93.1](https://github.com/proggarapsody/bitbottle/compare/v1.93.0...v1.93.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* **workflow-docs:** make taste-check shell snippet portable and correct ([443d546](https://github.com/proggarapsody/bitbottle/commit/443d5465dce2f911c119abb27b22f1643861c382))
+
 ## [1.93.0](https://github.com/proggarapsody/bitbottle/compare/v1.92.0...v1.93.0) (2026-05-21)
 
 
