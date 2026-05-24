@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.96.0](https://github.com/proggarapsody/bitbottle/compare/v1.95.0...v1.96.0) (2026-05-24)
+
+
+### Features
+
+* **ext-scaffold:** add extension scaffold command ([6f4a4cb](https://github.com/proggarapsody/bitbottle/commit/6f4a4cb241a59ad45f29198bdb093594b1fc2def))
+
+
+### Bug Fixes
+
+* **ext-scaffold:** fix path traversal, errfmt errors, and restructure command file ([e92e7f1](https://github.com/proggarapsody/bitbottle/commit/e92e7f16d45c2bf193d6b0beeb9c0e52849cadec))
+
 ## [1.95.0](https://github.com/proggarapsody/bitbottle/compare/v1.94.0...v1.95.0) (2026-05-24)
 
 
