@@ -407,6 +407,39 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/rest/api/1.0/projects/DELPRJ",
 			Status:     http.StatusNoContent,
 		},
+		// GET PAT list — used by auth pat list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/access-tokens/1.0/users/testuser",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{
+					"id":          "1",
+					"name":        "CI Token",
+					"permissions": []any{"REPO_READ"},
+					"createdDate": int64(1716556800000),
+				},
+			}),
+		},
+		// PUT PAT create — used by auth pat create
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/rest/access-tokens/1.0/users/testuser",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"id":          "2",
+				"name":        "CI Token",
+				"permissions": []any{"REPO_READ", "REPO_WRITE"},
+				"createdDate": int64(1716556800000),
+				"token":       "BBDC-generatedtoken",
+			},
+		},
+		// DELETE PAT revoke — used by auth pat revoke
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/rest/access-tokens/1.0/users/testuser/1",
+			Status:     http.StatusNoContent,
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

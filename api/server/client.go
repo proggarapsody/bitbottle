@@ -34,6 +34,9 @@ type Client struct {
 	// codeInsightsHTTP targets /rest/insights/1.0, the separate REST root
 	// Bitbucket Server uses for Code Insights reports and annotations.
 	codeInsightsHTTP *httpx.Transport
+	// patHTTP targets /rest/access-tokens/1.0, the separate REST root
+	// Bitbucket Server uses for personal access token management.
+	patHTTP *httpx.Transport
 	// host is the scheme+host extracted from baseURL, used to construct WebURLs
 	// for resources (like commits) that the API does not return a link for.
 	host string
@@ -88,6 +91,7 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 		defaultReviewersHTTP: newAltTransport(httpClient, schemeHost, bareHost, "/rest/default-reviewers/1.0", auth),
 		branchProtectHTTP:    newAltTransport(httpClient, schemeHost, bareHost, "/rest/branch-permissions/2.0", auth),
 		codeInsightsHTTP:     newAltTransport(httpClient, schemeHost, bareHost, "/rest/insights/1.0", auth),
+		patHTTP:              newAltTransport(httpClient, schemeHost, bareHost, "/rest/access-tokens/1.0", auth),
 		host:                 schemeHost,
 		userSlug:             username,
 	}
