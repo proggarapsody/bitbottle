@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.93.2](https://github.com/proggarapsody/bitbottle/compare/v1.93.1...v1.93.2) (2026-05-24)
+
+
+### Bug Fixes
+
+* **wire-migrate:** migrate repo_edit wire input structs to gen types ([3f84f81](https://github.com/proggarapsody/bitbottle/commit/3f84f8142e1d52d90bd57594f4f35454c30e77f9)), closes [#469](https://github.com/proggarapsody/bitbottle/issues/469)
+
 ## [1.93.1](https://github.com/proggarapsody/bitbottle/compare/v1.93.0...v1.93.1) (2026-05-24)
 
 
