@@ -1,0 +1,51 @@
+name: Nightly E2E
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: E2E (${{ matrix.backend }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [cloud, server]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build binary
+        run: go build -o bitbottle .
+      - name: Run E2E testscripts
+        env:
+          BITBOTTLE_E2E: "1"
+          BITBOTTLE_BIN: ${{ github.workspace }}/bitbottle
+          BB_TOKEN: ${{ matrix.backend == 'cloud' && secrets.BB_CLOUD_TOKEN || secrets.BB_SERVER_TOKEN }}
+          BB_HOST: ${{ matrix.backend == 'cloud' && 'bitbucket.org' || secrets.BB_SERVER_HOST }}
+          BB_E2E_WORKSPACE: ${{ secrets.BB_CLOUD_WORKSPACE }}
+          BB_E2E_PROJECT: ${{ secrets.BB_SERVER_PROJECT }}
+          BB_E2E_REPO: ${{ secrets.BB_SERVER_REPO }}
+        run: go test ./test/script/... -v -timeout 20m -run TestScript
+      - name: Report failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0, 10);
+            const title = `nightly-e2e: ${date}`;
+            const body = `**Backend:** ${{ matrix.backend }}\n**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'nightly-e2e',
+            });
+            const existing = issues.data.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['nightly-e2e'] });
+            }

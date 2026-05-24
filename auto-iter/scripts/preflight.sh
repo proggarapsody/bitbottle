@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Workspace inventory for §0 of /auto-iter.
 #
+# nightly-e2e PRs: workflow-only changes; secrets configured separately in repo UI — not gated by normal preflight
+#
 # Emits a single JSON object describing the working tree:
 #   {
 #     "clean": true|false,
