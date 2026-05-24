@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.97.0](https://github.com/proggarapsody/bitbottle/compare/v1.96.0...v1.97.0) (2026-05-24)
+
+
+### Features
+
+* **nightly-e2e:** add nightly live-wire E2E workflow ([af076c6](https://github.com/proggarapsody/bitbottle/commit/af076c63c09879888805e58f4544abcb0ef3bf1f))
+
 ## [1.96.0](https://github.com/proggarapsody/bitbottle/compare/v1.95.0...v1.96.0) (2026-05-24)
 
 
