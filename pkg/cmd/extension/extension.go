@@ -4,6 +4,7 @@ package extension
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/extension/scaffold"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmdregistry"
 )
@@ -24,5 +25,6 @@ func NewCmdExtension(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewCmdUpgrade(f))
 	cmd.AddCommand(NewCmdRemove(f))
 	cmd.AddCommand(NewCmdExec(f))
+	cmd.AddCommand(scaffold.NewCmdScaffold(f))
 	return cmd
 }
