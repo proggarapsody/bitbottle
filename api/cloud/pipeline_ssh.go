@@ -23,10 +23,6 @@ type cloudSSHKeyPair struct {
 }
 
 type cloudSSHKeyPairRegenBody struct {
-	KeyPair struct {
-		PrivateKey string `json:"private_key"`
-		PublicKey  string `json:"public_key"`
-	} `json:"key_pair"`
 	Bits int `json:"bits,omitempty"`
 }
 
