@@ -140,6 +140,91 @@ Default output columns: NODE_ID, NAME, ADDRESS, STATE, LOCAL.
 
 ---
 
+## admin mail get
+
+Show the current SMTP mail server configuration.
+
+```
+bitbottle admin mail get [--json] [--hostname HOST]
+```
+
+Default output columns: HOSTNAME, PORT, PROTOCOL, STARTTLS, USERNAME, SENDER.
+
+`--json` outputs the full config struct (password is never returned).
+
+---
+
+## admin mail set
+
+Update the SMTP mail server configuration.
+
+```
+bitbottle admin mail set --mail-hostname SMTP_HOST [--port N] [--protocol smtp|smtps]
+    [--username USER] [--sender EMAIL] [--use-starttls] [--require-starttls]
+    [--password PASS] [--hostname HOST]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--mail-hostname` | Mail server hostname (required) |
+| `--port` | SMTP port (default 25) |
+| `--protocol` | `smtp` or `smtps` (default `smtp`) |
+| `--use-starttls` | Use STARTTLS if available |
+| `--require-starttls` | Require STARTTLS (fail if not available) |
+| `--username` | SMTP authentication username |
+| `--sender` | Sender address for outgoing email (From:) |
+| `--password` | SMTP password (warning: visible in process list) |
+
+---
+
+## admin banner get
+
+Show the current site-wide announcement banner.
+
+```
+bitbottle admin banner get [--json] [--hostname HOST]
+```
+
+Default output:
+```
+Message:  Maintenance on Friday
+Audience: ALL
+Enabled:  true
+```
+
+`--json` outputs `{"message":"...","audience":"ALL","enabled":true}`.
+
+---
+
+## admin banner set
+
+Post or update the site-wide announcement banner.
+
+```
+bitbottle admin banner set MESSAGE [--audience all|authenticated|unauthenticated]
+    [--enabled] [--hostname HOST]
+```
+
+| Flag | Description |
+|------|-------------|
+| `MESSAGE` | Banner text (positional argument, required) |
+| `--audience` | `all`, `authenticated`, or `unauthenticated` (default `ALL`) |
+| `--enabled` | Enable the banner immediately (default true) |
+
+---
+
+## admin banner clear
+
+Remove the site-wide announcement banner.
+
+```
+bitbottle admin banner clear [--confirm] [--hostname HOST]
+```
+
+`--confirm` is required in non-TTY / CI mode.
+
+---
+
 ## MCP tools
 
 | Tool | Description |
@@ -153,3 +238,8 @@ Default output columns: NODE_ID, NAME, ADDRESS, STATE, LOCAL.
 | `rename_user` | Rename a user (`slug`, `new_slug`) |
 | `get_admin_license` | Get instance license details |
 | `get_cluster_nodes` | Get cluster node list |
+| `get_mail_server_config` | Get SMTP mail server config |
+| `set_mail_server_config` | Update SMTP mail server config (`mail_hostname` required, optional `port`, `protocol`, `use_starttls`, `require_starttls`, `username`, `sender_address`, `password`) |
+| `get_banner` | Get site-wide announcement banner |
+| `set_banner` | Create/update banner (`message` required, optional `audience`, `enabled`) |
+| `clear_banner` | Remove the site-wide announcement banner |

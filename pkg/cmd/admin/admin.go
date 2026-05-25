@@ -7,6 +7,7 @@ package admin
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/banner"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/cluster"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/license"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/logging"
@@ -37,5 +38,6 @@ include it; these commands must be performed by a system administrator.`,
 	cmd.AddCommand(license.NewCmdLicense(f, nil))
 	cmd.AddCommand(cluster.NewCmdCluster(f, nil))
 	cmd.AddCommand(mail.NewCmdMail(f))
+	cmd.AddCommand(banner.NewCmdBanner(f))
 	return cmd
 }

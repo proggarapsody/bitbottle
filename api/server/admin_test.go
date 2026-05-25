@@ -286,6 +286,100 @@ func TestServerClient_SetMailServerConfig_403_ReturnsDomainError(t *testing.T) {
 	assert.Equal(t, backend.ErrPermission, de.Kind)
 }
 
+// ── GetBanner ─────────────────────────────────────────────────────────────────
+
+func TestServerClient_GetBanner_OK(t *testing.T) {
+	t.Parallel()
+	const responseJSON = `{"message":"Maintenance on Friday","audience":"ALL","enabled":true}`
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/admin/banner", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(responseJSON))
+	})
+	cfg, err := c.GetBanner()
+	require.NoError(t, err)
+	assert.Equal(t, "Maintenance on Friday", cfg.Message)
+	assert.Equal(t, "ALL", cfg.Audience)
+	assert.True(t, cfg.Enabled)
+}
+
+func TestServerClient_GetBanner_403_ReturnsDomainError(t *testing.T) {
+	t.Parallel()
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
+	_, err := c.GetBanner()
+	require.Error(t, err)
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.Equal(t, backend.ErrPermission, de.Kind)
+}
+
+// ── SetBanner ─────────────────────────────────────────────────────────────────
+
+func TestServerClient_SetBanner_OK(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotBody string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPut, r.Method)
+		gotPath = r.URL.Path
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.WriteHeader(http.StatusOK)
+	})
+	err := c.SetBanner(backend.BannerConfig{
+		Message:  "Scheduled downtime Sunday 02:00 UTC",
+		Audience: "ALL",
+		Enabled:  true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "/admin/banner", gotPath)
+	assert.Contains(t, gotBody, `"message":"Scheduled downtime Sunday 02:00 UTC"`)
+	assert.Contains(t, gotBody, `"audience":"ALL"`)
+	assert.Contains(t, gotBody, `"enabled":true`)
+}
+
+func TestServerClient_SetBanner_403_ReturnsDomainError(t *testing.T) {
+	t.Parallel()
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
+	err := c.SetBanner(backend.BannerConfig{Message: "test", Audience: "ALL", Enabled: true})
+	require.Error(t, err)
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.Equal(t, backend.ErrPermission, de.Kind)
+}
+
+// ── ClearBanner ───────────────────────────────────────────────────────────────
+
+func TestServerClient_ClearBanner_OK(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusNoContent)
+	})
+	err := c.ClearBanner()
+	require.NoError(t, err)
+	assert.Equal(t, http.MethodDelete, gotMethod)
+	assert.Equal(t, "/admin/banner", gotPath)
+}
+
+func TestServerClient_ClearBanner_403_ReturnsDomainError(t *testing.T) {
+	t.Parallel()
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
+	err := c.ClearBanner()
+	require.Error(t, err)
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.Equal(t, backend.ErrPermission, de.Kind)
+}
+
 // ── GetClusterNodes ───────────────────────────────────────────────────────────
 
 func TestServerClient_GetClusterNodes_OK(t *testing.T) {

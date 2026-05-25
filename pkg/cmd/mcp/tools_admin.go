@@ -160,4 +160,38 @@ func registerAdminTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.setMailServerConfig,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("get_banner",
+			mcplib.WithDescription("Get the site-wide announcement banner configuration (Bitbucket Server / DC only). Cloud returns host.unsupported."),
+			optHostname,
+		),
+		h.getBanner,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("set_banner",
+			mcplib.WithDescription("Create or update the site-wide announcement banner (Bitbucket Server / DC only). Cloud returns host.unsupported."),
+			optHostname,
+			mcplib.WithString("message",
+				mcplib.Required(),
+				mcplib.Description("Banner message text"),
+			),
+			mcplib.WithString("audience",
+				mcplib.Description("Audience: ALL, AUTHENTICATED, or UNAUTHENTICATED (default ALL)"),
+			),
+			mcplib.WithBoolean("enabled",
+				mcplib.Description("Enable the banner immediately (default true)"),
+			),
+		),
+		h.setBanner,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("clear_banner",
+			mcplib.WithDescription("Remove the site-wide announcement banner (Bitbucket Server / DC only). Cloud returns host.unsupported."),
+			optHostname,
+		),
+		h.clearBanner,
+	)
 }

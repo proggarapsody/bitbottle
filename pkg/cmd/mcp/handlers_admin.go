@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -207,6 +208,62 @@ func (h *handlers) setMailServerConfig(_ context.Context, req mcplib.CallToolReq
 		return errResultErr(err), nil
 	}
 	return jsonResult(map[string]string{"status": "updated", "mail_hostname": mailHostname})
+}
+
+// ── get_banner ────────────────────────────────────────────────────────────────
+
+func (h *handlers) getBanner(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	cfg, err := ac.GetBanner()
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(cfg)
+}
+
+// ── set_banner ────────────────────────────────────────────────────────────────
+
+func (h *handlers) setBanner(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	message, err := requireString(req, "message")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	audience := strings.ToUpper(req.GetString("audience", "ALL"))
+	switch audience {
+	case "ALL", "AUTHENTICATED", "UNAUTHENTICATED":
+	default:
+		return errResult(fmt.Sprintf("audience must be one of ALL, AUTHENTICATED, UNAUTHENTICATED; got %q", audience)), nil
+	}
+	enabled := req.GetBool("enabled", true)
+
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := ac.SetBanner(backend.BannerConfig{
+		Message:  message,
+		Audience: audience,
+		Enabled:  enabled,
+	}); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]string{"status": "updated", "message": message})
+}
+
+// ── clear_banner ──────────────────────────────────────────────────────────────
+
+func (h *handlers) clearBanner(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := ac.ClearBanner(); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]string{"status": "cleared", "message": "Site-wide announcement banner has been removed."})
 }
 
 // ── set_logging_config ────────────────────────────────────────────────────────

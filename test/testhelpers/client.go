@@ -192,6 +192,11 @@ type FakeClient struct {
 	GetMailServerConfigFn func() (backend.MailServerConfig, error)
 	SetMailServerConfigFn func(in backend.MailServerConfig) error
 
+	// Admin banner methods (Server-only)
+	GetBannerFn   func() (backend.BannerConfig, error)
+	SetBannerFn   func(in backend.BannerConfig) error
+	ClearBannerFn func() error
+
 	// Source write methods (both backends; satisfies backend.SourceWriter when set)
 	PutFileFn func(ns, slug, path string, in backend.PutFileInput) error
 
@@ -2301,6 +2306,38 @@ func (c *FakeClient) SetMailServerConfig(in backend.MailServerConfig) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.SetMailServerConfig; set SetMailServerConfigFn in your test")
+	}
+	return nil
+}
+
+// ── Admin banner ──────────────────────────────────────────────────────────────
+
+func (c *FakeClient) GetBanner() (backend.BannerConfig, error) {
+	if c.GetBannerFn != nil {
+		return c.GetBannerFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetBanner; set GetBannerFn in your test")
+	}
+	return backend.BannerConfig{}, nil
+}
+
+func (c *FakeClient) SetBanner(in backend.BannerConfig) error {
+	if c.SetBannerFn != nil {
+		return c.SetBannerFn(in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetBanner; set SetBannerFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ClearBanner() error {
+	if c.ClearBannerFn != nil {
+		return c.ClearBannerFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ClearBanner; set ClearBannerFn in your test")
 	}
 	return nil
 }
