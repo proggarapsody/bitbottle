@@ -35,7 +35,7 @@ disagrees with this doc; the binary wins.
 | Deploy keys (both), branch-rules (Cloud only), ssh-keys (Cloud + Server/DC) | `references/deploy-key.md`, `references/branch-rule.md`, `references/ssh-key.md` |
 | Diff between refs, `diff REF1..REF2` | `references/diff.md` |
 | Branch compare (`branch compare BASE..HEAD`) — ahead/behind counts + commit lists (Cloud + Server/DC) | `references/branch.md` |
-| Workspaces + webhooks + workspace project CRUD + workspace perms (Cloud only), `user view` | `references/workspace.md`, `references/user.md` |
+| Workspaces + webhooks + workspace project CRUD + workspace perms + workspace pipeline variables (Cloud only), `user view` | `references/workspace.md`, `references/user.md` |
 | Mirror servers (list/view/repo list) (Server/DC only) | `references/mirror.md` |
 | Named credential profiles (`profile create/use/list/delete`) | `references/profile.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
