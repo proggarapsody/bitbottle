@@ -46,12 +46,13 @@ func TestAllFeatureSpecs_ServerSupport(t *testing.T) {
 
 func TestAllFeatureSpecs_Coverage(t *testing.T) {
 	t.Parallel()
-	// All 53 expected names must be present in AllFeatureSpecs.
+	// All 54 expected names must be present in AllFeatureSpecs.
 	expected := []string{
 		"AdminClient", "AuditClient", "BranchModelClient", "BranchProtector", "BranchRuleClient", "CodeInsightsClient",
 		"CodeSearcher", "CommentReactor", "CommitCommentReactor", "CommitFileClient",
 		"DefaultReviewerClient", "DefaultReviewersResolver", "DeployKeyClient", "DeploymentClient",
 		"DiffClient", "GroupClient", "GroupMemberClient",
+		"IPAllowlistClient",
 		"IssueAttacher", "IssueClient", "IssueVoter", "IssueWatcher",
 		"PRCommitClient", "PRCommentResolver",
 		"PRCommentStateSetter", "PRFileClient", "PRParticipantClient", "PRReopener",

@@ -468,6 +468,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "IPAllowlistClient",
+		HumanLabel:    "IP allowlist",
+		Plural:        false,
+		Check:         func(c Client) bool { _, ok := c.(IPAllowlistClient); return ok },
+		Feature:       FeatureIPAllowlist,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "SourceWriter",
 		HumanLabel:    "writing files via the API",
 		Check:         func(c Client) bool { _, ok := c.(SourceWriter); return ok },

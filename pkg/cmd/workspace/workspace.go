@@ -10,6 +10,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	cmdAudit "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/audit"
 	cmdhook "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/hook"
+	cmdIPAllowlist "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/ipallowlist"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/list"
 	cmdMemberList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/member"
 )
@@ -38,6 +39,15 @@ func NewCmdWorkspace(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(hookCmd)
 
 	cmd.AddCommand(cmdAudit.NewCmdAudit(f, nil))
+
+	ipallowlistCmd := &cobra.Command{
+		Use:   "ipallowlist",
+		Short: "Manage workspace IP allowlists (Cloud only)",
+	}
+	ipallowlistCmd.AddCommand(cmdIPAllowlist.NewCmdList(f, nil))
+	ipallowlistCmd.AddCommand(cmdIPAllowlist.NewCmdAdd(f, nil))
+	ipallowlistCmd.AddCommand(cmdIPAllowlist.NewCmdDelete(f, nil))
+	cmd.AddCommand(ipallowlistCmd)
 
 	return cmd
 }
