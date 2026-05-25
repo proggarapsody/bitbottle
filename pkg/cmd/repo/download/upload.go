@@ -47,7 +47,7 @@ func NewCmdDownloadUpload(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("opening file %s: %w", fileArg, err)
 			}
-			defer fh.Close()
+			defer fh.Close() //nolint:errcheck
 			if _, err := rc.UploadRepoDownload(ref.Project, ref.Slug, uploadName, fh); err != nil {
 				return err
 			}

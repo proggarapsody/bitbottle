@@ -46,7 +46,7 @@ func NewCmdDownloadGet(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("creating output file %s: %w", dest, err)
 			}
-			defer fh.Close()
+			defer fh.Close() //nolint:errcheck
 			if err := rc.DownloadRepoDownload(ref.Project, ref.Slug, nameArg, fh); err != nil {
 				return err
 			}

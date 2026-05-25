@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"fmt"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -49,7 +48,7 @@ func (h *handlers) viewMilestone(_ context.Context, req mcplib.CallToolRequest) 
 	}
 	idFloat := req.GetInt("id", 0)
 	if idFloat == 0 {
-		return errResult(fmt.Sprintf("required parameter missing or zero: id")), nil
+		return errResult("required parameter missing or zero: id"), nil
 	}
 	client, err := h.resolveBackend(hostname)
 	if err != nil {

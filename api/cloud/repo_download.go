@@ -80,7 +80,7 @@ func (c *Client) DownloadRepoDownload(ns, slug, name string, out io.Writer) erro
 	if err != nil {
 		return err
 	}
-	defer rc.Close()
+	defer rc.Close() //nolint:errcheck
 	_, err = io.Copy(out, rc)
 	return err
 }
