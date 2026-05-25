@@ -262,6 +262,9 @@ type FakeClient struct {
 	CreateRunnerFn func(workspace string, in backend.CreateRunnerInput) (backend.Runner, error)
 	DeleteRunnerFn func(workspace, runnerUUID string) error
 
+	// Audit methods (Cloud-only; satisfies backend.AuditClient when set)
+	ListAuditLogFn func(workspace string, opts backend.AuditLogOpts) ([]backend.AuditEvent, error)
+
 	// Diff methods (both backends; satisfies backend.DiffClient when set)
 	GetDiffFn     func(ns, slug, from, to string) (string, error)
 	GetDiffStatFn func(ns, slug, from, to string) (backend.DiffStat, error)
@@ -390,6 +393,7 @@ var (
 	_ backend.RepoLabelClient          = (*FakeClient)(nil)
 	_ backend.RunnerClient             = (*FakeClient)(nil)
 	_ backend.SourceWriter             = (*FakeClient)(nil)
+	_ backend.AuditClient              = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2378,4 +2382,16 @@ func (c *FakeClient) DeleteRunner(workspace, runnerUUID string) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteRunner; set DeleteRunnerFn in your test")
 	}
 	return nil
+}
+
+// ── AuditClient ───────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListAuditLog(workspace string, opts backend.AuditLogOpts) ([]backend.AuditEvent, error) {
+	if c.ListAuditLogFn != nil {
+		return c.ListAuditLogFn(workspace, opts)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListAuditLog; set ListAuditLogFn in your test")
+	}
+	return nil, nil
 }
