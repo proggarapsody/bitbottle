@@ -343,6 +343,10 @@ type FakeClient struct {
 	CreateRepoLabelFn func(ns, slug string, in backend.CreateRepoLabelInput) (backend.RepoLabel, error)
 	UpdateRepoLabelFn func(ns, slug string, id int, in backend.UpdateRepoLabelInput) (backend.RepoLabel, error)
 	DeleteRepoLabelFn func(ns, slug string, id int) error
+
+	// PipelineConfigClient methods (Cloud-only; satisfies backend.PipelineConfigClient when set)
+	GetPipelinesConfigFn    func(ws, slug string) (backend.PipelineConfig, error)
+	UpdatePipelinesConfigFn func(ws, slug string, in backend.PipelineConfig) (backend.PipelineConfig, error)
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -402,6 +406,7 @@ var (
 	_ backend.SourceWriter             = (*FakeClient)(nil)
 	_ backend.AuditClient              = (*FakeClient)(nil)
 	_ backend.CommitCherryPicker       = (*FakeClient)(nil)
+	_ backend.PipelineConfigClient     = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2456,4 +2461,26 @@ func (c *FakeClient) DeleteIPAllowlist(workspace, uuid string) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteIPAllowlist; set DeleteIPAllowlistFn in your test")
 	}
 	return nil
+}
+
+// ── PipelineConfigClient ─────────────────────────────────────────────────────
+
+func (c *FakeClient) GetPipelinesConfig(ws, slug string) (backend.PipelineConfig, error) {
+	if c.GetPipelinesConfigFn != nil {
+		return c.GetPipelinesConfigFn(ws, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipelinesConfig; set GetPipelinesConfigFn in your test")
+	}
+	return backend.PipelineConfig{}, nil
+}
+
+func (c *FakeClient) UpdatePipelinesConfig(ws, slug string, in backend.PipelineConfig) (backend.PipelineConfig, error) {
+	if c.UpdatePipelinesConfigFn != nil {
+		return c.UpdatePipelinesConfigFn(ws, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdatePipelinesConfig; set UpdatePipelinesConfigFn in your test")
+	}
+	return backend.PipelineConfig{}, nil
 }

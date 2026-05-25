@@ -1,3 +1,46 @@
+# Pipeline Config
+
+Enable or disable Bitbucket Cloud Pipelines at the repository level. This feature is **Cloud only**.
+
+## Commands
+
+```bash
+# Get pipeline config for a repository
+bitbottle pipeline config get WORKSPACE/REPO
+
+# Enable pipelines for a repository
+bitbottle pipeline config enable WORKSPACE/REPO
+
+# Disable pipelines for a repository
+bitbottle pipeline config disable WORKSPACE/REPO
+```
+
+`get` supports `--json`, `--jq`, `--yaml`, and `--template`.
+
+## Flags
+
+| Command | Flag | Description |
+|---|---|---|
+| all | `--hostname HOST` | Override the Bitbucket host |
+
+## MCP tools
+
+| Tool | Description |
+|---|---|
+| `get_pipeline_config` | Get pipeline config. Params: `project`, `slug` (required), `hostname` |
+| `enable_pipelines` | Enable pipelines. Params: `project`, `slug` (required), `hostname` |
+| `disable_pipelines` | Disable pipelines. Params: `project`, `slug` (required), `hostname` |
+
+## Backend details
+
+**Cloud** — `GET/PUT /2.0/repositories/{workspace}/{slug}/pipelines_config`
+
+Response: `{"enabled": true, "type": "repository_pipeline_settings"}`
+
+**Server/DC** — not supported. Returns a `host.unsupported` error.
+
+---
+
 # Pipeline Schedules
 
 Pipeline schedules let you run a Bitbucket Cloud pipeline on a recurring

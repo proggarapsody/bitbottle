@@ -98,6 +98,12 @@ type LoggingConfig struct {
 // LoggingConfig; the alias exists so the interface signature stays explicit.
 type LoggingConfigInput = LoggingConfig
 
+// PipelineConfig is the domain representation of a repository's Bitbucket Cloud
+// pipeline configuration.
+type PipelineConfig struct {
+	Enabled bool `json:"enabled"`
+}
+
 // SSHKey is the domain representation of a user SSH key on Bitbucket Cloud.
 type SSHKey struct {
 	ID    int    `json:"id"`

@@ -395,7 +395,7 @@ var AllFeatureSpecs = []FeatureSpec{
 		Check:         func(c Client) bool { _, ok := c.(SSHKeyClient); return ok },
 		Feature:       FeatureSSHKeys,
 		CloudSupport:  true,
-		ServerSupport: false,
+		ServerSupport: true,
 	},
 	{
 		Name:          "SuggestionApplier",
@@ -491,6 +491,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		Feature:       FeatureCherryPick,
 		CloudSupport:  false,
 		ServerSupport: true,
+	},
+	{
+		Name:          "PipelineConfigClient",
+		HumanLabel:    "pipeline config",
+		Check:         func(c Client) bool { _, ok := c.(PipelineConfigClient); return ok },
+		Feature:       FeaturePipelineConfig,
+		CloudSupport:  true,
+		ServerSupport: false,
 	},
 }
 
