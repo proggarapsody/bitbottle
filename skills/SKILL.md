@@ -29,12 +29,13 @@ disagrees with this doc; the binary wins.
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
 | Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch (Cloud only) | `references/issues.md` |
 | Issue milestones list/view (Cloud only) | `references/milestone.md` |
+| Issue versions list/view/create/delete (Cloud only) | `references/version.md` |
 | snippet list/view/create/delete (snippet snippet group, Cloud only) | `references/snippet.md` |
 | Deployments + environments + variables (Cloud only) | `references/deployment.md`, `references/variable.md` |
 | Deploy keys (both), branch-rules (Cloud only), ssh-keys (Cloud + Server/DC) | `references/deploy-key.md`, `references/branch-rule.md`, `references/ssh-key.md` |
 | Diff between refs, `diff REF1..REF2` | `references/diff.md` |
 | Branch compare (`branch compare BASE..HEAD`) — ahead/behind counts + commit lists (Cloud + Server/DC) | `references/branch.md` |
-| Workspaces + webhooks (Cloud only), `user view` | `references/workspace.md`, `references/user.md` |
+| Workspaces + webhooks + workspace project CRUD (Cloud only), `user view` | `references/workspace.md`, `references/user.md` |
 | Named credential profiles (`profile create/use/list/delete`) | `references/profile.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
 | Extensions (`extension install/list/upgrade/remove/exec`, extension scaffold) | `references/extension.md` |

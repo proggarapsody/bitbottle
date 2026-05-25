@@ -609,6 +609,63 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusOK,
 			Body:       map[string]any{"id": 1, "name": "v1.0"},
 		},
+		// issue versions list — used by version list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/versions",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"id": 1, "name": "1.0"},
+				map[string]any{"id": 2, "name": "2.0"},
+			}),
+		},
+		// issue version view — used by version view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/versions/1",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"id": 1, "name": "1.0"},
+		},
+		// issue version create — used by version create
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/versions",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"id": 3, "name": "3.0"},
+		},
+		// issue version delete — used by version delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/versions/1",
+			Status:     http.StatusNoContent,
+		},
+		// workspace project view — used by workspace project view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/projects/MYPROJ",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"key": "MYPROJ", "name": "My Project", "description": "", "is_private": false},
+		},
+		// workspace project create — used by workspace project create
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/workspaces/testworkspace/projects",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"key": "MYPROJ", "name": "My Project", "description": "", "is_private": false},
+		},
+		// workspace project update — used by workspace project edit
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/workspaces/testworkspace/projects/MYPROJ",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"key": "MYPROJ", "name": "Updated Project", "description": "", "is_private": false},
+		},
+		// workspace project delete — used by workspace project delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/workspaces/testworkspace/projects/MYPROJ",
+			Status:     http.StatusNoContent,
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

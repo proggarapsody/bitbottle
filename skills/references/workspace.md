@@ -75,9 +75,40 @@ bitbottle workspace hook delete WORKSPACE UUID
 | EVENTS | `events` | Comma-separated event list |
 | ACTIVE | `active` | Whether the webhook is active |
 
+## Workspace projects
+
+```bash
+# Create a project in a workspace
+bitbottle workspace project create WORKSPACE --key KEY --name NAME [--description D] [--private]
+
+# View a project
+bitbottle workspace project view WORKSPACE KEY
+bitbottle workspace project view WORKSPACE KEY --json
+
+# Edit a project (all flags optional — only changed fields are updated)
+bitbottle workspace project edit WORKSPACE KEY [--name NAME] [--description D] [--private=BOOL]
+
+# Delete a project
+bitbottle workspace project delete WORKSPACE KEY [--confirm]
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--key` | — | Project key, e.g. MYPROJ (required for create) |
+| `--name` | — | Project name (required for create) |
+| `--description` | — | Project description |
+| `--private` | false | Make project private |
+| `--confirm` | false | Skip deletion confirmation |
+
+Output fields for `view` and `--json`: `key`, `name`, `description`, `is_private`.
+
 ## MCP tools
 
 - `list_workspace_members` — `workspace` (required), `hostname`, `limit`
 - `workspace_hook_list` — `workspace` (required), `hostname`
 - `workspace_hook_create` — `workspace` (required), `url` (required), `events` (required, comma-separated), `active`, `hostname`
 - `workspace_hook_delete` — `workspace` (required), `uuid` (required), `hostname`
+- `create_workspace_project` — `workspace`, `key`, `name` (all required), `description`, `private`, `hostname`
+- `view_workspace_project` — `workspace`, `key` (required), `hostname`
+- `edit_workspace_project` — `workspace`, `key` (required), `name`, `description`, `private`, `hostname`
+- `delete_workspace_project` — `workspace`, `key` (required), `hostname`

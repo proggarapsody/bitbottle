@@ -39,6 +39,7 @@ import (
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/tag"       // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/user"      // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/variable"  // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/version"   // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/webhook"   // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/workspace" // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmdregistry"
