@@ -15,6 +15,10 @@ type PullRequest struct {
 	WebURL         string
 	HeadCommitHash string
 	AutoMerge      *AutoMergeState // nil when auto-merge is not enabled
+	// Version is the optimistic-concurrency token used by Bitbucket Server / DC.
+	// It is zero for Cloud PRs (Cloud does not expose a version field).
+	// Use omitempty so Cloud JSON output does not include a spurious "version":0.
+	Version int `json:"version,omitempty"`
 }
 
 // AutoMergeState records the auto-merge configuration for a pull request.

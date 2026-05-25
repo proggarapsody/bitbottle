@@ -68,6 +68,17 @@ func TestServerClient_GetPR_MapsAllFields(t *testing.T) {
 	assert.Contains(t, pr.WebURL, "pull-requests/42")
 }
 
+// TestServerClient_GetPR_CopiesVersion verifies that the version field from the
+// Bitbucket Server wire response is forwarded into the domain PullRequest.
+// pr_get.json contains "version":3.
+func TestServerClient_GetPR_CopiesVersion(t *testing.T) {
+	t.Parallel()
+	client := fixtureClient(t, "testdata/pr_get.json", 200)
+	pr, err := client.GetPR("MYPROJ", "my-service", 42)
+	require.NoError(t, err)
+	assert.Equal(t, 3, pr.Version, "toPRDomain must copy the version field from the wire response")
+}
+
 func TestServerClient_CreatePR_AddsRefsHeadsPrefix(t *testing.T) {
 	t.Parallel()
 	var gotBody []byte

@@ -32,6 +32,7 @@ func toPRDomain(w servergen.RestPullRequest) backend.PullRequest {
 		ToBranch:       w.ToRef.DisplayID,
 		WebURL:         webURL,
 		HeadCommitHash: w.FromRef.LatestCommit,
+		Version:        w.Version,
 	}
 	if w.AutoMerge != nil {
 		pr.AutoMerge = &backend.AutoMergeState{

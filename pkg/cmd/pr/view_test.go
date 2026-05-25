@@ -259,3 +259,49 @@ func TestPRView_JSON_IncludesDescription(t *testing.T) {
 
 	assert.Contains(t, out.String(), `"description":"Some description"`)
 }
+
+// TestPRView_JSON_ServerPR_IncludesVersion verifies that --json output for a
+// Server PR (version > 0) includes the "version" key.
+func TestPRView_JSON_ServerPR_IncludesVersion(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			p := testhelpers.BackendPRFactory(testhelpers.BackendPRWithID(42))
+			p.Version = 7
+			return p, nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"42", "--json"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Contains(t, out.String(), `"version":7`,
+		"--json for a Server PR must include the version key")
+}
+
+// TestPRView_JSON_CloudPR_OmitsVersion verifies that --json output for a Cloud
+// PR (version == 0) does NOT include the "version" key. Cloud PRs have no
+// optimistic-concurrency token.
+func TestPRView_JSON_CloudPR_OmitsVersion(t *testing.T) {
+	t.Parallel()
+
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			// Version is zero (default) — simulates a Cloud PR.
+			return testhelpers.BackendPRFactory(testhelpers.BackendPRWithID(1)), nil
+		},
+	}
+	f, out, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRView(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"1", "--json"})
+	require.NoError(t, cmd.Execute())
+
+	assert.NotContains(t, out.String(), `"version"`,
+		"--json for a Cloud PR (version=0) must not include the version key")
+}
