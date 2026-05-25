@@ -1,0 +1,6 @@
+# ssh-key list against Bitbucket Server returns user SSH keys.
+bb-fake server
+
+bitbottle ssh-key list --hostname $BB_HOST -k
+stdout 'Laptop'
+stdout 'Desktop'

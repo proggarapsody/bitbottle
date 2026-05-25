@@ -5,6 +5,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	cmdArtifact "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/artifact"
+	cmdConfig "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/config"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/list"
 	cmdLogs "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
 	cmdRerun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/rerun"
@@ -42,5 +43,6 @@ directory.`,
 	cmd.AddCommand(cmdWatch.NewCmdWatch(f, nil))
 	cmd.AddCommand(NewCmdPipelineSchedule(f))
 	cmd.AddCommand(NewCmdPipelineCache(f))
+	cmd.AddCommand(cmdConfig.NewCmdConfig(f))
 	return cmd
 }

@@ -34,6 +34,7 @@ import (
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/search"    // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/skill"     // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/snippet"   // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/sshkey"    // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/tag"       // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/user"      // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/variable"  // self-registers via init()

@@ -440,6 +440,16 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/rest/access-tokens/1.0/users/testuser/1",
 			Status:     http.StatusNoContent,
 		},
+		// SSH key list — used by ssh-key list (Server/DC)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/ssh/1.0/keys",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"id": 1, "label": "Laptop", "text": "ssh-rsa AAAA...laptop"},
+				map[string]any{"id": 2, "label": "Desktop", "text": "ssh-rsa AAAA...desktop"},
+			}),
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
@@ -493,6 +503,29 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/repositories/testworkspace/bad-auth/pullrequests",
 			Status:     http.StatusUnauthorized,
 			Body:       map[string]any{"type": "error", "error": map[string]any{"message": "Unauthorized"}},
+		},
+		// pipelines_config GET — used by pipeline config get
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"type": "repository_pipeline_settings", "enabled": true},
+		},
+		// pipelines_config PUT — used by pipeline config enable/disable
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"type": "repository_pipeline_settings", "enabled": false},
+		},
+		// SSH key list — used by ssh-key list (Cloud)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/users/testuser/ssh-keys",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"id": 1, "label": "Laptop", "key": "ssh-rsa AAAA...laptop"},
+			}),
 		},
 	}
 	return newTLSServer(ts, stubs...)
