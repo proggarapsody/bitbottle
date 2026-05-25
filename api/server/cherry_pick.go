@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	servergen "github.com/proggarapsody/bitbottle/api/server/gen"
@@ -22,7 +23,7 @@ type cherryPickTargetRef struct {
 func (c *Client) CherryPickCommit(ns, slug string, in backend.CherryPickInput) (backend.Commit, error) {
 	req := cherryPickRequest{
 		Message:      in.Message,
-		TargetRef:    cherryPickTargetRef{ID: "refs/heads/" + in.TargetBranch},
+		TargetRef:    cherryPickTargetRef{ID: "refs/heads/" + strings.TrimPrefix(in.TargetBranch, "refs/heads/")},
 		SourceCommit: in.SourceHash,
 	}
 	path := fmt.Sprintf("/projects/%s/repos/%s/cherry-pick", ns, slug)
