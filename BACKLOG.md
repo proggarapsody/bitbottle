@@ -445,7 +445,7 @@ Current state of every command area against gh feature parity:
 | BACKEND-TYPE-STRICT | **Validate `backend_type` at write time** | `internal/bbinstance/bbinstance.go:25-34` `IsCloud`'s `default → false` is intentional (per docstring: "server", "datacenter" both legitimately map to Server). But typos like `backend_type: clud` silently become Server at read time, surfacing as confusing API path errors. Real fix is **input validation**: add `BackendType.IsValid()` covering `{cloud, server, datacenter, ""}`, and call it in the `auth login` / `profile create` flows so typos are rejected at config write. Don't change `IsCloud` read semantics. | N/A | DX | ✅ |
 | ERR-EMPTY-400 | **Stamp `Code` on bare 400/422 responses** | `api/internal/httpx/httpx.go:364-385` → `backend.ClassifyHTTPError` at `api/backend/errors.go:206-243` already maps 401/403/404/409/5xx to a `Kind`, but only 401 gets an auto-`Code` (`CodeAuthInvalidToken`). A 400 / 422 with an empty response body therefore has `Kind: ""`, `Code: ""` and falls through to the catch-all errfmt fallback — agents and scripts see "HTTP 400: Bad Request" with no actionable hint. Fix: add `Kind: ErrInvalidRequest` + `Code: CodeInvalidRequest` for 400/422 in `ClassifyHTTPError`, register a catalogue entry, and let adapters override via `StampCode` when they have a more specific reason. | N/A | DX | ✅ |
 | SCORECARD-PUSH | **OpenSSF Scorecard score push** | Bundle four reachable Scorecard wins into one mega-PR: (1) Token-Permissions — push `contents:write` / `pull-requests:write` from workflow-root to job-level on `release.yml`, `release-please.yml`, `dependabot-auto-merge.yml`; (2) Security-Policy — add `SECURITY.md` pointing at GitHub Private Vulnerability Reporting (PVR toggle flipped manually in repo settings); (3) SAST — `.github/workflows/codeql.yml` for Go (autobuild, push+PR+weekly cron, SARIF upload to Security tab); (4) Signed-Releases — GoReleaser cosign keyless signing of checksums, SLSA provenance via `slsa-github-generator` reusable workflow, `npm publish --provenance` for the npm wrapper. Code-Review (0), Contributors (0), Maintained (0, time-fixed) are knowingly capped — no fix in this scope. Projected: 4.9 → ~7.5+. — scope **SCORECARD-PUSH** | N/A | DX | ✅ |
-| OSSF-BADGE | **OpenSSF Best Practices (CII) badge** | Apply at `https://www.bestpractices.dev` for the passing badge. Form-based; questions cover CI, license, security policy, signed releases — most answer "yes" once **SCORECARD-PUSH** lands. ~1h of form-filling + weeks of async review. Add the earned badge to README on receipt. Drives Scorecard's `CII-Best-Practices` check from 0 → passing. — scope **OSSF-BADGE** | N/A | DX | 🔲 |
+| OSSF-BADGE | **OpenSSF Best Practices (CII) badge** _(application submitted — awaiting OpenSSF review)_ | Application filed at `https://www.bestpractices.dev`. On grant: add badge to README near existing Scorecard badge (`[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/<ID>/badge)](https://www.bestpractices.dev/projects/<ID>)`) and flip this row to ✅. Auto-iter cannot act on this — external dependency. — scope **OSSF-BADGE** | N/A | DX | 🔲📝 |
 | PROJECT-CRUD | **Server/DC Project CRUD** | `project create KEY --name NAME [--description D] [--public]`, `project delete KEY [--confirm]`, `project edit KEY [--name NAME] [--description D] [--public=BOOL]`, `project view KEY`, `project list [--filter PREFIX]`. Server: `POST /rest/api/1.0/projects`, `DELETE /rest/api/1.0/projects/{key}`, `PUT /rest/api/1.0/projects/{key}`, `GET /rest/api/1.0/projects/{key}`, `GET /rest/api/1.0/projects`. Cloud → typed `host.unsupported`. New optional interfaces `ProjectCreator`, `ProjectDeleter`, `ProjectEditor`. MCP triplet for all five tools. — scope **PROJECT-CRUD** | Server/DC | 3 | ✅ |
 | PAT-MGMT | **Personal Access Token Management** | `auth pat list [--hostname H]`, `auth pat create --name NAME --scopes SCOPE1,SCOPE2 [--expires-in DAYS]`, `auth pat revoke ID [--confirm]`. Server: `GET /rest/access-tokens/1.0/users/{userSlug}`, `PUT /rest/access-tokens/1.0/users/{userSlug}`, `DELETE /rest/access-tokens/1.0/users/{userSlug}/{tokenId}`. Cloud: `GET/POST/DELETE /users/{selected_user}/api-tokens`. New optional interface `PATManager`. `create` echoes the raw secret exactly once to stdout. MCP triplet. — scope **PAT-MGMT** | Both | 3 | ✅ |
 | ISSUE-ATTACH-VOTE-WATCH | **Cloud Issue Attachments + Voting + Watching** | `issue attachment list/add/download/delete ISSUE_ID`, `issue vote/unvote ISSUE_ID`, `issue watch/unwatch ISSUE_ID`. Cloud: `GET/POST/DELETE /repositories/{ws}/{slug}/issues/{id}/attachments`; `PUT/DELETE /issues/{id}/vote`; `PUT/DELETE /issues/{id}/watch`. Server → typed `host.unsupported`. New optional interfaces `IssueAttacher`, `IssueVoter`, `IssueWatcher`. MCP triplets (8 tools). Completes the issue surface alongside shipped issue commands. — scope **ISSUE-ATTACH-VOTE-WATCH** | Cloud | 3 | 🔲 |
@@ -2720,22 +2720,12 @@ Print `"already up to date"` if version matches.
 
 ### OSSF-BADGE — OpenSSF Best Practices (CII) badge
 
-**Problem**: Scorecard's `CII-Best-Practices` check is 0 because no badge effort exists. The OpenSSF Best Practices badge is a separate (older) program at https://www.bestpractices.dev, not the Scorecard itself. Earning the passing tier flips the Scorecard check from 0 to a passing score.
+**Status**: Application submitted at https://www.bestpractices.dev (project URL `https://github.com/proggarapsody/bitbottle`). Awaiting OpenSSF review — typically 1–4 weeks. No further action until the badge ID is granted.
 
-**Changes** (all manual / out-of-band — no PR until badge is granted):
-
-1. Apply at https://www.bestpractices.dev for the project URL `https://github.com/proggarapsody/bitbottle`.
-2. Fill the form (~50 questions covering CI, license, security policy, signed releases, vulnerability disclosure, dependency management). Most answers are already "yes" once **SCORECARD-PUSH** lands.
-3. Submit and wait for OpenSSF review (typically 1–4 weeks).
-4. On grant: receive a badge ID (e.g. `BADGE_ID=12345`); add the badge to `README.md` near the existing Scorecard badge: `[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/BADGE_ID/badge)](https://www.bestpractices.dev/projects/BADGE_ID)`.
-
-**No code changes besides the README badge.** This scope is mostly waiting; the only artifact is the badge line in README. Land **SCORECARD-PUSH first** so the form's "signed releases / security policy / SAST" answers are honest.
-
-**Definition of Done**:
-- [ ] Application submitted at https://www.bestpractices.dev.
-- [ ] Badge granted (passing tier or higher).
-- [ ] Badge added to README.md.
-- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `chore(readme)` commit that adds the badge.
+**On grant**:
+1. Receive badge ID (e.g. `BADGE_ID=12345`).
+2. Add to `README.md` near the existing Scorecard badge: `[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/BADGE_ID/badge)](https://www.bestpractices.dev/projects/BADGE_ID)`.
+3. Flip this row 🔲📝 → ✅ in the same `chore(readme)` commit.
 
 ---
 

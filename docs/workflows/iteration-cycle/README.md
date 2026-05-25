@@ -99,8 +99,10 @@ inventory + smell scan acknowledged.
    - Surface candidates with a one-line proposal each.
 3. **Nothing emerges?** Switch to **brainstorm mode** (judgment-heavy
    model subagent). Brainstorm runs autonomously — no phone halt — and
-   emits 3–4 candidate BACKLOG rows. Every emitted row must satisfy
-   **all** of the following or be dropped before write:
+   emits **8–10 candidate BACKLOG rows** (sized to fill a full
+   `/auto-iter-stream 10`; see `quickref.md` § Brainstorm rules for the
+   rationale). Every emitted row must satisfy **all** of the following or
+   be dropped before write:
    1. **No-overlap** — does not duplicate any ✅ row or Functionality
       Map entry. _(This is the rule that retroactively killed
       PR-TEMPLATE; without it brainstorm hallucinates plausible-but-

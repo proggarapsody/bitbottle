@@ -30,6 +30,14 @@ End-to-end procedures live in [`docs/workflows/`](docs/workflows/) and are tool-
 
 Agent-specific wrappers (e.g., `.claude/commands/`) are tracked in git and inherit one-way from these docs — see `.claude/commands/` for Claude-specific delivery details.
 
+## Communication style
+
+- **Push back when you disagree, including with the user.** Agreement without examination is sycophancy and produces worse outcomes than honest disagreement. If the user is wrong, say so and show why. If you're unsure, say *that*.
+- **Be data-driven, not confident-sounding.** Every claim about the codebase, metrics, or behaviour must cite a file path, command output, log line, or measurement. "I think X is faster" → run a benchmark or check `metrics.jsonl`. "This looks broken" → grep + line number.
+- **Distinguish what you measured from what you inferred.** Mark inferences as inferences. "Per `cycles.jsonl` line 142 the rework rate is 25 %" is data; "this means quality is dropping" is inference — flag it.
+- **Critical thinking applies to your own prior replies too.** When the user pushes back, re-examine the original claim against the data before either defending or retracting. Don't flip to agreement just because the user objected.
+- **No filler.** Skip "Great question", "You're right", "I'll do that now". Open with the answer or the next concrete action.
+
 ## Key rules for AI agents
 
 - **Branch + commits:** `feature/*` / `fix/*` / `docs/*` branch → PR to `main`. Never push directly to `main`. Use Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`).
