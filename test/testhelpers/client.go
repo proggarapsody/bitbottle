@@ -354,6 +354,16 @@ type FakeClient struct {
 
 	// RefComparer methods (Cloud + Server/DC)
 	CompareRefsFn func(ns, slug, base, head string, limit int) (backend.RefComparison, error)
+
+	// RepoDownloadClient methods (Cloud-only; satisfies backend.RepoDownloadClient when set)
+	ListRepoDownloadsFn    func(ns, slug string, limit int) ([]backend.RepoDownload, error)
+	UploadRepoDownloadFn   func(ns, slug, name string, body io.Reader) (backend.RepoDownload, error)
+	DownloadRepoDownloadFn func(ns, slug, name string, out io.Writer) error
+	DeleteRepoDownloadFn   func(ns, slug, name string) error
+
+	// MilestoneClient methods (Cloud-only; satisfies backend.MilestoneClient when set)
+	ListMilestonesFn func(ns, slug string, limit int) ([]backend.Milestone, error)
+	GetMilestoneFn   func(ns, slug string, id int) (backend.Milestone, error)
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -416,6 +426,8 @@ var (
 	_ backend.PipelineConfigClient     = (*FakeClient)(nil)
 	_ backend.PipelineTestReportClient = (*FakeClient)(nil)
 	_ backend.RefComparer              = (*FakeClient)(nil)
+	_ backend.RepoDownloadClient       = (*FakeClient)(nil)
+	_ backend.MilestoneClient          = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2530,4 +2542,64 @@ func (c *FakeClient) CompareRefs(ns, slug, base, head string, limit int) (backen
 		c.T.Fatalf("unexpected call to FakeClient.CompareRefs; set CompareRefsFn in your test")
 	}
 	return backend.RefComparison{}, nil
+}
+
+func (c *FakeClient) ListRepoDownloads(ns, slug string, limit int) ([]backend.RepoDownload, error) {
+	if c.ListRepoDownloadsFn != nil {
+		return c.ListRepoDownloadsFn(ns, slug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListRepoDownloads; set ListRepoDownloadsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) UploadRepoDownload(ns, slug, name string, body io.Reader) (backend.RepoDownload, error) {
+	if c.UploadRepoDownloadFn != nil {
+		return c.UploadRepoDownloadFn(ns, slug, name, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UploadRepoDownload; set UploadRepoDownloadFn in your test")
+	}
+	return backend.RepoDownload{}, nil
+}
+
+func (c *FakeClient) DownloadRepoDownload(ns, slug, name string, out io.Writer) error {
+	if c.DownloadRepoDownloadFn != nil {
+		return c.DownloadRepoDownloadFn(ns, slug, name, out)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DownloadRepoDownload; set DownloadRepoDownloadFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) DeleteRepoDownload(ns, slug, name string) error {
+	if c.DeleteRepoDownloadFn != nil {
+		return c.DeleteRepoDownloadFn(ns, slug, name)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteRepoDownload; set DeleteRepoDownloadFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListMilestones(ns, slug string, limit int) ([]backend.Milestone, error) {
+	if c.ListMilestonesFn != nil {
+		return c.ListMilestonesFn(ns, slug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListMilestones; set ListMilestonesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetMilestone(ns, slug string, id int) (backend.Milestone, error) {
+	if c.GetMilestoneFn != nil {
+		return c.GetMilestoneFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetMilestone; set GetMilestoneFn in your test")
+	}
+	return backend.Milestone{}, nil
 }

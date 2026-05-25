@@ -576,6 +576,39 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusOK,
 			Body:       testhelpers.CloudPagedResponse([]any{}),
 		},
+		// repo downloads list — used by repo download list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/downloads",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"name": "release.zip", "size": int64(1024), "downloads": 5, "created_on": "2024-01-15T10:00:00Z"},
+				map[string]any{"name": "data.tar.gz", "size": int64(2048), "downloads": 2, "created_on": "2024-01-16T10:00:00Z"},
+			}),
+		},
+		// repo download delete — used by repo download delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/downloads/release.zip",
+			Status:     http.StatusNoContent,
+		},
+		// milestones list — used by milestone list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/milestones",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"id": 1, "name": "v1.0"},
+				map[string]any{"id": 2, "name": "v2.0"},
+			}),
+		},
+		// milestone view — used by milestone view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/milestones/1",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"id": 1, "name": "v1.0"},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

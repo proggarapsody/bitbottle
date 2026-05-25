@@ -195,6 +195,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "MilestoneClient",
+		HumanLabel:    "issue milestones",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(MilestoneClient); return ok },
+		Feature:       FeatureMilestones,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "PRCommitClient",
 		HumanLabel:    "PR commits",
 		Plural:        true,
@@ -313,6 +322,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		Feature:       FeatureRefCompare,
 		CloudSupport:  true,
 		ServerSupport: true,
+	},
+	{
+		Name:          "RepoDownloadClient",
+		HumanLabel:    "repo downloads",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(RepoDownloadClient); return ok },
+		Feature:       FeatureRepoDownloads,
+		CloudSupport:  true,
+		ServerSupport: false,
 	},
 	{
 		Name:          "RepoEditor",

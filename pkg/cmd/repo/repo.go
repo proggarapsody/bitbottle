@@ -7,6 +7,7 @@ import (
 	cmdClone "github.com/proggarapsody/bitbottle/pkg/cmd/repo/clone"
 	cmdCreate "github.com/proggarapsody/bitbottle/pkg/cmd/repo/create"
 	cmdDelete "github.com/proggarapsody/bitbottle/pkg/cmd/repo/delete"
+	cmdDownload "github.com/proggarapsody/bitbottle/pkg/cmd/repo/download"
 	cmdEdit "github.com/proggarapsody/bitbottle/pkg/cmd/repo/edit"
 	cmdFile "github.com/proggarapsody/bitbottle/pkg/cmd/repo/file"
 	cmdFork "github.com/proggarapsody/bitbottle/pkg/cmd/repo/fork"
@@ -56,5 +57,6 @@ disambiguate when multiple Bitbucket hosts are configured.`,
 	cmd.AddCommand(cmdVisibility.NewCmdVisibility(f))
 	cmd.AddCommand(cmdSetDefaultBranch.NewCmdSetDefaultBranch(f))
 	cmd.AddCommand(cmdPRSettings.NewCmdPRSettings(f))
+	cmd.AddCommand(cmdDownload.NewCmdDownload(f))
 	return cmd
 }

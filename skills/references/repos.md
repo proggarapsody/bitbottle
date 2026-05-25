@@ -59,6 +59,24 @@ commands require `--ref` (branch / tag / commit hash) and accept
 both Cloud and Server/DC. Columns: DISPLAY_NAME, USERNAME. Supports
 `--json`, `--jq expr`, `--hostname`. MCP tool: `list_repo_watchers(repo)`.
 
+## Downloads
+
+Manage repository download artifacts. **Cloud only** — Server/DC returns a
+typed `host.unsupported` error.
+
+```bash
+bitbottle repo download list   [WORKSPACE/REPO] [--limit N] [--json]
+bitbottle repo download upload [WORKSPACE/REPO] FILE [--name NAME]
+bitbottle repo download get    [WORKSPACE/REPO] NAME [--out PATH]
+bitbottle repo download delete [WORKSPACE/REPO] NAME [--confirm]
+```
+
+`list` shows name, size (human-readable), download count, and creation date.
+`upload` sends the file as a multipart form POST; `--name` overrides the filename.
+`get` streams the artifact to a local file; `--out` sets the destination path.
+`delete` requires `--confirm` outside a TTY.
+MCP tools: `list_repo_downloads`, `upload_repo_download` (base64 content), `delete_repo_download`.
+
 ## Labels
 
 ```bash

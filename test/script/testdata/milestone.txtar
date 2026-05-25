@@ -1,0 +1,12 @@
+# milestone list shows milestones; view shows single milestone.
+bb-fake cloud
+
+bitbottle milestone list testworkspace/cloud-repo-a -k
+stdout 'v1.0'
+stdout 'v2.0'
+
+bitbottle milestone list testworkspace/cloud-repo-a -k --json
+stdout '"name"'
+
+bitbottle milestone view testworkspace/cloud-repo-a 1 -k
+stdout 'v1.0'
