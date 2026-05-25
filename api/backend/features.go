@@ -484,6 +484,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: true,
 	},
+	{
+		Name:          "CommitCherryPicker",
+		HumanLabel:    "cherry-pick",
+		Check:         func(c Client) bool { _, ok := c.(CommitCherryPicker); return ok },
+		Feature:       FeatureCherryPick,
+		CloudSupport:  false,
+		ServerSupport: true,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.
