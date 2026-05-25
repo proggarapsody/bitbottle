@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.100.0](https://github.com/proggarapsody/bitbottle/compare/v1.99.0...v1.100.0) (2026-05-25)
+
+
+### Features
+
+* **issue,repo:** add issue attachment/vote/watch and repo label commands ([f3bbab9](https://github.com/proggarapsody/bitbottle/commit/f3bbab939c1b334655d2e7eee412a4a8f9914915))
+
 ## [1.99.0](https://github.com/proggarapsody/bitbottle/compare/v1.98.0...v1.99.0) (2026-05-24)
 
 
