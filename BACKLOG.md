@@ -2,7 +2,9 @@
 
 ## Up Next
 
-_(no pending scopes)_
+| Scope | Description | Backend | Est | Pri |
+|---|---|---|---|---|
+| PR-SETTINGS | Per-repo PR settings (required approvers, tasks, builds, merge strategies) | Both | 2 | ✅ |
 
 ## Philosophy
 
@@ -2758,7 +2760,7 @@ Print `"already up to date"` if version matches.
 
 ### REPO-EDIT — Repository metadata edit
 
-**Status:** 🔲
+**Status:** ✅
 
 Update mutable repository fields — description, website, language, fork policy, issues/wiki toggles — without performing a rename or visibility toggle. Complements the existing `repo rename`, `repo visibility`, and `repo set-default-branch` commands to cover full parity with `gh repo edit`.
 
@@ -2796,7 +2798,7 @@ type EditRepoInput struct {
 
 ### PIPE-STOP — Pipeline stop
 
-**Status:** 🔲
+**Status:** ✅
 
 Stop a running or pending Cloud pipeline. Useful for agents that trigger pipelines via `pipeline trigger`, watch them, and need to abort on undesired behaviour. `--confirm` required on non-TTY to prevent accidental stops.
 
@@ -2863,7 +2865,7 @@ type Snippet struct {
 
 ### BRANCH-MODEL — Cloud branching model
 
-**Status:** 🔲
+**Status:** ✅
 
 Read and update a repository's branching model — the development/production branch configuration and branch-type naming prefixes used by Bitbucket's in-UI "Create branch" wizard and by `pipelines.yml` `branches:` triggers. Distinct from BRANCH-RULE (which controls restrictions/enforcement policies).
 
@@ -2894,7 +2896,7 @@ type BranchModelClient interface {
 
 ### PIPE-ARTIFACTS — Pipeline artifacts
 
-**Status:** 🔲
+**Status:** ✅
 
 List and download per-step build artifacts declared via `artifacts:` in `bitbucket-pipelines.yml`. Today agents that trigger pipelines via `pipeline trigger` cannot retrieve their outputs without raw `api` calls — this closes that gap.
 
@@ -2929,7 +2931,7 @@ type PipelineArtifact struct {
 
 ### GROUP-MGMT — Server/DC Group Management
 
-**Status:** 🔲
+**Status:** ✅
 
 Bitbucket Server/DC has a first-class internal group primitive used everywhere — `perms project grant --group ENG`, `pr reviewer-group add --users …`, branch-restriction grants — but bitbottle has no surface for managing the groups themselves. Today admins must drop into the Bitbucket web UI (or raw `bitbottle api`) to create a new group or add a user to it. This scope closes the gap and lands the standard `gh org member`-shaped CRUD on the existing peer concept. Cloud's authorization model is workspace-permission-shaped rather than group-shaped, so Cloud returns typed `host.unsupported` from every method on this interface (consistent with PERMS, BRANCH-PROTECT, TASK).
 
