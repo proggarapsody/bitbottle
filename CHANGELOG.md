@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.116.0](https://github.com/proggarapsody/bitbottle/compare/v1.115.0...v1.116.0) (2026-05-25)
+
+
+### Features
+
+* **repo:** resolve clone URL via API, write git config post-clone, MCP tool clone_repo ([44f3f3b](https://github.com/proggarapsody/bitbottle/commit/44f3f3b9b56a389372958eff2fedd38e48c61e13))
+
 ## [1.115.0](https://github.com/proggarapsody/bitbottle/compare/v1.114.0...v1.115.0) (2026-05-25)
 
 
