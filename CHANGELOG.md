@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.104.0](https://github.com/proggarapsody/bitbottle/compare/v1.103.0...v1.104.0) (2026-05-25)
+
+
+### Features
+
+* **runner:** add pipeline runner list/create/delete commands (Cloud) ([9e0bc71](https://github.com/proggarapsody/bitbottle/commit/9e0bc718d157be9fcec7db46bbf28a5173970430))
+
 ## [1.103.0](https://github.com/proggarapsody/bitbottle/compare/v1.102.0...v1.103.0) (2026-05-25)
 
 
