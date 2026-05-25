@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.112.0](https://github.com/proggarapsody/bitbottle/compare/v1.111.0...v1.112.0) (2026-05-25)
+
+
+### Features
+
+* **version/workspace:** issue versions CRUD (Cloud) + workspace project CRUD (Cloud) ([67e2086](https://github.com/proggarapsody/bitbottle/commit/67e2086779f31d28ac52219e9f584a863ba38625))
+
 ## [1.111.0](https://github.com/proggarapsody/bitbottle/compare/v1.110.0...v1.111.0) (2026-05-25)
 
 
