@@ -266,7 +266,7 @@ func (d *debugRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 	return resp, nil
 }
 
-// resolveToken returns the token to use for the given host. When the
+// ResolveToken returns the token to use for the given host. When the
 // config-file token is non-empty it wins (preserving the pre-migrate
 // shape and the in-memory --with-token override). Otherwise — the
 // canonical post-`auth migrate` shape — fall back to the keyring under
@@ -276,7 +276,7 @@ func (d *debugRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 // not-found) are deliberately swallowed so a stuck keyring daemon
 // can't brick every command — the empty-token path produces the same
 // 401 the user would see without keyring at all. See PRD #372 Bug B.
-func resolveToken(hostCfg config.HostConfig, kr keyring.Keyring) string {
+func ResolveToken(hostCfg config.HostConfig, kr keyring.Keyring) string {
 	if hostCfg.OAuthToken != "" {
 		return hostCfg.OAuthToken
 	}
@@ -288,6 +288,12 @@ func resolveToken(hostCfg config.HostConfig, kr keyring.Keyring) string {
 		return ""
 	}
 	return tok
+}
+
+// resolveToken is an unexported alias kept for internal callers that
+// already reference the old name; new callers should use ResolveToken.
+func resolveToken(hostCfg config.HostConfig, kr keyring.Keyring) string {
+	return ResolveToken(hostCfg, kr)
 }
 
 func newBackendClient(hc *http.Client, hostname string, hostCfg config.HostConfig, dcBaseURL func(string) string) backend.Client {

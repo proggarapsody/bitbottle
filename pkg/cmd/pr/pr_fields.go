@@ -50,5 +50,13 @@ func prFieldsWithDescription(f *factory.Factory, cfg format.OutputConfig) *forma
 	p := prFields(f, cfg)
 	p.AddField(format.Field[backend.PullRequest]{Name: "description", Header: "DESCRIPTION", Extract: func(pr backend.PullRequest) any { return pr.Description }})
 	p.AddField(format.Field[backend.PullRequest]{Name: "autoMerge", Header: "AUTO_MERGE", Extract: func(pr backend.PullRequest) any { return pr.AutoMerge }})
+	// version is the Bitbucket Server optimistic-concurrency token. It is omitted
+	// from JSON output when zero (Cloud PRs never have a version).
+	p.AddField(format.Field[backend.PullRequest]{Name: "version", Header: "VERSION", Extract: func(pr backend.PullRequest) any {
+		if pr.Version == 0 {
+			return nil
+		}
+		return pr.Version
+	}})
 	return p
 }

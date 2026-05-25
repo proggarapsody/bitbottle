@@ -9,12 +9,21 @@ import (
 )
 
 func (c *Client) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
-	body := map[string]string{
-		"title":       in.Title,
-		"description": in.Description,
+	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
+	var current servergen.RestPullRequest
+	if err := c.getJSON(path, &current); err != nil {
+		return backend.PullRequest{}, stampPRNotFound(err, id)
+	}
+	body := struct {
+		Version     int    `json:"version"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	}{
+		Version:     current.Version,
+		Title:       in.Title,
+		Description: in.Description,
 	}
 	var w servergen.RestPullRequest
-	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
 	if err := c.putJSON(path, body, &w); err != nil {
 		return backend.PullRequest{}, err
 	}

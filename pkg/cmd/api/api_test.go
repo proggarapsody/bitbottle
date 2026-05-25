@@ -350,6 +350,56 @@ func TestAPI_Paginate_ServerWalksNextPageStart(t *testing.T) {
 	assert.Len(t, got, 2)
 }
 
+// TestAPI_MultiHost_AutoDetectsFromBaseRepo verifies that when multiple hosts are
+// configured but no --hostname flag is given, the command auto-detects the host
+// from BaseRepo (the git remote) and sends the request to that host.
+func TestAPI_MultiHost_AutoDetectsFromBaseRepo(t *testing.T) {
+	t.Parallel()
+
+	const twoHosts = "" +
+		"bb.example.com:\n  oauth_token: tok1\n  user: alice\n  git_protocol: ssh\n" +
+		"bb.other.com:\n  oauth_token: tok2\n  user: bob\n  git_protocol: ssh\n"
+
+	stub := &stubHTTP{respBody: `{}`}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: twoHosts})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
+	// Simulate being inside a checkout for bb.example.com.
+	f.BaseRepo = func() (bbrepo.RepoRef, error) {
+		return bbrepo.RepoRef{Host: "bb.example.com", Project: "PROJ", Slug: "repo"}, nil
+	}
+	cmd := api.NewCmdAPI(f)
+	cmd.SetArgs([]string{"rest/api/1.0/projects"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "https://bb.example.com/rest/api/1.0/projects", stub.req.URL.String(),
+		"with multiple hosts and no --hostname, BaseRepo host must be used")
+	assert.Equal(t, "Bearer tok1", stub.req.Header.Get("Authorization"))
+}
+
+// TestAPI_KeyringFallback_UsesKeyringToken verifies that when --hostname is
+// provided and the config has an empty oauth_token but a token stored in the
+// keyring under the user slug, the request is authenticated with the keyring
+// token (post-auth-migrate shape).
+func TestAPI_KeyringFallback_UsesKeyringToken(t *testing.T) {
+	t.Parallel()
+
+	// Config has empty oauth_token — token was migrated to keyring.
+	const migratedConfig = "bb.example.com:\n  oauth_token: \"\"\n  user: alice\n  git_protocol: ssh\n"
+
+	stub := &stubHTTP{respBody: `{}`}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: migratedConfig})
+	f.HTTPClient = factorytest.StubHTTPClient(stub)
+	// Store the token in the keyring under service=bitbottle, user=alice.
+	require.NoError(t, f.Keyring.Set("bitbottle", "alice", "keyring-token"))
+
+	cmd := api.NewCmdAPI(f)
+	cmd.SetArgs([]string{"--hostname", "bb.example.com", "rest/api/1.0/projects"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "Bearer keyring-token", stub.req.Header.Get("Authorization"),
+		"when oauth_token is empty, keyring token must be used")
+}
+
 func TestAPI_GET_PrintsBody(t *testing.T) {
 	t.Parallel()
 
