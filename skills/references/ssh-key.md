@@ -1,7 +1,7 @@
 # SSH Keys
 
-User SSH keys grant SSH access to Bitbucket Cloud for the authenticated user.
-This is a **Cloud-only** feature; Bitbucket Server/DC uses deploy keys instead.
+User SSH keys grant SSH access to Bitbucket for the authenticated user.
+Supported on both **Bitbucket Cloud** and **Bitbucket Server/DC**.
 
 ## Commands
 
@@ -49,9 +49,14 @@ JSON fields: `id` (int), `label` (string), `key` (string).
 
 ## Backend details
 
-**Cloud only** — calls `GET /user` to resolve the current user's nickname, then:
+**Cloud** — calls `GET /user` to resolve the current user's nickname, then:
 - `GET /users/{username}/ssh-keys` — paginated list
 - `POST /users/{username}/ssh-keys` — add key
 - `DELETE /users/{username}/ssh-keys/{id}` — delete key
 
-Returns `ErrUnsupportedOnHost` on Bitbucket Server/DC.
+**Server/DC** — calls the `/rest/ssh/1.0` REST root:
+- `GET /keys` — paginated list (uses `isLastPage`/`nextPageStart`)
+- `POST /keys` — add key; body `{"text": "<pub key>", "label": "<label>"}`
+- `DELETE /keys/{id}` — delete by integer ID
+
+Server wire format uses `"text"` for the key field; the CLI maps it to the `key` JSON field in output.

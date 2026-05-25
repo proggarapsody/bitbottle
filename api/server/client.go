@@ -40,6 +40,9 @@ type Client struct {
 	// cherryPickHTTP targets /rest/branch-utils/1.0, the separate REST root
 	// Bitbucket Server uses for cherry-pick operations.
 	cherryPickHTTP *httpx.Transport
+	// sshHTTP targets /rest/ssh/1.0, the separate REST root
+	// Bitbucket Server uses for user SSH key management.
+	sshHTTP *httpx.Transport
 	// host is the scheme+host extracted from baseURL, used to construct WebURLs
 	// for resources (like commits) that the API does not return a link for.
 	host string
@@ -96,6 +99,7 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 		codeInsightsHTTP:     newAltTransport(httpClient, schemeHost, bareHost, "/rest/insights/1.0", auth),
 		patHTTP:              newAltTransport(httpClient, schemeHost, bareHost, "/rest/access-tokens/1.0", auth),
 		cherryPickHTTP:       newAltTransport(httpClient, schemeHost, bareHost, "/rest/branch-utils/1.0", auth),
+		sshHTTP:              newAltTransport(httpClient, schemeHost, bareHost, "/rest/ssh/1.0", auth),
 		host:                 schemeHost,
 		userSlug:             username,
 	}

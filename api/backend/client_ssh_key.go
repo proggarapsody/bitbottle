@@ -1,7 +1,8 @@
 package backend
 
-// SSHKeyClient is implemented by Cloud backends only.
-// User SSH keys are a Cloud-only concept; Server/DC uses deploy keys instead.
+// SSHKeyClient is implemented by both Cloud and Server/DC backends.
+// Cloud calls the /users/{username}/ssh-keys API.
+// Server/DC calls the /rest/ssh/1.0/keys API for the authenticated user.
 type SSHKeyClient interface {
 	ListSSHKeys() ([]SSHKey, error)
 	AddSSHKey(input SSHKeyInput) (SSHKey, error)
