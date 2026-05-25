@@ -571,6 +571,23 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: false,
 	},
+	{
+		Name:          "PipelineSSHKeyPairClient",
+		HumanLabel:    "pipeline SSH key pair",
+		Check:         func(c Client) bool { _, ok := c.(PipelineSSHKeyPairClient); return ok },
+		Feature:       FeaturePipelineSSHKeyPair,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
+		Name:          "PipelineKnownHostsClient",
+		HumanLabel:    "pipeline known hosts",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(PipelineKnownHostsClient); return ok },
+		Feature:       FeaturePipelineKnownHosts,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.

@@ -24,7 +24,7 @@ disagrees with this doc; the binary wins.
 | PR lifecycle (list/view/create/merge/approve/comment/activity/review/commits/files/participants/ready/unready/task/suggestion/comment-react/default-reviewer/reviewer-group/…) | `references/pr.md` |
 | Repos, branches, tags, file/tree, visibility, edit, transfer, watcher, repo label list/create/update/delete, repo pr-settings get, repo pr-settings set, repo download list/upload/get/delete | `references/repos.md` |
 | Commits (view/files/status/comment/comment-react) | `references/commit.md` |
-| Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list (Cloud only) | `references/pipeline.md` |
+| Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list, SSH key pair, known hosts (Cloud only) | `references/pipeline.md` |
 | Pipeline runners — list / create / delete (Cloud only) | `references/runner.md` |
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
 | Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch (Cloud only) | `references/issues.md` |
@@ -158,6 +158,14 @@ bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
 # Test report and test cases (Cloud only)
 bitbottle pipeline test-report view PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID
 bitbottle pipeline test-case list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID [--status FAILED|PASSED|SKIPPED] [--limit N]
+
+# Pipeline SSH configuration (Cloud only)
+bitbottle pipeline ssh key-pair view [WORKSPACE/REPO]
+bitbottle pipeline ssh key-pair regenerate [WORKSPACE/REPO] [--bits 2048|4096] [--confirm]
+bitbottle pipeline ssh known-hosts list [WORKSPACE/REPO]
+bitbottle pipeline ssh known-hosts view UUID [WORKSPACE/REPO]
+bitbottle pipeline ssh known-hosts add HOSTNAME [WORKSPACE/REPO] [--key KEY] [--key-type rsa|ecdsa|ed25519]
+bitbottle pipeline ssh known-hosts delete UUID [WORKSPACE/REPO] [--confirm]
 ```
 
 ```bash

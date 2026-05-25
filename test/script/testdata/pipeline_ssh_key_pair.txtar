@@ -1,0 +1,12 @@
+# pipeline ssh key-pair view shows key info; regenerate --confirm regenerates.
+bb-fake cloud
+
+bitbottle pipeline ssh key-pair view testworkspace/cloud-repo-a -k
+stdout 'RSA'
+
+bitbottle pipeline ssh key-pair view testworkspace/cloud-repo-a -k --json
+stdout '"public_key"'
+stdout '"key_type"'
+
+bitbottle pipeline ssh key-pair regenerate testworkspace/cloud-repo-a -k --confirm
+stdout 'Regenerated'

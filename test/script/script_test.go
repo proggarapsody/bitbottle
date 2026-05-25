@@ -729,6 +729,76 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/workspaces/testworkspace/permissions/members/alice",
 			Status:     http.StatusNoContent,
 		},
+		// pipeline SSH key pair GET — used by pipeline ssh key-pair view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/ssh/key_pair",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"public_key": "ssh-rsa AAAA...", "key_type": "RSA", "created_on": "2024-01-01T00:00:00Z"},
+		},
+		// pipeline SSH key pair PUT (regenerate) — used by pipeline ssh key-pair regenerate
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/ssh/key_pair",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"public_key": "ssh-rsa BBBB...", "key_type": "RSA", "created_on": "2024-06-01T00:00:00Z"},
+		},
+		// pipeline known hosts list — used by pipeline ssh known-hosts list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/ssh/known_hosts",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"uuid":     "{kh-uuid-1}",
+					"hostname": "github.com",
+					"public_key": map[string]any{
+						"key_type":           "RSA",
+						"key":                "AAAA...",
+						"md5_fingerprint":    "aa:bb:cc:dd",
+						"sha256_fingerprint": "SHA256:xxxx",
+					},
+				},
+			}),
+		},
+		// pipeline known host view — used by pipeline ssh known-hosts view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/ssh/known_hosts/{kh-uuid-1}",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"uuid":     "{kh-uuid-1}",
+				"hostname": "github.com",
+				"public_key": map[string]any{
+					"key_type":           "RSA",
+					"key":                "AAAA...",
+					"md5_fingerprint":    "aa:bb:cc:dd",
+					"sha256_fingerprint": "SHA256:xxxx",
+				},
+			},
+		},
+		// pipeline known host add — used by pipeline ssh known-hosts add
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/ssh/known_hosts",
+			Status:     http.StatusCreated,
+			Body: map[string]any{
+				"uuid":     "{new-kh-uuid}",
+				"hostname": "bitbucket.org",
+				"public_key": map[string]any{
+					"key_type":           "RSA",
+					"key":                "CCCC...",
+					"md5_fingerprint":    "ee:ff:00:11",
+					"sha256_fingerprint": "SHA256:yyyy",
+				},
+			},
+		},
+		// pipeline known host delete — used by pipeline ssh known-hosts delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/ssh/known_hosts/{kh-uuid-1}",
+			Status:     http.StatusNoContent,
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
