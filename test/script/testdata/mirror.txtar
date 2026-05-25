@@ -1,0 +1,15 @@
+# mirror list/view/repo list against Server.
+bb-fake server
+
+bitbottle mirror list --hostname $BB_HOST -k
+stdout 'Primary Mirror'
+
+bitbottle mirror list --hostname $BB_HOST -k --json
+stdout '"name"'
+
+bitbottle mirror view mirror-1 --hostname $BB_HOST -k
+stdout 'Primary Mirror'
+stdout 'https://mirror.example.com'
+
+bitbottle mirror repo list mirror-1 --hostname $BB_HOST -k
+stdout 'test-repo'

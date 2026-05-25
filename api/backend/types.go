@@ -189,3 +189,34 @@ type UpdateWorkspaceProjectInput struct {
 	Description *string
 	IsPrivate   *bool
 }
+
+// MirrorServer represents a Bitbucket Smart Mirror server (Server/DC only).
+type MirrorServer struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	BaseURL string `json:"base_url"`
+	Enabled bool   `json:"enabled"`
+}
+
+// MirroredRepo represents a repository mirrored by a Smart Mirror server.
+type MirroredRepo struct {
+	Slug       string    `json:"slug"`
+	MirrorID   string    `json:"mirror_id"`
+	LastSyncAt time.Time `json:"last_sync_at"`
+	Status     string    `json:"status"`
+}
+
+// WorkspaceMemberPerm represents a workspace-level permission for a user
+// (Bitbucket Cloud only).
+type WorkspaceMemberPerm struct {
+	User       string `json:"user"`
+	Permission string `json:"permission"`
+}
+
+// WorkspaceRepoPerm represents a repository-level workspace permission for a
+// user (Bitbucket Cloud only).
+type WorkspaceRepoPerm struct {
+	Repo       string `json:"repo"`
+	User       string `json:"user"`
+	Permission string `json:"permission"`
+}
