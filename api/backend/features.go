@@ -274,6 +274,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "PRParticipantUpdater",
+		HumanLabel:    "PR participant update",
+		Check:         func(c Client) bool { _, ok := c.(PRParticipantUpdater); return ok },
+		Feature:       FeaturePRParticipantUpdate,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "PRReopener",
 		HumanLabel:    "pr reopen",
 		Check:         func(c Client) bool { _, ok := c.(PRReopener); return ok },
