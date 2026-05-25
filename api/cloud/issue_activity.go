@@ -9,8 +9,14 @@ import (
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
-// cloudIssueChanges is the wire shape for one Bitbucket Cloud issue change.
-// The "changes" field inside each item holds old_val/new_val.
+// cloudIssueChangeField is the old/new pair for one changed field.
+type cloudIssueChangeField struct {
+	Old string `json:"old"`
+	New string `json:"new"`
+}
+
+// cloudIssueChange is the wire shape for one Bitbucket Cloud issue change event.
+// The "changes" field is a map keyed by field name (e.g. "status", "priority").
 type cloudIssueChange struct {
 	ID        int    `json:"id"`
 	Kind      string `json:"kind"`
@@ -20,10 +26,7 @@ type cloudIssueChange struct {
 		AccountID   string `json:"account_id"`
 		DisplayName string `json:"display_name"`
 	} `json:"user"`
-	Changes struct {
-		OldVal string `json:"old_val"`
-		NewVal string `json:"new_val"`
-	} `json:"changes"`
+	Changes map[string]cloudIssueChangeField `json:"changes"`
 }
 
 func toIssueChangeDomain(w cloudIssueChange) backend.IssueChange {
@@ -32,11 +35,13 @@ func toIssueChangeDomain(w cloudIssueChange) backend.IssueChange {
 		slug = w.User.AccountID
 	}
 	c := backend.IssueChange{
-		ID:     w.ID,
-		Kind:   w.Kind,
-		OldVal: w.Changes.OldVal,
-		NewVal: w.Changes.NewVal,
-		User:   backend.User{Slug: slug, DisplayName: w.User.DisplayName},
+		ID:   w.ID,
+		Kind: w.Kind,
+		User: backend.User{Slug: slug, DisplayName: w.User.DisplayName},
+	}
+	if fields, ok := w.Changes[w.Kind]; ok {
+		c.OldVal = fields.Old
+		c.NewVal = fields.New
 	}
 	if t, err := time.Parse(time.RFC3339, w.CreatedOn); err == nil {
 		c.CreatedOn = t
@@ -63,4 +68,3 @@ func (c *Client) ListIssueActivity(ns, slug string, issueID int, limit int) ([]b
 		return out, nil
 	}, limit)
 }
-

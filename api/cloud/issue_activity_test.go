@@ -28,8 +28,7 @@ func TestListIssueActivity(t *testing.T) {
 					"nickname":     "alice",
 				},
 				"changes": map[string]any{
-					"old_val": "new",
-					"new_val": "open",
+					"status": map[string]any{"old": "new", "new": "open"},
 				},
 			},
 			map[string]any{
@@ -42,8 +41,7 @@ func TestListIssueActivity(t *testing.T) {
 					"nickname":     "bob",
 				},
 				"changes": map[string]any{
-					"old_val": "major",
-					"new_val": "minor",
+					"priority": map[string]any{"old": "major", "new": "minor"},
 				},
 			},
 		},
