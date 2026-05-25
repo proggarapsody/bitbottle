@@ -11,6 +11,22 @@ import (
 
 func init() {
 	registerTool(registerSourceTools)
+	registerTool(registerCloneTools)
+}
+
+// registerCloneTools wires the clone_repo MCP tool.
+func registerCloneTools(s *mcpserver.MCPServer, h *handlers) {
+	s.AddTool(
+		mcplib.NewTool("clone_repo",
+			mcplib.WithDescription("Clone a Bitbucket repository to a local directory, resolving the clone URL via the API. Writes bitbottle.host/project/slug into the cloned repo's .git/config for seamless follow-up commands."),
+			mcplib.WithString("project", mcplib.Required(), mcplib.Description("Project key (Server) or workspace slug (Cloud)")),
+			mcplib.WithString("slug", mcplib.Required(), mcplib.Description("Repository slug")),
+			mcplib.WithString("dir", mcplib.Description("Local directory path; defaults to the repo slug")),
+			mcplib.WithString("protocol", mcplib.Description("Clone protocol: 'ssh' (default) or 'https'")),
+			mcplib.WithString("hostname", mcplib.Description("Bitbucket hostname (omit when only one host is configured)")),
+		),
+		h.cloneRepo,
+	)
 }
 
 // registerSourceTools wires the RV1 source primitives — get_file_content,

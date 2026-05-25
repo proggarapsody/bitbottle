@@ -1,0 +1,19 @@
+# repo clone resolves the URL via API and calls git clone.
+bb-fake server
+
+chmod 0755 bin/git
+env PATH=$WORK/bin:$PATH
+
+bitbottle repo clone PROJ/alpha-repo my-clone -k
+stdout 'Cloned to my-clone'
+exists my-clone/.git/config
+
+-- bin/git --
+#!/bin/sh
+if [ "$1" = "clone" ]; then
+  dir="${3:-$(basename "${2%.git}")}"
+  mkdir -p "$dir"
+  /usr/bin/git -C "$dir" init -q 2>/dev/null
+  exit 0
+fi
+exec /usr/bin/git "$@"

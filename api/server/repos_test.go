@@ -86,6 +86,16 @@ func TestServerClient_GetRepo_NotFound(t *testing.T) {
 	assert.Equal(t, 404, httpErr.StatusCode)
 }
 
+func TestServerClient_GetRepo_MapsCloneURLs(t *testing.T) {
+	t.Parallel()
+	client := fixtureClient(t, "testdata/repo_get.json", 200)
+	repo, err := client.GetRepo("MYPROJ", "my-service")
+	require.NoError(t, err)
+	require.Len(t, repo.CloneURLs, 2)
+	assert.Equal(t, "http", repo.CloneURLs[0].Name)
+	assert.Equal(t, "ssh", repo.CloneURLs[1].Name)
+}
+
 func TestServerClient_CreateRepo_SendsScmId(t *testing.T) {
 	t.Parallel()
 	var gotBody []byte

@@ -48,11 +48,37 @@ func (c *Client) ListRepos(ns string, limit int) ([]backend.Repository, error) {
 }
 
 func (c *Client) GetRepo(ns, slug string) (backend.Repository, error) {
-	var w cloudgen.CloudRepo
+	type cloneLink struct {
+		Name string `json:"name"`
+		Href string `json:"href"`
+	}
+	var w struct {
+		Description string `json:"description"`
+		FullName    string `json:"full_name"`
+		IsPrivate   bool   `json:"is_private"`
+		Name        string `json:"name"`
+		Scm         string `json:"scm"`
+		Slug        string `json:"slug"`
+		Links       struct {
+			HTML  cloudgen.CloudHTMLLink `json:"html"`
+			Clone []cloneLink            `json:"clone"`
+		} `json:"links"`
+	}
 	if err := c.getJSON(fmt.Sprintf("/repositories/%s/%s", ns, slug), &w); err != nil {
 		return backend.Repository{}, stampRepoNotFound(err, ns, slug)
 	}
-	return toRepoDomain(w), nil
+	ns2, slug2 := ns, w.Slug
+	if parts := strings.SplitN(w.FullName, "/", 2); len(parts) == 2 {
+		ns2, slug2 = parts[0], parts[1]
+	}
+	repo := backend.Repository{
+		Slug: slug2, Name: w.Name, Namespace: ns2, SCM: w.Scm,
+		WebURL: w.Links.HTML.Href, Description: w.Description, IsPrivate: w.IsPrivate,
+	}
+	for _, cl := range w.Links.Clone {
+		repo.CloneURLs = append(repo.CloneURLs, backend.CloneURL{Name: cl.Name, URL: cl.Href})
+	}
+	return repo, nil
 }
 
 // stampRepoNotFound annotates a 404-on-repo error with CodeRepoNotFound +

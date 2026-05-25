@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/git"
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
@@ -14,6 +15,8 @@ import (
 
 func NewCmdClone(f *factory.Factory) *cobra.Command {
 	var hostname string
+	var useSSH bool
+	var useHTTPS bool
 
 	cmd := &cobra.Command{
 		Use:   "clone PROJECT/REPO [DIR]",
@@ -37,19 +40,74 @@ func NewCmdClone(f *factory.Factory) *cobra.Command {
 			}
 			hostCfg, _ := cfg.Get(host)
 
-			cloneURL := buildCloneURL(host, ref, hostCfg)
-
+			// Determine target directory.
 			var dir string
 			if len(args) == 2 {
 				dir = args[1]
+			} else {
+				dir = ref.Slug
 			}
 
+			// Try to resolve the clone URL via API.
+			cloneURL := resolveCloneURL(f, host, ref, hostCfg, useSSH, useHTTPS)
+
 			g := git.New(f.GitRunner())
-			return g.Clone(cloneURL, dir)
+			if err := g.Clone(cloneURL, dir); err != nil {
+				return err
+			}
+
+			// Write bitbottle git config keys into the cloned repo.
+			_ = g.SetConfigInDir(dir, "bitbottle.host", host)
+			_ = g.SetConfigInDir(dir, "bitbottle.project", ref.Project)
+			_ = g.SetConfigInDir(dir, "bitbottle.slug", ref.Slug)
+
+			fmt.Fprintf(f.IOStreams.Out, "Cloned to %s\n", dir)
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
+	cmd.Flags().BoolVar(&useSSH, "ssh", false, "Clone via SSH")
+	cmd.Flags().BoolVar(&useHTTPS, "https", false, "Clone via HTTPS")
 	return cmd
+}
+
+// resolveCloneURL tries the API first; falls back to buildCloneURL.
+func resolveCloneURL(f *factory.Factory, host string, ref bbrepo.RepoRef, hostCfg config.HostConfig, useSSH, useHTTPS bool) string {
+	client, err := f.Backend(host)
+	if err == nil {
+		repo, err := client.GetRepo(ref.Project, ref.Slug)
+		if err == nil && len(repo.CloneURLs) > 0 {
+			if url := pickCloneURL(repo.CloneURLs, hostCfg, useSSH, useHTTPS); url != "" {
+				return url
+			}
+		}
+	}
+	return buildCloneURL(host, ref, hostCfg)
+}
+
+// pickCloneURL selects a URL from the API list based on flags and config.
+func pickCloneURL(urls []backend.CloneURL, hostCfg config.HostConfig, useSSH, useHTTPS bool) string {
+	// Determine preferred protocol.
+	preferSSH := useSSH || (!useHTTPS && hostCfg.GitProtocol != "https" && hostCfg.GitProtocol != "http")
+
+	if preferSSH {
+		for _, u := range urls {
+			if u.Name == "ssh" {
+				return u.URL
+			}
+		}
+	}
+	// HTTPS: accept "https" or "http".
+	for _, u := range urls {
+		if u.Name == "https" || u.Name == "http" {
+			return u.URL
+		}
+	}
+	// Fallback: return first.
+	if len(urls) > 0 {
+		return urls[0].URL
+	}
+	return ""
 }
 
 func buildCloneURL(host string, ref bbrepo.RepoRef, hostCfg config.HostConfig) string {
