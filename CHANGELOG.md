@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.101.0](https://github.com/proggarapsody/bitbottle/compare/v1.100.0...v1.101.0) (2026-05-25)
+
+
+### Features
+
+* **admin:** add user management and system info commands ([7005dcb](https://github.com/proggarapsody/bitbottle/commit/7005dcbce9dc65e1fc5eda43035bcda8142770e3))
+
 ## [1.100.0](https://github.com/proggarapsody/bitbottle/compare/v1.99.0...v1.100.0) (2026-05-25)
 
 
