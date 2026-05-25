@@ -265,6 +265,11 @@ type FakeClient struct {
 	// Audit methods (Cloud-only; satisfies backend.AuditClient when set)
 	ListAuditLogFn func(workspace string, opts backend.AuditLogOpts) ([]backend.AuditEvent, error)
 
+	// IPAllowlist methods (Cloud-only; satisfies backend.IPAllowlistClient when set)
+	ListIPAllowlistsFn  func(workspace string) ([]backend.IPAllowlist, error)
+	CreateIPAllowlistFn func(workspace string, in backend.CreateIPAllowlistInput) (backend.IPAllowlist, error)
+	DeleteIPAllowlistFn func(workspace, uuid string) error
+
 	// Diff methods (both backends; satisfies backend.DiffClient when set)
 	GetDiffFn     func(ns, slug, from, to string) (string, error)
 	GetDiffStatFn func(ns, slug, from, to string) (backend.DiffStat, error)
@@ -2394,4 +2399,38 @@ func (c *FakeClient) ListAuditLog(workspace string, opts backend.AuditLogOpts) (
 		c.T.Fatalf("unexpected call to FakeClient.ListAuditLog; set ListAuditLogFn in your test")
 	}
 	return nil, nil
+}
+
+// ── IPAllowlistClient ─────────────────────────────────────────────────────────
+
+var _ backend.IPAllowlistClient = (*FakeClient)(nil)
+
+func (c *FakeClient) ListIPAllowlists(workspace string) ([]backend.IPAllowlist, error) {
+	if c.ListIPAllowlistsFn != nil {
+		return c.ListIPAllowlistsFn(workspace)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListIPAllowlists; set ListIPAllowlistsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateIPAllowlist(workspace string, in backend.CreateIPAllowlistInput) (backend.IPAllowlist, error) {
+	if c.CreateIPAllowlistFn != nil {
+		return c.CreateIPAllowlistFn(workspace, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateIPAllowlist; set CreateIPAllowlistFn in your test")
+	}
+	return backend.IPAllowlist{}, nil
+}
+
+func (c *FakeClient) DeleteIPAllowlist(workspace, uuid string) error {
+	if c.DeleteIPAllowlistFn != nil {
+		return c.DeleteIPAllowlistFn(workspace, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteIPAllowlist; set DeleteIPAllowlistFn in your test")
+	}
+	return nil
 }
