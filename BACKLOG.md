@@ -154,6 +154,14 @@ Current state of every command area against gh feature parity:
 | `pipeline logs` | ✅ | Stream step log |
 | `pipeline watch UUID` | ✅ | Poll until terminal state, stream step transitions — scope **GHP** |
 
+### Pipeline Runners _(Cloud only)_
+
+| Command | Status | Notes |
+|---|---|---|
+| `runner list WORKSPACE` | ✅ | List workspace self-hosted runners — scope **PIPE-RUNNERS** |
+| `runner create WORKSPACE --name NAME` | ✅ | Register a new self-hosted runner — scope **PIPE-RUNNERS** |
+| `runner delete WORKSPACE UUID` | ✅ | Remove a self-hosted runner — scope **PIPE-RUNNERS** |
+
 ### Commits
 
 | Command | Status | Notes |
@@ -496,6 +504,7 @@ Current state of every command area against gh feature parity:
 | SOURCE-WRITE | **Write file content via API** | `repo file put PATH --branch BRANCH --message MSG [--content TEXT \| --content-file FILE] [PROJECT/REPO]` — create or update a file on a branch without a local git clone. Server: `PUT /rest/api/1.0/projects/{k}/repos/{s}/browse/{path}` (multipart: `content`, `branch`, `message`, optional `sourceCommitId`). Cloud: `POST /repositories/{ws}/{slug}/src` (multipart: file part + `message`, `branch`, optional `parents`). New optional interface `SourceWriter`. MCP tool `put_file`. Complement to `repo file get` (✅). — scope **SOURCE-WRITE** | Both | 2 | ✅ |
 | ADMIN-MAIL | **Admin mail server configuration** | `admin mail get [--json]`, `admin mail set --host HOST --port N [--protocol smtp\|smtps] [--username U] [--password P] [--sender EMAIL] [--use-start-tls] [--require-start-tls]` — read/write Bitbucket Server SMTP configuration. Server: `GET /rest/api/1.0/admin/mail-server`, `PUT /rest/api/1.0/admin/mail-server`. Cloud → `host.unsupported`. Extends existing `AdminClient` interface. MCP pair `get_mail_server_config`, `set_mail_server_config`. — scope **ADMIN-MAIL** | Server/DC | 2 | ✅ |
 | ADMIN-BANNER | **Admin site-wide announcement banner** | `admin banner get [--json]`, `admin banner set MESSAGE [--audience all\|authenticated\|unauthenticated]`, `admin banner clear [--confirm]` — manage Bitbucket Server/DC's site-wide announcement banner. Server: `GET /rest/api/1.0/admin/banner`, `PUT /rest/api/1.0/admin/banner`, `DELETE /rest/api/1.0/admin/banner`. Cloud → `host.unsupported`. Extends `AdminClient`. MCP triplet `get_banner`, `set_banner`, `clear_banner`. PRD [#509](https://github.com/proggarapsody/bitbottle/issues/509). — scope **ADMIN-BANNER** | Server/DC | 2 | ✅ |
+| PIPE-RUNNERS | **Pipeline self-hosted runner management** | `runner list [WORKSPACE]`, `runner create [WORKSPACE] --name NAME [--platform PLATFORM] [--label LABEL...]`, `runner delete [WORKSPACE] UUID` — manage Bitbucket Cloud Pipelines self-hosted runners at workspace level. Cloud: `GET /2.0/workspaces/{ws}/pipelines-config/runners`, `POST /2.0/workspaces/{ws}/pipelines-config/runners`, `DELETE /2.0/workspaces/{ws}/pipelines-config/runners/{uuid}`. Cloud → `host.unsupported` on Server/DC. New optional interface `RunnerClient`. `AllFeatureSpecs` count 51 → 52. MCP triplet `list_runners`, `create_runner`, `delete_runner`. PRD [#512](https://github.com/proggarapsody/bitbottle/issues/512). — scope **PIPE-RUNNERS** | Cloud | 2 | ✅ |
 
 
 ---
@@ -3186,6 +3195,70 @@ type BannerConfig struct {
 - [x] `pkg/cmd/mcp/tools_admin.go` entries + `pkg/cmd/mcp/handlers_admin.go` methods + `pkg/cmd/mcp/handlers_admin_test.go` tests
 - [x] `test/testhelpers/client.go` — `GetBannerFn`, `SetBannerFn`, `ClearBannerFn` + compile assertions
 - [x] `skills/references/admin.md` updated
+- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PIPE-RUNNERS — Pipeline self-hosted runner management
+
+**Status:** ✅
+
+Bitbucket Cloud Pipelines supports self-hosted runners that execute pipeline steps on customer-owned infrastructure. Runners are registered at the workspace level and identified by a UUID. Cloud only — Server/DC has no equivalent → `ErrUnsupportedOnHost`.
+
+**Interface** (`api/backend/client_runner.go`):
+```go
+type RunnerClient interface {
+    ListRunners(workspace string) ([]Runner, error)
+    CreateRunner(workspace string, in CreateRunnerInput) (Runner, error)
+    DeleteRunner(workspace, runnerUUID string) error
+}
+
+type Runner struct {
+    UUID     string
+    Name     string
+    State    string
+    Platform RunnerPlatform
+    Labels   []string
+}
+
+type RunnerPlatform struct {
+    Operating string // LINUX | WINDOWS | MACOS
+    Arch      string // AMD64 | ARM64
+}
+
+type CreateRunnerInput struct {
+    Name     string
+    Labels   []string
+    Platform RunnerPlatform
+}
+```
+
+**Commands:**
+- `bitbottle runner list [WORKSPACE]`
+- `bitbottle runner create [WORKSPACE] --name NAME [--platform linux_amd64|linux_arm64|windows_amd64|macos_arm64] [--label LABEL...]`
+- `bitbottle runner delete [WORKSPACE] UUID`
+
+**Backends:** Cloud (`GET /2.0/workspaces/{ws}/pipelines-config/runners`, `POST /2.0/workspaces/{ws}/pipelines-config/runners`, `DELETE /2.0/workspaces/{ws}/pipelines-config/runners/{uuid}`). Server/DC → `ErrUnsupportedOnHost`.
+
+**Note:** API uses `X86_64` for arch; internal uses `AMD64`. `normalizeArch` converts on read; `apiArch` converts on write.
+
+**MCP tools:** `list_runners`, `create_runner`, `delete_runner`
+
+**Definition of Done:**
+- [x] `api/backend/client_runner.go` — `RunnerClient` interface, `Runner`/`RunnerPlatform`/`CreateRunnerInput` types, `FeatureRunner` constant, `AsRunnerClient` helper
+- [x] `api/backend/features.go` — `FeatureRunner` spec added (Cloud: true, Server: false); count 51 → 52
+- [x] `api/backend/capability_contract_test.go` — `RunnerClient` added to expected names
+- [x] `api/cloud/runner.go` — wire types + `ListRunners`, `CreateRunner`, `DeleteRunner` implementations with `normalizeArch`/`apiArch`
+- [x] `api/cloud/runner_test.go` — httptest server tests for all 3 methods
+- [x] `pkg/cmd/runner/runner.go` — umbrella command + `init()` self-registration
+- [x] `pkg/cmd/runner/list/list.go` + `list_test.go`
+- [x] `pkg/cmd/runner/create/create.go` + `create_test.go`
+- [x] `pkg/cmd/runner/delete/delete.go` + `delete_test.go`
+- [x] `pkg/cmd/root/root.go` — blank import for `pkg/cmd/runner`
+- [x] `pkg/cmd/mcp/tools_runner.go` + `handlers_runner.go` + `handlers_runner_test.go`
+- [x] `test/testhelpers/client.go` — `ListRunnersFn`, `CreateRunnerFn`, `DeleteRunnerFn` + compile assertion
+- [x] `skills/references/runner.md` created
+- [x] `skills/SKILL.md` updated (reference table + Cloud-only list)
 - [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---
