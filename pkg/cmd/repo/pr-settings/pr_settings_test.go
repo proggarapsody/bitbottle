@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	prsettings "github.com/proggarapsody/bitbottle/pkg/cmd/repo/pr-settings"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
+	prsettings "github.com/proggarapsody/bitbottle/pkg/cmd/repo/pr-settings"
 )
 
 // TestNewCmdPRSettings_HasSubcommands verifies that the group command registers
