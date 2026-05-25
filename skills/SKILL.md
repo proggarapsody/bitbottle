@@ -137,6 +137,7 @@ For custom-hostname Bitbucket Data Center, force routing with
 bitbottle pipeline trigger WORKSPACE/REPO --branch main
 bitbottle pipeline watch WORKSPACE/REPO UUID
 bitbottle pipeline stop UUID WORKSPACE/REPO --confirm
+bitbottle pipeline rerun UUID WORKSPACE/REPO
 bitbottle pipeline view UUID WORKSPACE/REPO
 
 # List and download step artifacts

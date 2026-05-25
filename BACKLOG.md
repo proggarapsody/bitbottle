@@ -155,6 +155,7 @@ Current state of every command area against gh feature parity:
 | `pipeline steps` | ✅ | List steps in a pipeline |
 | `pipeline logs` | ✅ | Stream step log |
 | `pipeline watch UUID` | ✅ | Poll until terminal state, stream step transitions — scope **GHP** |
+| `pipeline rerun UUID` | ✅ | Re-trigger a pipeline at the same commit — scope **PIPE-RERUN** |
 
 ### Pipeline Runners _(Cloud only)_
 

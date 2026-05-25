@@ -76,6 +76,40 @@ URL path (e.g. `{abc-123}`); the CLI handles this automatically.
 
 ---
 
+# Pipeline Rerun
+
+Re-trigger a finished pipeline at the same commit. This feature is **Cloud only**.
+
+## Commands
+
+```bash
+# Rerun a pipeline by UUID (WORKSPACE/REPO optional when BaseRepo is configured)
+bitbottle pipeline rerun UUID WORKSPACE/REPO
+
+# When BaseRepo is configured, WORKSPACE/REPO is optional
+bitbottle pipeline rerun UUID
+```
+
+## Flags
+
+| Flag | Description |
+|---|---|
+| `--hostname HOST` | Override the Bitbucket host |
+
+## MCP tools
+
+| Tool | Description |
+|---|---|
+| `rerun_pipeline` | Re-run a pipeline at the same commit. Params: `repo` (required), `pipeline_uuid` (required), `hostname` |
+
+## Backend details
+
+**Cloud** — Fetches the source pipeline (`GET /2.0/repositories/{ws}/{slug}/pipelines/{uuid}`) to read the target ref and commit hash, then POSTs a new pipeline run (`POST /2.0/repositories/{ws}/{slug}/pipelines/`) with the same ref and commit. When the source pipeline has no commit hash (custom pipelines), falls back to a ref-only trigger. UUIDs are automatically wrapped in curly braces.
+
+**Server/DC** — not supported. Returns a `host.unsupported` error.
+
+---
+
 # Pipeline Stop
 
 Stop a running pipeline. This feature is **Cloud only**.

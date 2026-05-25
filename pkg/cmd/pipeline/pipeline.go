@@ -7,6 +7,7 @@ import (
 	cmdArtifact "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/artifact"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/list"
 	cmdLogs "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
+	cmdRerun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/rerun"
 	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
 	cmdSteps "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/steps"
 	cmdStop "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/stop"
@@ -32,6 +33,7 @@ directory.`,
 	cmd.AddCommand(cmdArtifact.NewCmdArtifact(f))
 	cmd.AddCommand(cmdList.NewCmdList(f, nil))
 	cmd.AddCommand(cmdView.NewCmdView(f, nil))
+	cmd.AddCommand(cmdRerun.NewCmdRerun(f, nil))
 	cmd.AddCommand(cmdRun.NewCmdRun(f, nil))
 	cmd.AddCommand(cmdSteps.NewCmdSteps(f, nil))
 	cmd.AddCommand(cmdStop.NewCmdStop(f, nil))
