@@ -26,6 +26,7 @@ import (
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/issue"     // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"       // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/milestone" // self-registers via init()
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/mirror"    // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline"  // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/pr"        // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/profile"   // self-registers via init()

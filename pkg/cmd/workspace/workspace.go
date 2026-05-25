@@ -13,6 +13,7 @@ import (
 	cmdIPAllowlist "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/ipallowlist"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/list"
 	cmdMemberList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/member"
+	cmdPerms "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/perms"
 	cmdProject "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/project"
 )
 
@@ -41,6 +42,7 @@ func NewCmdWorkspace(f *factory.Factory) *cobra.Command {
 
 	cmd.AddCommand(cmdAudit.NewCmdAudit(f, nil))
 	cmd.AddCommand(cmdProject.NewCmdWorkspaceProject(f))
+	cmd.AddCommand(cmdPerms.NewCmdWorkspacePerms(f))
 
 	ipallowlistCmd := &cobra.Command{
 		Use:   "ipallowlist",

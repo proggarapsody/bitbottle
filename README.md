@@ -95,7 +95,8 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
 | `user` | `view` |
-| `workspace` | `list` `member list` `hook list` `hook create` `hook delete` `project {create\|view\|edit\|delete}` _(Cloud only)_ |
+| `workspace` | `list` `member list` `hook list` `hook create` `hook delete` `project {create\|view\|edit\|delete}` `perms {list\|repo list\|grant\|revoke}` _(Cloud only)_ |
+| `mirror` | `list` `view` `repo list` _(Server/DC only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ · `server-list` `create` `view` `edit` `delete` _(Server/DC only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
 | `milestone` | `list` `view` _(Cloud only)_ |
@@ -490,6 +491,15 @@ bitbottle workspace hook create myworkspace --url https://example.com/hook --eve
 bitbottle workspace hook create myworkspace --url https://example.com/hook --events repo:push --events pullrequest:created
 
 bitbottle workspace hook delete myworkspace WEBHOOK-UUID
+
+# Workspace permissions (Cloud only)
+bitbottle workspace perms list myworkspace
+bitbottle workspace perms list myworkspace --json
+
+bitbottle workspace perms repo list myworkspace
+
+bitbottle workspace perms grant myworkspace --user alice --permission member
+bitbottle workspace perms revoke myworkspace --user alice --confirm
 ```
 
 All commands surface a typed unsupported-capability error against
@@ -595,6 +605,27 @@ bitbottle --hostname git.example.com code-insights merge-check delete \
 
 Invoking any `code-insights` command against a Bitbucket Cloud host returns
 the typed `host.unsupported` error.
+
+### Mirror Servers _(Bitbucket Server / DC only)_
+
+List and inspect Smart Mirror servers configured on a Bitbucket Server instance.
+
+```bash
+# List all mirror servers
+bitbottle mirror list --hostname git.example.com
+
+# View a specific mirror server
+bitbottle mirror view MIRROR-ID --hostname git.example.com
+
+# List repos mirrored by a specific server
+bitbottle mirror repo list MIRROR-ID --hostname git.example.com
+
+# JSON output
+bitbottle mirror list --hostname git.example.com --json
+bitbottle mirror view MIRROR-ID --hostname git.example.com --json
+```
+
+Requires the Bitbucket Server Mirror module to be enabled and at least one mirror configured.
 
 ### Permissions _(Bitbucket Server / DC only)_
 

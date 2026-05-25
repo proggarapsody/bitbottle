@@ -112,3 +112,53 @@ Output fields for `view` and `--json`: `key`, `name`, `description`, `is_private
 - `view_workspace_project` — `workspace`, `key` (required), `hostname`
 - `edit_workspace_project` — `workspace`, `key` (required), `name`, `description`, `private`, `hostname`
 - `delete_workspace_project` — `workspace`, `key` (required), `hostname`
+- `list_workspace_perms` — `workspace` (required), `limit`
+- `list_workspace_repo_perms` — `workspace` (required), `limit`
+- `grant_workspace_perm` — `workspace`, `user`, `permission` (all required)
+- `revoke_workspace_perm` — `workspace`, `user` (both required)
+
+## Workspace Permissions (Cloud only)
+
+Manage workspace-level user membership and per-repository effective permissions.
+Returns `host.unsupported` on Bitbucket Server/DC.
+
+### workspace perms list
+
+List member-level permissions for a workspace.
+
+```bash
+bitbottle workspace perms list myworkspace
+bitbottle workspace perms list myworkspace --json
+bitbottle workspace perms list myworkspace --limit 100
+```
+
+Output columns: USER, PERMISSION
+
+### workspace perms repo list
+
+List effective per-repository permissions for all users in a workspace.
+
+```bash
+bitbottle workspace perms repo list myworkspace
+bitbottle workspace perms repo list myworkspace --json
+```
+
+Output columns: REPO, USER, PERMISSION
+
+### workspace perms grant
+
+Grant a user a workspace-level permission. Valid permissions: `member`, `collaborator`, `owner`.
+
+```bash
+bitbottle workspace perms grant myworkspace --user alice --permission member
+bitbottle workspace perms grant myworkspace --user bob --permission owner
+```
+
+### workspace perms revoke
+
+Revoke a user's workspace-level permission.
+
+```bash
+bitbottle workspace perms revoke myworkspace --user alice --confirm
+# Omit --confirm on a TTY to get an interactive confirmation prompt
+```

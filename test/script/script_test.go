@@ -459,6 +459,31 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 				map[string]any{"id": "abc1234", "message": "feat: new thing\n", "author": map[string]any{"name": "Test User"}, "authorTimestamp": int64(1704067200000)},
 			}),
 		},
+		// GET mirror servers list — used by mirror list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/mirroring/latest/mirrorServers",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"id": "mirror-1", "name": "Primary Mirror", "baseUrl": "https://mirror.example.com", "enabled": true},
+			}),
+		},
+		// GET mirror server view — used by mirror view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/mirroring/latest/mirrorServers/mirror-1",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"id": "mirror-1", "name": "Primary Mirror", "baseUrl": "https://mirror.example.com", "enabled": true},
+		},
+		// GET mirrored repos list — used by mirror repo list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/mirroring/latest/mirrorServers/mirror-1/repos",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"slug": "test-repo", "mirrorId": "mirror-1", "status": "AVAILABLE", "lastSync": int64(1705296000000)},
+			}),
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
@@ -664,6 +689,44 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 		{
 			Method:     http.MethodDelete,
 			PathSuffix: "/workspaces/testworkspace/projects/MYPROJ",
+			Status:     http.StatusNoContent,
+		},
+		// workspace perms list — used by workspace perms list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/permissions",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"permission": "member",
+					"user":       map[string]any{"account_id": "abc123", "nickname": "alice"},
+				},
+			}),
+		},
+		// workspace perms repo list — used by workspace perms repo list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/permissions/repositories",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"permission": "write",
+					"user":       map[string]any{"account_id": "abc123", "nickname": "alice"},
+					"repository": map[string]any{"slug": "my-repo", "full_name": "testworkspace/my-repo"},
+				},
+			}),
+		},
+		// workspace perms grant — used by workspace perms grant
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/workspaces/testworkspace/permissions/members/alice",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"permission": "member"},
+		},
+		// workspace perms revoke — used by workspace perms revoke
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/workspaces/testworkspace/permissions/members/alice",
 			Status:     http.StatusNoContent,
 		},
 	}

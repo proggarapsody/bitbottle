@@ -376,6 +376,17 @@ type FakeClient struct {
 	GetWorkspaceProjectFn    func(ws, key string) (backend.WorkspaceProject, error)
 	UpdateWorkspaceProjectFn func(ws, key string, input backend.UpdateWorkspaceProjectInput) (backend.WorkspaceProject, error)
 	DeleteWorkspaceProjectFn func(ws, key string) error
+
+	// MirrorClient methods (Server-only; satisfies backend.MirrorClient when set)
+	ListMirrorServersFn func(limit int) ([]backend.MirrorServer, error)
+	GetMirrorServerFn   func(id string) (backend.MirrorServer, error)
+	ListMirroredReposFn func(mirrorID string, limit int) ([]backend.MirroredRepo, error)
+
+	// WorkspacePermsClient methods (Cloud-only; satisfies backend.WorkspacePermsClient when set)
+	ListWorkspaceMemberPermsFn func(ws string, limit int) ([]backend.WorkspaceMemberPerm, error)
+	ListWorkspaceRepoPermsFn   func(ws string, limit int) ([]backend.WorkspaceRepoPerm, error)
+	GrantWorkspacePermFn       func(ws, user, permission string) error
+	RevokeWorkspacePermFn      func(ws, user string) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -442,6 +453,8 @@ var (
 	_ backend.MilestoneClient          = (*FakeClient)(nil)
 	_ backend.IssueVersionClient       = (*FakeClient)(nil)
 	_ backend.CloudProjectClient       = (*FakeClient)(nil)
+	_ backend.MirrorClient             = (*FakeClient)(nil)
+	_ backend.WorkspacePermsClient     = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2694,6 +2707,76 @@ func (c *FakeClient) DeleteWorkspaceProject(ws, key string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteWorkspaceProject; set DeleteWorkspaceProjectFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListMirrorServers(limit int) ([]backend.MirrorServer, error) {
+	if c.ListMirrorServersFn != nil {
+		return c.ListMirrorServersFn(limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListMirrorServers; set ListMirrorServersFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetMirrorServer(id string) (backend.MirrorServer, error) {
+	if c.GetMirrorServerFn != nil {
+		return c.GetMirrorServerFn(id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetMirrorServer; set GetMirrorServerFn in your test")
+	}
+	return backend.MirrorServer{}, nil
+}
+
+func (c *FakeClient) ListMirroredRepos(mirrorID string, limit int) ([]backend.MirroredRepo, error) {
+	if c.ListMirroredReposFn != nil {
+		return c.ListMirroredReposFn(mirrorID, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListMirroredRepos; set ListMirroredReposFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) ListWorkspaceMemberPerms(ws string, limit int) ([]backend.WorkspaceMemberPerm, error) {
+	if c.ListWorkspaceMemberPermsFn != nil {
+		return c.ListWorkspaceMemberPermsFn(ws, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaceMemberPerms; set ListWorkspaceMemberPermsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) ListWorkspaceRepoPerms(ws string, limit int) ([]backend.WorkspaceRepoPerm, error) {
+	if c.ListWorkspaceRepoPermsFn != nil {
+		return c.ListWorkspaceRepoPermsFn(ws, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaceRepoPerms; set ListWorkspaceRepoPermsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GrantWorkspacePerm(ws, user, permission string) error {
+	if c.GrantWorkspacePermFn != nil {
+		return c.GrantWorkspacePermFn(ws, user, permission)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GrantWorkspacePerm; set GrantWorkspacePermFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RevokeWorkspacePerm(ws, user string) error {
+	if c.RevokeWorkspacePermFn != nil {
+		return c.RevokeWorkspacePermFn(ws, user)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RevokeWorkspacePerm; set RevokeWorkspacePermFn in your test")
 	}
 	return nil
 }
