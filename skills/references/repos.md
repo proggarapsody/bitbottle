@@ -59,6 +59,18 @@ commands require `--ref` (branch / tag / commit hash) and accept
 both Cloud and Server/DC. Columns: DISPLAY_NAME, USERNAME. Supports
 `--json`, `--jq expr`, `--hostname`. MCP tool: `list_repo_watchers(repo)`.
 
+## Labels
+
+```bash
+bitbottle repo label list   [PROJECT/REPO] [--json]
+bitbottle repo label create [PROJECT/REPO] --name N [--color C]
+bitbottle repo label update [PROJECT/REPO] ID [--name N] [--color C]
+bitbottle repo label delete [PROJECT/REPO] ID
+```
+
+Works on both Cloud and Server/DC. MCP tools: `list_repo_labels`,
+`create_repo_label`, `update_repo_label`, `delete_repo_label`.
+
 `repo visibility PROJ/repo` prints `public` or `private`. With a second
 argument (`public` or `private`) it sets the visibility. Works on both
 Cloud and Server/DC. MCP tool: `repo_visibility(repo[, visibility])`.

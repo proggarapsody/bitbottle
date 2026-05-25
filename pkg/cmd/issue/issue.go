@@ -28,5 +28,10 @@ the current directory.`,
 	cmd.AddCommand(NewCmdIssueReopen(f))
 	cmd.AddCommand(NewCmdIssueAssign(f))
 	cmd.AddCommand(NewCmdIssueComment(f))
+	cmd.AddCommand(NewCmdIssueAttachment(f))
+	cmd.AddCommand(NewCmdIssueVote(f))
+	cmd.AddCommand(NewCmdIssueUnvote(f))
+	cmd.AddCommand(NewCmdIssueWatch(f))
+	cmd.AddCommand(NewCmdIssueUnwatch(f))
 	return cmd
 }
