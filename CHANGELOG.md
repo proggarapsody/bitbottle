@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.117.0](https://github.com/proggarapsody/bitbottle/compare/v1.116.0...v1.117.0) (2026-05-25)
+
+
+### Features
+
+* **pr:** add pr participant update command (Cloud only); MCP tool update_pr_participant ([e67637d](https://github.com/proggarapsody/bitbottle/commit/e67637df1b93dd47a8e1136a9ad4b9c955004b53))
+
 ## [1.116.0](https://github.com/proggarapsody/bitbottle/compare/v1.115.0...v1.116.0) (2026-05-25)
 
 
