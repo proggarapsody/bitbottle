@@ -12,6 +12,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	cmdApprove "github.com/proggarapsody/bitbottle/pkg/cmd/pr/approve"
 	cmdDecline "github.com/proggarapsody/bitbottle/pkg/cmd/pr/decline"
+	cmdParticipantUpdate "github.com/proggarapsody/bitbottle/pkg/cmd/pr/participant/update"
 	cmdReady "github.com/proggarapsody/bitbottle/pkg/cmd/pr/ready"
 	cmdReopen "github.com/proggarapsody/bitbottle/pkg/cmd/pr/reopen"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/task"
@@ -57,6 +58,12 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRCommits(f))
 	cmd.AddCommand(NewCmdPRFiles(f))
 	cmd.AddCommand(NewCmdPRParticipants(f))
+	participantCmd := &cobra.Command{
+		Use:   "participant",
+		Short: "Manage pull request participants",
+	}
+	participantCmd.AddCommand(cmdParticipantUpdate.NewCmdPRParticipantUpdate(f))
+	cmd.AddCommand(participantCmd)
 	cmd.AddCommand(NewCmdSuggestion(f))
 	cmd.AddCommand(NewCmdReviewerGroup(f))
 	return cmd

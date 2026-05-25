@@ -17,6 +17,46 @@ const listPRParticipantsJSON = `{"values":[
 {"user":{"account_id":"u3","display_name":"Carol","nickname":"carol"},"role":"PARTICIPANT","approved":false,"state":""}
 ]}`
 
+const updatePRParticipantJSON = `{"user":{"account_id":"u1","display_name":"Alice","nickname":"alice"},"role":"REVIEWER","approved":true,"state":"approved"}`
+
+func TestCloudClient_UpdatePRParticipant_IssuesCorrectPath(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotMethod string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotMethod = r.Method
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(updatePRParticipantJSON))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	_, err := client.UpdatePRParticipant("myworkspace", "my-service", 42, "u1", "approved")
+	require.NoError(t, err)
+
+	assert.Equal(t, http.MethodPut, gotMethod)
+	assert.Equal(t, "/repositories/myworkspace/my-service/pullrequests/42/participants/u1", gotPath)
+}
+
+func TestCloudClient_UpdatePRParticipant_MapsResponse(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(updatePRParticipantJSON))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+
+	p, err := client.UpdatePRParticipant("myworkspace", "my-service", 42, "u1", "approved")
+	require.NoError(t, err)
+
+	assert.Equal(t, "alice", p.User.Slug)
+	assert.Equal(t, "Alice", p.User.DisplayName)
+	assert.Equal(t, "REVIEWER", p.Role)
+	assert.True(t, p.Approved)
+	assert.Equal(t, "APPROVED", p.State)
+}
+
 func TestCloudClient_ListPRParticipants_IssuesCorrectPathAndNormalizesState(t *testing.T) {
 	t.Parallel()
 	var gotPath string

@@ -291,6 +291,9 @@ type FakeClient struct {
 	// PR participant methods (both backends; satisfies backend.PRParticipantClient when set)
 	ListPRParticipantsFn func(ns, slug string, prID int) ([]backend.PRParticipant, error)
 
+	// PR participant update methods (Cloud-only; satisfies backend.PRParticipantUpdater when set)
+	UpdatePRParticipantFn func(ns, slug string, prID int, accountID, state string) (backend.PRParticipant, error)
+
 	// Repo watcher methods (both backends; satisfies backend.RepoWatcherClient when set)
 	ListRepoWatchersFn func(ns, slug string) ([]backend.User, error)
 
@@ -435,6 +438,7 @@ var (
 	_ backend.PRCommitClient                  = (*FakeClient)(nil)
 	_ backend.PRFileClient                    = (*FakeClient)(nil)
 	_ backend.PRParticipantClient             = (*FakeClient)(nil)
+	_ backend.PRParticipantUpdater            = (*FakeClient)(nil)
 	_ backend.PRStatusLister                  = (*FakeClient)(nil)
 	_ backend.RepoEditor                      = (*FakeClient)(nil)
 	_ backend.RepoPRSettingsClient            = (*FakeClient)(nil)
@@ -2030,6 +2034,16 @@ func (c *FakeClient) ListPRParticipants(ns, slug string, prID int) ([]backend.PR
 		c.T.Fatalf("unexpected call to FakeClient.ListPRParticipants; set ListPRParticipantsFn in your test")
 	}
 	return nil, nil
+}
+
+func (c *FakeClient) UpdatePRParticipant(ns, slug string, prID int, accountID, state string) (backend.PRParticipant, error) {
+	if c.UpdatePRParticipantFn != nil {
+		return c.UpdatePRParticipantFn(ns, slug, prID, accountID, state)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdatePRParticipant; set UpdatePRParticipantFn in your test")
+	}
+	return backend.PRParticipant{}, nil
 }
 
 // ── WorkspaceMemberClient ─────────────────────────────────────────────────────

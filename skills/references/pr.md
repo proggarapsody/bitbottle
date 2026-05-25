@@ -49,6 +49,7 @@ bitbottle pr files        42                                         # list file
 bitbottle pr files        42 --json status,path,additions,deletions  # structured output
 bitbottle pr participants 42                                         # list participants (author, reviewers, observers)
 bitbottle pr participants 42 --json role,display_name,username,approved # structured output
+bitbottle pr participant update 42 --user ACCOUNT_ID --approve|--unapprove|--request-changes [PROJECT/REPO]  # Cloud only; MCP: update_pr_participant
 bitbottle pr update-branch 42                                  # rebase/sync PR branch onto target (Cloud merge commit; Server rebase)
 bitbottle pr status [PROJ/repo]                               # show your open PRs split by role (AUTHOR / REVIEWER)
 bitbottle pr reopen 42                                        # reopen a declined/closed PR
@@ -122,6 +123,12 @@ Output table: ROLE | DISPLAY_NAME | USERNAME | APPROVED. Cloud `state` values
 (`approved`, `changes_requested`) are normalised to uppercase; Server `status`
 `NEEDS_WORK` maps to `CHANGES_REQUESTED`, `UNAPPROVED` maps to `""`. Supports
 `--json role,display_name,username,approved`. MCP tool: `list_pr_participants`.
+
+`pr participant update` updates a single participant's approval state via the
+Cloud Participants API (`PUT /repositories/{ws}/{slug}/pullrequests/{id}/participants/{account_id}`).
+Flags: `--user ACCOUNT_ID` (required), plus exactly one of `--approve`,
+`--unapprove`, or `--request-changes`. Cloud only — Server/DC returns a typed
+`host.unsupported` error. MCP tool: `update_pr_participant`.
 
 ## Flag reality check
 

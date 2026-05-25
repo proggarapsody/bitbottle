@@ -27,6 +27,28 @@ func toPRParticipantDomain(w cloudgen.CloudPRParticipant) backend.PRParticipant 
 	}
 }
 
+// UpdatePRParticipant updates a participant's approval state on a pull request.
+// Cloud endpoint: PUT /repositories/{ws}/{slug}/pullrequests/{id}/participants/{accountID}
+// state: "approved", "changes_requested", or "" (neutral/unapprove).
+func (c *Client) UpdatePRParticipant(ns, slug string, prID int, accountID, state string) (backend.PRParticipant, error) {
+	type body struct {
+		Role  string  `json:"role"`
+		State *string `json:"state"`
+	}
+	b := body{Role: "REVIEWER"}
+	if state != "" {
+		s := strings.ToLower(state)
+		b.State = &s
+	}
+	var w cloudgen.CloudPRParticipant
+	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/participants/%s",
+		ns, slug, prID, accountID)
+	if err := c.putJSON(path, b, &w); err != nil {
+		return backend.PRParticipant{}, err
+	}
+	return toPRParticipantDomain(w), nil
+}
+
 // ListPRParticipants returns the participants of a pull request.
 // Cloud endpoint: GET /repositories/{ws}/{slug}/pullrequests/{id}/participants
 func (c *Client) ListPRParticipants(ns, slug string, prID int) ([]backend.PRParticipant, error) {

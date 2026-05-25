@@ -1,0 +1,5 @@
+# pr participant update sets a reviewer's approval state on Cloud.
+bb-fake cloud
+
+bitbottle pr participant update 10 --user acc-test-uuid --approve testworkspace/cloud-repo-a -k
+stdout 'APPROVED'

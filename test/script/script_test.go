@@ -870,6 +870,18 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/ssh/known_hosts/{kh-uuid-1}",
 			Status:     http.StatusNoContent,
 		},
+		// PUT PR participant — used by pr participant update
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/repositories/TESTWORKSPACE/cloud-repo-a/pullrequests/10/participants/acc-test-uuid",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"user":     map[string]any{"account_id": "acc-test-uuid", "display_name": "Alice", "nickname": "alice"},
+				"role":     "REVIEWER",
+				"approved": true,
+				"state":    "approved",
+			},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

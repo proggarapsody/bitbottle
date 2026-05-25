@@ -31,4 +31,22 @@ func registerPRParticipantTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.listPRParticipants,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("update_pr_participant",
+			mcplib.WithDescription("Update a pull request participant's approval state. Cloud only."),
+			optHostname,
+			reqRepo,
+			reqPRID,
+			mcplib.WithString("account_id",
+				mcplib.Required(),
+				mcplib.Description("Account ID of the participant"),
+			),
+			mcplib.WithString("state",
+				mcplib.Required(),
+				mcplib.Description("New approval state: 'approved', 'changes_requested', or '' (neutral/unapprove)"),
+			),
+		),
+		h.updatePRParticipant,
+	)
 }
