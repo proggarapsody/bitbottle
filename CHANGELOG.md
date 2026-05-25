@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.105.0](https://github.com/proggarapsody/bitbottle/compare/v1.104.0...v1.105.0) (2026-05-25)
+
+
+### Features
+
+* **workspace:** add workspace audit log command (Cloud) ([6f61b11](https://github.com/proggarapsody/bitbottle/commit/6f61b1157249cbbe2b0d99f2add8ef807140732c))
+
 ## [1.104.0](https://github.com/proggarapsody/bitbottle/compare/v1.103.0...v1.104.0) (2026-05-25)
 
 
