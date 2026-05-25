@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.106.0](https://github.com/proggarapsody/bitbottle/compare/v1.105.0...v1.106.0) (2026-05-25)
+
+
+### Features
+
+* **workspace:** add workspace IP allowlist management commands (Cloud) ([97fe043](https://github.com/proggarapsody/bitbottle/commit/97fe043c3fc057d819c392e3c1d90bff1df57bfd))
+
 ## [1.105.0](https://github.com/proggarapsody/bitbottle/compare/v1.104.0...v1.105.0) (2026-05-25)
 
 
