@@ -44,6 +44,14 @@ type MailServerConfig struct {
 	Password string `json:"-"`
 }
 
+// BannerConfig holds the site-wide announcement banner settings for a
+// Bitbucket Server / DC instance.
+type BannerConfig struct {
+	Message  string `json:"message"`
+	Audience string `json:"audience"` // "ALL" | "AUTHENTICATED" | "UNAUTHENTICATED"
+	Enabled  bool   `json:"enabled"`
+}
+
 // AdminClient exposes Bitbucket Server / Data Center administration
 // operations. Bitbucket Cloud does not expose these endpoints — calls against
 // Cloud return ErrUnsupportedOnHost via AsAdminClient.
@@ -65,6 +73,11 @@ type AdminClient interface {
 	// Mail server config (Server/DC only)
 	GetMailServerConfig() (MailServerConfig, error)
 	SetMailServerConfig(in MailServerConfig) error
+
+	// Banner config (Server/DC only)
+	GetBanner() (BannerConfig, error)
+	SetBanner(in BannerConfig) error
+	ClearBanner() error
 }
 
 // FeatureAdmin names the admin capability.

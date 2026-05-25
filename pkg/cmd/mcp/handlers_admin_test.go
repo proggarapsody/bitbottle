@@ -359,6 +359,136 @@ func TestMCP_SetMailServerConfig_MissingMailHostname(t *testing.T) {
 	assertErrorResult(t, result, "mail_hostname")
 }
 
+// ── get_banner ────────────────────────────────────────────────────────────────
+
+func TestMCP_GetBanner_OK(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		GetBannerFn: func() (backend.BannerConfig, error) {
+			return backend.BannerConfig{
+				Message:  "Maintenance Friday",
+				Audience: "ALL",
+				Enabled:  true,
+			}, nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.getBanner(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "Maintenance Friday", "")
+	assertJSONContains(t, result, "ALL", "")
+}
+
+func TestMCP_GetBanner_Error(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		GetBannerFn: func() (backend.BannerConfig, error) {
+			return backend.BannerConfig{}, &backend.DomainError{
+				Kind:    backend.ErrPermission,
+				Message: "access denied",
+			}
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.getBanner(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "permission")
+}
+
+// ── set_banner ────────────────────────────────────────────────────────────────
+
+func TestMCP_SetBanner_OK(t *testing.T) {
+	t.Parallel()
+	var gotCfg backend.BannerConfig
+	fake := &testhelpers.FakeClient{T: t,
+		SetBannerFn: func(in backend.BannerConfig) error {
+			gotCfg = in
+			return nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.setBanner(context.Background(), makeReq(map[string]any{
+		"message":  "Scheduled maintenance Sunday",
+		"audience": "authenticated",
+		"enabled":  true,
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "updated", "")
+	assertJSONContains(t, result, "Scheduled maintenance Sunday", "")
+	assert.Equal(t, "Scheduled maintenance Sunday", gotCfg.Message)
+	assert.Equal(t, "AUTHENTICATED", gotCfg.Audience)
+	assert.True(t, gotCfg.Enabled)
+}
+
+func TestMCP_SetBanner_DefaultAudience(t *testing.T) {
+	t.Parallel()
+	var gotCfg backend.BannerConfig
+	fake := &testhelpers.FakeClient{T: t,
+		SetBannerFn: func(in backend.BannerConfig) error {
+			gotCfg = in
+			return nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.setBanner(context.Background(), makeReq(map[string]any{
+		"message": "Hello world",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "updated", "")
+	assert.Equal(t, "ALL", gotCfg.Audience)
+	assert.True(t, gotCfg.Enabled)
+}
+
+func TestMCP_SetBanner_MissingMessage(t *testing.T) {
+	t.Parallel()
+	h := fakeAdminHandlers(t, &testhelpers.FakeClient{T: t})
+	result, err := h.setBanner(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "message")
+}
+
+func TestMCP_SetBanner_InvalidAudience(t *testing.T) {
+	t.Parallel()
+	h := fakeAdminHandlers(t, &testhelpers.FakeClient{T: t})
+	result, err := h.setBanner(context.Background(), makeReq(map[string]any{
+		"message":  "test",
+		"audience": "INVALID",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "audience")
+}
+
+// ── clear_banner ──────────────────────────────────────────────────────────────
+
+func TestMCP_ClearBanner_OK(t *testing.T) {
+	t.Parallel()
+	var called bool
+	fake := &testhelpers.FakeClient{T: t,
+		ClearBannerFn: func() error {
+			called = true
+			return nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.clearBanner(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "cleared", "")
+	assert.True(t, called)
+}
+
+func TestMCP_ClearBanner_Error(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		ClearBannerFn: func() error {
+			return &backend.DomainError{Kind: backend.ErrPermission, Message: "forbidden"}
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.clearBanner(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "permission")
+}
+
 // ── noAdminClient returns unsupported ────────────────────────────────────────
 
 // noAdminClientWrapper wraps backend.Client without satisfying AdminClient,

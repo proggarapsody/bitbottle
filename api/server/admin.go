@@ -195,6 +195,47 @@ func (c *Client) SetMailServerConfig(in backend.MailServerConfig) error {
 	return c.http.PutJSON("/admin/mail-server", wire, nil)
 }
 
+// ── Banner ────────────────────────────────────────────────────────────────────
+
+// GetBanner returns the current site-wide announcement banner configuration.
+// GET /rest/api/1.0/admin/banner
+func (c *Client) GetBanner() (backend.BannerConfig, error) {
+	var wire struct {
+		Message  string `json:"message"`
+		Audience string `json:"audience"`
+		Enabled  bool   `json:"enabled"`
+	}
+	if err := c.http.GetJSON("/admin/banner", &wire); err != nil {
+		return backend.BannerConfig{}, err
+	}
+	return backend.BannerConfig{
+		Message:  wire.Message,
+		Audience: wire.Audience,
+		Enabled:  wire.Enabled,
+	}, nil
+}
+
+// SetBanner creates or replaces the site-wide announcement banner.
+// PUT /rest/api/1.0/admin/banner
+func (c *Client) SetBanner(in backend.BannerConfig) error {
+	wire := struct {
+		Message  string `json:"message"`
+		Audience string `json:"audience"`
+		Enabled  bool   `json:"enabled"`
+	}{
+		Message:  in.Message,
+		Audience: in.Audience,
+		Enabled:  in.Enabled,
+	}
+	return c.http.PutJSON("/admin/banner", wire, nil)
+}
+
+// ClearBanner removes the site-wide announcement banner.
+// DELETE /rest/api/1.0/admin/banner
+func (c *Client) ClearBanner() error {
+	return c.http.DeleteJSON("/admin/banner", nil)
+}
+
 // GetClusterNodes returns the nodes in the Bitbucket Server/DC cluster.
 // GET /rest/api/1.0/admin/cluster
 func (c *Client) GetClusterNodes() ([]backend.ClusterNode, error) {

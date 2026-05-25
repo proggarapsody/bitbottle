@@ -280,6 +280,11 @@ Current state of every command area against gh feature parity:
 | `admin user rename OLD NEW` | ✅ | Rename a user (change username/slug) — scope **ADMIN-USER** |
 | `admin license [--json]` | ✅ | Show instance license details — scope **ADMIN-SYSTEM** |
 | `admin cluster [--json]` | ✅ | Show cluster node list — scope **ADMIN-SYSTEM** |
+| `admin mail get` | ✅ | Show SMTP mail server configuration — scope **ADMIN-MAIL** |
+| `admin mail set` | ✅ | Update SMTP mail server configuration — scope **ADMIN-MAIL** |
+| `admin banner get` | ✅ | Show site-wide announcement banner — scope **ADMIN-BANNER** |
+| `admin banner set MESSAGE` | ✅ | Post/update banner message and audience — scope **ADMIN-BANNER** |
+| `admin banner clear` | ✅ | Remove current banner — scope **ADMIN-BANNER** |
 
 ### PR Auto-Merge _(both backends — missing)_
 
@@ -490,6 +495,7 @@ Current state of every command area against gh feature parity:
 | CI-BADGE | **Fix CI status badge permanently showing "failing"** | The README CI badge reports `failing` even when all GitHub Actions workflows are green. Diagnose root cause: likely the badge URL references a workflow `name:` field or branch that doesn't exactly match, or the badge points at a workflow that legitimately fails on some triggers (e.g. a skipped path-filtered job counted as failed). Fix: (1) verify the badge URL's `workflow=` parameter matches the exact `name:` in the `.github/workflows/ci.yml` file and the `branch=` matches `main`; (2) if a workflow is expected to conditionally fail, split it out or add a dedicated always-passing status job; (3) switch to the shields.io `workflow` badge format if the GitHub native badge continues to flicker. Update `README.md` with the corrected badge URL. | N/A | DX | ✅ |
 | SOURCE-WRITE | **Write file content via API** | `repo file put PATH --branch BRANCH --message MSG [--content TEXT \| --content-file FILE] [PROJECT/REPO]` — create or update a file on a branch without a local git clone. Server: `PUT /rest/api/1.0/projects/{k}/repos/{s}/browse/{path}` (multipart: `content`, `branch`, `message`, optional `sourceCommitId`). Cloud: `POST /repositories/{ws}/{slug}/src` (multipart: file part + `message`, `branch`, optional `parents`). New optional interface `SourceWriter`. MCP tool `put_file`. Complement to `repo file get` (✅). — scope **SOURCE-WRITE** | Both | 2 | ✅ |
 | ADMIN-MAIL | **Admin mail server configuration** | `admin mail get [--json]`, `admin mail set --host HOST --port N [--protocol smtp\|smtps] [--username U] [--password P] [--sender EMAIL] [--use-start-tls] [--require-start-tls]` — read/write Bitbucket Server SMTP configuration. Server: `GET /rest/api/1.0/admin/mail-server`, `PUT /rest/api/1.0/admin/mail-server`. Cloud → `host.unsupported`. Extends existing `AdminClient` interface. MCP pair `get_mail_server_config`, `set_mail_server_config`. — scope **ADMIN-MAIL** | Server/DC | 2 | ✅ |
+| ADMIN-BANNER | **Admin site-wide announcement banner** | `admin banner get [--json]`, `admin banner set MESSAGE [--audience all\|authenticated\|unauthenticated]`, `admin banner clear [--confirm]` — manage Bitbucket Server/DC's site-wide announcement banner. Server: `GET /rest/api/1.0/admin/banner`, `PUT /rest/api/1.0/admin/banner`, `DELETE /rest/api/1.0/admin/banner`. Cloud → `host.unsupported`. Extends `AdminClient`. MCP triplet `get_banner`, `set_banner`, `clear_banner`. PRD [#509](https://github.com/proggarapsody/bitbottle/issues/509). — scope **ADMIN-BANNER** | Server/DC | 2 | ✅ |
 
 
 ---
@@ -3138,6 +3144,47 @@ type MailServerConfig struct {
 - [x] `pkg/cmd/admin/admin.go` — wire `mail.NewCmdMail(f)`
 - [x] `pkg/cmd/mcp/tools_admin.go` entries + `pkg/cmd/mcp/handlers_admin.go` methods + `pkg/cmd/mcp/handlers_admin_test.go` tests
 - [x] `test/testhelpers/client.go` — `GetMailServerConfigFn` + `SetMailServerConfigFn` fields + implementations
+- [x] `skills/references/admin.md` updated
+- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### ADMIN-BANNER — Admin site-wide announcement banner
+
+**Status:** ✅
+
+Bitbucket Server/DC exposes a site-wide announcement banner endpoint. Admins use this to post maintenance windows, upgrade notices, and scheduled downtime messages to users logging in. Cloud has no equivalent → `ErrUnsupportedOnHost`.
+
+**Interface** (extends `AdminClient` in `api/backend/client_admin.go`):
+```go
+GetBanner() (BannerConfig, error)
+SetBanner(in BannerConfig) error
+ClearBanner() error
+
+type BannerConfig struct {
+    Message  string
+    Audience string // "ALL" | "AUTHENTICATED" | "UNAUTHENTICATED"
+    Enabled  bool
+}
+```
+
+**Commands:**
+- `bitbottle admin banner get [--json]`
+- `bitbottle admin banner set MESSAGE [--audience all|authenticated|unauthenticated]`
+- `bitbottle admin banner clear [--confirm]`
+
+**Backends:** Server (`GET /rest/api/1.0/admin/banner`, `PUT /rest/api/1.0/admin/banner`, `DELETE /rest/api/1.0/admin/banner`). Cloud → `ErrUnsupportedOnHost`.
+
+**MCP tools:** `get_banner`, `set_banner`, `clear_banner`
+
+**Definition of Done:**
+- [x] `api/backend/client_admin.go` — add `GetBanner`, `SetBanner`, `ClearBanner` methods + `BannerConfig` type
+- [x] `api/server/admin.go` — implement all 3 methods
+- [x] `api/server/admin_test.go` — tests for all 3 methods
+- [x] `pkg/cmd/admin/banner/banner.go` + `get/get.go` + `set/set.go` + `clear/clear.go` + matching `_test.go`
+- [x] `pkg/cmd/admin/admin.go` — wire `banner.NewCmdBanner(f)`
+- [x] `pkg/cmd/mcp/tools_admin.go` entries + `pkg/cmd/mcp/handlers_admin.go` methods + `pkg/cmd/mcp/handlers_admin_test.go` tests
+- [x] `test/testhelpers/client.go` — `GetBannerFn`, `SetBannerFn`, `ClearBannerFn` + compile assertions
 - [x] `skills/references/admin.md` updated
 - [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
