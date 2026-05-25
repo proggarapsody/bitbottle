@@ -102,3 +102,107 @@ func TestListTree_NotFound_ReturnsTypedEnvelope(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "repo.not_found")
 }
+
+// ── put_file ──────────────────────────────────────────────────────────────────
+
+func TestPutFile_OK(t *testing.T) {
+	t.Parallel()
+	var gotNS, gotSlug, gotPath string
+	var gotIn backend.PutFileInput
+	fake := &testhelpers.FakeClient{
+		PutFileFn: func(ns, slug, path string, in backend.PutFileInput) error {
+			gotNS, gotSlug, gotPath = ns, slug, path
+			gotIn = in
+			return nil
+		},
+	}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoToolsCfg})
+	factorytest.UseBackend(f, fake)
+	h := newHandlers(f)
+	result, err := h.putFile(context.Background(), makeReq(map[string]any{
+		"project": "myws",
+		"slug":    "my-svc",
+		"path":    "README.md",
+		"branch":  "main",
+		"message": "Update README",
+		"content": "# Hello",
+	}))
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	assertJSONContains(t, result, "committed", "")
+	assertJSONContains(t, result, "README.md", "")
+	assert.Equal(t, "myws", gotNS)
+	assert.Equal(t, "my-svc", gotSlug)
+	assert.Equal(t, "README.md", gotPath)
+	assert.Equal(t, "main", gotIn.Branch)
+	assert.Equal(t, "Update README", gotIn.Message)
+	assert.Equal(t, "# Hello", gotIn.Content)
+}
+
+func TestPutFile_WithSourceCommit(t *testing.T) {
+	t.Parallel()
+	var gotSourceCommit string
+	fake := &testhelpers.FakeClient{
+		PutFileFn: func(ns, slug, path string, in backend.PutFileInput) error {
+			gotSourceCommit = in.SourceCommit
+			return nil
+		},
+	}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoToolsCfg})
+	factorytest.UseBackend(f, fake)
+	h := newHandlers(f)
+	result, err := h.putFile(context.Background(), makeReq(map[string]any{
+		"project":       "myws",
+		"slug":          "my-svc",
+		"path":          "README.md",
+		"branch":        "main",
+		"message":       "Update",
+		"content":       "x",
+		"source_commit": "deadbeef",
+	}))
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	assert.Equal(t, "deadbeef", gotSourceCommit)
+}
+
+func TestPutFile_MissingProject_ReturnsError(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoToolsCfg})
+	h := newHandlers(f)
+	result, err := h.putFile(context.Background(), makeReq(map[string]any{
+		"slug": "my-svc", "path": "README.md", "branch": "main", "message": "x", "content": "x",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "project")
+}
+
+func TestPutFile_MissingBranch_ReturnsError(t *testing.T) {
+	t.Parallel()
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoToolsCfg})
+	h := newHandlers(f)
+	result, err := h.putFile(context.Background(), makeReq(map[string]any{
+		"project": "myws", "slug": "my-svc", "path": "README.md", "message": "x", "content": "x",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "branch")
+}
+
+func TestPutFile_UnsupportedOnBackend_ReturnsError(t *testing.T) {
+	t.Parallel()
+	// Plain Client without SourceWriter
+	type noWriteFake struct{ backend.Client }
+	wrapped := noWriteFake{Client: &testhelpers.FakeClient{}}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoToolsCfg})
+	factorytest.UseBackend(f, wrapped)
+	h := newHandlers(f)
+	result, err := h.putFile(context.Background(), makeReq(map[string]any{
+		"project": "myws",
+		"slug":    "my-svc",
+		"path":    "README.md",
+		"branch":  "main",
+		"message": "Update",
+		"content": "x",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "host.unsupported")
+}

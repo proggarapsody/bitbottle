@@ -449,6 +449,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: false,
 	},
+	{
+		Name:          "SourceWriter",
+		HumanLabel:    "writing files via the API",
+		Check:         func(c Client) bool { _, ok := c.(SourceWriter); return ok },
+		Feature:       FeatureSourceWrite,
+		CloudSupport:  true,
+		ServerSupport: true,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.

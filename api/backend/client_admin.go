@@ -30,6 +30,20 @@ type ClusterNode struct {
 	Local   bool
 }
 
+// MailServerConfig holds the mail-server settings for a Bitbucket Server / DC instance.
+type MailServerConfig struct {
+	Hostname        string
+	Port            int
+	Protocol        string // "smtp" | "smtps"
+	UseStartTLS     bool
+	RequireStartTLS bool
+	Username        string
+	SenderAddress   string
+	// Password is write-only — not returned by GET; include for the set command.
+	// The json:"-" tag ensures it is never serialised in --json output.
+	Password string `json:"-"`
+}
+
 // AdminClient exposes Bitbucket Server / Data Center administration
 // operations. Bitbucket Cloud does not expose these endpoints — calls against
 // Cloud return ErrUnsupportedOnHost via AsAdminClient.
@@ -47,6 +61,10 @@ type AdminClient interface {
 	// System info (Server/DC only)
 	GetLicense() (AdminLicense, error)
 	GetClusterNodes() ([]ClusterNode, error)
+
+	// Mail server config (Server/DC only)
+	GetMailServerConfig() (MailServerConfig, error)
+	SetMailServerConfig(in MailServerConfig) error
 }
 
 // FeatureAdmin names the admin capability.

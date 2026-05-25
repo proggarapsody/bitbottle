@@ -188,6 +188,13 @@ type FakeClient struct {
 	GetLicenseFn      func() (backend.AdminLicense, error)
 	GetClusterNodesFn func() ([]backend.ClusterNode, error)
 
+	// Admin mail server methods (Server-only)
+	GetMailServerConfigFn func() (backend.MailServerConfig, error)
+	SetMailServerConfigFn func(in backend.MailServerConfig) error
+
+	// Source write methods (both backends; satisfies backend.SourceWriter when set)
+	PutFileFn func(ns, slug, path string, in backend.PutFileInput) error
+
 	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
 	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
 	GetReportFn         func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
@@ -371,6 +378,7 @@ var (
 	_ backend.IssueVoter               = (*FakeClient)(nil)
 	_ backend.IssueWatcher             = (*FakeClient)(nil)
 	_ backend.RepoLabelClient          = (*FakeClient)(nil)
+	_ backend.SourceWriter             = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2259,6 +2267,40 @@ func (c *FakeClient) DeleteRepoLabel(ns, slug string, id int) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteRepoLabel; set DeleteRepoLabelFn in your test")
+	}
+	return nil
+}
+
+// ── SourceWriter ──────────────────────────────────────────────────────────────
+
+func (c *FakeClient) PutFile(ns, slug, path string, in backend.PutFileInput) error {
+	if c.PutFileFn != nil {
+		return c.PutFileFn(ns, slug, path, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.PutFile; set PutFileFn in your test")
+	}
+	return nil
+}
+
+// ── Admin mail server ─────────────────────────────────────────────────────────
+
+func (c *FakeClient) GetMailServerConfig() (backend.MailServerConfig, error) {
+	if c.GetMailServerConfigFn != nil {
+		return c.GetMailServerConfigFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetMailServerConfig; set GetMailServerConfigFn in your test")
+	}
+	return backend.MailServerConfig{}, nil
+}
+
+func (c *FakeClient) SetMailServerConfig(in backend.MailServerConfig) error {
+	if c.SetMailServerConfigFn != nil {
+		return c.SetMailServerConfigFn(in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetMailServerConfig; set SetMailServerConfigFn in your test")
 	}
 	return nil
 }

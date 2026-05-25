@@ -144,6 +144,57 @@ func (c *Client) GetLicense() (backend.AdminLicense, error) {
 	}, nil
 }
 
+// GetMailServerConfig returns the current mail-server configuration.
+// GET /rest/api/1.0/admin/mail-server
+func (c *Client) GetMailServerConfig() (backend.MailServerConfig, error) {
+	var wire struct {
+		Hostname        string `json:"hostname"`
+		Port            int    `json:"port"`
+		Protocol        string `json:"protocol"`
+		UseStartTLS     bool   `json:"use-start-tls"`
+		RequireStartTLS bool   `json:"require-start-tls"`
+		Username        string `json:"username"`
+		SenderAddress   string `json:"senderAddress"`
+	}
+	if err := c.http.GetJSON("/admin/mail-server", &wire); err != nil {
+		return backend.MailServerConfig{}, err
+	}
+	return backend.MailServerConfig{
+		Hostname:        wire.Hostname,
+		Port:            wire.Port,
+		Protocol:        wire.Protocol,
+		UseStartTLS:     wire.UseStartTLS,
+		RequireStartTLS: wire.RequireStartTLS,
+		Username:        wire.Username,
+		SenderAddress:   wire.SenderAddress,
+	}, nil
+}
+
+// SetMailServerConfig writes a new mail-server configuration.
+// PUT /rest/api/1.0/admin/mail-server
+func (c *Client) SetMailServerConfig(in backend.MailServerConfig) error {
+	wire := struct {
+		Hostname        string `json:"hostname"`
+		Port            int    `json:"port"`
+		Protocol        string `json:"protocol"`
+		UseStartTLS     bool   `json:"use-start-tls"`
+		RequireStartTLS bool   `json:"require-start-tls"`
+		Username        string `json:"username"`
+		SenderAddress   string `json:"senderAddress"`
+		Password        string `json:"password,omitempty"`
+	}{
+		Hostname:        in.Hostname,
+		Port:            in.Port,
+		Protocol:        in.Protocol,
+		UseStartTLS:     in.UseStartTLS,
+		RequireStartTLS: in.RequireStartTLS,
+		Username:        in.Username,
+		SenderAddress:   in.SenderAddress,
+		Password:        in.Password,
+	}
+	return c.http.PutJSON("/admin/mail-server", wire, nil)
+}
+
 // GetClusterNodes returns the nodes in the Bitbucket Server/DC cluster.
 // GET /rest/api/1.0/admin/cluster
 func (c *Client) GetClusterNodes() ([]backend.ClusterNode, error) {

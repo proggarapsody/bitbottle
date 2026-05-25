@@ -23,6 +23,14 @@ func toSrcEntryDomain(w cloudgen.CloudSrcEntry) backend.TreeEntry {
 	}
 }
 
+// cloudSrcWritePath builds the Cloud POST /src endpoint path for file writes.
+// Cloud writes go to /repositories/{workspace}/{slug}/src (no ref or file path
+// in the URL — branch and file path are multipart body fields).
+func cloudSrcWritePath(ns, slug string) string {
+	return fmt.Sprintf("/repositories/%s/%s/src",
+		url.PathEscape(ns), url.PathEscape(slug))
+}
+
 // srcPath builds the Cloud /src endpoint path. ref and pathInRepo are
 // path-segment-encoded so refs like "release/1.0" and paths with spaces
 // survive intact. A trailing slash is added when listing the repo root —

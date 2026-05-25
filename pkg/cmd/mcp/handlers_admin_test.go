@@ -280,6 +280,85 @@ func TestMCP_GetClusterNodes_OK(t *testing.T) {
 	assertJSONContains(t, result, "Primary", "")
 }
 
+// ── get_mail_server_config ────────────────────────────────────────────────────
+
+func TestMCP_GetMailServerConfig_OK(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		GetMailServerConfigFn: func() (backend.MailServerConfig, error) {
+			return backend.MailServerConfig{
+				Hostname:      "smtp.example.com",
+				Port:          25,
+				Protocol:      "smtp",
+				UseStartTLS:   false,
+				Username:      "mailer",
+				SenderAddress: "no-reply@example.com",
+			}, nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.getMailServerConfig(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "smtp.example.com", "")
+	assertJSONContains(t, result, "no-reply@example.com", "")
+	// Password must never be in output
+	text := extractText(t, result)
+	assert.NotContains(t, text, "Password")
+}
+
+func TestMCP_GetMailServerConfig_Error(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		GetMailServerConfigFn: func() (backend.MailServerConfig, error) {
+			return backend.MailServerConfig{}, &backend.DomainError{
+				Kind:    backend.ErrPermission,
+				Message: "access denied",
+			}
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.getMailServerConfig(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "permission")
+}
+
+// ── set_mail_server_config ────────────────────────────────────────────────────
+
+func TestMCP_SetMailServerConfig_OK(t *testing.T) {
+	t.Parallel()
+	var gotCfg backend.MailServerConfig
+	fake := &testhelpers.FakeClient{T: t,
+		SetMailServerConfigFn: func(in backend.MailServerConfig) error {
+			gotCfg = in
+			return nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.setMailServerConfig(context.Background(), makeReq(map[string]any{
+		"mail_hostname":  "smtp.example.com",
+		"port":           float64(465),
+		"protocol":       "smtps",
+		"sender_address": "bot@example.com",
+		"username":       "mailer",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "updated", "")
+	assertJSONContains(t, result, "smtp.example.com", "")
+	assert.Equal(t, "smtp.example.com", gotCfg.Hostname)
+	assert.Equal(t, 465, gotCfg.Port)
+	assert.Equal(t, "smtps", gotCfg.Protocol)
+	assert.Equal(t, "bot@example.com", gotCfg.SenderAddress)
+	assert.Equal(t, "mailer", gotCfg.Username)
+}
+
+func TestMCP_SetMailServerConfig_MissingMailHostname(t *testing.T) {
+	t.Parallel()
+	h := fakeAdminHandlers(t, &testhelpers.FakeClient{T: t})
+	result, err := h.setMailServerConfig(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "mail_hostname")
+}
+
 // ── noAdminClient returns unsupported ────────────────────────────────────────
 
 // noAdminClientWrapper wraps backend.Client without satisfying AdminClient,

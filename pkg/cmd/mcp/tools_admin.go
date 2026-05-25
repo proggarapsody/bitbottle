@@ -119,4 +119,45 @@ func registerAdminTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.getClusterNodes,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("get_mail_server_config",
+			mcplib.WithDescription("Get the mail server configuration for a Bitbucket Server / DC instance (Server/DC only). The password field is never returned."),
+			optHostname,
+		),
+		h.getMailServerConfig,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("set_mail_server_config",
+			mcplib.WithDescription("Update the mail server configuration for a Bitbucket Server / DC instance (Server/DC only)"),
+			optHostname,
+			mcplib.WithString("mail_hostname",
+				mcplib.Required(),
+				mcplib.Description("Mail server hostname"),
+			),
+			mcplib.WithNumber("port",
+				mcplib.Description("Mail server port (default 25)"),
+			),
+			mcplib.WithString("protocol",
+				mcplib.Description("Protocol: smtp or smtps (default smtp)"),
+			),
+			mcplib.WithBoolean("use_starttls",
+				mcplib.Description("Enable STARTTLS if available"),
+			),
+			mcplib.WithBoolean("require_starttls",
+				mcplib.Description("Require STARTTLS (fail if not available)"),
+			),
+			mcplib.WithString("username",
+				mcplib.Description("SMTP authentication username"),
+			),
+			mcplib.WithString("sender_address",
+				mcplib.Description("Sender email address (From:)"),
+			),
+			mcplib.WithString("password",
+				mcplib.Description("SMTP password (note: passed in plaintext via MCP)"),
+			),
+		),
+		h.setMailServerConfig,
+	)
 }

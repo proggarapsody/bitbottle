@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/repo/file/put"
 )
 
 // NewCmdFile is the parent of `repo file <action>`. It exists today
@@ -19,6 +20,7 @@ func NewCmdFile(f *factory.Factory) *cobra.Command {
 		Short: "Read repository files at a ref",
 	}
 	cmd.AddCommand(NewCmdFileGet(f))
+	cmd.AddCommand(put.NewCmdFilePut(f))
 	return cmd
 }
 
