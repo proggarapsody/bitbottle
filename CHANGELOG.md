@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.119.0](https://github.com/proggarapsody/bitbottle/compare/v1.118.0...v1.119.0) (2026-05-25)
+
+
+### Features
+
+* **workspace:** add workspace search command with query/role filters (Cloud) ([cb4e226](https://github.com/proggarapsody/bitbottle/commit/cb4e226d3a72a12b0b17f916f3e02d6b0133e40b))
+
 ## [1.118.0](https://github.com/proggarapsody/bitbottle/compare/v1.117.0...v1.118.0) (2026-05-25)
 
 
