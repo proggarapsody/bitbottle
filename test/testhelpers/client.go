@@ -387,6 +387,16 @@ type FakeClient struct {
 	ListWorkspaceRepoPermsFn   func(ws string, limit int) ([]backend.WorkspaceRepoPerm, error)
 	GrantWorkspacePermFn       func(ws, user, permission string) error
 	RevokeWorkspacePermFn      func(ws, user string) error
+
+	// PipelineSSHKeyPairClient methods (Cloud-only; satisfies backend.PipelineSSHKeyPairClient when set)
+	GetPipelineSSHKeyPairFn        func(ns, slug string) (backend.PipelineSSHKeyPair, error)
+	RegeneratePipelineSSHKeyPairFn func(ns, slug string, bits int) (backend.PipelineSSHKeyPair, error)
+
+	// PipelineKnownHostsClient methods (Cloud-only; satisfies backend.PipelineKnownHostsClient when set)
+	ListPipelineKnownHostsFn  func(ns, slug string) ([]backend.PipelineKnownHost, error)
+	GetPipelineKnownHostFn    func(ns, slug, uuid string) (backend.PipelineKnownHost, error)
+	AddPipelineKnownHostFn    func(ns, slug string, in backend.PipelineKnownHostInput) (backend.PipelineKnownHost, error)
+	DeletePipelineKnownHostFn func(ns, slug, uuid string) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -448,6 +458,8 @@ var (
 	_ backend.CommitCherryPicker       = (*FakeClient)(nil)
 	_ backend.PipelineConfigClient     = (*FakeClient)(nil)
 	_ backend.PipelineTestReportClient = (*FakeClient)(nil)
+	_ backend.PipelineSSHKeyPairClient = (*FakeClient)(nil)
+	_ backend.PipelineKnownHostsClient = (*FakeClient)(nil)
 	_ backend.RefComparer              = (*FakeClient)(nil)
 	_ backend.RepoDownloadClient       = (*FakeClient)(nil)
 	_ backend.MilestoneClient          = (*FakeClient)(nil)
@@ -2777,6 +2789,70 @@ func (c *FakeClient) RevokeWorkspacePerm(ws, user string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RevokeWorkspacePerm; set RevokeWorkspacePermFn in your test")
+	}
+	return nil
+}
+
+// ── PipelineSSHKeyPairClient ──────────────────────────────────────────────────
+
+func (c *FakeClient) GetPipelineSSHKeyPair(ns, slug string) (backend.PipelineSSHKeyPair, error) {
+	if c.GetPipelineSSHKeyPairFn != nil {
+		return c.GetPipelineSSHKeyPairFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipelineSSHKeyPair; set GetPipelineSSHKeyPairFn in your test")
+	}
+	return backend.PipelineSSHKeyPair{}, nil
+}
+
+func (c *FakeClient) RegeneratePipelineSSHKeyPair(ns, slug string, bits int) (backend.PipelineSSHKeyPair, error) {
+	if c.RegeneratePipelineSSHKeyPairFn != nil {
+		return c.RegeneratePipelineSSHKeyPairFn(ns, slug, bits)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RegeneratePipelineSSHKeyPair; set RegeneratePipelineSSHKeyPairFn in your test")
+	}
+	return backend.PipelineSSHKeyPair{}, nil
+}
+
+// ── PipelineKnownHostsClient ──────────────────────────────────────────────────
+
+func (c *FakeClient) ListPipelineKnownHosts(ns, slug string) ([]backend.PipelineKnownHost, error) {
+	if c.ListPipelineKnownHostsFn != nil {
+		return c.ListPipelineKnownHostsFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelineKnownHosts; set ListPipelineKnownHostsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetPipelineKnownHost(ns, slug, uuid string) (backend.PipelineKnownHost, error) {
+	if c.GetPipelineKnownHostFn != nil {
+		return c.GetPipelineKnownHostFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipelineKnownHost; set GetPipelineKnownHostFn in your test")
+	}
+	return backend.PipelineKnownHost{}, nil
+}
+
+func (c *FakeClient) AddPipelineKnownHost(ns, slug string, in backend.PipelineKnownHostInput) (backend.PipelineKnownHost, error) {
+	if c.AddPipelineKnownHostFn != nil {
+		return c.AddPipelineKnownHostFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddPipelineKnownHost; set AddPipelineKnownHostFn in your test")
+	}
+	return backend.PipelineKnownHost{}, nil
+}
+
+func (c *FakeClient) DeletePipelineKnownHost(ns, slug, uuid string) error {
+	if c.DeletePipelineKnownHostFn != nil {
+		return c.DeletePipelineKnownHostFn(ns, slug, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeletePipelineKnownHost; set DeletePipelineKnownHostFn in your test")
 	}
 	return nil
 }

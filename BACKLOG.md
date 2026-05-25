@@ -523,6 +523,14 @@ Current state of every command area against gh feature parity:
 | PIPE-TEST-REPORTS | **Cloud Pipeline Test Reports** | `pipeline test-report view PIPELINE_UUID --step STEP_UUID [--json]`, `pipeline test-case list PIPELINE_UUID --step STEP_UUID [--status FAILED\|PASSED\|SKIPPED] [--limit N] [--json]` — read JUnit-style test reports attached to a pipeline step (the panel shown under the "Tests" tab in the Bitbucket UI). Cloud: `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports`, `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports/test_cases` (paginated). Cloud only — Server/DC has no equivalent; returns typed `host.unsupported`. New optional interface `PipelineTestReportClient` with `GetPipelineTestReport`, `ListPipelineTestCases` (via `paging.Collect[T]`). Domain types `PipelineTestReport{Total, Passed, Failed, Skipped, DurationMS}` and `PipelineTestCase{Name, ClassName, Status, DurationMS, FailureMessage}`. MCP pair `view_pipeline_test_report`, `list_pipeline_test_cases`. Closes a real agent gap — today agents can read pipeline status but cannot triage which tests failed without `pipeline logs` scraping. — scope **PIPE-TEST-REPORTS** | Cloud | 2 | ✅ |
 | REPO-DOWNLOAD | **Cloud Repository Downloads** | `repo download list [PROJECT/REPO] [--limit N] [--json]`, `repo download upload [PROJECT/REPO] FILE [--name NAME]`, `repo download get [PROJECT/REPO] NAME [--out PATH]`, `repo download delete [PROJECT/REPO] NAME [--confirm]` — manage the legacy-but-still-supported Cloud Downloads collection (files associated with a repository, not tied to a tag). Cloud: `GET /repositories/{ws}/{slug}/downloads` (paginated), `POST /repositories/{ws}/{slug}/downloads` (multipart `files` field), `GET /repositories/{ws}/{slug}/downloads/{filename}` (binary), `DELETE /repositories/{ws}/{slug}/downloads/{filename}`. Cloud only — Server/DC has no equivalent; returns typed `host.unsupported`. New optional interface `RepoDownloadClient` with `ListRepoDownloads`, `UploadRepoDownload(ns, slug, name string, body io.Reader) error`, `DownloadRepoDownload(ns, slug, name string, out io.Writer) error`, `DeleteRepoDownload`. Domain type `RepoDownload{Name, SizeBytes, Downloads, CreatedOn, WebURL}`. MCP triplet `list_repo_downloads`, `upload_repo_download` (base64 envelope), `delete_repo_download`. Closest Bitbucket analogue to `gh release upload`/`gh release download` for Cloud users. — scope **REPO-DOWNLOAD** | Cloud | 2 | ✅ |
 | BRANCH-COMPARE | **Compare two refs (ahead/behind)** | `branch compare BASE..HEAD [PROJECT/REPO] [--json]` — show ahead/behind commit counts and the list of commits unique to each side, the way `git rev-list --left-right --count` does locally but without a clone. Cloud: `GET /repositories/{ws}/{slug}/commits/{head}?exclude={base}` (paginated for the "head ahead" side) plus a mirrored call for "base ahead". Server: `GET /rest/api/1.0/projects/{k}/repos/{s}/compare/commits?from={head}&to={base}` (single endpoint returns both sides). Both backends. New optional interface `RefComparer` with `CompareRefs(ns, slug, base, head string, limit int) (RefComparison, error)`. Domain type `RefComparison{Base, Head, AheadBy, BehindBy, CommitsAhead []Commit, CommitsBehind []Commit}`. MCP tool `compare_refs`. Complements DIFF ✅ (which shows file changes) — this is the commit-graph view, useful for release-note generation and "is this branch up to date?" checks. — scope **BRANCH-COMPARE** | Both | 2 | ✅ |
+| PIPELINE-SSH-KEY-PAIR | **Pipeline SSH Key Pair** | `pipeline ssh key-pair view [PROJECT/REPO] [--json]`, `pipeline ssh key-pair regenerate [PROJECT/REPO] [--bits 2048\|4096] [--confirm]` — view the SSH public key Bitbucket Cloud Pipelines uses to clone private dependencies, or regenerate the key pair when it's been compromised. Cloud: `GET /repositories/{ws}/{slug}/pipelines_config/ssh/key_pair`, `PUT /repositories/{ws}/{slug}/pipelines_config/ssh/key_pair` (empty body triggers regeneration). Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `PipelineSSHKeyPairClient` with `GetPipelineSSHKeyPair`, `RegeneratePipelineSSHKeyPair`. Domain type `PipelineSSHKeyPair{PublicKey, KeyTypeLabel, Created}`. Single-resource view + write-op pattern (no list/delete). MCP pair `view_pipeline_ssh_key_pair`, `regenerate_pipeline_ssh_key_pair`. Closes a real agent gap: agents setting up private dependency access need the public key to add to external services. — scope **PIPELINE-SSH-KEY-PAIR** | Cloud | 1 | 🔲 |
+| PIPELINE-KNOWN-HOSTS | **Pipeline Known SSH Hosts** | `pipeline ssh known-hosts list [PROJECT/REPO] [--json]`, `pipeline ssh known-hosts view [PROJECT/REPO] UUID [--json]`, `pipeline ssh known-hosts add [PROJECT/REPO] HOSTNAME [--key KEY] [--key-type rsa\|dsa\|ecdsa\|ed25519]`, `pipeline ssh known-hosts delete [PROJECT/REPO] UUID [--confirm]` — manage the trusted SSH host entries for Bitbucket Cloud Pipelines (prevents unknown-host prompts during `git clone` steps). Cloud: `GET/POST /repositories/{ws}/{slug}/pipelines_config/ssh/known_hosts`, `GET/DELETE /repositories/{ws}/{slug}/pipelines_config/ssh/known_hosts/{uuid}`. Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `PipelineKnownHostsClient` with `ListPipelineKnownHosts` (via `paging.Collect[T]`), `GetPipelineKnownHost`, `AddPipelineKnownHost`, `DeletePipelineKnownHost`. Domain type `PipelineKnownHost{UUID, Hostname, PublicKey}`. MCP quartet `list_pipeline_known_hosts`, `view_pipeline_known_host`, `add_pipeline_known_host`, `delete_pipeline_known_host`. Pairs with PIPELINE-SSH-KEY-PAIR — together completes the full pipeline SSH surface. — scope **PIPELINE-KNOWN-HOSTS** | Cloud | 2 | 🔲 |
+| WORKSPACE-PIPELINE-VARS | **Workspace-scoped Pipeline Variables** | `workspace pipeline-variable list [WORKSPACE] [--json]`, `workspace pipeline-variable get [WORKSPACE] KEY [--json]`, `workspace pipeline-variable set [WORKSPACE] KEY VALUE [--secured]`, `workspace pipeline-variable delete [WORKSPACE] KEY [--confirm]` — manage Bitbucket Cloud workspace-level pipeline variables (distinct from repo-level `variable --scope repository` and from deployment env vars). Cloud: `GET /workspaces/{ws}/pipelines-config/variables` (paginated), `GET/PUT/DELETE /workspaces/{ws}/pipelines-config/variables/{uuid}`, `POST /workspaces/{ws}/pipelines-config/variables`. Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `WorkspacePipelineVariableClient` with list/get/set/delete (paging.Collect for list, write-op with typed errors for set/delete, ErrConflict on duplicate key). Domain type `WorkspacePipelineVariable{UUID, Key, Value, Secured}`. MCP quartet `list_workspace_pipeline_vars`, `get_workspace_pipeline_var`, `set_workspace_pipeline_var`, `delete_workspace_pipeline_var`. Fills the last pipeline-variable scope gap (repo and deployment already ✅). — scope **WORKSPACE-PIPELINE-VARS** | Cloud | 2 | 🔲 |
+| REPO-CLONE | **Repo Clone** | `bitbottle repo clone [HOST/]PROJECT/REPO [DIR] [--ssh\|--https]` — resolve the Bitbucket clone URL via the repo API then shell out to `git clone`, and auto-inject `bitbottle.host`, `bitbottle.project`, `bitbottle.slug` into the new repo's `.git/config` so subsequent `bitbottle` commands work without `-R`. Cloud: `GET /repositories/{ws}/{slug}` (`links.clone[]`); Server: `GET /rest/api/1.0/projects/{k}/repos/{s}` (`links.clone[]`). No new backend interface — reuses existing `RepoClient.GetRepository`. Pattern: write-op (shells out to `exec.Command("git","clone",...)`, typed ErrNotFound on missing repo, ErrTransport on git failure). MCP tool `clone_repo`. `gh repo clone` equivalent. — scope **REPO-CLONE** | Both | 2 | 🔲 |
+| PR-PARTICIPANT-UPDATE | **PR Participant Role/State Update** | `bitbottle pr participant update PR_ID --user ACCOUNT_ID (--approve\|--unapprove\|--state changes_requested\|null) [PROJECT/REPO]` — update a single participant's approval state via the Cloud Participants API (distinct from the top-level `pr approve`/`pr unapprove` which operate on the authenticated user). Cloud: `PUT /repositories/{ws}/{slug}/pullrequests/{id}/participants/{account_id}`. Server: typed `host.unsupported` (Server uses comment-based approval, no participants endpoint). New optional interface `PRParticipantUpdater` with `UpdatePRParticipant(ns, slug string, prID int, accountID, state string) (PRParticipant, error)`. Pattern: single write-op with typed errors (ErrPermission, ErrNotFound). MCP tool `update_pr_participant`. Closes the Cloud reviewer-lifecycle gap: agents doing code-review automation can set reviewer states programmatically. — scope **PR-PARTICIPANT-UPDATE** | Cloud | 2 | 🔲 |
+| WORKSPACE-PROJECT-PERMS | **Cloud Workspace Project Permissions** | `workspace project perms list WORKSPACE PROJECT_KEY [--json]`, `workspace project perms grant WORKSPACE PROJECT_KEY --user SLUG\|--group SLUG PERM [read\|write\|admin\|create-repo]`, `workspace project perms revoke WORKSPACE PROJECT_KEY --user SLUG\|--group SLUG [--confirm]` — manage per-project member permissions within a Cloud workspace (distinct from workspace-level `workspace perms` ✅ which is membership, and from Cloud `project list` ✅). Cloud: `GET /workspaces/{ws}/projects/{key}/permissions/users` + `/groups` (paginated each), `PUT /workspaces/{ws}/projects/{key}/permissions/users/{user}` + `/groups/{slug}`, `DELETE` same. Server/DC → typed `host.unsupported` (Server project perms already shipped under `perms` ✅). New optional interface `WorkspaceProjectPermsClient`. Pattern: `paging.Collect[T]` for list, write-op with typed errors. MCP triplet `list_workspace_project_perms`, `grant_workspace_project_perm`, `revoke_workspace_project_perm`. Closes the Cloud project-permissions gap. — scope **WORKSPACE-PROJECT-PERMS** | Cloud | 3 | 🔲 |
+| ISSUE-ACTIVITY | **Cloud Issue Activity Log** | `bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json]` — view the full change history of a Cloud issue (state/priority/assignee/component/milestone/title transitions + comment events). Cloud: `GET /repositories/{ws}/{slug}/issues/{id}/changes` (paginated; each item has `kind`, `old_val`, `new_val`, `created_on`, `user`). Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `IssueActivityClient` with `ListIssueActivity(ns, slug string, issueID int, limit int) ([]IssueChange, error)` (via `paging.Collect[T]`). Domain type `IssueChange{ID, Kind, OldVal, NewVal, CreatedOn, User}`. MCP tools `list_issue_activity`. Completes the issue audit trail alongside `issue view` ✅ and issue comments ✅. — scope **ISSUE-ACTIVITY** | Cloud | 1 | 🔲 |
+| WORKSPACES-SEARCH | **Workspace Search with Filters** | `bitbottle workspace search [--query Q] [--role owner\|collaborator\|member] [--limit N] [--json]` — paginated workspace search with role and slug/name query filters (current `workspace list` returns all workspaces without filters). Cloud: `GET /2.0/workspaces?q=...&role=...` (paginated). Cloud only — Server/DC returns typed `host.unsupported` (Server uses projects, not workspaces). Extends existing `WorkspaceClient` with a `SearchWorkspaces(opts WorkspaceSearchOpts) ([]Workspace, error)` method (via `paging.Collect[T]`). Pattern: list via `paging.Collect[T]`. MCP tool `search_workspaces`. Fills the filter gap on the existing workspace surface. — scope **WORKSPACES-SEARCH** | Cloud | 1 | 🔲 |
 
 
 ---
@@ -3281,6 +3289,324 @@ type CreateRunnerInput struct {
 
 ---
 
+### PIPELINE-SSH-KEY-PAIR — Pipeline SSH Key Pair
+
+**Status:** 🔲
+
+Bitbucket Cloud Pipelines auto-generates an RSA key pair for each repository; the public half must be added to any external service Pipelines needs to clone from over SSH. Today users must visit the web UI (Repository settings → Pipelines → SSH keys) to copy the key. This scope exposes `view` (to get the public key) and `regenerate` (to rotate when compromised).
+
+**Interface:**
+```go
+type PipelineSSHKeyPairClient interface {
+    GetPipelineSSHKeyPair(ns, slug string) (PipelineSSHKeyPair, error)
+    RegeneratePipelineSSHKeyPair(ns, slug string, bits int) (PipelineSSHKeyPair, error)
+}
+type PipelineSSHKeyPair struct {
+    PublicKey    string
+    KeyTypeLabel string // "RSA-4096" etc.
+    Created      time.Time
+}
+```
+
+**Commands:** `pipeline ssh key-pair view [PROJECT/REPO] [--json]`, `pipeline ssh key-pair regenerate [PROJECT/REPO] [--bits 2048|4096] [--confirm]`
+
+**Backends:** Cloud (`GET/PUT /repositories/{ws}/{slug}/pipelines_config/ssh/key_pair`). Server → typed `host.unsupported`.
+
+**MCP tools:** `view_pipeline_ssh_key_pair`, `regenerate_pipeline_ssh_key_pair`
+
+**Definition of Done:**
+- [ ] `api/backend/client_pipeline_ssh.go` — `PipelineSSHKeyPairClient` interface + domain type + `FeaturePipelineSSHKey` + `AsPipelineSSHKeyPairClient`
+- [ ] `api/backend/features.go` — spec entry (Cloud: true, Server: false); count bumped
+- [ ] `api/cloud/pipeline_ssh_key.go` + `_test.go`
+- [ ] `pkg/cmd/pipeline/ssh/` — umbrella `ssh.go` + `keypair/keypair.go` (view + regenerate subcommands)
+- [ ] `pkg/cmd/pipeline/pipeline.go` — add `cmdSSH.NewCmdPipelineSSH(f)`
+- [ ] `pkg/cmd/mcp/tools_pipeline_ssh.go` + `handlers_pipeline_ssh.go` + `handlers_pipeline_ssh_test.go`
+- [ ] `test/testhelpers/client.go` — FakeClient extensions + compile assertions
+- [ ] `test/script/testdata/pipeline_ssh_key_pair.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/pipeline.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PIPELINE-KNOWN-HOSTS — Pipeline Known SSH Hosts
+
+**Status:** 🔲
+
+When Pipelines clones a private repo over SSH, it needs the remote host's public key pre-trusted; otherwise the step fails with "Host key verification failed". This scope manages the per-repo known-hosts list in the Bitbucket UI.
+
+**Interface:**
+```go
+type PipelineKnownHostsClient interface {
+    ListPipelineKnownHosts(ns, slug string) ([]PipelineKnownHost, error)
+    GetPipelineKnownHost(ns, slug, uuid string) (PipelineKnownHost, error)
+    AddPipelineKnownHost(ns, slug string, in PipelineKnownHostInput) (PipelineKnownHost, error)
+    DeletePipelineKnownHost(ns, slug, uuid string) error
+}
+type PipelineKnownHost struct {
+    UUID     string
+    Hostname string
+    PublicKey PipelineSSHPublicKey
+}
+type PipelineSSHPublicKey struct {
+    KeyType    string
+    Key        string // base64
+    MD5        string
+    SHA256     string
+}
+type PipelineKnownHostInput struct {
+    Hostname  string
+    PublicKey PipelineSSHPublicKey
+}
+```
+
+**Commands:** `pipeline ssh known-hosts list`, `pipeline ssh known-hosts view UUID`, `pipeline ssh known-hosts add HOSTNAME [--key KEY] [--key-type rsa|ecdsa|ed25519]`, `pipeline ssh known-hosts delete UUID [--confirm]`
+
+**Backends:** Cloud (`GET/POST /repositories/{ws}/{slug}/pipelines_config/ssh/known_hosts`, `GET/DELETE /.../known_hosts/{uuid}`). Server → typed `host.unsupported`.
+
+**MCP tools:** `list_pipeline_known_hosts`, `view_pipeline_known_host`, `add_pipeline_known_host`, `delete_pipeline_known_host`
+
+**Definition of Done:**
+- [ ] Extend `api/backend/client_pipeline_ssh.go` — `PipelineKnownHostsClient` interface + domain types + `FeaturePipelineKnownHosts` + helper
+- [ ] `api/backend/features.go` — spec entry; count bumped
+- [ ] `api/cloud/pipeline_known_hosts.go` + `_test.go`
+- [ ] `pkg/cmd/pipeline/ssh/known_hosts/` — list, view, add, delete
+- [ ] `pkg/cmd/pipeline/pipeline.go` — already adds `cmdSSH.NewCmdPipelineSSH(f)` (shared with PIPELINE-SSH-KEY-PAIR)
+- [ ] `pkg/cmd/mcp/tools_pipeline_known_hosts.go` + `handlers_pipeline_known_hosts.go` + `handlers_pipeline_known_hosts_test.go`
+- [ ] `test/testhelpers/client.go` — FakeClient extensions + compile assertions
+- [ ] `test/script/testdata/pipeline_known_hosts.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/pipeline.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### WORKSPACE-PIPELINE-VARS — Workspace-scoped Pipeline Variables
+
+**Status:** 🔲
+
+Cloud workspace pipeline variables are shared across all repos in the workspace and are injected into every pipeline step. Unlike repo-level pipeline variables (`variable --scope repository`) and deployment env vars, these live at the workspace level. The API uses UUIDs rather than plain keys for addressing.
+
+**Interface:**
+```go
+type WorkspacePipelineVariableClient interface {
+    ListWorkspacePipelineVariables(workspace string) ([]WorkspacePipelineVariable, error)
+    GetWorkspacePipelineVariable(workspace, uuid string) (WorkspacePipelineVariable, error)
+    SetWorkspacePipelineVariable(workspace string, in WorkspacePipelineVariableInput) (WorkspacePipelineVariable, error)
+    DeleteWorkspacePipelineVariable(workspace, uuid string) error
+}
+type WorkspacePipelineVariable struct {
+    UUID    string
+    Key     string
+    Value   string
+    Secured bool
+}
+type WorkspacePipelineVariableInput struct {
+    Key     string
+    Value   string
+    Secured bool
+    UUID    string // non-empty = update existing
+}
+```
+
+**Commands:** `workspace pipeline-variable list [WORKSPACE]`, `workspace pipeline-variable get [WORKSPACE] KEY`, `workspace pipeline-variable set [WORKSPACE] KEY VALUE [--secured]`, `workspace pipeline-variable delete [WORKSPACE] KEY [--confirm]`
+
+**Backends:** Cloud (`GET/POST /workspaces/{ws}/pipelines-config/variables`, `GET/PUT/DELETE /workspaces/{ws}/pipelines-config/variables/{uuid}`). Server → typed `host.unsupported`.
+
+**MCP tools:** `list_workspace_pipeline_vars`, `get_workspace_pipeline_var`, `set_workspace_pipeline_var`, `delete_workspace_pipeline_var`
+
+**Definition of Done:**
+- [ ] `api/backend/client_workspace_pipeline_vars.go` — interface + types + `FeatureWorkspacePipelineVars` + helper
+- [ ] `api/backend/features.go` — spec entry; count bumped
+- [ ] `api/cloud/workspace_pipeline_vars.go` + `_test.go` — `get` resolves key→uuid via list then fetches by uuid
+- [ ] `pkg/cmd/workspace/pipelinevar/` — list, get, set, delete (under `workspace pipeline-variable`)
+- [ ] `pkg/cmd/workspace/workspace.go` — add `cmdPipelineVar.NewCmdWorkspacePipelineVariable(f)`
+- [ ] `pkg/cmd/mcp/tools_workspace_pipeline_vars.go` + `handlers_workspace_pipeline_vars.go` + `_test.go`
+- [ ] `test/testhelpers/client.go` — FakeClient extensions + compile assertions
+- [ ] `test/script/testdata/workspace_pipeline_vars.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/workspace.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### REPO-CLONE — Repo Clone
+
+**Status:** 🔲
+
+The most common first action with a new repo is cloning it. Today users must visit the Bitbucket web UI to copy the clone URL. `bitbottle repo clone` resolves the URL via API and shells out to `git clone`, then auto-configures `.git/config` with `bitbottle.host`, `bitbottle.project`, `bitbottle.slug` so subsequent commands work without `-R`. Equivalent to `gh repo clone`.
+
+**Interface:** No new backend interface — reuses `RepoClient.GetRepository`. Clone URL resolution uses the `links.clone[]` array from the existing `Repository` type.
+
+**Commands:** `bitbottle repo clone [HOST/]PROJECT/REPO [DIR] [--ssh|--https]`
+
+- `--ssh` (default when SSH URLs present): uses the `ssh://` clone URL
+- `--https` (default when no SSH): uses the `https://` URL
+- `DIR` defaults to the repo slug
+
+**Backends:** Both — Cloud (`GET /repositories/{ws}/{slug}`) and Server (`GET /rest/api/1.0/projects/{k}/repos/{s}`) already return `links.clone[]`.
+
+**MCP tools:** `clone_repo`
+
+**Definition of Done:**
+- [ ] `pkg/cmd/repo/clone/clone.go` + `clone_test.go`
+- [ ] `pkg/cmd/repo/repo.go` — add `cmdClone.NewCmdClone(f, nil)`
+- [ ] `pkg/cmd/mcp/tools_repo.go` entry + `handlers_repo.go` method + `handlers_repo_test.go` test
+- [ ] `test/script/testdata/repo_clone.txtar` (mocks `git clone` via PATH override)
+- [ ] `skills/SKILL.md` + `skills/references/repos.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PR-PARTICIPANT-UPDATE — PR Participant Role/State Update
+
+**Status:** 🔲
+
+Cloud's Participants API lets any workspace member update a participant's approval state on a PR. This is distinct from `pr approve`/`pr unapprove` (which operate on the authenticated user) — it enables agents and admins to programmatically manage reviewer state, e.g., marking a reviewer as having approved after an out-of-band conversation.
+
+**Interface:**
+```go
+type PRParticipantUpdater interface {
+    UpdatePRParticipant(ns, slug string, prID int, accountID, state string) (PRParticipant, error)
+}
+// state: "approved" | "changes_requested" | "" (neutral)
+```
+
+**Commands:** `bitbottle pr participant update PR_ID --user ACCOUNT_ID (--approve|--unapprove|--request-changes) [PROJECT/REPO]`
+
+**Backends:** Cloud (`PUT /repositories/{ws}/{slug}/pullrequests/{id}/participants/{account_id}`). Server → typed `host.unsupported`.
+
+**MCP tools:** `update_pr_participant`
+
+**Definition of Done:**
+- [ ] `api/backend/client_pr_participant.go` — `PRParticipantUpdater` interface + `FeaturePRParticipantUpdate` + helper
+- [ ] `api/backend/features.go` — spec entry; count bumped
+- [ ] `api/cloud/pr_participant.go` + `_test.go`
+- [ ] `pkg/cmd/pr/participant/update/update.go` + `_test.go`; add to `pkg/cmd/pr/pr.go`
+- [ ] `pkg/cmd/mcp/tools_pr_participant.go` + `handlers_pr_participant.go` + `_test.go`
+- [ ] `test/testhelpers/client.go` — FakeClient + compile assertion
+- [ ] `test/script/testdata/pr_participant_update.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/pr.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### WORKSPACE-PROJECT-PERMS — Cloud Workspace Project Permissions
+
+**Status:** 🔲
+
+In Bitbucket Cloud, each workspace contains projects that group repositories. Project-level permissions control who can read/write/admin those repositories. These are distinct from workspace membership (`workspace perms` ✅) and from individual repo permissions.
+
+**Interface:**
+```go
+type WorkspaceProjectPermsClient interface {
+    ListWorkspaceProjectPerms(workspace, projectKey string) ([]WorkspaceProjectPerm, error)
+    GrantWorkspaceProjectPerm(workspace, projectKey string, in WorkspaceProjectPermInput) error
+    RevokeWorkspaceProjectPerm(workspace, projectKey, subjectSlug string, isGroup bool) error
+}
+type WorkspaceProjectPerm struct {
+    Permission string // read | write | admin | create-repo
+    User       *User
+    Group      *Group
+}
+type WorkspaceProjectPermInput struct {
+    Permission string
+    UserSlug   string // one of
+    GroupSlug  string // one of
+}
+```
+
+**Commands:** `workspace project perms list WORKSPACE PROJECT_KEY [--json]`, `workspace project perms grant WORKSPACE PROJECT_KEY (--user|--group) SLUG PERM`, `workspace project perms revoke WORKSPACE PROJECT_KEY (--user|--group) SLUG [--confirm]`
+
+**Backends:** Cloud (`GET /workspaces/{ws}/projects/{key}/permissions/users` + `/groups`, `PUT/DELETE /.../users/{user}` + `.../groups/{slug}`). Server → typed `host.unsupported`.
+
+**MCP tools:** `list_workspace_project_perms`, `grant_workspace_project_perm`, `revoke_workspace_project_perm`
+
+**Definition of Done:**
+- [ ] `api/backend/client_workspace_project_perms.go` — interface + types + `FeatureWorkspaceProjectPerms` + helper
+- [ ] `api/backend/features.go` — spec entry; count bumped
+- [ ] `api/cloud/workspace_project_perms.go` + `_test.go`
+- [ ] `pkg/cmd/workspace/projectperms/` — list, grant, revoke; add to `workspace project` subcommand tree
+- [ ] `pkg/cmd/mcp/tools_workspace_project_perms.go` + `handlers_workspace_project_perms.go` + `_test.go`
+- [ ] `test/testhelpers/client.go` — FakeClient + compile assertion
+- [ ] `test/script/testdata/workspace_project_perms.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/workspace.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### ISSUE-ACTIVITY — Cloud Issue Activity Log
+
+**Status:** 🔲
+
+The Cloud issue tracker records every state change as an immutable event (state/priority/assignee/component/milestone/title transitions plus comment events). Today `issue view` ✅ shows current state only. This scope exposes the full audit trail — useful for agents tracing issue lifecycle or generating changelogs.
+
+**Interface:**
+```go
+type IssueActivityClient interface {
+    ListIssueActivity(ns, slug string, issueID int, limit int) ([]IssueChange, error)
+}
+type IssueChange struct {
+    ID        int
+    Kind      string // "status" | "priority" | "assignee" | "component" | "milestone" | "title" | "content" | "comment"
+    OldVal    string
+    NewVal    string
+    CreatedOn time.Time
+    User      User
+}
+```
+
+**Commands:** `bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json]`
+
+**Backends:** Cloud (`GET /repositories/{ws}/{slug}/issues/{id}/changes`, paginated). Server → typed `host.unsupported`.
+
+**MCP tools:** `list_issue_activity`
+
+**Definition of Done:**
+- [ ] `api/backend/client_issue_activity.go` — `IssueActivityClient` interface + `IssueChange` type + `FeatureIssueActivity` + helper
+- [ ] `api/backend/features.go` — spec entry; count bumped
+- [ ] `api/cloud/issue_activity.go` + `_test.go`
+- [ ] `pkg/cmd/issue/activity/activity.go` + `_test.go`; add to `pkg/cmd/issue/issue.go`
+- [ ] `pkg/cmd/mcp/tools_issue_activity.go` + `handlers_issue_activity.go` + `_test.go`
+- [ ] `test/testhelpers/client.go` — FakeClient + compile assertion
+- [ ] `test/script/testdata/issue_activity.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/issue.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### WORKSPACES-SEARCH — Workspace Search with Filters
+
+**Status:** 🔲
+
+`workspace list` (✅) returns all workspaces the authenticated user belongs to without filter support. The Cloud API supports `?q=slug~"prefix"&role=owner|collaborator|member` on the same endpoint. This scope surfaces those filters as CLI flags, enabling scripts to find workspaces by name or role without client-side grep.
+
+**Interface:** Extends existing `WorkspaceClient` with a new `SearchWorkspaces(opts WorkspaceSearchOpts) ([]Workspace, error)` method (via `paging.Collect[T]`).
+```go
+type WorkspaceSearchOpts struct {
+    Query string // slug/name prefix match
+    Role  string // owner | collaborator | member | "" (all)
+    Limit int
+}
+```
+
+**Commands:** `bitbottle workspace search [--query Q] [--role owner|collaborator|member] [--limit N] [--json]`
+
+**Backends:** Cloud (`GET /2.0/workspaces?q=...&role=...`). Server → typed `host.unsupported`.
+
+**MCP tools:** `search_workspaces`
+
+**Definition of Done:**
+- [ ] `api/backend/client_workspace.go` — add `WorkspaceSearcher` interface (or extend `WorkspaceClient`) + `WorkspaceSearchOpts` type + `FeatureWorkspaceSearch` + helper
+- [ ] `api/backend/features.go` — spec entry; count bumped
+- [ ] `api/cloud/workspace.go` — add `SearchWorkspaces` method
+- [ ] `api/cloud/workspace_test.go` — add tests
+- [ ] `pkg/cmd/workspace/search/search.go` + `_test.go`; add to `pkg/cmd/workspace/workspace.go`
+- [ ] `pkg/cmd/mcp/tools_workspace_search.go` + `handlers_workspace_search.go` + `_test.go`
+- [ ] `test/testhelpers/client.go` — FakeClient + compile assertion
+- [ ] `test/script/testdata/workspace_search.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/workspace.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
 ## Implementation Order
 
 > **P0 testing-strategy tier added 2026-05-18 after deep analysis of cycles 90–99 (see § Testing Strategy).** Every behaviour bug shipped in that window — [#387](https://github.com/proggarapsody/bitbottle/pull/387), [#394](https://github.com/proggarapsody/bitbottle/pull/394), [#390](https://github.com/proggarapsody/bitbottle/pull/390), [#384](https://github.com/proggarapsody/bitbottle/pull/384)/[#388](https://github.com/proggarapsody/bitbottle/pull/388)/[#391](https://github.com/proggarapsody/bitbottle/pull/391), [`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a) — was a seam bug invisible to unit + adapter tiers. These four scopes close the gap. Land them before any further feature scope.
@@ -3341,3 +3667,11 @@ type CreateRunnerInput struct {
 | 49 | **PR-COMMITS** PR Commit List | Agent primitive: list commits in a PR. Both backends. Complements `pr view` and diff tools. |
 | 50 | **PR-FILES** PR Changed Files | Agent primitive: list files changed in a PR. Both backends. Enables agent code-review workflows. |
 | 51 | **REPO-WATCHER** Repository Watchers | Discovery: list who's watching a repo. Both backends. |
+| 52 | **PIPELINE-SSH-KEY-PAIR** Pipeline SSH Key Pair | CI setup: view/regenerate the Pipelines SSH key pair for private dependency access. Cloud only. |
+| 53 | **PIPELINE-KNOWN-HOSTS** Pipeline Known SSH Hosts | CI setup: manage trusted SSH hosts for Pipelines. Pairs with PIPELINE-SSH-KEY-PAIR. Cloud only. |
+| 54 | **WORKSPACE-PIPELINE-VARS** Workspace Pipeline Variables | CI automation: workspace-scoped pipeline vars. Fills the last pipeline-variable scope gap. Cloud only. |
+| 55 | **REPO-CLONE** Repo Clone | DX: `gh repo clone` equivalent — clone + auto-configure bitbottle git config. Both backends. |
+| 56 | **PR-PARTICIPANT-UPDATE** PR Participant Update | Agent automation: set reviewer approval state via Cloud API. Cloud only. |
+| 57 | **WORKSPACE-PROJECT-PERMS** Cloud Workspace Project Permissions | Access control: manage per-project member permissions in Cloud workspaces. Cloud only. |
+| 58 | **ISSUE-ACTIVITY** Cloud Issue Activity Log | Audit: view full change history for a Cloud issue. Cloud only. |
+| 59 | **WORKSPACES-SEARCH** Workspace Search with Filters | DX: paginated workspace search with role/query filters. Cloud only. |

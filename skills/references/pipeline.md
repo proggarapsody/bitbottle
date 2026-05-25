@@ -290,3 +290,69 @@ bitbottle pipeline test-case list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID 
 **Cloud** — Summary: `GET /2.0/repositories/{ws}/{slug}/pipelines/{uuid}/steps/{step_uuid}/test_reports`. Cases: `GET .../test_reports/test_cases` (paginated). UUIDs are automatically wrapped in curly braces. Duration is returned in seconds (`duration_in_seconds`) and converted to milliseconds.
 
 **Server/DC** — not supported. Returns a `host.unsupported` error.
+
+---
+
+# Pipeline SSH Configuration
+
+Manage the SSH key pair and known hosts used by Bitbucket Cloud Pipelines when connecting to external services (e.g. GitHub, private registries). This feature is **Cloud only**.
+
+## Commands
+
+```bash
+# View the current SSH key pair
+bitbottle pipeline ssh key-pair view [WORKSPACE/REPO]
+bitbottle pipeline ssh key-pair view [WORKSPACE/REPO] --json
+
+# Regenerate the SSH key pair
+bitbottle pipeline ssh key-pair regenerate [WORKSPACE/REPO] [--bits 2048|4096] [--confirm]
+
+# List known hosts
+bitbottle pipeline ssh known-hosts list [WORKSPACE/REPO]
+bitbottle pipeline ssh known-hosts list [WORKSPACE/REPO] --json
+
+# View a single known host
+bitbottle pipeline ssh known-hosts view UUID [WORKSPACE/REPO]
+
+# Add a known host
+bitbottle pipeline ssh known-hosts add HOSTNAME [WORKSPACE/REPO] [--key KEY] [--key-type RSA|ECDSA|Ed25519]
+
+# Delete a known host
+bitbottle pipeline ssh known-hosts delete UUID [WORKSPACE/REPO] [--confirm]
+```
+
+All commands support `--json`, `--jq`, `--yaml`, and `--template` where applicable.
+
+## Flags
+
+| Command | Flag | Description |
+|---|---|---|
+| all | `--hostname HOST` | Override the Bitbucket host |
+| `key-pair regenerate` | `--bits N` | Key size (2048 or 4096; default 2048) |
+| `key-pair regenerate` | `--confirm` | Confirm without TTY prompt |
+| `known-hosts add` | `--key KEY` | Base64-encoded public key material |
+| `known-hosts add` | `--key-type TYPE` | Key algorithm: RSA, ECDSA, or Ed25519 |
+| `known-hosts delete` | `--confirm` | Confirm without TTY prompt |
+
+## JSON output
+
+`key-pair view` / `key-pair regenerate` fields: `public_key` (string), `key_type` (string), `created` (RFC3339).
+
+`known-hosts list` / `view` fields: `uuid` (string), `hostname` (string), `public_key.key_type` (string), `public_key.key` (string), `public_key.md5_fingerprint` (string), `public_key.sha256_fingerprint` (string).
+
+## MCP tools
+
+| Tool | Description |
+|---|---|
+| `view_pipeline_ssh_key_pair` | View the SSH key pair. Params: `project`, `slug` (required), `hostname` |
+| `regenerate_pipeline_ssh_key_pair` | Regenerate the SSH key pair. Params: `project`, `slug` (required), `bits`, `hostname` |
+| `list_pipeline_known_hosts` | List known hosts. Params: `project`, `slug` (required), `hostname` |
+| `view_pipeline_known_host` | View a known host by UUID. Params: `project`, `slug`, `uuid` (required), `hostname` |
+| `add_pipeline_known_host` | Add a known host. Params: `project`, `slug`, `hostname_arg` (required), `key`, `key_type`, `hostname` |
+| `delete_pipeline_known_host` | Delete a known host by UUID. Params: `project`, `slug`, `uuid` (required), `hostname` |
+
+## Backend details
+
+**Cloud** — Key pair: `GET/PUT /2.0/repositories/{ws}/{slug}/pipelines_config/ssh/key_pair`. Known hosts: `GET/POST /2.0/repositories/{ws}/{slug}/pipelines_config/ssh/known_hosts` (list paginated), `GET/DELETE .../known_hosts/{uuid}`.
+
+**Server/DC** — not supported. Returns a `host.unsupported` error.

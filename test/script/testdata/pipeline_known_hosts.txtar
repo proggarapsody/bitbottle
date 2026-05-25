@@ -1,0 +1,17 @@
+# pipeline ssh known-hosts list, view, add, delete.
+bb-fake cloud
+
+bitbottle pipeline ssh known-hosts list testworkspace/cloud-repo-a -k
+stdout 'github.com'
+
+bitbottle pipeline ssh known-hosts list testworkspace/cloud-repo-a -k --json
+stdout '"hostname"'
+
+bitbottle pipeline ssh known-hosts view kh-uuid-1 testworkspace/cloud-repo-a -k
+stdout 'github.com'
+
+bitbottle pipeline ssh known-hosts add bitbucket.org testworkspace/cloud-repo-a -k --key CCCC... --key-type RSA
+stdout 'Added known host'
+
+bitbottle pipeline ssh known-hosts delete kh-uuid-1 testworkspace/cloud-repo-a -k --confirm
+stdout 'Deleted known host'
