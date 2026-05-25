@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.111.0](https://github.com/proggarapsody/bitbottle/compare/v1.110.0...v1.111.0) (2026-05-25)
+
+
+### Features
+
+* **repo/milestone:** repo downloads (Cloud) + issue milestones read (Cloud) ([bc0fc21](https://github.com/proggarapsody/bitbottle/commit/bc0fc21a4fd7a9274afd764f8e1661804ecd0ff5))
+
 ## [1.110.0](https://github.com/proggarapsody/bitbottle/compare/v1.109.0...v1.110.0) (2026-05-25)
 
 
