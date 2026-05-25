@@ -54,4 +54,3 @@ func (c *Client) compareOneSide(ns, slug, ref, exclude string, limit int) ([]bac
 		return out, nil
 	}, limit)
 }
-

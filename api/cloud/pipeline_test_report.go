@@ -12,24 +12,24 @@ import (
 // cloudPipelineTestReport is the wire representation of the Cloud test report
 // summary for a pipeline step.
 type cloudPipelineTestReport struct {
-	Status              string  `json:"status"`
-	TotalCount          int     `json:"total_count"`
-	SuccessCount        int     `json:"success_count"`
-	FailedCount         int     `json:"failed_count"`
-	ErrorCount          int     `json:"error_count"`
-	SkippedCount        int     `json:"skipped_count"`
-	DurationInSeconds   float64 `json:"duration_in_seconds"`
+	Status            string  `json:"status"`
+	TotalCount        int     `json:"total_count"`
+	SuccessCount      int     `json:"success_count"`
+	FailedCount       int     `json:"failed_count"`
+	ErrorCount        int     `json:"error_count"`
+	SkippedCount      int     `json:"skipped_count"`
+	DurationInSeconds float64 `json:"duration_in_seconds"`
 }
 
 // cloudPipelineTestCase is the wire representation of one test case.
 type cloudPipelineTestCase struct {
-	TestCaseReason string  `json:"test_case_reason"`
-	Status         string  `json:"status"`
-	Name           string  `json:"name"`
-	ClassName      string  `json:"class_name"`
+	TestCaseReason    string  `json:"test_case_reason"`
+	Status            string  `json:"status"`
+	Name              string  `json:"name"`
+	ClassName         string  `json:"class_name"`
 	DurationInSeconds float64 `json:"duration_in_seconds"`
-	ErrorDetails   string  `json:"error_details"`
-	ErrorMessage   string  `json:"error_message"`
+	ErrorDetails      string  `json:"error_details"`
+	ErrorMessage      string  `json:"error_message"`
 }
 
 func testReportPath(ws, slug, pipelineUUID, stepUUID string) string {

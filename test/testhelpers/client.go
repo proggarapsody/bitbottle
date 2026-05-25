@@ -349,8 +349,8 @@ type FakeClient struct {
 	UpdatePipelinesConfigFn func(ws, slug string, in backend.PipelineConfig) (backend.PipelineConfig, error)
 
 	// PipelineTestReportClient methods (Cloud-only)
-	GetPipelineTestReportFn  func(ws, slug, pipelineUUID, stepUUID string) (backend.PipelineTestReport, error)
-	ListPipelineTestCasesFn  func(ws, slug, pipelineUUID, stepUUID string, filter backend.TestCaseFilter) ([]backend.PipelineTestCase, error)
+	GetPipelineTestReportFn func(ws, slug, pipelineUUID, stepUUID string) (backend.PipelineTestReport, error)
+	ListPipelineTestCasesFn func(ws, slug, pipelineUUID, stepUUID string, filter backend.TestCaseFilter) ([]backend.PipelineTestCase, error)
 
 	// RefComparer methods (Cloud + Server/DC)
 	CompareRefsFn func(ns, slug, base, head string, limit int) (backend.RefComparison, error)

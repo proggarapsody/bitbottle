@@ -574,7 +574,7 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Method:     http.MethodGet,
 			PathSuffix: "/commits/main",
 			Status:     http.StatusOK,
-			Body: testhelpers.CloudPagedResponse([]any{}),
+			Body:       testhelpers.CloudPagedResponse([]any{}),
 		},
 	}
 	return newTLSServer(ts, stubs...)
