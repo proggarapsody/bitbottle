@@ -882,6 +882,28 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 				"state":    "approved",
 			},
 		},
+		// GET issue activity — used by issue activity
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/issues/1/changes",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"id":         1,
+					"kind":       "status",
+					"created_on": "2024-01-15T10:00:00+00:00",
+					"user":       map[string]any{"account_id": "abc", "display_name": "Alice", "nickname": "alice"},
+					"changes":    map[string]any{"status": map[string]any{"old": "new", "new": "open"}},
+				},
+				map[string]any{
+					"id":         2,
+					"kind":       "priority",
+					"created_on": "2024-01-16T12:00:00+00:00",
+					"user":       map[string]any{"account_id": "def", "display_name": "Bob", "nickname": "bob"},
+					"changes":    map[string]any{"priority": map[string]any{"old": "major", "new": "minor"}},
+				},
+			}),
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

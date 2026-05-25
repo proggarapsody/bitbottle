@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/issue/activity"
 )
 
 func NewCmdIssue(f *factory.Factory) *cobra.Command {
@@ -33,5 +34,6 @@ the current directory.`,
 	cmd.AddCommand(NewCmdIssueUnvote(f))
 	cmd.AddCommand(NewCmdIssueWatch(f))
 	cmd.AddCommand(NewCmdIssueUnwatch(f))
+	cmd.AddCommand(activity.NewCmdIssueActivity(f))
 	return cmd
 }

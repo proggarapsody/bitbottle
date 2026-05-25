@@ -220,3 +220,15 @@ type WorkspaceRepoPerm struct {
 	User       string `json:"user"`
 	Permission string `json:"permission"`
 }
+
+// IssueChange represents one change event in a Cloud issue's audit trail.
+// Kind is the field that changed: "status", "priority", "assignee",
+// "component", "milestone", "title", "content", or "comment".
+type IssueChange struct {
+	ID        int       `json:"id"`
+	Kind      string    `json:"kind"`
+	OldVal    string    `json:"old_val"`
+	NewVal    string    `json:"new_val"`
+	CreatedOn time.Time `json:"created_on"`
+	User      User      `json:"user"`
+}

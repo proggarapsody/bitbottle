@@ -1,0 +1,12 @@
+# issue activity shows the change history of a Cloud issue.
+bb-fake cloud
+
+bitbottle issue activity 1 testworkspace/cloud-repo-a -k
+stdout 'status'
+stdout 'new'
+stdout 'open'
+stdout 'Alice'
+
+bitbottle issue activity 1 testworkspace/cloud-repo-a -k --json
+stdout '"kind"'
+stdout '"status"'

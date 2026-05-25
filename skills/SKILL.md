@@ -27,7 +27,7 @@ disagrees with this doc; the binary wins.
 | Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list, SSH key pair, known hosts (Cloud only) | `references/pipeline.md` |
 | Pipeline runners — list / create / delete (Cloud only) | `references/runner.md` |
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
-| Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch (Cloud only) | `references/issues.md` |
+| Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch, activity/change log (Cloud only) | `references/issues.md` |
 | Issue milestones list/view (Cloud only) | `references/milestone.md` |
 | Issue versions list/view/create/delete (Cloud only) | `references/version.md` |
 | snippet list/view/create/delete (snippet snippet group, Cloud only) | `references/snippet.md` |
@@ -105,7 +105,7 @@ on the host entry in `hosts.yml` (see `references/auth.md`).
 | Auth context flag | `--email you@…` | `--username your.user` |
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
-| Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable/config/test-report/test-case), `runner list`, `runner create`, `runner delete`, `issue *` (including `issue attachment list/delete`, `issue vote/unvote`, `issue watch/unwatch`), `snippet list [--workspace W]`, `snippet view`, `snippet create`, `snippet delete`, `pr request-changes`, `pr comment resolve`, `branch-rule *`, `branch-model *`, `workspace *` (including `workspace perms *`), `search`, `project list WORKSPACE` | — |
+| Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable/config/test-report/test-case), `runner list`, `runner create`, `runner delete`, `issue *` (including `issue attachment list/delete`, `issue vote/unvote`, `issue watch/unwatch`, `issue activity`), `snippet list [--workspace W]`, `snippet view`, `snippet create`, `snippet delete`, `pr request-changes`, `pr comment resolve`, `branch-rule *`, `branch-model *`, `workspace *` (including `workspace perms *`), `search`, `project list WORKSPACE` | — |
 | Server-only | — | `admin user list/activate/deactivate/rename`, `admin license`, `admin cluster`, `admin secrets rotate`, `admin logging get/set`, `code-insights *`, `pr task *`, `pr suggestion apply`, `pr/commit comment react/unreact`, `pr reviewer-group *`, `repo pr-settings get`, `repo pr-settings set`, `group list`, `group create`, `group delete`, `group member list`, `group member add`, `group member remove`, `mirror list`, `mirror view`, `mirror repo list`, `project server-list`, `project create`, `project view`, `project edit`, `project delete`, `auth pat list`, `auth pat create`, `auth pat revoke`, `commit cherry-pick HASH BRANCH` |
 
 For custom-hostname Bitbucket Data Center, force routing with
