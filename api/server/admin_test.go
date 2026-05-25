@@ -261,7 +261,7 @@ func TestServerClient_SetMailServerConfig_OK(t *testing.T) {
 		UseStartTLS:   true,
 		Username:      "mailer",
 		SenderAddress: "no-reply@example.com",
-		Password:      "s3cr3t",
+		Password:      "test-mail-pass",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "/admin/mail-server", gotPath)
@@ -269,7 +269,7 @@ func TestServerClient_SetMailServerConfig_OK(t *testing.T) {
 	assert.Contains(t, gotBody, `"port":25`)
 	assert.Contains(t, gotBody, `"protocol":"smtp"`)
 	assert.Contains(t, gotBody, `"use-start-tls":true`)
-	assert.Contains(t, gotBody, `"password":"s3cr3t"`)
+	assert.Contains(t, gotBody, `"password":"test-mail-pass"`)
 }
 
 func TestServerClient_SetMailServerConfig_403_ReturnsDomainError(t *testing.T) {
