@@ -1,5 +1,7 @@
 package backend
 
+import "time"
+
 // Options overrides the stored config when constructing a backend client.
 // Used by auth login to validate a new token before it is persisted.
 type Options struct {
@@ -141,4 +143,19 @@ func ToServerMergeStrategy(s string) string {
 	default:
 		return "merge-commit"
 	}
+}
+
+// RepoDownload is the domain representation of a Bitbucket Cloud repository
+// download artifact.
+type RepoDownload struct {
+	Name      string    `json:"name"`
+	Size      int64     `json:"size"`
+	Downloads int       `json:"downloads"`
+	CreatedOn time.Time `json:"created_on"`
+}
+
+// Milestone is the domain representation of a Bitbucket Cloud issue milestone.
+type Milestone struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }

@@ -1,0 +1,12 @@
+# repo download list shows files; delete removes one.
+bb-fake cloud
+
+bitbottle repo download list testworkspace/cloud-repo-a -k
+stdout 'release.zip'
+stdout 'data.tar.gz'
+
+bitbottle repo download list testworkspace/cloud-repo-a -k --json
+stdout '"name"'
+
+bitbottle repo download delete testworkspace/cloud-repo-a release.zip -k --confirm
+stdout 'Deleted'

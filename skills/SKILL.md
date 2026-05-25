@@ -22,12 +22,13 @@ disagrees with this doc; the binary wins.
 |---|---|
 | Auth, hosts.yml, env vars, multi-host, `auth migrate`, `auth doctor` | `references/auth.md` |
 | PR lifecycle (list/view/create/merge/approve/comment/activity/review/commits/files/participants/ready/unready/task/suggestion/comment-react/default-reviewer/reviewer-group/…) | `references/pr.md` |
-| Repos, branches, tags, file/tree, visibility, edit, transfer, watcher, repo label list/create/update/delete, repo pr-settings get, repo pr-settings set | `references/repos.md` |
+| Repos, branches, tags, file/tree, visibility, edit, transfer, watcher, repo label list/create/update/delete, repo pr-settings get, repo pr-settings set, repo download list/upload/get/delete | `references/repos.md` |
 | Commits (view/files/status/comment/comment-react) | `references/commit.md` |
 | Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list (Cloud only) | `references/pipeline.md` |
 | Pipeline runners — list / create / delete (Cloud only) | `references/runner.md` |
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
 | Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch (Cloud only) | `references/issues.md` |
+| Issue milestones list/view (Cloud only) | `references/milestone.md` |
 | snippet list/view/create/delete (snippet snippet group, Cloud only) | `references/snippet.md` |
 | Deployments + environments + variables (Cloud only) | `references/deployment.md`, `references/variable.md` |
 | Deploy keys (both), branch-rules (Cloud only), ssh-keys (Cloud + Server/DC) | `references/deploy-key.md`, `references/branch-rule.md`, `references/ssh-key.md` |

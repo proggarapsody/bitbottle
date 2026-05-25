@@ -82,7 +82,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 |---|---|
 | `auth` | `login` `logout` `status` `token` `refresh` `doctor` |
 | `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `unready` `request-review` `comment` `default-reviewer {list\|add\|remove}` |
-| `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` `watcher list` |
+| `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` `watcher list` `download {list\|upload\|get\|delete}` _(Cloud only)_ |
 | `branch` | `list` `create` `delete` `checkout` `compare` |
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
@@ -98,6 +98,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `workspace` | `list` `member list` `hook list` `hook create` `hook delete` _(Cloud only)_ |
 | `project` | `list WORKSPACE` _(Cloud only)_ · `server-list` `create` `view` `edit` `delete` _(Server/DC only)_ |
 | `issue` | `list` `view` `create` `close` `edit` `reopen` `assign` `comment {list\|add\|edit\|delete}` _(Cloud only)_ |
+| `milestone` | `list` `view` _(Cloud only)_ |
 | `search` | `code QUERY` _(Cloud only)_ |
 | `api` | Raw REST passthrough with pagination, `--jq`, variable expansion |
 | `alias` | Custom command shortcuts |
