@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.102.0](https://github.com/proggarapsody/bitbottle/compare/v1.101.0...v1.102.0) (2026-05-25)
+
+
+### Features
+
+* **repo,admin:** add repo file put and admin mail server config commands ([2d0ee64](https://github.com/proggarapsody/bitbottle/commit/2d0ee64c7b0d97532ea35b464d28e88846827ee6))
+
 ## [1.101.0](https://github.com/proggarapsody/bitbottle/compare/v1.100.0...v1.101.0) (2026-05-25)
 
 
