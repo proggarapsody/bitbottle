@@ -50,3 +50,16 @@ bitbottle issue unwatch [PROJECT/REPO] ISSUE_ID
 
 MCP tools: `list_issue_attachments`, `delete_issue_attachment`, `vote_issue`,
 `unvote_issue`, `watch_issue`, `unwatch_issue`.
+
+## Activity / change log (Cloud only)
+
+Show the full audit trail of changes on an issue (state, priority, assignee, title, etc.).
+
+```bash
+bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json] [--jq EXPR]
+```
+
+Each row shows: change ID, kind (status/priority/assignee/…), old value → new value,
+date, and the user who made the change.
+
+MCP tool: `list_issue_activity` — requires `issue_id`, `workspace`, `repo_slug`; optional `hostname` and `limit`.

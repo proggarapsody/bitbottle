@@ -347,6 +347,9 @@ type FakeClient struct {
 	WatchIssueFn   func(ns, slug string, id int) error
 	UnwatchIssueFn func(ns, slug string, id int) error
 
+	// IssueActivityClient methods (Cloud-only; satisfies backend.IssueActivityClient when set)
+	ListIssueActivityFn func(ns, slug string, issueID int, limit int) ([]backend.IssueChange, error)
+
 	// RepoLabelClient methods (both backends; satisfies backend.RepoLabelClient when set)
 	ListRepoLabelsFn  func(ns, slug string) ([]backend.RepoLabel, error)
 	CreateRepoLabelFn func(ns, slug string, in backend.CreateRepoLabelInput) (backend.RepoLabel, error)
@@ -478,6 +481,7 @@ var (
 	_ backend.CloudProjectClient              = (*FakeClient)(nil)
 	_ backend.MirrorClient                    = (*FakeClient)(nil)
 	_ backend.WorkspacePermsClient            = (*FakeClient)(nil)
+	_ backend.IssueActivityClient             = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2398,6 +2402,18 @@ func (c *FakeClient) UnwatchIssue(ns, slug string, id int) error {
 		c.T.Fatalf("unexpected call to FakeClient.UnwatchIssue; set UnwatchIssueFn in your test")
 	}
 	return nil
+}
+
+// ── IssueActivityClient ───────────────────────────────────────────────────────
+
+func (c *FakeClient) ListIssueActivity(ns, slug string, issueID int, limit int) ([]backend.IssueChange, error) {
+	if c.ListIssueActivityFn != nil {
+		return c.ListIssueActivityFn(ns, slug, issueID, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListIssueActivity; set ListIssueActivityFn in your test")
+	}
+	return nil, nil
 }
 
 // ── RepoLabelClient ───────────────────────────────────────────────────────────

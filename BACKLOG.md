@@ -529,7 +529,7 @@ Current state of every command area against gh feature parity:
 | REPO-CLONE | **Repo Clone** | `bitbottle repo clone [HOST/]PROJECT/REPO [DIR] [--ssh\|--https]` — resolve the Bitbucket clone URL via the repo API then shell out to `git clone`, and auto-inject `bitbottle.host`, `bitbottle.project`, `bitbottle.slug` into the new repo's `.git/config` so subsequent `bitbottle` commands work without `-R`. Cloud: `GET /repositories/{ws}/{slug}` (`links.clone[]`); Server: `GET /rest/api/1.0/projects/{k}/repos/{s}` (`links.clone[]`). No new backend interface — reuses existing `RepoClient.GetRepository`. Pattern: write-op (shells out to `exec.Command("git","clone",...)`, typed ErrNotFound on missing repo, ErrTransport on git failure). MCP tool `clone_repo`. `gh repo clone` equivalent. — scope **REPO-CLONE** | Both | 2 | ✅ |
 | PR-PARTICIPANT-UPDATE | **PR Participant Role/State Update** | `bitbottle pr participant update PR_ID --user ACCOUNT_ID (--approve\|--unapprove\|--state changes_requested\|null) [PROJECT/REPO]` — update a single participant's approval state via the Cloud Participants API (distinct from the top-level `pr approve`/`pr unapprove` which operate on the authenticated user). Cloud: `PUT /repositories/{ws}/{slug}/pullrequests/{id}/participants/{account_id}`. Server: typed `host.unsupported` (Server uses comment-based approval, no participants endpoint). New optional interface `PRParticipantUpdater` with `UpdatePRParticipant(ns, slug string, prID int, accountID, state string) (PRParticipant, error)`. Pattern: single write-op with typed errors (ErrPermission, ErrNotFound). MCP tool `update_pr_participant`. Closes the Cloud reviewer-lifecycle gap: agents doing code-review automation can set reviewer states programmatically. — scope **PR-PARTICIPANT-UPDATE** | Cloud | 2 | ✅ |
 | WORKSPACE-PROJECT-PERMS | **Cloud Workspace Project Permissions** | `workspace project perms list WORKSPACE PROJECT_KEY [--json]`, `workspace project perms grant WORKSPACE PROJECT_KEY --user SLUG\|--group SLUG PERM [read\|write\|admin\|create-repo]`, `workspace project perms revoke WORKSPACE PROJECT_KEY --user SLUG\|--group SLUG [--confirm]` — manage per-project member permissions within a Cloud workspace (distinct from workspace-level `workspace perms` ✅ which is membership, and from Cloud `project list` ✅). Cloud: `GET /workspaces/{ws}/projects/{key}/permissions/users` + `/groups` (paginated each), `PUT /workspaces/{ws}/projects/{key}/permissions/users/{user}` + `/groups/{slug}`, `DELETE` same. Server/DC → typed `host.unsupported` (Server project perms already shipped under `perms` ✅). New optional interface `WorkspaceProjectPermsClient`. Pattern: `paging.Collect[T]` for list, write-op with typed errors. MCP triplet `list_workspace_project_perms`, `grant_workspace_project_perm`, `revoke_workspace_project_perm`. Closes the Cloud project-permissions gap. — scope **WORKSPACE-PROJECT-PERMS** | Cloud | 3 | 🔲 |
-| ISSUE-ACTIVITY | **Cloud Issue Activity Log** | `bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json]` — view the full change history of a Cloud issue (state/priority/assignee/component/milestone/title transitions + comment events). Cloud: `GET /repositories/{ws}/{slug}/issues/{id}/changes` (paginated; each item has `kind`, `old_val`, `new_val`, `created_on`, `user`). Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `IssueActivityClient` with `ListIssueActivity(ns, slug string, issueID int, limit int) ([]IssueChange, error)` (via `paging.Collect[T]`). Domain type `IssueChange{ID, Kind, OldVal, NewVal, CreatedOn, User}`. MCP tools `list_issue_activity`. Completes the issue audit trail alongside `issue view` ✅ and issue comments ✅. — scope **ISSUE-ACTIVITY** | Cloud | 1 | 🔲 |
+| ISSUE-ACTIVITY | **Cloud Issue Activity Log** | `bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json]` — view the full change history of a Cloud issue (state/priority/assignee/component/milestone/title transitions + comment events). Cloud: `GET /repositories/{ws}/{slug}/issues/{id}/changes` (paginated; each item has `kind`, `old_val`, `new_val`, `created_on`, `user`). Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `IssueActivityClient` with `ListIssueActivity(ns, slug string, issueID int, limit int) ([]IssueChange, error)` (via `paging.Collect[T]`). Domain type `IssueChange{ID, Kind, OldVal, NewVal, CreatedOn, User}`. MCP tools `list_issue_activity`. Completes the issue audit trail alongside `issue view` ✅ and issue comments ✅. — scope **ISSUE-ACTIVITY** | Cloud | 1 | ✅ |
 | WORKSPACES-SEARCH | **Workspace Search with Filters** | `bitbottle workspace search [--query Q] [--role owner\|collaborator\|member] [--limit N] [--json]` — paginated workspace search with role and slug/name query filters (current `workspace list` returns all workspaces without filters). Cloud: `GET /2.0/workspaces?q=...&role=...` (paginated). Cloud only — Server/DC returns typed `host.unsupported` (Server uses projects, not workspaces). Extends existing `WorkspaceClient` with a `SearchWorkspaces(opts WorkspaceSearchOpts) ([]Workspace, error)` method (via `paging.Collect[T]`). Pattern: list via `paging.Collect[T]`. MCP tool `search_workspaces`. Fills the filter gap on the existing workspace surface. — scope **WORKSPACES-SEARCH** | Cloud | 1 | 🔲 |
 
 
@@ -3534,7 +3534,7 @@ type WorkspaceProjectPermInput struct {
 
 ### ISSUE-ACTIVITY — Cloud Issue Activity Log
 
-**Status:** 🔲
+**Status:** ✅
 
 The Cloud issue tracker records every state change as an immutable event (state/priority/assignee/component/milestone/title transitions plus comment events). Today `issue view` ✅ shows current state only. This scope exposes the full audit trail — useful for agents tracing issue lifecycle or generating changelogs.
 
@@ -3560,15 +3560,15 @@ type IssueChange struct {
 **MCP tools:** `list_issue_activity`
 
 **Definition of Done:**
-- [ ] `api/backend/client_issue_activity.go` — `IssueActivityClient` interface + `IssueChange` type + `FeatureIssueActivity` + helper
-- [ ] `api/backend/features.go` — spec entry; count bumped
-- [ ] `api/cloud/issue_activity.go` + `_test.go`
-- [ ] `pkg/cmd/issue/activity/activity.go` + `_test.go`; add to `pkg/cmd/issue/issue.go`
-- [ ] `pkg/cmd/mcp/tools_issue_activity.go` + `handlers_issue_activity.go` + `_test.go`
-- [ ] `test/testhelpers/client.go` — FakeClient + compile assertion
-- [ ] `test/script/testdata/issue_activity.txtar`
-- [ ] `skills/SKILL.md` + `skills/references/issue.md` updated
-- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+- [x] `api/backend/client_issue_activity.go` — `IssueActivityClient` interface + `IssueChange` type + `FeatureIssueActivity` + helper
+- [x] `api/backend/features.go` — spec entry; count bumped
+- [x] `api/cloud/issue_activity.go` + `_test.go`
+- [x] `pkg/cmd/issue/activity/activity.go` + `_test.go`; add to `pkg/cmd/issue/issue.go`
+- [x] `pkg/cmd/mcp/tools_issue_activity.go` + `handlers_issue_activity.go` + `_test.go`
+- [x] `test/testhelpers/client.go` — FakeClient + compile assertion
+- [x] `test/script/testdata/issue_activity.txtar`
+- [x] `skills/SKILL.md` + `skills/references/issue.md` updated
+- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---
 
