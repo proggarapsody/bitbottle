@@ -49,6 +49,9 @@ func (f *fakePipelineClient) SetPipelineVariable(ns, slug string, in backend.Pip
 	return f.setFn(ns, slug, in)
 }
 func (f *fakePipelineClient) StopPipeline(string, string, string) error { return nil }
+func (f *fakePipelineClient) RerunPipeline(string, string, string) (backend.Pipeline, error) {
+	return backend.Pipeline{}, nil
+}
 func (f *fakePipelineClient) DeletePipelineVariable(ns, slug, key string) error {
 	return f.deleteFn(ns, slug, key)
 }
