@@ -310,6 +310,40 @@ func (t *Transport) PutJSON(path string, body, v any) error {
 	return t.sendJSON(http.MethodPut, path, body, v)
 }
 
+// PostRaw sends a POST request with the raw body and the given contentType
+// (e.g. "multipart/form-data; boundary=..."). No JSON encoding or decoding
+// is performed. Used for endpoints that accept multipart uploads.
+func (t *Transport) PostRaw(path string, body io.Reader, contentType string) error {
+	return t.sendRaw(http.MethodPost, path, body, contentType)
+}
+
+// PutRaw sends a PUT request with the raw body and the given contentType.
+// No JSON encoding or decoding is performed.
+func (t *Transport) PutRaw(path string, body io.Reader, contentType string) error {
+	return t.sendRaw(http.MethodPut, path, body, contentType)
+}
+
+func (t *Transport) sendRaw(method, path string, body io.Reader, contentType string) error {
+	ctx := context.Background()
+	if t.defaultRetryPolicy != nil {
+		ctx = WithRetry(ctx, *t.defaultRetryPolicy)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, t.baseURL+path, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", contentType)
+	resp, err := t.do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode >= http.StatusBadRequest {
+		return t.apiError(resp)
+	}
+	return nil
+}
+
 // DeleteJSON sends a DELETE request with an optional JSON body (body may be nil).
 func (t *Transport) DeleteJSON(path string, body any) error {
 	return t.sendJSON(http.MethodDelete, path, body, nil)

@@ -210,6 +210,82 @@ func TestServerClient_GetLicense_OK(t *testing.T) {
 	assert.Equal(t, "2026-01-01", lic.SupportExpiry)
 }
 
+// ── GetMailServerConfig ───────────────────────────────────────────────────────
+
+func TestServerClient_GetMailServerConfig_OK(t *testing.T) {
+	t.Parallel()
+	const responseJSON = `{
+		"hostname": "smtp.example.com",
+		"port": 465,
+		"protocol": "smtps",
+		"use-start-tls": false,
+		"require-start-tls": false,
+		"username": "mailer",
+		"senderAddress": "no-reply@example.com"
+	}`
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/admin/mail-server", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(responseJSON))
+	})
+	cfg, err := c.GetMailServerConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "smtp.example.com", cfg.Hostname)
+	assert.Equal(t, 465, cfg.Port)
+	assert.Equal(t, "smtps", cfg.Protocol)
+	assert.False(t, cfg.UseStartTLS)
+	assert.False(t, cfg.RequireStartTLS)
+	assert.Equal(t, "mailer", cfg.Username)
+	assert.Equal(t, "no-reply@example.com", cfg.SenderAddress)
+	// Password is never returned by GET — field must be zero value.
+	assert.Equal(t, "", cfg.Password)
+}
+
+// ── SetMailServerConfig ───────────────────────────────────────────────────────
+
+func TestServerClient_SetMailServerConfig_OK(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotBody string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPut, r.Method)
+		gotPath = r.URL.Path
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.WriteHeader(http.StatusOK)
+	})
+	err := c.SetMailServerConfig(backend.MailServerConfig{
+		Hostname:      "smtp.example.com",
+		Port:          25,
+		Protocol:      "smtp",
+		UseStartTLS:   true,
+		Username:      "mailer",
+		SenderAddress: "no-reply@example.com",
+		Password:      "s3cr3t",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "/admin/mail-server", gotPath)
+	assert.Contains(t, gotBody, `"hostname":"smtp.example.com"`)
+	assert.Contains(t, gotBody, `"port":25`)
+	assert.Contains(t, gotBody, `"protocol":"smtp"`)
+	assert.Contains(t, gotBody, `"use-start-tls":true`)
+	assert.Contains(t, gotBody, `"password":"s3cr3t"`)
+}
+
+func TestServerClient_SetMailServerConfig_403_ReturnsDomainError(t *testing.T) {
+	t.Parallel()
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
+	err := c.SetMailServerConfig(backend.MailServerConfig{
+		Hostname: "smtp.example.com",
+	})
+	require.Error(t, err)
+	var de *backend.DomainError
+	require.ErrorAs(t, err, &de)
+	assert.Equal(t, backend.ErrPermission, de.Kind)
+}
+
 // ── GetClusterNodes ───────────────────────────────────────────────────────────
 
 func TestServerClient_GetClusterNodes_OK(t *testing.T) {

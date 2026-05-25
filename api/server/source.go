@@ -48,6 +48,22 @@ func rawPath(ns, slug, ref, pathInRepo string) string {
 		strings.Join(segments, "/"), url.QueryEscape(ref))
 }
 
+// browseWritePath builds /projects/{key}/repos/{slug}/browse/{path} without
+// any query string — used for PUT (file-write) requests where the branch is
+// passed in the multipart body rather than a query param.
+func browseWritePath(ns, slug, pathInRepo string) string {
+	prefix := fmt.Sprintf("/projects/%s/repos/%s/browse",
+		url.PathEscape(ns), url.PathEscape(slug))
+	if pathInRepo == "" {
+		return prefix
+	}
+	segments := strings.Split(pathInRepo, "/")
+	for i, s := range segments {
+		segments[i] = url.PathEscape(s)
+	}
+	return prefix + "/" + strings.Join(segments, "/")
+}
+
 // browsePath builds /projects/{key}/repos/{slug}/browse/{path}?at={ref}.
 // pathInRepo "" lists the repo root (no path segments).
 func browsePath(ns, slug, ref, pathInRepo string) string {

@@ -159,6 +159,56 @@ func (h *handlers) getClusterNodes(_ context.Context, req mcplib.CallToolRequest
 	return jsonResult(nodes)
 }
 
+// ── get_mail_server_config ────────────────────────────────────────────────────
+
+func (h *handlers) getMailServerConfig(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	cfg, err := ac.GetMailServerConfig()
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	// Return the domain struct directly — Password has json:"-" so it is
+	// excluded from the JSON output automatically.
+	return jsonResult(cfg)
+}
+
+// ── set_mail_server_config ────────────────────────────────────────────────────
+
+func (h *handlers) setMailServerConfig(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	mailHostname, err := requireString(req, "mail_hostname")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	port := req.GetInt("port", 25)
+	protocol := req.GetString("protocol", "smtp")
+	useStartTLS := req.GetBool("use_starttls", false)
+	requireStartTLS := req.GetBool("require_starttls", false)
+	username := req.GetString("username", "")
+	senderAddress := req.GetString("sender_address", "")
+	password := req.GetString("password", "")
+
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := ac.SetMailServerConfig(backend.MailServerConfig{
+		Hostname:        mailHostname,
+		Port:            port,
+		Protocol:        protocol,
+		UseStartTLS:     useStartTLS,
+		RequireStartTLS: requireStartTLS,
+		Username:        username,
+		SenderAddress:   senderAddress,
+		Password:        password,
+	}); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]string{"status": "updated", "mail_hostname": mailHostname})
+}
+
 // ── set_logging_config ────────────────────────────────────────────────────────
 
 func (h *handlers) setLoggingConfig(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
