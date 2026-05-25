@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.114.0](https://github.com/proggarapsody/bitbottle/compare/v1.113.0...v1.114.0) (2026-05-25)
+
+
+### Features
+
+* **pipeline/ssh:** pipeline SSH key pair + known hosts management (Cloud) ([d7e1703](https://github.com/proggarapsody/bitbottle/commit/d7e1703490d8530f284d770920665e667a76b96c))
+
+
+### Bug Fixes
+
+* **pipeline/ssh:** flip BACKLOG rows ✅; strip dead KeyPair sub-struct from regen body ([9cf419c](https://github.com/proggarapsody/bitbottle/commit/9cf419c1519b6eddade22a16e8b72d3034663c3a))
+
 ## [1.113.0](https://github.com/proggarapsody/bitbottle/compare/v1.112.0...v1.113.0) (2026-05-25)
 
 
