@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.107.0](https://github.com/proggarapsody/bitbottle/compare/v1.106.0...v1.107.0) (2026-05-25)
+
+
+### Features
+
+* **repo:** add repo pr-settings get/set commands (Cloud + Server/DC) ([2bacf9d](https://github.com/proggarapsody/bitbottle/commit/2bacf9d25388e9bf2cb37a70201f0fc388c0ab8f))
+
 ## [1.106.0](https://github.com/proggarapsody/bitbottle/compare/v1.105.0...v1.106.0) (2026-05-25)
 
 
