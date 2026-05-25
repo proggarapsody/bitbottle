@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.110.0](https://github.com/proggarapsody/bitbottle/compare/v1.109.0...v1.110.0) (2026-05-25)
+
+
+### Features
+
+* **pipeline/branch:** pipeline test-report view/list (Cloud) + branch compare (Cloud+Server) ([17bb93d](https://github.com/proggarapsody/bitbottle/commit/17bb93d636c791413f8df73d7f6b94396f7234d3))
+
 ## [1.109.0](https://github.com/proggarapsody/bitbottle/compare/v1.108.0...v1.109.0) (2026-05-25)
 
 
