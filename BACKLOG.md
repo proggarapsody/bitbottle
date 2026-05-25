@@ -2976,7 +2976,7 @@ type Group struct {
 
 ### PR-SETTINGS — Per-Repo PR Settings
 
-**Status:** 🔲
+**Status:** ✅
 
 Bitbucket exposes per-repo pull-request configuration that's distinct from branch protections and from the branching model: required number of approvers, "all approvers must approve", "all tasks must be resolved", required green builds, and which merge strategies are allowed. Today these can only be set in the web UI (Server) or by hand-rolling a `PUT /repositories/{ws}/{slug}` payload (Cloud). This scope ships the read/write CLI surface that completes the trio: BRANCH-RULE (Cloud ref restrictions ✅), BRANCH-PROTECT (Server ref restrictions ✅), PR-SETTINGS (PR merge gate, both backends).
 
@@ -3015,14 +3015,14 @@ type RepoPRSettingsInput struct {
 **MCP tools:** `get_repo_pr_settings`, `set_repo_pr_settings`
 
 **Definition of Done:**
-- [ ] `api/backend/client_repo_pr_settings.go` — interface + `RepoPRSettings` + `RepoPRSettingsInput`
-- [ ] `api/cloud/repo_pr_settings.go` + `api/cloud/repo_pr_settings_test.go` (subset support + typed errors on Cloud-unsupported fields)
-- [ ] `api/server/repo_pr_settings.go` + `api/server/repo_pr_settings_test.go`
-- [ ] `pkg/cmd/repo/pr-settings/` (get, set) + tests
-- [ ] MCP pair (`tools.go` + `handlers.go` + `handlers_test.go`)
-- [ ] `test/script/testdata/repo_pr_settings_*.txtar` for both backends
-- [ ] `skills/SKILL.md` + `skills/references/repo.md`
-- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+- [x] `api/backend/client_repo_pr_settings.go` — interface + `RepoPRSettings` + `RepoPRSettingsInput`
+- [x] `api/cloud/repo_pr_settings.go` + `api/cloud/repo_pr_settings_test.go` (subset support + typed errors on Cloud-unsupported fields)
+- [x] `api/server/repo_pr_settings.go` + `api/server/repo_pr_settings_test.go`
+- [x] `pkg/cmd/repo/pr-settings/` (get, set) + tests
+- [x] MCP pair (`tools.go` + `handlers.go` + `handlers_test.go`)
+- [x] `test/script/testdata/repo_pr_settings_*.txtar` for both backends
+- [x] `skills/SKILL.md` + `skills/references/repos.md`
+- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---
 
