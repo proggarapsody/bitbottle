@@ -7,8 +7,11 @@ package admin
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/cluster"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/license"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/logging"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/secrets"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/user"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmdregistry"
 )
@@ -29,5 +32,8 @@ include it; these commands must be performed by a system administrator.`,
 	}
 	cmd.AddCommand(secrets.NewCmdSecrets(f))
 	cmd.AddCommand(logging.NewCmdLogging(f))
+	cmd.AddCommand(user.NewCmdUser(f))
+	cmd.AddCommand(license.NewCmdLicense(f, nil))
+	cmd.AddCommand(cluster.NewCmdCluster(f, nil))
 	return cmd
 }

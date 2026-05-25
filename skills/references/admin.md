@@ -62,6 +62,84 @@ With `--persistent` the change survives restarts (writes `log4j.properties`).
 
 ---
 
+---
+
+## admin user list
+
+List users on the Bitbucket Server / DC instance.
+
+```
+bitbottle admin user list [--filter QUERY] [--limit N] [--json] [--hostname HOST]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--filter` | Filter users by name or email prefix |
+| `--limit` | Maximum number of users (default 50) |
+| `--json` | Output as JSON array |
+
+Default output columns: SLUG, DISPLAY_NAME, EMAIL, ACTIVE, TYPE.
+
+---
+
+## admin user activate
+
+Activate a user account.
+
+```
+bitbottle admin user activate SLUG [--hostname HOST]
+```
+
+---
+
+## admin user deactivate
+
+Deactivate a user account.
+
+```
+bitbottle admin user deactivate SLUG [--hostname HOST]
+```
+
+---
+
+## admin user rename
+
+Rename a user (change their username / slug).
+
+```
+bitbottle admin user rename OLD_SLUG NEW_SLUG [--hostname HOST]
+```
+
+---
+
+## admin license
+
+Show license details for the instance.
+
+```
+bitbottle admin license [--json] [--hostname HOST]
+```
+
+Default output columns: TIER, USERS, SERVER_ID, EXPIRY, SUPPORT_EXPIRY.
+
+`--json` outputs the full license struct.
+
+---
+
+## admin cluster
+
+Show cluster node information.
+
+```
+bitbottle admin cluster [--json] [--hostname HOST]
+```
+
+Default output columns: NODE_ID, NAME, ADDRESS, STATE, LOCAL.
+
+`--json` outputs the full node list.
+
+---
+
 ## MCP tools
 
 | Tool | Description |
@@ -69,3 +147,9 @@ With `--persistent` the change survives restarts (writes `log4j.properties`).
 | `rotate_secrets` | Rotate cluster HTTPS secret |
 | `get_logging_config` | Get log level and async setting |
 | `set_logging_config` | Set log level (`level`), async flag (`async`), persistence (`persistent`) |
+| `list_admin_users` | List users (`filter`, `limit`) |
+| `activate_user` | Activate a user (`slug`) |
+| `deactivate_user` | Deactivate a user (`slug`) |
+| `rename_user` | Rename a user (`slug`, `new_slug`) |
+| `get_admin_license` | Get instance license details |
+| `get_cluster_nodes` | Get cluster node list |

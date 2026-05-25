@@ -135,6 +135,151 @@ func TestMCP_SetLoggingConfig_InvalidLevel_ReturnsError(t *testing.T) {
 	assertErrorResult(t, result, "case-sensitive")
 }
 
+// ── list_admin_users ──────────────────────────────────────────────────────────
+
+func TestMCP_ListAdminUsers_OK(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		ListAdminUsersFn: func(filter string, limit int) ([]backend.AdminUser, error) {
+			return []backend.AdminUser{
+				{Slug: "alice", DisplayName: "Alice A", Email: "alice@example.com", Active: true, Type: "NORMAL"},
+			}, nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.listAdminUsers(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "alice", "")
+}
+
+func TestMCP_ListAdminUsers_WithFilter(t *testing.T) {
+	t.Parallel()
+	var gotFilter string
+	fake := &testhelpers.FakeClient{T: t,
+		ListAdminUsersFn: func(filter string, limit int) ([]backend.AdminUser, error) {
+			gotFilter = filter
+			return nil, nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.listAdminUsers(context.Background(), makeReq(map[string]any{"filter": "ali"}))
+	require.NoError(t, err)
+	require.False(t, result.IsError)
+	assert.Equal(t, "ali", gotFilter)
+}
+
+// ── activate_user ─────────────────────────────────────────────────────────────
+
+func TestMCP_ActivateUser_OK(t *testing.T) {
+	t.Parallel()
+	var gotSlug string
+	fake := &testhelpers.FakeClient{T: t,
+		ActivateUserFn: func(slug string) error {
+			gotSlug = slug
+			return nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.activateUser(context.Background(), makeReq(map[string]any{"slug": "alice"}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "activated", "")
+	assert.Equal(t, "alice", gotSlug)
+}
+
+func TestMCP_ActivateUser_MissingSlug(t *testing.T) {
+	t.Parallel()
+	h := fakeAdminHandlers(t, &testhelpers.FakeClient{T: t})
+	result, err := h.activateUser(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "slug")
+}
+
+// ── deactivate_user ───────────────────────────────────────────────────────────
+
+func TestMCP_DeactivateUser_OK(t *testing.T) {
+	t.Parallel()
+	var gotSlug string
+	fake := &testhelpers.FakeClient{T: t,
+		DeactivateUserFn: func(slug string) error {
+			gotSlug = slug
+			return nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.deactivateUser(context.Background(), makeReq(map[string]any{"slug": "bob"}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "deactivated", "")
+	assert.Equal(t, "bob", gotSlug)
+}
+
+// ── rename_user ───────────────────────────────────────────────────────────────
+
+func TestMCP_RenameUser_OK(t *testing.T) {
+	t.Parallel()
+	var gotSlug, gotNewSlug string
+	fake := &testhelpers.FakeClient{T: t,
+		RenameUserFn: func(slug, newSlug string) error {
+			gotSlug = slug
+			gotNewSlug = newSlug
+			return nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.renameUser(context.Background(), makeReq(map[string]any{
+		"slug": "old-alice", "new_slug": "alice",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "renamed", "")
+	assert.Equal(t, "old-alice", gotSlug)
+	assert.Equal(t, "alice", gotNewSlug)
+}
+
+func TestMCP_RenameUser_MissingNewSlug(t *testing.T) {
+	t.Parallel()
+	h := fakeAdminHandlers(t, &testhelpers.FakeClient{T: t})
+	result, err := h.renameUser(context.Background(), makeReq(map[string]any{"slug": "alice"}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "new_slug")
+}
+
+// ── get_admin_license ─────────────────────────────────────────────────────────
+
+func TestMCP_GetAdminLicense_OK(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		GetLicenseFn: func() (backend.AdminLicense, error) {
+			return backend.AdminLicense{
+				Tier:     "ENTERPRISE",
+				Users:    500,
+				ServerId: "srv-abc123",
+			}, nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.getAdminLicense(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "ENTERPRISE", "")
+	assertJSONContains(t, result, "srv-abc123", "")
+}
+
+// ── get_cluster_nodes ─────────────────────────────────────────────────────────
+
+func TestMCP_GetClusterNodes_OK(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t,
+		GetClusterNodesFn: func() ([]backend.ClusterNode, error) {
+			return []backend.ClusterNode{
+				{NodeId: "node-1", Name: "Primary", Address: "10.0.0.1", State: "ACTIVE", Local: true},
+			}, nil
+		},
+	}
+	h := fakeAdminHandlers(t, fake)
+	result, err := h.getClusterNodes(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "node-1", "")
+	assertJSONContains(t, result, "Primary", "")
+}
+
 // ── noAdminClient returns unsupported ────────────────────────────────────────
 
 // noAdminClientWrapper wraps backend.Client without satisfying AdminClient,

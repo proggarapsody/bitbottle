@@ -178,6 +178,16 @@ type FakeClient struct {
 	GetLoggingConfigFn func() (backend.LoggingConfig, error)
 	SetLoggingConfigFn func(in backend.LoggingConfigInput) error
 
+	// Admin user methods (Server-only)
+	ListAdminUsersFn func(filter string, limit int) ([]backend.AdminUser, error)
+	RenameUserFn     func(slug, newSlug string) error
+	ActivateUserFn   func(slug string) error
+	DeactivateUserFn func(slug string) error
+
+	// Admin system methods (Server-only)
+	GetLicenseFn      func() (backend.AdminLicense, error)
+	GetClusterNodesFn func() ([]backend.ClusterNode, error)
+
 	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
 	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
 	GetReportFn         func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
@@ -1445,6 +1455,66 @@ func (c *FakeClient) SetLoggingConfig(in backend.LoggingConfigInput) error {
 		c.T.Fatalf("unexpected call to FakeClient.SetLoggingConfig; set SetLoggingConfigFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) ListAdminUsers(filter string, limit int) ([]backend.AdminUser, error) {
+	if c.ListAdminUsersFn != nil {
+		return c.ListAdminUsersFn(filter, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListAdminUsers; set ListAdminUsersFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) RenameUser(slug, newSlug string) error {
+	if c.RenameUserFn != nil {
+		return c.RenameUserFn(slug, newSlug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RenameUser; set RenameUserFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ActivateUser(slug string) error {
+	if c.ActivateUserFn != nil {
+		return c.ActivateUserFn(slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ActivateUser; set ActivateUserFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) DeactivateUser(slug string) error {
+	if c.DeactivateUserFn != nil {
+		return c.DeactivateUserFn(slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeactivateUser; set DeactivateUserFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) GetLicense() (backend.AdminLicense, error) {
+	if c.GetLicenseFn != nil {
+		return c.GetLicenseFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetLicense; set GetLicenseFn in your test")
+	}
+	return backend.AdminLicense{}, nil
+}
+
+func (c *FakeClient) GetClusterNodes() ([]backend.ClusterNode, error) {
+	if c.GetClusterNodesFn != nil {
+		return c.GetClusterNodesFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetClusterNodes; set GetClusterNodesFn in your test")
+	}
+	return nil, nil
 }
 
 // ── PermissionsClient ────────────────────────────────────────────────────────
