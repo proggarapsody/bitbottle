@@ -1,0 +1,20 @@
+# workspace search — query and role filters.
+bb-fake cloud
+
+# no filters — returns all workspaces
+bitbottle workspace search -k
+stdout 'myworkspace'
+stdout 'otherws'
+
+# query filter
+bitbottle workspace search --query myworkspace -k
+stdout 'myworkspace'
+
+# role filter
+bitbottle workspace search --role owner -k
+stdout 'myworkspace'
+
+# JSON output
+bitbottle workspace search -k --json
+stdout '"slug"'
+stdout 'myworkspace'

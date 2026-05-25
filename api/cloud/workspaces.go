@@ -3,6 +3,7 @@ package cloud
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
@@ -37,6 +38,40 @@ func (c *Client) ListWorkspaces(limit int) ([]backend.Workspace, error) {
 		}
 		return out, nil
 	}, limit)
+}
+
+// SearchWorkspaces searches workspaces matching the given opts.
+// Cloud: GET /2.0/workspaces with optional q and role query params.
+func (c *Client) SearchWorkspaces(opts backend.WorkspaceSearchOpts) ([]backend.Workspace, error) {
+	params := url.Values{}
+	if opts.Query != "" {
+		params.Set("q", fmt.Sprintf(`slug~"%s"`, opts.Query))
+	}
+	if opts.Role != "" {
+		params.Set("role", opts.Role)
+	}
+	if opts.Limit > 0 {
+		pagelen := opts.Limit
+		if pagelen > 50 {
+			pagelen = 50
+		}
+		params.Set("pagelen", fmt.Sprintf("%d", pagelen))
+	}
+	path := "/workspaces"
+	if encoded := params.Encode(); encoded != "" {
+		path = path + "?" + encoded
+	}
+	return paging.Collect(c.http, path, func(body []byte) ([]backend.Workspace, error) {
+		var page cloudPagedResponse[cloudgen.CloudWorkspace]
+		if err := json.Unmarshal(body, &page); err != nil {
+			return nil, err
+		}
+		out := make([]backend.Workspace, 0, len(page.Values))
+		for _, w := range page.Values {
+			out = append(out, toWorkspaceDomain(w))
+		}
+		return out, nil
+	}, opts.Limit)
 }
 
 func toProjectDomain(w cloudgen.CloudProject) backend.Project {

@@ -904,6 +904,18 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 				},
 			}),
 		},
+		// GET /workspaces — used by workspace search
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"uuid": "{ws-uuid-1}", "slug": "myworkspace", "name": "My Workspace",
+					"links": map[string]any{"html": map[string]any{"href": "https://bitbucket.org/myworkspace/"}}},
+				map[string]any{"uuid": "{ws-uuid-2}", "slug": "otherws", "name": "Other WS",
+					"links": map[string]any{"html": map[string]any{"href": "https://bitbucket.org/otherws/"}}},
+			}),
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
