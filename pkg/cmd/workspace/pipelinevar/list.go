@@ -76,10 +76,10 @@ func listRun(f *factory.Factory, opts *ListOptions) error {
 func pipelineVarFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.PipelineVariable] {
 	p := format.New[backend.PipelineVariable](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
 	p.AddField(format.Field[backend.PipelineVariable]{
-		Name:    "uuid",
-		Header:  "UUID",
+		Name:     "uuid",
+		Header:   "UUID",
 		JSONOnly: true,
-		Extract: func(v backend.PipelineVariable) any { return v.UUID },
+		Extract:  func(v backend.PipelineVariable) any { return v.UUID },
 	})
 	p.AddField(format.Field[backend.PipelineVariable]{
 		Name:    "key",
@@ -87,8 +87,8 @@ func pipelineVarFields(f *factory.Factory, cfg format.OutputConfig) *format.Prin
 		Extract: func(v backend.PipelineVariable) any { return v.Key },
 	})
 	p.AddField(format.Field[backend.PipelineVariable]{
-		Name:    "value",
-		Header:  "VALUE",
+		Name:   "value",
+		Header: "VALUE",
 		Extract: func(v backend.PipelineVariable) any {
 			if v.Secured {
 				return "***"

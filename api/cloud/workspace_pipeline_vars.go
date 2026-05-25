@@ -41,9 +41,8 @@ func (c *Client) GetWorkspacePipelineVariable(workspace, uuid string) (backend.P
 	return toPipelineVariableDomain(w), nil
 }
 
-// SetWorkspacePipelineVariable upserts a workspace-level pipeline variable.
-// If in.UUID is non-empty it updates via PUT; otherwise it searches by Key
-// and PUTs if found, POSTs if not.
+// SetWorkspacePipelineVariable upserts a workspace-level pipeline variable by key:
+// PUTs if a variable with that key already exists, POSTs otherwise.
 func (c *Client) SetWorkspacePipelineVariable(workspace string, in backend.PipelineVariableInput) (backend.PipelineVariable, error) {
 	body := cloudgen.CloudPipelineVariable{
 		Key:     in.Key,

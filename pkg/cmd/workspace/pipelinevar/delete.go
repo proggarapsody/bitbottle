@@ -43,6 +43,10 @@ func NewCmdDelete(f *factory.Factory, runF func(*DeleteOptions) error) *cobra.Co
 }
 
 func deleteRun(f *factory.Factory, opts *DeleteOptions) error {
+	if !opts.Confirm && !f.IOStreams.IsStdoutTTY() {
+		return fmt.Errorf("--confirm required when not running interactively")
+	}
+
 	workspace, err := resolveWorkspace(f, opts.Workspace)
 	if err != nil {
 		return err
