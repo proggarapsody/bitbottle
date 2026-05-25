@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	cmdAudit "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/audit"
 	cmdhook "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/hook"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/list"
 	cmdMemberList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/member"
@@ -35,6 +36,8 @@ func NewCmdWorkspace(f *factory.Factory) *cobra.Command {
 	hookCmd.AddCommand(cmdhook.NewCmdCreate(f, nil))
 	hookCmd.AddCommand(cmdhook.NewCmdDelete(f, nil))
 	cmd.AddCommand(hookCmd)
+
+	cmd.AddCommand(cmdAudit.NewCmdAudit(f, nil))
 
 	return cmd
 }

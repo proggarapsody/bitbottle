@@ -459,6 +459,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "AuditClient",
+		HumanLabel:    "audit log",
+		Plural:        false,
+		Check:         func(c Client) bool { _, ok := c.(AuditClient); return ok },
+		Feature:       FeatureAudit,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "SourceWriter",
 		HumanLabel:    "writing files via the API",
 		Check:         func(c Client) bool { _, ok := c.(SourceWriter); return ok },
