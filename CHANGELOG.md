@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.113.0](https://github.com/proggarapsody/bitbottle/compare/v1.112.0...v1.113.0) (2026-05-25)
+
+
+### Features
+
+* **mirror/workspace:** mirror server read (Server/DC) + workspace perms (Cloud) ([cb39eb1](https://github.com/proggarapsody/bitbottle/commit/cb39eb16cda9b275f800203e707dcb0ef005da0e))
+
 ## [1.112.0](https://github.com/proggarapsody/bitbottle/compare/v1.111.0...v1.112.0) (2026-05-25)
 
 
