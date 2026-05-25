@@ -84,6 +84,17 @@ Two categories — **mid-cycle** (pause-and-continue) and **chain-breaking** (ex
 
 The feature PR is **auto-merged** once CI is green AND all gates pass (no halt — gates already vetted content). The only mid-cycle halt is at the irreversible release-publish step.
 
+**Accepted tradeoff (auto-merge vs design-judge timing).** `gh pr merge --auto`
+fires on the first satisfying event, which is typically CI green (~2 min) —
+faster than design-judge return (~3–5 min). When DJ finds a BLOCKER after
+auto-merge fires, the BLOCKER is fixed via a follow-up PR rather than
+delayed merging. Measured: 2 of 4 BLOCKER cases in the 2026-05-24 stream
+(cycles 139, 143) followed this pattern. The alternative — serializing
+merge after DJ — adds DJ wall-clock (~3–5 min) to every cycle, including
+the 60 %+ that have zero BLOCKERs. Net: the follow-up-PR pattern is faster
+for stream throughput. If a real security BLOCKER lands and the follow-up
+window is unacceptable, escalate manually; do not change the default.
+
 **The halt fires per release-please PR, NOT per feat cycle.** When cycles run back-to-back faster than release-please reacts, one release-please PR collects multiple `feat:` commits — across cycles 81–86 in the May-17 stream, six `feat:` cycles ran in 87 minutes and release-please opened a single PR (#359) that bundled all six. A halt-per-feat model would have asked the user to ship six times for one publish; instead it fired zero times because the per-cycle assumption is wrong. Match reality: halt only when release-please opens a **new** PR (different number than the previously-halted-on one).
 
 Tap → release PR merges, GoReleaser publishes async. Tap "hold" → exit, cycle outcome `halt_release`.
@@ -114,7 +125,14 @@ For `refactor:` / `docs:` / `chore:` cycles: no halt at all — these don't trig
 
 ## Brainstorm rules
 
-Brainstorm runs autonomously (judgment-heavy model, ~1–2 min, ~3 new BACKLOG rows per run). To keep autonomous brainstorms honest, every emitted row must satisfy **all** of the following or be dropped before it lands in `BACKLOG.md`:
+Brainstorm runs autonomously (judgment-heavy model, ~2–5 min, **target 8–10
+new BACKLOG rows per run** — enough to fill one full `/auto-iter-stream 10`).
+Lower targets were tried (cycles 136, 142 produced 4 each) but a 10-cycle
+stream then needed 2 brainstorm cycles, ~160K extra Opus tokens. Cycle 64
+empirically demonstrated 22 rows in a single 5-min brainstorm — capacity
+is not the limiter, the prompt target is. To keep autonomous brainstorms
+honest, every emitted row must satisfy **all** of the following or be
+dropped before it lands in `BACKLOG.md`:
 
 1. **No-overlap.** Scan existing ✅ rows and the Functionality Map. Reject anything redundant with already-shipped scope. _(This is the single load-bearing rule — it killed PR-TEMPLATE retroactively at cyc 39 because `repo file get` already covered it.)_
 2. **Backend declared.** Each row marks `Cloud` / `Server` / `Both`. If `Both`, both endpoints must be named.

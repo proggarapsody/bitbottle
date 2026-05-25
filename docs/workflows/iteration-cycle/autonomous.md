@@ -100,16 +100,30 @@ done < <(git diff --name-only origin/main...HEAD -- 'pkg/cmd/**/*.go' ':!*_test.
 #    Build the group path dynamically so nested subcommands work:
 #      pkg/cmd/pr/list.go         → group="pr",         verb="list"
 #      pkg/cmd/pr/comment/list.go → group="pr comment", verb="list"
+#    Skip rules (mirror check #1's skip, plus group-register files):
+#    - tools_*.go / handlers*.go: MCP triplet, not cobra commands
+#    - <verb>.go where verb == basename(dirname): group-register file
+#      (e.g. pkg/cmd/auth/pat/pat.go is the `pat` group container, not a verb)
+#    Hyphen↔underscore equivalence: cobra `Use` uses hyphens (`server-list`),
+#    filenames use underscores (`server_list.go`). Normalize both before lookup.
 while IFS= read -r f; do
+    [[ "$f" =~ /tools_.*\.go$ || "$f" =~ /handlers.*\.go$ ]] && continue
     verb=$(basename "$f" .go)
     rel=${f#pkg/cmd/}                       # e.g. pr/comment/list.go
     group=$(dirname "$rel" | tr / ' ')      # "pr comment" or "pr"
-    grep -qF "$group $verb" skills/SKILL.md \
-        || violations+="$f: skills/SKILL.md missing '$group $verb' entry\n"
+    # Skip group-register files (verb name matches parent dir)
+    parent=$(basename "$(dirname "$f")")
+    [ "$verb" = "$parent" ] && continue
+    # Normalize hyphen/underscore for SKILL.md lookup
+    verb_hyphen=${verb//_/-}
+    grep -qF "$group $verb" skills/SKILL.md || \
+        grep -qF "$group $verb_hyphen" skills/SKILL.md || \
+        violations+="$f: skills/SKILL.md missing '$group $verb' entry\n"
     # references/ files are organized by top-level group only
     top=${group%% *}
     [ -f "skills/references/${top}.md" ] && \
         ! grep -qF "$verb" "skills/references/${top}.md" && \
+        ! grep -qF "$verb_hyphen" "skills/references/${top}.md" && \
         violations+="$f: skills/references/${top}.md missing '$verb' entry\n"
 done < <(git diff --name-only --diff-filter=A origin/main...HEAD -- 'pkg/cmd/**/*.go' ':!*_test.go' ':!**/*_fields.go')
 
@@ -138,8 +152,17 @@ fi
 
 **False-positive prevention rules** (each is load-bearing — earlier versions
 of the sweep produced spurious failures without them):
-- Skip MCP tool-registration files (`tools_*.go`, `handlers*.go`) — they have
-  no cobra `Short` field and are not cobra commands.
+- Skip MCP tool-registration files (`tools_*.go`, `handlers*.go`) in **both**
+  check #1 and check #2 — they have no cobra `Short` field, are not cobra
+  commands, and therefore have no SKILL.md entry to validate. Cycles
+  137–144 produced ~16 false positives across 4 cycles from this skip
+  being missing from check #2.
+- Skip group-register files (`<verb>.go` where `verb == basename(dirname)` —
+  e.g. `pkg/cmd/auth/pat/pat.go`). These register the cobra group, not a
+  verb; SKILL.md entries are for the group's children.
+- Normalize hyphen↔underscore for SKILL.md / references lookup. Cobra `Use`
+  strings use hyphens (`server-list`); filenames use underscores
+  (`server_list.go`). Check both forms.
 - The `net/http` check must exclude `*_test.go` (legitimate to import for
   `httptest`).
 - For `net/http`, use `xargs grep -l` on filtered files, never raw
@@ -265,3 +288,87 @@ step2_pr_open: PR #147 opened, CI running...
 
 No expanded reasoning, no narration of file lists. The metrics and cycle logs
 are the durable record; verbose conversation narration is pure token cost.
+
+---
+
+## Post-stream analysis (multi-cycle runs only)
+
+When **more than one cycle** ran in a single invocation — i.e. a
+`/auto-iter-stream N` (any `N > 1`), or a `/loop` that completed ≥ 2
+cycles, or an ad-hoc batch — a post-stream **analysis report** MUST be
+produced and saved to `auto-iter/reports/`. Single-cycle runs skip this
+step (one data point is not a trend).
+
+The report is the durable record of *workflow* behaviour across the batch:
+throughput, token efficiency, code quality, predictability, recurring
+algorithm bugs. It is the only place this is captured — `cycles.jsonl`
+holds per-cycle outcomes, not cross-cycle synthesis.
+
+### Model split: Opus analyzes, Haiku writes
+
+Two-stage dispatch — picking the right model for each stage matters because
+analysis is judgment-heavy and writing is mechanical:
+
+| Stage | Model | Job |
+|---|---|---|
+| **Analyze** | Opus subagent | Read `cycles.jsonl` + `metrics.jsonl` for the range, compare to prior era (median tokens/duration, rework rate, design-judge findings), identify recurring algorithm bugs, recommend fixes. Returns a structured findings object. |
+| **Write** | Haiku subagent | Take Opus's findings and fill in the report template at `auto-iter/reports/<name>.md`. No new analysis — purely formatting + prose. |
+
+Why this split:
+- Opus is the only model that reliably catches cross-cycle patterns
+  (auto-merge race, metric drop-out, recurring false positives). Sonnet
+  tends to summarize per-cycle rather than synthesize.
+- Haiku is sufficient for prose rendering and ~10× cheaper than Opus for
+  the same word count. Spending Opus tokens on Markdown formatting is
+  waste.
+
+Both stages dispatch via `Task` (worktree isolation not required —
+read-only analysis).
+
+### Naming convention
+
+Files live at `auto-iter/reports/<kind>-<YYYY-MM-DD>-<descriptor>.md`.
+
+`<kind>`:
+- `stream-` — a `/auto-iter-stream N` run analyzed end-to-end
+- `cycles-` — ad-hoc analysis of a cycle range (not a single stream)
+- `compare-` — side-by-side era comparison
+- `audit-` — focused audit of one dimension (e.g. metric emission, dj-calibration)
+
+`<YYYY-MM-DD>` is the **start of the analyzed window** in UTC, not the
+report generation date.
+
+`<descriptor>`:
+- `cycles-NNN-MMM` for `stream-` / `cycles-` reports
+- A short slug for thematic audits (`metric-emission`, `dj-false-positives`)
+
+Examples:
+- `stream-2026-05-24-cycles-135-144.md`
+- `audit-2026-05-26-metric-emission.md`
+- `compare-2026-05-30-streams-q2.md`
+
+### Required sections
+
+Minimum sections in every report (Haiku fills these from Opus's findings):
+1. **TL;DR** — 2-3 sentences
+2. **Throughput** — wall-clock, releases, median per-cycle (with comparison table vs prior era)
+3. **Per-cycle detail** — table of scope, LOC, tokens, duration, outcome, design-judge findings
+4. **Historical baseline** — median tokens/duration of the prior comparable era
+5. **Code quality** — rework rate, BLOCKERs caught, false-positive rate
+6. **Predictability & algorithm consistency** — recurring bugs, metric drop-out, race conditions
+7. **Comparison to prior era** — table contrasting this batch with the last comparable batch
+8. **Recommended fixes** — ranked by ROI, with file paths and rough LOC estimates
+9. **Bottom line** — one paragraph synthesis
+
+See `auto-iter/reports/README.md` for the policy file and existing reports
+for examples.
+
+### When to run
+
+At stream completion, after the final `cycle_complete` line is written to
+`stream.jsonl` and before releasing the lock. The report dispatch is
+*part of the stream*, not a follow-up task — if the stream ends without
+the report, the work isn't done.
+
+For `/loop`-driven autonomous runs that don't have a natural stream
+boundary, write a report every 10 completed cycles (rolling window).

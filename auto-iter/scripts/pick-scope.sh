@@ -29,14 +29,20 @@ if [[ ! -f "$BACKLOG_FILE" ]]; then
 fi
 
 # Find the first 🔲 row inside the ## Backlog section.
+# Skip rows marked 🔲📝 — those are manual-only (e.g. external form
+# submission, third-party signup) and not eligible for the auto-iter loop.
+# The picker would otherwise pick them, the cycle would skip them, and the
+# row would block the picker on every subsequent cycle until a human
+# resolves it. Treat 🔲📝 as "not 🔲" for picker purposes.
 row=$(awk '
-  /^## Backlog/    { inblk=1; next }
-  inblk && /^## / { inblk=0 }
-  inblk && /🔲/   { print; exit }
+  /^## Backlog/         { inblk=1; next }
+  inblk && /^## /       { inblk=0 }
+  inblk && /🔲📝/      { next }
+  inblk && /🔲/         { print; exit }
 ' "$BACKLOG_FILE")
 
 if [[ -z "$row" ]]; then
-  halt "backlog_empty" "no 🔲 rows in ## Backlog"
+  halt "backlog_empty" "no 🔲 rows in ## Backlog (manual-only 🔲📝 rows skipped)"
 fi
 
 # Strip leading/trailing | and whitespace from each pipe-separated cell.
