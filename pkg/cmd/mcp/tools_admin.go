@@ -49,4 +49,74 @@ func registerAdminTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.setLoggingConfig,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("list_admin_users",
+			mcplib.WithDescription("List users on a Bitbucket Server / DC instance (Server/DC only)"),
+			optHostname,
+			mcplib.WithString("filter",
+				mcplib.Description("Filter users by name or email prefix"),
+			),
+			mcplib.WithNumber("limit",
+				mcplib.Description("Maximum number of users to return (default 50, max 1000)"),
+			),
+		),
+		h.listAdminUsers,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("activate_user",
+			mcplib.WithDescription("Activate a user account on Bitbucket Server / DC (Server/DC only)"),
+			optHostname,
+			mcplib.WithString("slug",
+				mcplib.Required(),
+				mcplib.Description("Username (slug) of the user to activate"),
+			),
+		),
+		h.activateUser,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("deactivate_user",
+			mcplib.WithDescription("Deactivate a user account on Bitbucket Server / DC (Server/DC only)"),
+			optHostname,
+			mcplib.WithString("slug",
+				mcplib.Required(),
+				mcplib.Description("Username (slug) of the user to deactivate"),
+			),
+		),
+		h.deactivateUser,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("rename_user",
+			mcplib.WithDescription("Rename a user (change username/slug) on Bitbucket Server / DC (Server/DC only)"),
+			optHostname,
+			mcplib.WithString("slug",
+				mcplib.Required(),
+				mcplib.Description("Current username (slug) of the user"),
+			),
+			mcplib.WithString("new_slug",
+				mcplib.Required(),
+				mcplib.Description("New username (slug) for the user"),
+			),
+		),
+		h.renameUser,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("get_admin_license",
+			mcplib.WithDescription("Get license details for a Bitbucket Server / DC instance (Server/DC only)"),
+			optHostname,
+		),
+		h.getAdminLicense,
+	)
+
+	s.AddTool(
+		mcplib.NewTool("get_cluster_nodes",
+			mcplib.WithDescription("Get cluster node information for a Bitbucket Server / DC instance (Server/DC only)"),
+			optHostname,
+		),
+		h.getClusterNodes,
+	)
 }

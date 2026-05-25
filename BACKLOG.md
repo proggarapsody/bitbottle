@@ -274,6 +274,12 @@ Current state of every command area against gh feature parity:
 | `admin secrets rotate` | ✅ | Rotate application secrets (HTTP Strict Transport, etc.) — scope **ADMIN** |
 | `admin logging get` | ✅ | Show current log level + async flag — scope **ADMIN** |
 | `admin logging set` | ✅ | `--level DEBUG\|INFO\|WARN\|ERROR`, `--async` — scope **ADMIN** |
+| `admin user list [--filter QUERY] [--limit N] [--json]` | ✅ | List users on Bitbucket Server/DC — scope **ADMIN-USER** |
+| `admin user activate SLUG` | ✅ | Activate a user account — scope **ADMIN-USER** |
+| `admin user deactivate SLUG` | ✅ | Deactivate a user account — scope **ADMIN-USER** |
+| `admin user rename OLD NEW` | ✅ | Rename a user (change username/slug) — scope **ADMIN-USER** |
+| `admin license [--json]` | ✅ | Show instance license details — scope **ADMIN-SYSTEM** |
+| `admin cluster [--json]` | ✅ | Show cluster node list — scope **ADMIN-SYSTEM** |
 
 ### PR Auto-Merge _(both backends — missing)_
 
@@ -393,6 +399,8 @@ Current state of every command area against gh feature parity:
 | VAR | **Variable Command Promotion** | `variable list/set/delete --scope repository\|workspace\|deployment` | Cloud | 2 | ✅ |
 | PERMS | **Permissions Management** | `perms project list/grant/revoke`, `perms repo list/grant/revoke` | Server/DC | 3 | ✅ |
 | ADMIN | **Admin Commands** | `admin secrets rotate`, `admin logging get/set` | Server/DC | 3 | ✅ |
+| ADMIN-USER | **Admin User Management** | `admin user list/activate/deactivate/rename` | Server/DC | 3 | ✅ |
+| ADMIN-SYSTEM | **Admin System Info** | `admin license`, `admin cluster` | Server/DC | 3 | ✅ |
 | AUTOMERGE | **PR Auto-Merge** | `pr merge --auto[=off]` flag + `pr view` extension | Both (Cloud beta) | 2 | ✅ |
 | TASK | **PR Tasks** | `pr task list/create/resolve/reopen` (Server severity-BLOCKER comments) | Server/DC | 3 | ✅ |
 | REACT-PR | **PR Comment Reactions** | `pr comment react/unreact`, `pr comment list --reactions`; `CommentReactor` interface + Server impl + Cloud stub | Server/DC | 3 | ✅ |

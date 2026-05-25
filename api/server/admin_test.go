@@ -84,3 +84,155 @@ func TestServerClient_SetLoggingConfig_Persistent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "/admin/logging/properties", gotPath)
 }
+
+// ── ListAdminUsers ────────────────────────────────────────────────────────────
+
+func TestServerClient_ListAdminUsers_OK(t *testing.T) {
+	t.Parallel()
+	const responseJSON = `{
+		"values": [
+			{"name":"alice","displayName":"Alice A","emailAddress":"alice@example.com","active":true,"type":"NORMAL"},
+			{"name":"svc-bot","displayName":"Bot","emailAddress":"bot@example.com","active":false,"type":"SERVICE"}
+		],
+		"isLastPage": true
+	}`
+	var gotPath string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(responseJSON))
+	})
+	users, err := c.ListAdminUsers("", 50)
+	require.NoError(t, err)
+	assert.Equal(t, "/admin/users", gotPath)
+	require.Len(t, users, 2)
+	assert.Equal(t, "alice", users[0].Slug)
+	assert.Equal(t, "Alice A", users[0].DisplayName)
+	assert.Equal(t, "alice@example.com", users[0].Email)
+	assert.True(t, users[0].Active)
+	assert.Equal(t, "NORMAL", users[0].Type)
+	assert.Equal(t, "svc-bot", users[1].Slug)
+	assert.False(t, users[1].Active)
+}
+
+func TestServerClient_ListAdminUsers_WithFilter(t *testing.T) {
+	t.Parallel()
+	var gotQuery string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[],"isLastPage":true}`))
+	})
+	_, err := c.ListAdminUsers("ali", 25)
+	require.NoError(t, err)
+	assert.Contains(t, gotQuery, "filter=ali")
+	assert.Contains(t, gotQuery, "limit=25")
+}
+
+// ── ActivateUser / DeactivateUser ─────────────────────────────────────────────
+
+func TestServerClient_ActivateUser_OK(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotBody string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPut, r.Method)
+		gotPath = r.URL.Path
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.WriteHeader(http.StatusOK)
+	})
+	err := c.ActivateUser("alice")
+	require.NoError(t, err)
+	assert.Equal(t, "/admin/users", gotPath)
+	assert.Contains(t, gotBody, `"name":"alice"`)
+	assert.Contains(t, gotBody, `"active":true`)
+}
+
+func TestServerClient_DeactivateUser_OK(t *testing.T) {
+	t.Parallel()
+	var gotBody string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.WriteHeader(http.StatusOK)
+	})
+	err := c.DeactivateUser("alice")
+	require.NoError(t, err)
+	assert.Contains(t, gotBody, `"name":"alice"`)
+	assert.Contains(t, gotBody, `"active":false`)
+}
+
+// ── RenameUser ────────────────────────────────────────────────────────────────
+
+func TestServerClient_RenameUser_OK(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotBody string
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPut, r.Method)
+		gotPath = r.URL.Path
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.WriteHeader(http.StatusOK)
+	})
+	err := c.RenameUser("old-alice", "alice")
+	require.NoError(t, err)
+	assert.Equal(t, "/admin/users/rename", gotPath)
+	assert.Contains(t, gotBody, `"name":"old-alice"`)
+	assert.Contains(t, gotBody, `"newName":"alice"`)
+}
+
+// ── GetLicense ────────────────────────────────────────────────────────────────
+
+func TestServerClient_GetLicense_OK(t *testing.T) {
+	t.Parallel()
+	const responseJSON = `{
+		"tier": "ENTERPRISE",
+		"numberOfUsers": 500,
+		"serverId": "srv-abc123",
+		"license": "ABC-LICENSE-KEY",
+		"expiryDate": "2027-01-01",
+		"supportExpiryDate": "2026-01-01",
+		"creationDate": "2020-01-01"
+	}`
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/admin/license", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(responseJSON))
+	})
+	lic, err := c.GetLicense()
+	require.NoError(t, err)
+	assert.Equal(t, "ENTERPRISE", lic.Tier)
+	assert.Equal(t, 500, lic.Users)
+	assert.Equal(t, "srv-abc123", lic.ServerId)
+	assert.Equal(t, "2027-01-01", lic.ExpiryDate)
+	assert.Equal(t, "2026-01-01", lic.SupportExpiry)
+}
+
+// ── GetClusterNodes ───────────────────────────────────────────────────────────
+
+func TestServerClient_GetClusterNodes_OK(t *testing.T) {
+	t.Parallel()
+	const responseJSON = `{
+		"nodes": [
+			{"nodeId":"node-1","name":"Primary","address":{"address":"10.0.0.1"},"state":"ACTIVE","local":true},
+			{"nodeId":"node-2","name":"Secondary","address":{"address":"10.0.0.2"},"state":"ACTIVE","local":false}
+		]
+	}`
+	c, _ := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/admin/cluster", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(responseJSON))
+	})
+	nodes, err := c.GetClusterNodes()
+	require.NoError(t, err)
+	require.Len(t, nodes, 2)
+	assert.Equal(t, "node-1", nodes[0].NodeId)
+	assert.Equal(t, "Primary", nodes[0].Name)
+	assert.Equal(t, "10.0.0.1", nodes[0].Address)
+	assert.Equal(t, "ACTIVE", nodes[0].State)
+	assert.True(t, nodes[0].Local)
+	assert.False(t, nodes[1].Local)
+}

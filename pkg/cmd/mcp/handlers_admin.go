@@ -57,6 +57,108 @@ func (h *handlers) getLoggingConfig(_ context.Context, req mcplib.CallToolReques
 	})
 }
 
+// ── list_admin_users ──────────────────────────────────────────────────────────
+
+func (h *handlers) listAdminUsers(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	filter := req.GetString("filter", "")
+	limit := req.GetInt("limit", 50)
+	if err := validateRange("limit", limit, 1, 1000); err != nil {
+		return errResult(err.Error()), nil
+	}
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	users, err := ac.ListAdminUsers(filter, limit)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(users)
+}
+
+// ── activate_user ─────────────────────────────────────────────────────────────
+
+func (h *handlers) activateUser(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := ac.ActivateUser(slug); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]string{"slug": slug, "status": "activated"})
+}
+
+// ── deactivate_user ───────────────────────────────────────────────────────────
+
+func (h *handlers) deactivateUser(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := ac.DeactivateUser(slug); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]string{"slug": slug, "status": "deactivated"})
+}
+
+// ── rename_user ───────────────────────────────────────────────────────────────
+
+func (h *handlers) renameUser(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	slug, err := requireString(req, "slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	newSlug, err := requireString(req, "new_slug")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if err := ac.RenameUser(slug, newSlug); err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(map[string]string{"old_slug": slug, "new_slug": newSlug, "status": "renamed"})
+}
+
+// ── get_admin_license ─────────────────────────────────────────────────────────
+
+func (h *handlers) getAdminLicense(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	lic, err := ac.GetLicense()
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(lic)
+}
+
+// ── get_cluster_nodes ─────────────────────────────────────────────────────────
+
+func (h *handlers) getClusterNodes(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	ac, _, err := h.resolveAdminClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	nodes, err := ac.GetClusterNodes()
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(nodes)
+}
+
 // ── set_logging_config ────────────────────────────────────────────────────────
 
 func (h *handlers) setLoggingConfig(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
