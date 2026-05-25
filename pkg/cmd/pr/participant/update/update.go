@@ -2,12 +2,13 @@ package update
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	prshared "github.com/proggarapsody/bitbottle/pkg/cmd/pr/shared"
 )
 
 // NewCmdPRParticipantUpdate returns the "pr participant update" sub-command.
@@ -25,7 +26,7 @@ func NewCmdPRParticipantUpdate(f *factory.Factory) *cobra.Command {
 		Short: "Update a pull request participant's approval state",
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prID, err := parsePRID(args[0])
+			prID, err := prshared.ParsePRID(args[0])
 			if err != nil {
 				return err
 			}
@@ -48,10 +49,11 @@ func NewCmdPRParticipantUpdate(f *factory.Factory) *cobra.Command {
 			if len(args) > 1 {
 				repoArg = args[1:]
 			}
-			ref, err := resolveTarget(f, repoArg, hostnameFlag)
+			ref, err := factory.ResolveTarget(f, repoArg, hostnameFlag)
 			if err != nil {
 				return err
 			}
+			ref.Project = strings.ToUpper(ref.Project)
 
 			client, err := f.Backend(ref.Host)
 			if err != nil {
@@ -86,20 +88,4 @@ func NewCmdPRParticipantUpdate(f *factory.Factory) *cobra.Command {
 	cmd.MarkFlagsMutuallyExclusive("approve", "unapprove", "request-changes")
 
 	return cmd
-}
-
-func parsePRID(arg string) (int, error) {
-	var id int
-	if _, err := fmt.Sscan(arg, &id); err != nil || id <= 0 {
-		return 0, fmt.Errorf("invalid PR ID %q: must be a positive integer", arg)
-	}
-	return id, nil
-}
-
-func resolveTarget(f *factory.Factory, repoArgs []string, hostnameFlag string) (bbrepo.RepoRef, error) {
-	var extraArgs []string
-	if len(repoArgs) > 0 {
-		extraArgs = repoArgs
-	}
-	return factory.ResolveTarget(f, extraArgs, hostnameFlag)
 }

@@ -873,7 +873,7 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 		// PUT PR participant — used by pr participant update
 		{
 			Method:     http.MethodPut,
-			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pullrequests/10/participants/acc-test-uuid",
+			PathSuffix: "/repositories/TESTWORKSPACE/cloud-repo-a/pullrequests/10/participants/acc-test-uuid",
 			Status:     http.StatusOK,
 			Body: map[string]any{
 				"user":     map[string]any{"account_id": "acc-test-uuid", "display_name": "Alice", "nickname": "alice"},
