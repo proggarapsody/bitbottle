@@ -257,6 +257,11 @@ type FakeClient struct {
 	ListPipelineCachesFn  func(ns, slug string) ([]backend.PipelineCache, error)
 	DeletePipelineCacheFn func(ns, slug, uuid string) error
 
+	// Runner methods (Cloud-only; satisfies backend.RunnerClient when set)
+	ListRunnersFn  func(workspace string) ([]backend.Runner, error)
+	CreateRunnerFn func(workspace string, in backend.CreateRunnerInput) (backend.Runner, error)
+	DeleteRunnerFn func(workspace, runnerUUID string) error
+
 	// Diff methods (both backends; satisfies backend.DiffClient when set)
 	GetDiffFn     func(ns, slug, from, to string) (string, error)
 	GetDiffStatFn func(ns, slug, from, to string) (backend.DiffStat, error)
@@ -383,6 +388,7 @@ var (
 	_ backend.IssueVoter               = (*FakeClient)(nil)
 	_ backend.IssueWatcher             = (*FakeClient)(nil)
 	_ backend.RepoLabelClient          = (*FakeClient)(nil)
+	_ backend.RunnerClient             = (*FakeClient)(nil)
 	_ backend.SourceWriter             = (*FakeClient)(nil)
 )
 
@@ -2338,6 +2344,38 @@ func (c *FakeClient) ClearBanner() error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ClearBanner; set ClearBannerFn in your test")
+	}
+	return nil
+}
+
+// ── RunnerClient ──────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListRunners(workspace string) ([]backend.Runner, error) {
+	if c.ListRunnersFn != nil {
+		return c.ListRunnersFn(workspace)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListRunners; set ListRunnersFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateRunner(workspace string, in backend.CreateRunnerInput) (backend.Runner, error) {
+	if c.CreateRunnerFn != nil {
+		return c.CreateRunnerFn(workspace, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateRunner; set CreateRunnerFn in your test")
+	}
+	return backend.Runner{}, nil
+}
+
+func (c *FakeClient) DeleteRunner(workspace, runnerUUID string) error {
+	if c.DeleteRunnerFn != nil {
+		return c.DeleteRunnerFn(workspace, runnerUUID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteRunner; set DeleteRunnerFn in your test")
 	}
 	return nil
 }

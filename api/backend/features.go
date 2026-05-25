@@ -450,6 +450,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "RunnerClient",
+		HumanLabel:    "pipeline runners",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(RunnerClient); return ok },
+		Feature:       FeatureRunner,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "SourceWriter",
 		HumanLabel:    "writing files via the API",
 		Check:         func(c Client) bool { _, ok := c.(SourceWriter); return ok },
