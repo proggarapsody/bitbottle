@@ -459,6 +459,24 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 				map[string]any{"id": "abc1234", "message": "feat: new thing\n", "author": map[string]any{"name": "Test User"}, "authorTimestamp": int64(1704067200000)},
 			}),
 		},
+		// GET repo — used by repo clone (and repo view)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"id": 1, "slug": "alpha-repo", "name": "alpha-repo",
+				"project": map[string]any{"key": "PROJ"},
+				"scmId":   "git", "public": false,
+				"links": map[string]any{
+					"self": []any{map[string]any{"href": "https://bb.example.com/projects/PROJ/repos/alpha-repo/browse"}},
+					"clone": []any{
+						map[string]any{"name": "http", "href": "https://bb.example.com/scm/PROJ/alpha-repo.git"},
+						map[string]any{"name": "ssh", "href": "ssh://git@bb.example.com:7999/PROJ/alpha-repo.git"},
+					},
+				},
+			},
+		},
 		// GET mirror servers list — used by mirror list
 		{
 			Method:     http.MethodGet,
@@ -525,6 +543,22 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pullrequests/10",
 			Status:     http.StatusOK,
 			Body:       cloudPR(10, "Cloud fix", "OPEN"),
+		},
+		// GET repo — used by repo clone (and repo view)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"full_name": "testworkspace/cloud-repo-a", "scm": "git", "is_private": false,
+				"links": map[string]any{
+					"html": map[string]any{"href": "https://bitbucket.org/testworkspace/cloud-repo-a"},
+					"clone": []any{
+						map[string]any{"name": "https", "href": "https://bitbucket.org/testworkspace/cloud-repo-a.git"},
+						map[string]any{"name": "ssh", "href": "ssh://git@bitbucket.org/testworkspace/cloud-repo-a.git"},
+					},
+				},
+			},
 		},
 		// 404 — for errfmt_not_found
 		{

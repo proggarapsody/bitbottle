@@ -27,9 +27,9 @@ func TestRepoClone_Cloud_HTTPS_UsesBitbucketOrg(t *testing.T) {
 	require.NoError(t, cmd.Execute())
 
 	require.NotEmpty(t, runner.Calls, "expected at least one git call")
-	last := runner.Calls[len(runner.Calls)-1]
-	require.GreaterOrEqual(t, len(last.Args), 2)
-	url := last.Args[1]
+	cloneCall := findCloneCall(t, runner)
+	require.GreaterOrEqual(t, len(cloneCall.Args), 2)
+	url := cloneCall.Args[1]
 
 	assert.True(t, strings.HasPrefix(url, "https://bitbucket.org/"),
 		"cloud HTTPS clone URL must start with https://bitbucket.org/, got %q", url)

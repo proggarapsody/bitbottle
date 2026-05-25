@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/run"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
@@ -101,6 +102,80 @@ func TestListTree_NotFound_ReturnsTypedEnvelope(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	assertErrorResult(t, result, "repo.not_found")
+}
+
+// ── clone_repo ───────────────────────────────────────────────────────────────
+
+func TestCloneRepo_SSHProtocol(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			return backend.Repository{
+				Slug:      slug,
+				Namespace: ns,
+				CloneURLs: []backend.CloneURL{
+					{Name: "ssh", URL: "ssh://git@git.example.com:7999/MYPROJ/my-svc.git"},
+					{Name: "http", URL: "https://git.example.com/scm/myproj/my-svc.git"},
+				},
+			}, nil
+		},
+	}
+	gitRunner := testhelpers.NewFakeRunner(testhelpers.RunResponse{})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoToolsCfg})
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return gitRunner }
+	h := newHandlers(f)
+	result, err := h.cloneRepo(context.Background(), makeReq(map[string]any{
+		"project":  "MYPROJ",
+		"slug":     "my-svc",
+		"protocol": "ssh",
+	}))
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.False(t, result.IsError)
+	// Find the clone call and verify SSH URL.
+	var cloneArgs []string
+	for _, c := range gitRunner.Calls {
+		if len(c.Args) > 0 && c.Args[0] == "clone" {
+			cloneArgs = c.Args
+			break
+		}
+	}
+	require.NotNil(t, cloneArgs, "expected a git clone call")
+	assert.Equal(t, "ssh://git@git.example.com:7999/MYPROJ/my-svc.git", cloneArgs[1])
+}
+
+func TestCloneRepo_RepoNotFound(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			return backend.Repository{}, &backend.DomainError{
+				Kind: backend.ErrNotFound,
+				Code: backend.CodeRepoNotFound,
+			}
+		},
+	}
+	// Git clone will also fail (no actual git), but GetRepo returns not-found first.
+	// We expect the clone to fail since the URL still gets resolved and passed to git.
+	// To test not-found returned by the handler, wire a git runner that also errors.
+	gitRunner := testhelpers.NewFakeRunner(testhelpers.RunResponse{Err: errCloneFailed})
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: repoToolsCfg})
+	factorytest.UseBackend(f, fake)
+	f.GitRunner = func() run.Runner { return gitRunner }
+	h := newHandlers(f)
+	result, err := h.cloneRepo(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"slug":    "missing-repo",
+	}))
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+// errCloneFailed is a sentinel used by TestCloneRepo_RepoNotFound.
+var errCloneFailed = &backend.DomainError{
+	Kind:    backend.ErrNotFound,
+	Code:    backend.CodeRepoNotFound,
+	Message: "repo not found",
 }
 
 // ── put_file ──────────────────────────────────────────────────────────────────

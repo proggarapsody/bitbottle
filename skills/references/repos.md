@@ -11,7 +11,7 @@ bitbottle repo list  [PROJ]                     # PROJ optional; defaults to all
 bitbottle repo view  PROJ/repo [--web]
 bitbottle repo create NAME --project PROJ [--description "x"] [--private=false]
 bitbottle repo delete PROJ/repo [--confirm]     # destructive
-bitbottle repo clone  PROJ/repo [PATH]
+bitbottle repo clone  [HOST/]PROJ/repo [DIR] [--ssh|--https]    # API-resolved URL; writes bitbottle.* git config; MCP: clone_repo
 bitbottle repo set-default HOST/PROJ/repo       # writes .git/config in cwd
 bitbottle repo rename   PROJ/repo NEW-NAME [--confirm]              # both backends; slug derives from name on Cloud — destructive
 bitbottle repo fork     WS/repo --into TARGET-WS [--name NAME]       # Cloud only

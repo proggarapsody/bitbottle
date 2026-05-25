@@ -200,6 +200,16 @@ func TestCloudClient_ForkRepo_SendsNameWhenSet(t *testing.T) {
 	assert.Equal(t, "forked", gotBody["name"])
 }
 
+func TestCloudClient_GetRepo_MapsCloneURLs(t *testing.T) {
+	t.Parallel()
+	client, _ := cloudFixtureClient(t, "testdata/repo_get.json", 200)
+	repo, err := client.GetRepo("myworkspace", "my-service")
+	require.NoError(t, err)
+	require.Len(t, repo.CloneURLs, 2)
+	assert.Equal(t, "https", repo.CloneURLs[0].Name)
+	assert.Equal(t, "ssh", repo.CloneURLs[1].Name)
+}
+
 func TestCloudClient_DeleteRepo_204(t *testing.T) {
 	t.Parallel()
 	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {

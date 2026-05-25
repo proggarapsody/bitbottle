@@ -1,5 +1,11 @@
 package backend
 
+// CloneURL is a single clone-protocol entry returned by the Bitbucket repo API.
+type CloneURL struct {
+	Name string // "ssh", "https", or "http"
+	URL  string
+}
+
 // Repository is the domain representation of a Bitbucket repository.
 //
 // ID is the backend's numeric identifier (Server / Data Center). Cloud
@@ -16,6 +22,7 @@ type Repository struct {
 	Description string
 	IsPrivate   bool
 	ID          int
+	CloneURLs   []CloneURL
 }
 
 // CreateRepoInput carries the parameters for creating a repository.

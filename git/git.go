@@ -59,6 +59,12 @@ func (g *Git) SetConfig(key, value string) error {
 	return err
 }
 
+// SetConfigInDir writes a key-value pair to the git config of a specific repo dir.
+func (g *Git) SetConfigInDir(dir, key, value string) error {
+	_, _, err := g.runner.Run("-C", dir, "config", "--local", key, value)
+	return err
+}
+
 func (g *Git) HasUncommittedChanges() (bool, error) {
 	stdout, _, err := g.runner.Run("status", "--porcelain")
 	if err != nil {
