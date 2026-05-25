@@ -8,9 +8,9 @@ import (
 )
 
 type cherryPickRequest struct {
-	Message    string               `json:"message,omitempty"`
-	TargetRef  cherryPickTargetRef  `json:"targetRef"`
-	SourceCommit string             `json:"sourceCommit"`
+	Message      string              `json:"message,omitempty"`
+	TargetRef    cherryPickTargetRef `json:"targetRef"`
+	SourceCommit string              `json:"sourceCommit"`
 }
 
 type cherryPickTargetRef struct {
