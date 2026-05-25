@@ -16,6 +16,7 @@ import (
 	cmdPerms "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/perms"
 	cmdPipelineVar "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/pipelinevar"
 	cmdProject "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/project"
+	cmdSearch "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/search"
 )
 
 func NewCmdWorkspace(f *factory.Factory) *cobra.Command {
@@ -24,6 +25,7 @@ func NewCmdWorkspace(f *factory.Factory) *cobra.Command {
 		Short: "List Bitbucket Cloud workspaces (Cloud only)",
 	}
 	cmd.AddCommand(cmdList.NewCmdList(f, nil))
+	cmd.AddCommand(cmdSearch.NewCmdSearch(f, nil))
 
 	memberCmd := &cobra.Command{
 		Use:   "member",

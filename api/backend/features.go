@@ -614,6 +614,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: false,
 	},
+	{
+		Name:          "WorkspaceSearcher",
+		HumanLabel:    "workspace search",
+		Plural:        false,
+		Check:         func(c Client) bool { _, ok := c.(WorkspaceSearcher); return ok },
+		Feature:       FeatureWorkspaceSearch,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.

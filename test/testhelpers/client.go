@@ -350,6 +350,9 @@ type FakeClient struct {
 	// IssueActivityClient methods (Cloud-only; satisfies backend.IssueActivityClient when set)
 	ListIssueActivityFn func(ns, slug string, issueID int, limit int) ([]backend.IssueChange, error)
 
+	// WorkspaceSearcher methods (Cloud-only; satisfies backend.WorkspaceSearcher when set)
+	SearchWorkspacesFn func(opts backend.WorkspaceSearchOpts) ([]backend.Workspace, error)
+
 	// RepoLabelClient methods (both backends; satisfies backend.RepoLabelClient when set)
 	ListRepoLabelsFn  func(ns, slug string) ([]backend.RepoLabel, error)
 	CreateRepoLabelFn func(ns, slug string, in backend.CreateRepoLabelInput) (backend.RepoLabel, error)
@@ -482,6 +485,7 @@ var (
 	_ backend.MirrorClient                    = (*FakeClient)(nil)
 	_ backend.WorkspacePermsClient            = (*FakeClient)(nil)
 	_ backend.IssueActivityClient             = (*FakeClient)(nil)
+	_ backend.WorkspaceSearcher               = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2412,6 +2416,16 @@ func (c *FakeClient) ListIssueActivity(ns, slug string, issueID int, limit int) 
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListIssueActivity; set ListIssueActivityFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) SearchWorkspaces(opts backend.WorkspaceSearchOpts) ([]backend.Workspace, error) {
+	if c.SearchWorkspacesFn != nil {
+		return c.SearchWorkspacesFn(opts)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SearchWorkspaces; set SearchWorkspacesFn in your test")
 	}
 	return nil, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/cloud"
 )
 
@@ -107,6 +108,109 @@ func TestCloudClient_ListProjects_IssuesCorrectPath(t *testing.T) {
 	_, err := client.ListProjects("acme", 0)
 	require.NoError(t, err)
 	assert.Equal(t, "/workspaces/acme/projects", gotPath)
+}
+
+func TestCloudClient_SearchWorkspaces_NoFilters(t *testing.T) {
+	t.Parallel()
+	var gotQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, "", gotQuery)
+}
+
+func TestCloudClient_SearchWorkspaces_WithQuery(t *testing.T) {
+	t.Parallel()
+	var gotQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{Query: "myws"})
+	require.NoError(t, err)
+	assert.Contains(t, gotQuery, "myws")
+	assert.Contains(t, gotQuery, "slug")
+}
+
+func TestCloudClient_SearchWorkspaces_WithRole(t *testing.T) {
+	t.Parallel()
+	var gotQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{Role: "owner"})
+	require.NoError(t, err)
+	assert.Contains(t, gotQuery, "role=owner")
+}
+
+func TestCloudClient_SearchWorkspaces_WithLimit(t *testing.T) {
+	t.Parallel()
+	var gotQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{Limit: 10})
+	require.NoError(t, err)
+	assert.Contains(t, gotQuery, "pagelen=10")
+}
+
+func TestCloudClient_SearchWorkspaces_DecodesValues(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(wsPageJSON))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	got, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{})
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+	assert.Equal(t, "acme", got[0].Slug)
+	assert.Equal(t, "beta", got[1].Slug)
+}
+
+func TestCloudClient_SearchWorkspaces_LimitCappedAt50(t *testing.T) {
+	t.Parallel()
+	var gotQuery string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{Limit: 200})
+	require.NoError(t, err)
+	assert.Contains(t, gotQuery, "pagelen=50")
+}
+
+func TestCloudClient_SearchWorkspaces_PropagatesAPIError(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"type":"error","error":{"message":"Unauthorized"}}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{})
+	require.Error(t, err)
 }
 
 func TestCloudClient_ListProjects_RejectsEmptyWorkspace(t *testing.T) {

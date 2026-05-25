@@ -13,6 +13,13 @@ bitbottle workspace list
 bitbottle workspace list --limit 100
 bitbottle workspace list --json slug,name --jq '.[].slug'
 
+# Search workspaces by slug/name prefix with optional role filter
+bitbottle workspace search
+bitbottle workspace search --query myws
+bitbottle workspace search --role owner
+bitbottle workspace search --query myws --role collaborator --limit 10
+bitbottle workspace search --json
+
 # List members of a workspace
 bitbottle workspace member list WORKSPACE
 bitbottle workspace member list                # inferred from pinned repo
@@ -37,6 +44,10 @@ bitbottle workspace hook delete WORKSPACE UUID
 |---|---|---|---|
 | `workspace list` | `--limit INT` | 30 | Max workspaces returned (0 = no cap) |
 | `workspace list` | `--hostname HOST` | — | Override the Bitbucket host |
+| `workspace search` | `--query Q` | — | Slug/name prefix to match |
+| `workspace search` | `--role ROLE` | — | Filter by role: owner, collaborator, or member |
+| `workspace search` | `--limit INT` | 30 | Max workspaces returned (0 = no cap) |
+| `workspace search` | `--hostname HOST` | — | Override the Bitbucket host |
 | `workspace member list` | `--limit INT` | 50 | Max members returned (0 = no cap) |
 | `workspace member list` | `--hostname HOST` | — | Override the Bitbucket host |
 | `workspace hook list` | `--hostname HOST` | — | Override the Bitbucket host |
@@ -104,6 +115,7 @@ Output fields for `view` and `--json`: `key`, `name`, `description`, `is_private
 
 ## MCP tools
 
+- `search_workspaces` — `query`, `role`, `hostname`, `limit`
 - `list_workspace_members` — `workspace` (required), `hostname`, `limit`
 - `workspace_hook_list` — `workspace` (required), `hostname`
 - `workspace_hook_create` — `workspace` (required), `url` (required), `events` (required, comma-separated), `active`, `hostname`
