@@ -213,6 +213,30 @@ func TestServerClient_UnreadyPR_GetsThenPutsFullBody(t *testing.T) {
 	assert.Contains(t, put, `"toRef"`)
 }
 
+// TestServerClient_UpdatePR_IncludesVersion verifies that UpdatePR first GETs
+// the current PR to read its version, then PUTs with that version in the body.
+// Bitbucket Server rejects a PUT without version with HTTP 400.
+func TestServerClient_UpdatePR_IncludesVersion(t *testing.T) {
+	t.Parallel()
+	var putBody []byte
+	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPut {
+			putBody, _ = io.ReadAll(r.Body)
+			// Return a plausible PR response with version bumped.
+			_, _ = io.WriteString(w, `{"id":135,"version":8,"title":"new","description":"newdesc","state":"OPEN","draft":false,"author":{"user":{"slug":"alice","displayName":"Alice"}},"fromRef":{"id":"refs/heads/feat/x","displayId":"feat/x"},"toRef":{"id":"refs/heads/main","displayId":"main"},"links":{"self":[{"href":"https://bb.example.com/pull-requests/135"}]}}`)
+			return
+		}
+		// GET: return PR with version 7.
+		_, _ = io.WriteString(w, `{"id":135,"version":7,"title":"old","description":"old","state":"OPEN","draft":false,"author":{"user":{"slug":"alice","displayName":"Alice"}},"fromRef":{"id":"refs/heads/feat/x","displayId":"feat/x"},"toRef":{"id":"refs/heads/main","displayId":"main"},"links":{"self":[{"href":"https://bb.example.com/pull-requests/135"}]}}`)
+	})
+	_, err := client.UpdatePR("ns", "slug", 135, backend.UpdatePRInput{Title: "new", Description: "newdesc"})
+	require.NoError(t, err)
+	// PUT body must include the version fetched from GET (7).
+	assert.Contains(t, string(putBody), `"version":7`,
+		"UpdatePR PUT body must include the current version for Server optimistic concurrency")
+}
+
 func TestServerClient_RemoveReviewers_DeletesPerUser(t *testing.T) {
 	t.Parallel()
 	var paths, methods []string
