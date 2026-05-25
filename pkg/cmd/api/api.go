@@ -77,13 +77,26 @@ func runAPI(cmd *cobra.Command, f *factory.Factory, endpoint string, opts *optio
 		case 1:
 			host = hosts[0]
 		default:
-			return fmt.Errorf("multiple hosts configured; use --hostname to specify one")
+			// Multiple hosts: try to auto-detect from the git remote (BaseRepo).
+			// If not in a git checkout, fall through to the original error.
+			if f.BaseRepo != nil {
+				if ref, err := f.BaseRepo(); err == nil && ref.Host != "" {
+					host = ref.Host
+				}
+			}
+			if host == "" {
+				return fmt.Errorf("multiple hosts configured; use --hostname to specify one")
+			}
 		}
 	}
 	hostCfg, ok := cfg.Get(host)
 	if !ok {
 		return fmt.Errorf("not logged into %s", host)
 	}
+	// Resolve the token through the keyring so post-`auth migrate` configs work.
+	// factory.Backend does this via resolveToken; replicate that here so `bitbottle api`
+	// authenticates correctly when the token has been migrated out of hosts.yml.
+	hostCfg.OAuthToken = factory.ResolveToken(hostCfg, f.Keyring)
 
 	hc, err := f.HTTPClient(host)
 	if err != nil {
