@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.103.0](https://github.com/proggarapsody/bitbottle/compare/v1.102.0...v1.103.0) (2026-05-25)
+
+
+### Features
+
+* **admin:** add admin banner commands (get/set/clear) for Server/DC ([434aee1](https://github.com/proggarapsody/bitbottle/commit/434aee1ccdeb105c063e62624a74f10df844bd36))
+
 ## [1.102.0](https://github.com/proggarapsody/bitbottle/compare/v1.101.0...v1.102.0) (2026-05-25)
 
 
