@@ -8,6 +8,7 @@ type PipelineClient interface {
 	GetPipeline(ns, slug, uuid string) (Pipeline, error)
 	RunPipeline(ns, slug string, in RunPipelineInput) (Pipeline, error)
 	StopPipeline(ws, slug, pipelineUUID string) error
+	RerunPipeline(ns, slug, sourceUUID string) (Pipeline, error)
 	ListPipelineSteps(ns, slug, uuid string) ([]PipelineStep, error)
 	GetPipelineStepLog(ns, slug, pipelineUUID, stepUUID string) (io.ReadCloser, error)
 	ListPipelineVariables(ns, slug string) ([]PipelineVariable, error)
