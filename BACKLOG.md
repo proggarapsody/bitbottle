@@ -488,6 +488,8 @@ Current state of every command area against gh feature parity:
 | EXT-SCAFFOLD | **Extension Scaffold** | `extension scaffold NAME [--lang go\|bash] [--dir DIR]` — initialize a new bitbottle extension project from a template (matches `gh extension create`). Generates `bitbottle-NAME/` with: (a) `bitbottle-NAME` executable stub (Go `main.go` + `go.mod` for `--lang go`, or POSIX-sh script for `--lang bash`), (b) `README.md` with install/usage notes, (c) `.github/workflows/release.yml` releasing a binary asset named `bitbottle-NAME-<os>-<arch>` recognised by `extension install USER/REPO`, (d) `LICENSE` (MIT default). Default `--dir` is cwd. Pure-local command — no Bitbucket API calls (no backend) and no `host.unsupported`. Completes the extension ecosystem alongside shipped EXT-CORE / EXT-RUNTIME / EXT-MGMT. No MCP exposure (template generation is a per-developer one-shot, not an agent loop). Embedded templates live under `pkg/cmd/extension/scaffold/templates/`. — scope **EXT-SCAFFOLD** | N/A | DX | ✅ |
 | NIGHTLY-E2E | **Nightly live-wire E2E workflow** | `.github/workflows/nightly-e2e.yml` running on a 02:00 UTC cron + manual `workflow_dispatch`. Runs the existing `test/script/` testscript corpus with `BITBOTTLE_E2E=1` against (a) real Bitbucket Cloud (workspace + repo + PAT via `secrets.BB_CLOUD_*`) and (b) real Bitbucket Server (URL + PAT via `secrets.BB_SERVER_*`), in a job matrix of `{cloud, server}`. Closes the explicit tier-6 gap called out in `docs/ARCHITECTURE.md` "Test tiers" and `docs/TESTING-PYRAMID.md`. On failure: open (or update) a `nightly-e2e: <date>` GitHub issue with the failing scripts + run URL; never block `main`. Reuses the same hermetic txtar files — the env flag flips the harness from `bb-fake` to real backends. Touches: new workflow file, `auto-iter/scripts/preflight.sh` skip note ("nightly-e2e PRs gated separately"), `docs/TESTING-PYRAMID.md` tier-6 status flip. — scope **NIGHTLY-E2E** | N/A | DX | ✅ |
 | CI-BADGE | **Fix CI status badge permanently showing "failing"** | The README CI badge reports `failing` even when all GitHub Actions workflows are green. Diagnose root cause: likely the badge URL references a workflow `name:` field or branch that doesn't exactly match, or the badge points at a workflow that legitimately fails on some triggers (e.g. a skipped path-filtered job counted as failed). Fix: (1) verify the badge URL's `workflow=` parameter matches the exact `name:` in the `.github/workflows/ci.yml` file and the `branch=` matches `main`; (2) if a workflow is expected to conditionally fail, split it out or add a dedicated always-passing status job; (3) switch to the shields.io `workflow` badge format if the GitHub native badge continues to flicker. Update `README.md` with the corrected badge URL. | N/A | DX | ✅ |
+| SOURCE-WRITE | **Write file content via API** | `repo file put PATH --branch BRANCH --message MSG [--content TEXT \| --content-file FILE] [PROJECT/REPO]` — create or update a file on a branch without a local git clone. Server: `PUT /rest/api/1.0/projects/{k}/repos/{s}/browse/{path}` (multipart: `content`, `branch`, `message`, optional `sourceCommitId`). Cloud: `POST /repositories/{ws}/{slug}/src` (multipart: file part + `message`, `branch`, optional `parents`). New optional interface `SourceWriter`. MCP tool `put_file`. Complement to `repo file get` (✅). — scope **SOURCE-WRITE** | Both | 2 | ✅ |
+| ADMIN-MAIL | **Admin mail server configuration** | `admin mail get [--json]`, `admin mail set --host HOST --port N [--protocol smtp\|smtps] [--username U] [--password P] [--sender EMAIL] [--use-start-tls] [--require-start-tls]` — read/write Bitbucket Server SMTP configuration. Server: `GET /rest/api/1.0/admin/mail-server`, `PUT /rest/api/1.0/admin/mail-server`. Cloud → `host.unsupported`. Extends existing `AdminClient` interface. MCP pair `get_mail_server_config`, `set_mail_server_config`. — scope **ADMIN-MAIL** | Server/DC | 2 | ✅ |
 
 
 ---
@@ -3052,6 +3054,92 @@ EXT-CORE / EXT-RUNTIME / EXT-MGMT shipped the install + exec + upgrade + remove 
 - [ ] `test/script/scripts.go` (or the testscript bootstrap) reads the env vars and skips Cloud-only scripts on the server matrix leg and vice versa
 - [ ] `docs/TESTING-PYRAMID.md` tier-6 status flipped from "not shipped" to "shipped"
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### SOURCE-WRITE — Write file content via API
+
+**Status:** ✅
+
+Complement to `repo file get` (✅ RV1). Allows agents and scripts to create or update a file on a branch without a local git clone. Useful for programmatically updating config files, changelogs, READMEs, etc.
+
+**Interface:**
+```go
+// api/backend/client_source_write.go
+type SourceWriter interface {
+    PutFile(ns, slug, path string, in PutFileInput) error
+}
+
+type PutFileInput struct {
+    Content      string // raw file content (UTF-8 text or base64 for binary)
+    Branch       string // target branch
+    Message      string // commit message
+    SourceCommit string // optional: expected HEAD SHA for conflict detection
+}
+```
+
+**Commands:** `bitbottle repo file put PATH --branch BRANCH --message MSG [--content TEXT | --content-file FILE] [--source-commit SHA] [PROJECT/REPO]`
+
+**Backends:**
+- Server: `PUT /rest/api/1.0/projects/{k}/repos/{s}/browse/{path}` with multipart form body: `content=<bytes>`, `branch=<name>`, `message=<text>`, `sourceCommitId=<sha>` (optional, for conflict detection)
+- Cloud: `POST /repositories/{ws}/{slug}/src` with multipart form: file part named as the path, plus `message=<text>`, `branch=<name>`, `parents=<sha>` (optional)
+
+**MCP tools:** `put_file`
+
+**Definition of Done:**
+- [x] `api/backend/client_source_write.go` — `SourceWriter` interface + `PutFileInput` type + `FeatureSourceWrite` + `AsSourceWriter`
+- [x] `api/server/source_write.go` + `api/server/source_write_test.go`
+- [x] `api/cloud/source_write.go` + `api/cloud/source_write_test.go`
+- [x] `pkg/cmd/repo/file/put/put.go` + `pkg/cmd/repo/file/put/put_test.go`
+- [x] `pkg/cmd/mcp/tools_repo.go` entry + `pkg/cmd/mcp/handlers_repo.go` method + `pkg/cmd/mcp/handlers_repo_test.go` test
+- [x] `test/testhelpers/client.go` — `PutFileFn` field + compile assertion
+- [x] `api/backend/features.go` — `FeatureSourceWrite` + `AllFeatureSpecs` entry (count 50 → 51)
+- [x] `api/backend/capability_contract_test.go` — count + name updated
+- [x] `skills/SKILL.md` + `skills/references/repos.md` updated
+- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### ADMIN-MAIL — Admin mail server configuration
+
+**Status:** ✅
+
+Bitbucket Server/DC exposes SMTP configuration via a dedicated admin REST endpoint. This is separate from general `admin logging` and `admin secrets` — it controls how Bitbucket sends email notifications. Cloud → `ErrUnsupportedOnHost` (Cloud uses Atlassian's managed email infrastructure).
+
+**Interface** (extends `AdminClient` in `api/backend/client_admin.go`):
+```go
+GetMailServerConfig() (MailServerConfig, error)
+SetMailServerConfig(in MailServerConfig) error
+
+type MailServerConfig struct {
+    Hostname        string
+    Port            int
+    Protocol        string // "smtp" | "smtps"
+    UseStartTLS     bool
+    RequireStartTLS bool
+    Username        string
+    SenderAddress   string
+    // Password is write-only; never returned in GET response
+}
+```
+
+**Commands:**
+- `bitbottle admin mail get [--hostname HOST] [--json]`
+- `bitbottle admin mail set [--hostname HOST] --host HOSTNAME --port N [--protocol smtp|smtps] [--username U] [--sender EMAIL] [--use-start-tls] [--require-start-tls]`
+
+**Backends:** Server (`GET /rest/api/1.0/admin/mail-server`, `PUT /rest/api/1.0/admin/mail-server`). Cloud → `ErrUnsupportedOnHost`.
+
+**MCP tools:** `get_mail_server_config`, `set_mail_server_config`
+
+**Definition of Done:**
+- [x] `api/backend/client_admin.go` — add `GetMailServerConfig` + `SetMailServerConfig` methods + `MailServerConfig` type
+- [x] `api/server/admin.go` — implement both methods
+- [x] `pkg/cmd/admin/mail/mail.go` + `pkg/cmd/admin/mail/get/get.go` + `pkg/cmd/admin/mail/set/set.go` + matching `_test.go`
+- [x] `pkg/cmd/admin/admin.go` — wire `mail.NewCmdMail(f)`
+- [x] `pkg/cmd/mcp/tools_admin.go` entries + `pkg/cmd/mcp/handlers_admin.go` methods + `pkg/cmd/mcp/handlers_admin_test.go` tests
+- [x] `test/testhelpers/client.go` — `GetMailServerConfigFn` + `SetMailServerConfigFn` fields + implementations
+- [x] `skills/references/admin.md` updated
+- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---
 
