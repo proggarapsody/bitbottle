@@ -1,0 +1,18 @@
+# workspace project CRUD operations.
+bb-fake cloud
+
+bitbottle workspace project create testworkspace --key MYPROJ --name MyProject -k
+stdout 'MYPROJ'
+
+bitbottle workspace project view testworkspace MYPROJ -k
+stdout 'MYPROJ'
+stdout 'My Project'
+
+bitbottle workspace project view testworkspace MYPROJ -k --json
+stdout '"key"'
+
+bitbottle workspace project edit testworkspace MYPROJ --name UpdatedProject -k
+stdout 'Updated'
+
+bitbottle workspace project delete testworkspace MYPROJ -k --confirm
+stdout 'Deleted'

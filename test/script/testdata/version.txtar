@@ -1,0 +1,18 @@
+# version list shows versions; view shows single; create adds; delete removes.
+bb-fake cloud
+
+bitbottle version list testworkspace/cloud-repo-a -k
+stdout '1.0'
+stdout '2.0'
+
+bitbottle version view 1 testworkspace/cloud-repo-a -k
+stdout '1.0'
+
+bitbottle version list testworkspace/cloud-repo-a -k --json
+stdout '"name"'
+
+bitbottle version create testworkspace/cloud-repo-a --name 3.0 -k
+stdout 'Created'
+
+bitbottle version delete 1 testworkspace/cloud-repo-a -k --confirm
+stdout 'Deleted'

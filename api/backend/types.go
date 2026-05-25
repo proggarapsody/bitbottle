@@ -159,3 +159,33 @@ type Milestone struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
+
+// IssueVersion is the domain representation of a Bitbucket Cloud issue version.
+type IssueVersion struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// WorkspaceProject is the domain representation of a Bitbucket Cloud workspace project.
+type WorkspaceProject struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	IsPrivate   bool   `json:"is_private"`
+}
+
+// CreateWorkspaceProjectInput carries the parameters for creating a workspace project.
+type CreateWorkspaceProjectInput struct {
+	Key         string
+	Name        string
+	Description string
+	IsPrivate   bool
+}
+
+// UpdateWorkspaceProjectInput carries the parameters for updating a workspace project.
+// Nil pointer fields are left unchanged.
+type UpdateWorkspaceProjectInput struct {
+	Name        *string
+	Description *string
+	IsPrivate   *bool
+}

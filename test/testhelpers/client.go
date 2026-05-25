@@ -364,6 +364,18 @@ type FakeClient struct {
 	// MilestoneClient methods (Cloud-only; satisfies backend.MilestoneClient when set)
 	ListMilestonesFn func(ns, slug string, limit int) ([]backend.Milestone, error)
 	GetMilestoneFn   func(ns, slug string, id int) (backend.Milestone, error)
+
+	// IssueVersionClient methods (Cloud-only; satisfies backend.IssueVersionClient when set)
+	ListIssueVersionsFn  func(ns, slug string, limit int) ([]backend.IssueVersion, error)
+	GetIssueVersionFn    func(ns, slug string, id int) (backend.IssueVersion, error)
+	CreateIssueVersionFn func(ns, slug, name string) (backend.IssueVersion, error)
+	DeleteIssueVersionFn func(ns, slug string, id int) error
+
+	// CloudProjectClient methods (Cloud-only; satisfies backend.CloudProjectClient when set)
+	CreateWorkspaceProjectFn func(ws string, input backend.CreateWorkspaceProjectInput) (backend.WorkspaceProject, error)
+	GetWorkspaceProjectFn    func(ws, key string) (backend.WorkspaceProject, error)
+	UpdateWorkspaceProjectFn func(ws, key string, input backend.UpdateWorkspaceProjectInput) (backend.WorkspaceProject, error)
+	DeleteWorkspaceProjectFn func(ws, key string) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -428,6 +440,8 @@ var (
 	_ backend.RefComparer              = (*FakeClient)(nil)
 	_ backend.RepoDownloadClient       = (*FakeClient)(nil)
 	_ backend.MilestoneClient          = (*FakeClient)(nil)
+	_ backend.IssueVersionClient       = (*FakeClient)(nil)
+	_ backend.CloudProjectClient       = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2602,4 +2616,84 @@ func (c *FakeClient) GetMilestone(ns, slug string, id int) (backend.Milestone, e
 		c.T.Fatalf("unexpected call to FakeClient.GetMilestone; set GetMilestoneFn in your test")
 	}
 	return backend.Milestone{}, nil
+}
+
+func (c *FakeClient) ListIssueVersions(ns, slug string, limit int) ([]backend.IssueVersion, error) {
+	if c.ListIssueVersionsFn != nil {
+		return c.ListIssueVersionsFn(ns, slug, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListIssueVersions; set ListIssueVersionsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetIssueVersion(ns, slug string, id int) (backend.IssueVersion, error) {
+	if c.GetIssueVersionFn != nil {
+		return c.GetIssueVersionFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetIssueVersion; set GetIssueVersionFn in your test")
+	}
+	return backend.IssueVersion{}, nil
+}
+
+func (c *FakeClient) CreateIssueVersion(ns, slug, name string) (backend.IssueVersion, error) {
+	if c.CreateIssueVersionFn != nil {
+		return c.CreateIssueVersionFn(ns, slug, name)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateIssueVersion; set CreateIssueVersionFn in your test")
+	}
+	return backend.IssueVersion{}, nil
+}
+
+func (c *FakeClient) DeleteIssueVersion(ns, slug string, id int) error {
+	if c.DeleteIssueVersionFn != nil {
+		return c.DeleteIssueVersionFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteIssueVersion; set DeleteIssueVersionFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) CreateWorkspaceProject(ws string, input backend.CreateWorkspaceProjectInput) (backend.WorkspaceProject, error) {
+	if c.CreateWorkspaceProjectFn != nil {
+		return c.CreateWorkspaceProjectFn(ws, input)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateWorkspaceProject; set CreateWorkspaceProjectFn in your test")
+	}
+	return backend.WorkspaceProject{}, nil
+}
+
+func (c *FakeClient) GetWorkspaceProject(ws, key string) (backend.WorkspaceProject, error) {
+	if c.GetWorkspaceProjectFn != nil {
+		return c.GetWorkspaceProjectFn(ws, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetWorkspaceProject; set GetWorkspaceProjectFn in your test")
+	}
+	return backend.WorkspaceProject{}, nil
+}
+
+func (c *FakeClient) UpdateWorkspaceProject(ws, key string, input backend.UpdateWorkspaceProjectInput) (backend.WorkspaceProject, error) {
+	if c.UpdateWorkspaceProjectFn != nil {
+		return c.UpdateWorkspaceProjectFn(ws, key, input)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdateWorkspaceProject; set UpdateWorkspaceProjectFn in your test")
+	}
+	return backend.WorkspaceProject{}, nil
+}
+
+func (c *FakeClient) DeleteWorkspaceProject(ws, key string) error {
+	if c.DeleteWorkspaceProjectFn != nil {
+		return c.DeleteWorkspaceProjectFn(ws, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteWorkspaceProject; set DeleteWorkspaceProjectFn in your test")
+	}
+	return nil
 }
