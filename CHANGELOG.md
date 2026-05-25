@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.118.0](https://github.com/proggarapsody/bitbottle/compare/v1.117.0...v1.118.0) (2026-05-25)
+
+
+### Features
+
+* **issue:** add issue activity log command and MCP tool list_issue_activity (Cloud) ([c1e4490](https://github.com/proggarapsody/bitbottle/commit/c1e4490cd1e0cfc7cb8eebc8db89f639de09da1a))
+
 ## [1.117.0](https://github.com/proggarapsody/bitbottle/compare/v1.116.0...v1.117.0) (2026-05-25)
 
 
