@@ -1,0 +1,11 @@
+# pipeline config get shows enabled status; disable prints confirmation.
+bb-fake cloud
+
+bitbottle pipeline config get testworkspace/cloud-repo-a -k
+stdout 'true'
+
+bitbottle pipeline config get testworkspace/cloud-repo-a -k --json
+stdout '"enabled"'
+
+bitbottle pipeline config disable testworkspace/cloud-repo-a -k
+stdout 'disabled'

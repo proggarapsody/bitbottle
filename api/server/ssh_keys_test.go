@@ -81,7 +81,7 @@ func TestServerClient_AddSSHKey_MissingKey(t *testing.T) {
 	})
 	_, err := c.AddSSHKey(backend.SSHKeyInput{Label: "no key"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "key required")
+	assert.Contains(t, err.Error(), "key is required")
 }
 
 func TestServerClient_DeleteSSHKey(t *testing.T) {

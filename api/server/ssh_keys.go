@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
@@ -51,7 +50,11 @@ func (c *Client) ListSSHKeys() ([]backend.SSHKey, error) {
 // POST /rest/ssh/1.0/keys
 func (c *Client) AddSSHKey(input backend.SSHKeyInput) (backend.SSHKey, error) {
 	if input.Key == "" {
-		return backend.SSHKey{}, fmt.Errorf("key required")
+		return backend.SSHKey{}, &backend.DomainError{
+			Kind:    backend.ErrInvalidRequest,
+			Code:    backend.CodeInvalidRequest,
+			Message: "key is required",
+		}
 	}
 	body := restSSHKeyCreate{Text: input.Key, Label: input.Label}
 	var w restSSHKey
@@ -64,5 +67,5 @@ func (c *Client) AddSSHKey(input backend.SSHKeyInput) (backend.SSHKey, error) {
 // DeleteSSHKey removes an SSH key by ID for the current user.
 // DELETE /rest/ssh/1.0/keys/{id}
 func (c *Client) DeleteSSHKey(id int) error {
-	return c.sshHTTP.DeleteJSON(fmt.Sprintf("/keys/%s", url.PathEscape(fmt.Sprintf("%d", id))), nil)
+	return c.sshHTTP.DeleteJSON(fmt.Sprintf("/keys/%d", id), nil)
 }

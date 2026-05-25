@@ -89,9 +89,9 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `deploy-key` | `list` `add` `delete` |
 | `branch-rule` | `list` `add` `delete` _(Cloud only)_ |
 | `branch-model` | `get` `set` _(Cloud only)_ |
-| `ssh-key` | `list` `add` `delete` _(Cloud only)_ |
+| `ssh-key` | `list` `add` `delete` |
 | `commit` | `log` `view` `status` `status report` `files` `comment {list\|add\|edit\|delete}` |
-| `pipeline` | `list` `view` `run` `steps` `logs` `stop` `trigger` `watch` `schedule {list\|create\|delete}` `cache {list\|delete}` `artifact {list\|download}` _(Cloud only)_ |
+| `pipeline` | `list` `view` `run` `steps` `logs` `stop` `trigger` `watch` `schedule {list\|create\|delete}` `cache {list\|delete}` `artifact {list\|download}` `config {get\|enable\|disable}` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
 | `user` | `view` |
