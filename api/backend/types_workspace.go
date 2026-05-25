@@ -89,6 +89,14 @@ type IssueComment struct {
 	UpdatedOn time.Time
 }
 
+// IssueAttachment is a file attached to a Bitbucket Cloud issue.
+type IssueAttachment struct {
+	Name     string
+	Size     int64
+	MIMEType string
+	Links    struct{ Self string }
+}
+
 // Webhook is the domain representation of a repository webhook.
 // Both Bitbucket Cloud and Server/DC expose a similar shape — a remote URL,
 // a list of subscribed events, and an active flag. ID is the backend's

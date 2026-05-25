@@ -159,3 +159,22 @@ type TreeEntry struct {
 	Size int64
 	Hash string
 }
+
+// RepoLabel is a label that can be attached to a Bitbucket repository.
+type RepoLabel struct {
+	ID    int
+	Name  string
+	Color string
+}
+
+// CreateRepoLabelInput carries the parameters for creating a repository label.
+type CreateRepoLabelInput struct {
+	Name  string
+	Color string
+}
+
+// UpdateRepoLabelInput carries the parameters for updating a repository label.
+type UpdateRepoLabelInput struct {
+	Name  string
+	Color string
+}

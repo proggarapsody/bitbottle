@@ -46,16 +46,18 @@ func TestAllFeatureSpecs_ServerSupport(t *testing.T) {
 
 func TestAllFeatureSpecs_Coverage(t *testing.T) {
 	t.Parallel()
-	// All 46 expected names must be present in AllFeatureSpecs.
+	// All 50 expected names must be present in AllFeatureSpecs.
 	expected := []string{
 		"AdminClient", "BranchModelClient", "BranchProtector", "BranchRuleClient", "CodeInsightsClient",
 		"CodeSearcher", "CommentReactor", "CommitCommentReactor", "CommitFileClient",
 		"DefaultReviewerClient", "DefaultReviewersResolver", "DeployKeyClient", "DeploymentClient",
-		"DiffClient", "GroupClient", "GroupMemberClient", "IssueClient", "PRCommitClient", "PRCommentResolver",
+		"DiffClient", "GroupClient", "GroupMemberClient",
+		"IssueAttacher", "IssueClient", "IssueVoter", "IssueWatcher",
+		"PRCommitClient", "PRCommentResolver",
 		"PRCommentStateSetter", "PRFileClient", "PRParticipantClient", "PRReopener",
 		"PATClient", "PermissionsClient", "PipelineArtifactClient", "PipelineCacheClient", "PipelineClient",
 		"PipelineScheduleClient", "PipelineTriggerClient", "RepoEditor", "RepoForker", "RepoForksLister",
-		"RepoPRSettingsClient", "RepoTransferClient", "RepoWatcherClient", "ReviewerGroupClient",
+		"RepoPRSettingsClient", "RepoLabelClient", "RepoTransferClient", "RepoWatcherClient", "ReviewerGroupClient",
 		"ServerProjectClient", "SnippetClient", "SSHKeyClient",
 		"SuggestionApplier", "VersionedServer", "WorkspaceClient", "WorkspaceMemberClient",
 		"WorkspaceVariableClient", "WorkspaceWebhookClient",

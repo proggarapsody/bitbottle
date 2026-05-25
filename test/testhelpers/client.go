@@ -288,6 +288,24 @@ type FakeClient struct {
 	ListPATsFn  func(userSlug string, limit int) ([]backend.PAT, error)
 	CreatePATFn func(userSlug string, in backend.CreatePATInput) (backend.PATWithSecret, error)
 	RevokePATFn func(userSlug, tokenID string) error
+
+	// IssueAttacher methods (Cloud-only; satisfies backend.IssueAttacher when set)
+	ListIssueAttachmentsFn  func(ns, slug string, id int) ([]backend.IssueAttachment, error)
+	DeleteIssueAttachmentFn func(ns, slug string, id int, filename string) error
+
+	// IssueVoter methods (Cloud-only; satisfies backend.IssueVoter when set)
+	VoteIssueFn   func(ns, slug string, id int) error
+	UnvoteIssueFn func(ns, slug string, id int) error
+
+	// IssueWatcher methods (Cloud-only; satisfies backend.IssueWatcher when set)
+	WatchIssueFn   func(ns, slug string, id int) error
+	UnwatchIssueFn func(ns, slug string, id int) error
+
+	// RepoLabelClient methods (both backends; satisfies backend.RepoLabelClient when set)
+	ListRepoLabelsFn  func(ns, slug string) ([]backend.RepoLabel, error)
+	CreateRepoLabelFn func(ns, slug string, in backend.CreateRepoLabelInput) (backend.RepoLabel, error)
+	UpdateRepoLabelFn func(ns, slug string, id int, in backend.UpdateRepoLabelInput) (backend.RepoLabel, error)
+	DeleteRepoLabelFn func(ns, slug string, id int) error
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -339,6 +357,10 @@ var (
 	_ backend.GroupMemberClient        = (*FakeClient)(nil)
 	_ backend.ServerProjectClient      = (*FakeClient)(nil)
 	_ backend.PATClient                = (*FakeClient)(nil)
+	_ backend.IssueAttacher            = (*FakeClient)(nil)
+	_ backend.IssueVoter               = (*FakeClient)(nil)
+	_ backend.IssueWatcher             = (*FakeClient)(nil)
+	_ backend.RepoLabelClient          = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2059,6 +2081,114 @@ func (c *FakeClient) RevokePAT(userSlug, tokenID string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RevokePAT; set RevokePATFn in your test")
+	}
+	return nil
+}
+
+// ── IssueAttacher ─────────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListIssueAttachments(ns, slug string, id int) ([]backend.IssueAttachment, error) {
+	if c.ListIssueAttachmentsFn != nil {
+		return c.ListIssueAttachmentsFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListIssueAttachments; set ListIssueAttachmentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) DeleteIssueAttachment(ns, slug string, id int, filename string) error {
+	if c.DeleteIssueAttachmentFn != nil {
+		return c.DeleteIssueAttachmentFn(ns, slug, id, filename)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteIssueAttachment; set DeleteIssueAttachmentFn in your test")
+	}
+	return nil
+}
+
+// ── IssueVoter ────────────────────────────────────────────────────────────────
+
+func (c *FakeClient) VoteIssue(ns, slug string, id int) error {
+	if c.VoteIssueFn != nil {
+		return c.VoteIssueFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.VoteIssue; set VoteIssueFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) UnvoteIssue(ns, slug string, id int) error {
+	if c.UnvoteIssueFn != nil {
+		return c.UnvoteIssueFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UnvoteIssue; set UnvoteIssueFn in your test")
+	}
+	return nil
+}
+
+// ── IssueWatcher ─────────────────────────────────────────────────────────────
+
+func (c *FakeClient) WatchIssue(ns, slug string, id int) error {
+	if c.WatchIssueFn != nil {
+		return c.WatchIssueFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.WatchIssue; set WatchIssueFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) UnwatchIssue(ns, slug string, id int) error {
+	if c.UnwatchIssueFn != nil {
+		return c.UnwatchIssueFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UnwatchIssue; set UnwatchIssueFn in your test")
+	}
+	return nil
+}
+
+// ── RepoLabelClient ───────────────────────────────────────────────────────────
+
+func (c *FakeClient) ListRepoLabels(ns, slug string) ([]backend.RepoLabel, error) {
+	if c.ListRepoLabelsFn != nil {
+		return c.ListRepoLabelsFn(ns, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListRepoLabels; set ListRepoLabelsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) CreateRepoLabel(ns, slug string, in backend.CreateRepoLabelInput) (backend.RepoLabel, error) {
+	if c.CreateRepoLabelFn != nil {
+		return c.CreateRepoLabelFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CreateRepoLabel; set CreateRepoLabelFn in your test")
+	}
+	return backend.RepoLabel{}, nil
+}
+
+func (c *FakeClient) UpdateRepoLabel(ns, slug string, id int, in backend.UpdateRepoLabelInput) (backend.RepoLabel, error) {
+	if c.UpdateRepoLabelFn != nil {
+		return c.UpdateRepoLabelFn(ns, slug, id, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdateRepoLabel; set UpdateRepoLabelFn in your test")
+	}
+	return backend.RepoLabel{}, nil
+}
+
+func (c *FakeClient) DeleteRepoLabel(ns, slug string, id int) error {
+	if c.DeleteRepoLabelFn != nil {
+		return c.DeleteRepoLabelFn(ns, slug, id)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteRepoLabel; set DeleteRepoLabelFn in your test")
 	}
 	return nil
 }

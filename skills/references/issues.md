@@ -33,3 +33,20 @@ Use `--state on-hold` on the CLI (the hyphen is normalized; the API uses a space
 MCP tools: `list_issues`, `get_issue`, `create_issue`, `close_issue`,
 `update_issue`, `reopen_issue`, `assign_issue`, `list_issue_comments`,
 `add_issue_comment`, `edit_issue_comment`, `delete_issue_comment`.
+
+## Attachments
+```bash
+bitbottle issue attachment list   [PROJECT/REPO] ISSUE_ID [--json]
+bitbottle issue attachment delete [PROJECT/REPO] ISSUE_ID FILENAME
+```
+
+## Vote / watch
+```bash
+bitbottle issue vote    [PROJECT/REPO] ISSUE_ID
+bitbottle issue unvote  [PROJECT/REPO] ISSUE_ID
+bitbottle issue watch   [PROJECT/REPO] ISSUE_ID
+bitbottle issue unwatch [PROJECT/REPO] ISSUE_ID
+```
+
+MCP tools: `list_issue_attachments`, `delete_issue_attachment`, `vote_issue`,
+`unvote_issue`, `watch_issue`, `unwatch_issue`.
