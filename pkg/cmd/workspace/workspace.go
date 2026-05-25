@@ -14,6 +14,7 @@ import (
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/list"
 	cmdMemberList "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/member"
 	cmdPerms "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/perms"
+	cmdPipelineVar "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/pipelinevar"
 	cmdProject "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/project"
 )
 
@@ -39,6 +40,16 @@ func NewCmdWorkspace(f *factory.Factory) *cobra.Command {
 	hookCmd.AddCommand(cmdhook.NewCmdCreate(f, nil))
 	hookCmd.AddCommand(cmdhook.NewCmdDelete(f, nil))
 	cmd.AddCommand(hookCmd)
+
+	pipelineVarCmd := &cobra.Command{
+		Use:   "pipeline-variable",
+		Short: "Manage workspace pipeline variables (Cloud only)",
+	}
+	pipelineVarCmd.AddCommand(cmdPipelineVar.NewCmdList(f, nil))
+	pipelineVarCmd.AddCommand(cmdPipelineVar.NewCmdGet(f, nil))
+	pipelineVarCmd.AddCommand(cmdPipelineVar.NewCmdSet(f, nil))
+	pipelineVarCmd.AddCommand(cmdPipelineVar.NewCmdDelete(f, nil))
+	cmd.AddCommand(pipelineVarCmd)
 
 	cmd.AddCommand(cmdAudit.NewCmdAudit(f, nil))
 	cmd.AddCommand(cmdProject.NewCmdWorkspaceProject(f))

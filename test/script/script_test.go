@@ -729,6 +729,43 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/workspaces/testworkspace/permissions/members/alice",
 			Status:     http.StatusNoContent,
 		},
+		// workspace pipeline-variable list — used by workspace pipeline-variable list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/pipelines-config/variables/",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"uuid": "{pv-uuid-1}", "key": "MY_VAR", "value": "hello", "secured": false},
+				map[string]any{"uuid": "{pv-uuid-2}", "key": "SECRET_VAR", "value": "", "secured": true},
+			}),
+		},
+		// workspace pipeline-variable get — used by workspace pipeline-variable get
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/pipelines-config/variables/{pv-uuid-1}",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"uuid": "{pv-uuid-1}", "key": "MY_VAR", "value": "hello", "secured": false},
+		},
+		// workspace pipeline-variable set (POST) — used by workspace pipeline-variable set (new)
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/workspaces/testworkspace/pipelines-config/variables/",
+			Status:     http.StatusCreated,
+			Body:       map[string]any{"uuid": "{pv-uuid-3}", "key": "NEW_VAR", "value": "newval", "secured": false},
+		},
+		// workspace pipeline-variable set (PUT) — used by workspace pipeline-variable set (update)
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/workspaces/testworkspace/pipelines-config/variables/{pv-uuid-1}",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"uuid": "{pv-uuid-1}", "key": "MY_VAR", "value": "updated", "secured": false},
+		},
+		// workspace pipeline-variable delete — used by workspace pipeline-variable delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/workspaces/testworkspace/pipelines-config/variables/{pv-uuid-1}",
+			Status:     http.StatusNoContent,
+		},
 		// pipeline SSH key pair GET — used by pipeline ssh key-pair view
 		{
 			Method:     http.MethodGet,

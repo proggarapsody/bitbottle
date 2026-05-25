@@ -116,6 +116,47 @@ Output fields for `view` and `--json`: `key`, `name`, `description`, `is_private
 - `list_workspace_repo_perms` — `workspace` (required), `limit`
 - `grant_workspace_perm` — `workspace`, `user`, `permission` (all required)
 - `revoke_workspace_perm` — `workspace`, `user` (both required)
+- `list_workspace_pipeline_vars` — `workspace` (required), `hostname`
+- `get_workspace_pipeline_var` — `workspace`, `key` (both required), `hostname`
+- `set_workspace_pipeline_var` — `workspace`, `key`, `value` (all required), `secured`, `hostname`
+- `delete_workspace_pipeline_var` — `workspace`, `key` (both required), `hostname`
+
+## Workspace Pipeline Variables (Cloud only)
+
+Workspace-level pipeline variables are shared across all repositories in the
+workspace and injected into every pipeline step. They are distinct from
+repo-level pipeline variables (`variable --scope repository`) and deployment
+env vars. Returns `host.unsupported` on Bitbucket Server/DC.
+
+```bash
+# List all workspace pipeline variables
+bitbottle workspace pipeline-variable list WORKSPACE
+bitbottle workspace pipeline-variable list                    # inferred from pinned repo
+bitbottle workspace pipeline-variable list myworkspace --json
+
+# Get a workspace pipeline variable by key
+bitbottle workspace pipeline-variable get WORKSPACE KEY
+bitbottle workspace pipeline-variable get myworkspace MY_VAR --json
+
+# Create or update a workspace pipeline variable (upsert by key)
+bitbottle workspace pipeline-variable set WORKSPACE KEY VALUE
+bitbottle workspace pipeline-variable set myworkspace MY_VAR myvalue
+bitbottle workspace pipeline-variable set myworkspace SECRET_VAR s3cr3t --secured
+
+# Delete a workspace pipeline variable by key
+bitbottle workspace pipeline-variable delete WORKSPACE KEY [--confirm]
+bitbottle workspace pipeline-variable delete myworkspace MY_VAR --confirm
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--secured` | false | Mark as secured (value redacted on read) |
+| `--confirm` | false | Skip deletion confirmation prompt |
+| `--hostname HOST` | — | Override the Bitbucket host |
+| `--json [FIELDS]` | — | JSON output |
+| `--jq EXPR` | — | Filter JSON with jq expression |
+
+Output fields for `list` and `get`: `key`, `value`, `secured`, `uuid` (JSON-only).
 
 ## Workspace Permissions (Cloud only)
 

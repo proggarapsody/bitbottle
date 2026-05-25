@@ -1,0 +1,23 @@
+# workspace pipeline-variable list/get/set/delete.
+bb-fake cloud
+
+bitbottle workspace pipeline-variable list testworkspace -k
+stdout 'MY_VAR'
+stdout 'SECRET_VAR'
+
+bitbottle workspace pipeline-variable list testworkspace -k --json
+stdout '"key"'
+stdout 'MY_VAR'
+
+bitbottle workspace pipeline-variable get testworkspace MY_VAR -k
+stdout 'MY_VAR'
+stdout 'hello'
+
+bitbottle workspace pipeline-variable set testworkspace NEW_VAR newval -k
+stdout 'NEW_VAR'
+
+bitbottle workspace pipeline-variable set testworkspace MY_VAR updated -k
+stdout 'MY_VAR'
+
+bitbottle workspace pipeline-variable delete testworkspace MY_VAR -k --confirm
+stdout 'Deleted'

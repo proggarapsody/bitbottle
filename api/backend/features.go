@@ -512,6 +512,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "WorkspacePipelineVariableClient",
+		HumanLabel:    "workspace pipeline variables",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(WorkspacePipelineVariableClient); return ok },
+		Feature:       FeatureWorkspacePipelineVars,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "WorkspaceWebhookClient",
 		HumanLabel:    "workspace webhooks",
 		Plural:        true,

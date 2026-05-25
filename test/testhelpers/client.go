@@ -167,6 +167,12 @@ type FakeClient struct {
 	SetWorkspaceVariableFn    func(ns string, in backend.PipelineVariableInput) (backend.PipelineVariable, error)
 	DeleteWorkspaceVariableFn func(ns, key string) error
 
+	// Workspace pipeline variable methods (Cloud-only; satisfies backend.WorkspacePipelineVariableClient when set)
+	ListWorkspacePipelineVariablesFn  func(workspace string) ([]backend.PipelineVariable, error)
+	GetWorkspacePipelineVariableFn    func(workspace, uuid string) (backend.PipelineVariable, error)
+	SetWorkspacePipelineVariableFn    func(workspace string, in backend.PipelineVariableInput) (backend.PipelineVariable, error)
+	DeleteWorkspacePipelineVariableFn func(workspace, uuid string) error
+
 	// Permissions methods (Server-only; satisfies backend.PermissionsClient when set)
 	ListProjectPermissionsFn  func(ctx context.Context, project string) ([]backend.PermissionGrant, error)
 	GrantProjectPermissionFn  func(ctx context.Context, project string, subject backend.PermissionSubject, perm string) error
@@ -441,8 +447,9 @@ var (
 	_ backend.SSHKeyClient             = (*FakeClient)(nil)
 	_ backend.WorkspaceClient          = (*FakeClient)(nil)
 	_ backend.WorkspaceMemberClient    = (*FakeClient)(nil)
-	_ backend.WorkspaceVariableClient  = (*FakeClient)(nil)
-	_ backend.PRReviewerRemover        = (*FakeClient)(nil)
+	_ backend.WorkspaceVariableClient         = (*FakeClient)(nil)
+	_ backend.WorkspacePipelineVariableClient = (*FakeClient)(nil)
+	_ backend.PRReviewerRemover               = (*FakeClient)(nil)
 	_ backend.WorkspaceWebhookClient   = (*FakeClient)(nil)
 	_ backend.GroupClient              = (*FakeClient)(nil)
 	_ backend.GroupMemberClient        = (*FakeClient)(nil)
@@ -1455,6 +1462,48 @@ func (c *FakeClient) DeleteWorkspaceVariable(ns, key string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteWorkspaceVariable; set DeleteWorkspaceVariableFn in your test")
+	}
+	return nil
+}
+
+// ── WorkspacePipelineVariableClient ──────────────────────────────────────────
+
+func (c *FakeClient) ListWorkspacePipelineVariables(workspace string) ([]backend.PipelineVariable, error) {
+	if c.ListWorkspacePipelineVariablesFn != nil {
+		return c.ListWorkspacePipelineVariablesFn(workspace)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspacePipelineVariables; set ListWorkspacePipelineVariablesFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetWorkspacePipelineVariable(workspace, uuid string) (backend.PipelineVariable, error) {
+	if c.GetWorkspacePipelineVariableFn != nil {
+		return c.GetWorkspacePipelineVariableFn(workspace, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetWorkspacePipelineVariable; set GetWorkspacePipelineVariableFn in your test")
+	}
+	return backend.PipelineVariable{}, nil
+}
+
+func (c *FakeClient) SetWorkspacePipelineVariable(workspace string, in backend.PipelineVariableInput) (backend.PipelineVariable, error) {
+	if c.SetWorkspacePipelineVariableFn != nil {
+		return c.SetWorkspacePipelineVariableFn(workspace, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetWorkspacePipelineVariable; set SetWorkspacePipelineVariableFn in your test")
+	}
+	return backend.PipelineVariable{}, nil
+}
+
+func (c *FakeClient) DeleteWorkspacePipelineVariable(workspace, uuid string) error {
+	if c.DeleteWorkspacePipelineVariableFn != nil {
+		return c.DeleteWorkspacePipelineVariableFn(workspace, uuid)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteWorkspacePipelineVariable; set DeleteWorkspacePipelineVariableFn in your test")
 	}
 	return nil
 }
