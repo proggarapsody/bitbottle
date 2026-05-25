@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.115.0](https://github.com/proggarapsody/bitbottle/compare/v1.114.0...v1.115.0) (2026-05-25)
+
+
+### Features
+
+* **workspace:** workspace pipeline-variable list/get/set/delete (Cloud) ([d344749](https://github.com/proggarapsody/bitbottle/commit/d344749474cecd471adcb4ebe8433d3985db5e62))
+
 ## [1.114.0](https://github.com/proggarapsody/bitbottle/compare/v1.113.0...v1.114.0) (2026-05-25)
 
 
