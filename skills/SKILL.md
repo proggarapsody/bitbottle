@@ -24,7 +24,7 @@ disagrees with this doc; the binary wins.
 | PR lifecycle (list/view/create/merge/approve/comment/activity/review/commits/files/participants/ready/unready/task/suggestion/comment-react/default-reviewer/reviewer-group/…) | `references/pr.md` |
 | Repos, branches, tags, file/tree, visibility, edit, transfer, watcher, repo label list/create/update/delete, repo pr-settings get, repo pr-settings set | `references/repos.md` |
 | Commits (view/files/status/comment/comment-react) | `references/commit.md` |
-| Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger (Cloud only) | `references/pipeline.md` |
+| Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list (Cloud only) | `references/pipeline.md` |
 | Pipeline runners — list / create / delete (Cloud only) | `references/runner.md` |
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
 | Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch (Cloud only) | `references/issues.md` |
@@ -32,6 +32,7 @@ disagrees with this doc; the binary wins.
 | Deployments + environments + variables (Cloud only) | `references/deployment.md`, `references/variable.md` |
 | Deploy keys (both), branch-rules (Cloud only), ssh-keys (Cloud + Server/DC) | `references/deploy-key.md`, `references/branch-rule.md`, `references/ssh-key.md` |
 | Diff between refs, `diff REF1..REF2` | `references/diff.md` |
+| Branch compare (`branch compare BASE..HEAD`) — ahead/behind counts + commit lists (Cloud + Server/DC) | `references/branch.md` |
 | Workspaces + webhooks (Cloud only), `user view` | `references/workspace.md`, `references/user.md` |
 | Named credential profiles (`profile create/use/list/delete`) | `references/profile.md` |
 | Raw REST passthrough, pagination, MCP server config | `references/api.md` |
@@ -101,7 +102,7 @@ on the host entry in `hosts.yml` (see `references/auth.md`).
 | Auth context flag | `--email you@…` | `--username your.user` |
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
-| Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable/config), `runner list`, `runner create`, `runner delete`, `issue *` (including `issue attachment list/delete`, `issue vote/unvote`, `issue watch/unwatch`), `snippet list [--workspace W]`, `snippet view`, `snippet create`, `snippet delete`, `pr request-changes`, `pr comment resolve`, `branch-rule *`, `branch-model *`, `workspace *`, `search`, `project list WORKSPACE` | — |
+| Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable/config/test-report/test-case), `runner list`, `runner create`, `runner delete`, `issue *` (including `issue attachment list/delete`, `issue vote/unvote`, `issue watch/unwatch`), `snippet list [--workspace W]`, `snippet view`, `snippet create`, `snippet delete`, `pr request-changes`, `pr comment resolve`, `branch-rule *`, `branch-model *`, `workspace *`, `search`, `project list WORKSPACE` | — |
 | Server-only | — | `admin user list/activate/deactivate/rename`, `admin license`, `admin cluster`, `admin secrets rotate`, `admin logging get/set`, `code-insights *`, `pr task *`, `pr suggestion apply`, `pr/commit comment react/unreact`, `pr reviewer-group *`, `repo pr-settings get`, `repo pr-settings set`, `group list`, `group create`, `group delete`, `group member list`, `group member add`, `group member remove`, `project server-list`, `project create`, `project view`, `project edit`, `project delete`, `auth pat list`, `auth pat create`, `auth pat revoke`, `commit cherry-pick HASH BRANCH` |
 
 For custom-hostname Bitbucket Data Center, force routing with
@@ -150,6 +151,16 @@ bitbottle pipeline config disable WORKSPACE/REPO
 bitbottle pipeline artifact list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID
 bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
   --step STEP_UUID --name build.tar.gz [--out PATH|-] [--clobber]
+
+# Test report and test cases (Cloud only)
+bitbottle pipeline test-report view PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID
+bitbottle pipeline test-case list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID [--status FAILED|PASSED|SKIPPED] [--limit N]
+```
+
+```bash
+# Branch compare (Cloud + Server/DC)
+bitbottle branch compare main..feature WORKSPACE/REPO
+bitbottle branch compare main..feature WORKSPACE/REPO --json
 ```
 
 ## Dashboard

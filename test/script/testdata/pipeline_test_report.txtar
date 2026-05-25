@@ -1,0 +1,14 @@
+# pipeline test-report view shows summary; test-case list shows cases.
+bb-fake cloud
+
+bitbottle pipeline test-report view pipe-uuid testworkspace/cloud-repo-a --step step-uuid -k
+stdout 'Total:'
+stdout '10'
+
+bitbottle pipeline test-report view pipe-uuid testworkspace/cloud-repo-a --step step-uuid -k --json
+stdout '"total"'
+stdout '"passed"'
+
+bitbottle pipeline test-case list pipe-uuid testworkspace/cloud-repo-a --step step-uuid -k
+stdout 'TestFoo'
+stdout 'FAILED'

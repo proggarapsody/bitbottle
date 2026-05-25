@@ -12,6 +12,7 @@ import (
 	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
 	cmdSteps "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/steps"
 	cmdStop "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/stop"
+	cmdTestReport "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/testreport"
 	cmdTrigger "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/trigger"
 	cmdView "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/view"
 	cmdWatch "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/watch"
@@ -44,5 +45,7 @@ directory.`,
 	cmd.AddCommand(NewCmdPipelineSchedule(f))
 	cmd.AddCommand(NewCmdPipelineCache(f))
 	cmd.AddCommand(cmdConfig.NewCmdConfig(f))
+	cmd.AddCommand(cmdTestReport.NewCmdTestReport(f))
+	cmd.AddCommand(cmdTestReport.NewCmdTestCase(f))
 	return cmd
 }

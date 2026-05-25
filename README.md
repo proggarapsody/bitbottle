@@ -83,7 +83,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `auth` | `login` `logout` `status` `token` `refresh` `doctor` |
 | `pr` | `list` `view` `create` `merge` `approve` `unapprove` `diff` `checkout` `edit` `decline` `reopen` `ready` `unready` `request-review` `comment` `default-reviewer {list\|add\|remove}` |
 | `repo` | `list` `view` `create` `delete` `clone` `set-default` `rename` `fork` _(Cloud)_ `file get` `tree` `watcher list` |
-| `branch` | `list` `create` `delete` `checkout` |
+| `branch` | `list` `create` `delete` `checkout` `compare` |
 | `tag` | `list` `create` `delete` |
 | `webhook` | `list` `view` `create` `delete` |
 | `deploy-key` | `list` `add` `delete` |
@@ -91,7 +91,7 @@ Tokens are intentionally stripped from `hosts.yml` on every save. If you have an
 | `branch-model` | `get` `set` _(Cloud only)_ |
 | `ssh-key` | `list` `add` `delete` |
 | `commit` | `log` `view` `status` `status report` `files` `comment {list\|add\|edit\|delete}` |
-| `pipeline` | `list` `view` `run` `steps` `logs` `stop` `trigger` `watch` `schedule {list\|create\|delete}` `cache {list\|delete}` `artifact {list\|download}` `config {get\|enable\|disable}` _(Cloud only)_ |
+| `pipeline` | `list` `view` `run` `steps` `logs` `stop` `trigger` `watch` `schedule {list\|create\|delete}` `cache {list\|delete}` `artifact {list\|download}` `config {get\|enable\|disable}` `test-report view` `test-case list` _(Cloud only)_ |
 | `deployment` | `list` `view` _(Cloud only)_ |
 | `environment` | `list` `create` `delete` _(Cloud only)_ |
 | `user` | `view` |

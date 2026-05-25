@@ -3,6 +3,7 @@ package branch
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/pkg/cmd/branch/compare"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/branch/protect"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
@@ -23,5 +24,6 @@ directory.`,
 	cmd.AddCommand(NewCmdBranchCreate(f))
 	cmd.AddCommand(NewCmdBranchCheckout(f))
 	cmd.AddCommand(protect.NewCmdProtect(f))
+	cmd.AddCommand(compare.NewCmdCompare(f, nil))
 	return cmd
 }
