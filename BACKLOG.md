@@ -5,6 +5,8 @@
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
 | PR-SETTINGS | Per-repo PR settings (required approvers, tasks, builds, merge strategies) | Both | 2 | ✅ |
+| PIPE-RERUN | Re-trigger a pipeline at the same commit | Cloud | 1 | ✅ |
+| CHERRY-PICK | Cherry-pick commit onto a branch (branch-utils) | Server/DC | 1 | ✅ |
 
 ## Philosophy
 
@@ -173,6 +175,7 @@ Current state of every command area against gh feature parity:
 | `commit view` | ✅ | View a single commit |
 | `commit status` | ✅ | List build statuses for a commit hash |
 | `commit comment list / add / edit / delete` | ✅ | Cloud + Server/DC `/commit/{hash}/comments` — scope **RV6** |
+| `commit cherry-pick HASH BRANCH` | ✅ | Cherry-pick commit onto a branch; Server/DC only (branch-utils plugin) — scope **CHERRY-PICK** |
 
 ### Tags
 

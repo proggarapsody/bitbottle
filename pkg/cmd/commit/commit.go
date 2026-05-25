@@ -22,5 +22,6 @@ directory.`,
 	cmd.AddCommand(NewCmdCommitStatus(f))
 	cmd.AddCommand(NewCmdCommitComment(f))
 	cmd.AddCommand(NewCmdCommitFiles(f))
+	cmd.AddCommand(NewCmdCherryPick(f))
 	return cmd
 }

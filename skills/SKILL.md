@@ -72,6 +72,7 @@ bitbottle is inconsistent about repo targeting — match what `-h` says:
 | `repo *`, `branch *`, `tag *`, `webhook *` | positional `PROJECT/REPO` | `-R` is in the inherited flag list but **silently ignored** — pass `PROJECT/REPO` as a positional and `--hostname HOST` separately |
 | `commit view PROJECT/REPO HASH` | positional, **PROJ/REPO first** | |
 | `commit files HASH [PROJECT/REPO]` | positional, **HASH first** | inverse of `commit view` |
+| `commit cherry-pick HASH BRANCH [PROJECT/REPO]` | positional, **HASH then BRANCH** | Server/DC only (`branch-utils` plugin); `--message/-m` overrides commit msg |
 | `issue *`, `code-insights *` | `[PROJECT/REPO]` positional or `-R` | optional; defaults to checkout |
 
 Outside any Bitbucket checkout, the relevant positional/`-R` is mandatory.
@@ -101,7 +102,7 @@ on the host entry in `hosts.yml` (see `references/auth.md`).
 | Token type | App Password / API token | PAT (`BBDC-…`) |
 | API base path | `2.0/…` | `rest/api/1.0/…` |
 | Cloud-only | `pipeline *` (list/view/run/stop/trigger/watch/logs/steps/schedule/cache/variable), `runner list`, `runner create`, `runner delete`, `issue *` (including `issue attachment list/delete`, `issue vote/unvote`, `issue watch/unwatch`), `snippet list [--workspace W]`, `snippet view`, `snippet create`, `snippet delete`, `pr request-changes`, `pr comment resolve`, `ssh-key *`, `branch-rule *`, `branch-model *`, `workspace *`, `search`, `project list WORKSPACE` | — |
-| Server-only | — | `admin user list/activate/deactivate/rename`, `admin license`, `admin cluster`, `admin secrets rotate`, `admin logging get/set`, `code-insights *`, `pr task *`, `pr suggestion apply`, `pr/commit comment react/unreact`, `pr reviewer-group *`, `repo pr-settings get`, `repo pr-settings set`, `group list`, `group create`, `group delete`, `group member list`, `group member add`, `group member remove`, `project server-list`, `project create`, `project view`, `project edit`, `project delete`, `auth pat list`, `auth pat create`, `auth pat revoke` |
+| Server-only | — | `admin user list/activate/deactivate/rename`, `admin license`, `admin cluster`, `admin secrets rotate`, `admin logging get/set`, `code-insights *`, `pr task *`, `pr suggestion apply`, `pr/commit comment react/unreact`, `pr reviewer-group *`, `repo pr-settings get`, `repo pr-settings set`, `group list`, `group create`, `group delete`, `group member list`, `group member add`, `group member remove`, `project server-list`, `project create`, `project view`, `project edit`, `project delete`, `auth pat list`, `auth pat create`, `auth pat revoke`, `commit cherry-pick HASH BRANCH` |
 
 For custom-hostname Bitbucket Data Center, force routing with
 `backend_type: cloud|server` in `hosts.yml`.

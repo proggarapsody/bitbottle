@@ -75,8 +75,9 @@ type FakeClient struct {
 	DownloadPipelineArtifactFn func(ws, slug, pipelineUUID, stepUUID, name string, out io.Writer) error
 
 	// Commit methods
-	ListCommitsFn func(ns, slug, branch string, limit int) ([]backend.Commit, error)
-	GetCommitFn   func(ns, slug, hash string) (backend.Commit, error)
+	ListCommitsFn      func(ns, slug, branch string, limit int) ([]backend.Commit, error)
+	GetCommitFn        func(ns, slug, hash string) (backend.Commit, error)
+	CherryPickCommitFn func(ns, slug string, in backend.CherryPickInput) (backend.Commit, error)
 
 	// Commit comment methods
 	ListCommitCommentsFn  func(ns, slug, hash string, limit int) ([]backend.CommitComment, error)
@@ -400,6 +401,7 @@ var (
 	_ backend.RunnerClient             = (*FakeClient)(nil)
 	_ backend.SourceWriter             = (*FakeClient)(nil)
 	_ backend.AuditClient              = (*FakeClient)(nil)
+	_ backend.CommitCherryPicker       = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -880,6 +882,16 @@ func (c *FakeClient) GetCommit(ns, slug, hash string) (backend.Commit, error) {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.GetCommit; set GetCommitFn in your test")
+	}
+	return backend.Commit{}, nil
+}
+
+func (c *FakeClient) CherryPickCommit(ns, slug string, in backend.CherryPickInput) (backend.Commit, error) {
+	if c.CherryPickCommitFn != nil {
+		return c.CherryPickCommitFn(ns, slug, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CherryPickCommit; set CherryPickCommitFn in your test")
 	}
 	return backend.Commit{}, nil
 }
