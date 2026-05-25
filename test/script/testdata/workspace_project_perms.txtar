@@ -1,0 +1,18 @@
+# workspace project perms list/grant/revoke.
+bb-fake cloud
+
+bitbottle workspace project perms list testworkspace PROJ -k
+stdout 'alice'
+stdout 'write'
+
+bitbottle workspace project perms list testworkspace PROJ -k --json
+stdout '"permission"'
+
+bitbottle workspace project perms grant testworkspace PROJ --user alice --permission write -k
+stdout 'Granted'
+
+bitbottle workspace project perms grant testworkspace PROJ --group devs --permission read -k
+stdout 'Granted'
+
+bitbottle workspace project perms revoke testworkspace PROJ --user alice --confirm -k
+stdout 'Revoked'

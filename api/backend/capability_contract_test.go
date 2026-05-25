@@ -46,7 +46,7 @@ func TestAllFeatureSpecs_ServerSupport(t *testing.T) {
 
 func TestAllFeatureSpecs_Coverage(t *testing.T) {
 	t.Parallel()
-	// All 70 expected names must be present in AllFeatureSpecs.
+	// All 71 expected names must be present in AllFeatureSpecs.
 	expected := []string{
 		"AdminClient", "AuditClient", "BranchModelClient", "BranchProtector", "BranchRuleClient",
 		"CloudProjectClient",
@@ -70,7 +70,7 @@ func TestAllFeatureSpecs_Coverage(t *testing.T) {
 		"ServerProjectClient", "SnippetClient", "SSHKeyClient",
 		"SourceWriter",
 		"SuggestionApplier", "VersionedServer", "WorkspaceClient", "WorkspaceMemberClient",
-		"WorkspacePermsClient", "WorkspacePipelineVariableClient", "WorkspaceSearcher", "WorkspaceVariableClient", "WorkspaceWebhookClient",
+		"WorkspacePermsClient", "WorkspacePipelineVariableClient", "WorkspaceProjectPermsClient", "WorkspaceSearcher", "WorkspaceVariableClient", "WorkspaceWebhookClient",
 	}
 	names := make(map[string]bool, len(backend.AllFeatureSpecs))
 	for _, spec := range backend.AllFeatureSpecs {

@@ -128,6 +128,9 @@ Output fields for `view` and `--json`: `key`, `name`, `description`, `is_private
 - `list_workspace_repo_perms` — `workspace` (required), `limit`
 - `grant_workspace_perm` — `workspace`, `user`, `permission` (all required)
 - `revoke_workspace_perm` — `workspace`, `user` (both required)
+- `list_workspace_project_perms` — `workspace`, `project_key` (both required), `hostname`
+- `grant_workspace_project_perm` — `workspace`, `project_key`, `permission` (all required), `user_slug` or `group_slug`, `hostname`
+- `revoke_workspace_project_perm` — `workspace`, `project_key`, `subject_slug` (all required), `is_group`, `hostname`
 - `list_workspace_pipeline_vars` — `workspace` (required), `hostname`
 - `get_workspace_pipeline_var` — `workspace`, `key` (both required), `hostname`
 - `set_workspace_pipeline_var` — `workspace`, `key`, `value` (all required), `secured`, `hostname`
@@ -213,5 +216,43 @@ Revoke a user's workspace-level permission.
 
 ```bash
 bitbottle workspace perms revoke myworkspace --user alice --confirm
+# Omit --confirm on a TTY to get an interactive confirmation prompt
+```
+
+## Workspace Project Permissions (Cloud only)
+
+Manage per-project user and group permissions within a Cloud workspace. These
+are distinct from workspace-level membership (`workspace perms`) and from
+Server/DC project permissions (`perms project`). Returns `host.unsupported`
+on Bitbucket Server/DC.
+
+### workspace project perms list
+
+List user and group permissions for a workspace project.
+
+```bash
+bitbottle workspace project perms list myworkspace PROJ
+bitbottle workspace project perms list myworkspace PROJ --json
+```
+
+Output columns: SUBJECT, TYPE, PERMISSION
+
+### workspace project perms grant
+
+Grant a user or group a permission on a workspace project.
+Valid permissions: `read`, `write`, `admin`, `create-repo`.
+
+```bash
+bitbottle workspace project perms grant myworkspace PROJ --user alice --permission write
+bitbottle workspace project perms grant myworkspace PROJ --group devs --permission read
+```
+
+### workspace project perms revoke
+
+Revoke a user or group permission on a workspace project.
+
+```bash
+bitbottle workspace project perms revoke myworkspace PROJ --user alice --confirm
+bitbottle workspace project perms revoke myworkspace PROJ --group devs --confirm
 # Omit --confirm on a TTY to get an interactive confirmation prompt
 ```

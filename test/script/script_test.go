@@ -763,6 +763,45 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/workspaces/testworkspace/permissions/members/alice",
 			Status:     http.StatusNoContent,
 		},
+		// workspace project perms list (users) — used by workspace project perms list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/users",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"permission": "write",
+					"user":       map[string]any{"account_id": "abc123", "display_name": "Alice", "nickname": "alice"},
+				},
+			}),
+		},
+		// workspace project perms list (groups) — used by workspace project perms list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/groups",
+			Status:     http.StatusOK,
+			Body:       testhelpers.CloudPagedResponse([]any{}),
+		},
+		// workspace project perms grant user — used by workspace project perms grant --user
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/users/alice",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"permission": "write"},
+		},
+		// workspace project perms grant group — used by workspace project perms grant --group
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/groups/devs",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"permission": "read"},
+		},
+		// workspace project perms revoke user — used by workspace project perms revoke
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/users/alice",
+			Status:     http.StatusNoContent,
+		},
 		// workspace pipeline-variable list — used by workspace pipeline-variable list
 		{
 			Method:     http.MethodGet,
