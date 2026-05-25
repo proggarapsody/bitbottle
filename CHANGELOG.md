@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.108.0](https://github.com/proggarapsody/bitbottle/compare/v1.107.0...v1.108.0) (2026-05-25)
+
+
+### Features
+
+* **commit:** add commit cherry-pick command (Server/DC) ([979db8a](https://github.com/proggarapsody/bitbottle/commit/979db8a4189d671dc0f6d9062f76021ab9004cba))
+* **pipeline:** add pipeline rerun command (Cloud) ([fd96d9a](https://github.com/proggarapsody/bitbottle/commit/fd96d9a81a249b91dc5ca64e0853ec585df175a5))
+
+
+### Bug Fixes
+
+* **pr:** edit on Server includes version; expose version in pr view; api auto-detects host ([9d30fed](https://github.com/proggarapsody/bitbottle/commit/9d30fed7ae0f9d6e0d1c4158a5475b872bd9f0ff))
+
 ## [1.107.0](https://github.com/proggarapsody/bitbottle/compare/v1.106.0...v1.107.0) (2026-05-25)
 
 
