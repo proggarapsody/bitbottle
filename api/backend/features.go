@@ -298,6 +298,23 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "PipelineTestReportClient",
+		HumanLabel:    "pipeline test reports",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(PipelineTestReportClient); return ok },
+		Feature:       FeaturePipelineTestReports,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
+		Name:          "RefComparer",
+		HumanLabel:    "branch compare",
+		Check:         func(c Client) bool { _, ok := c.(RefComparer); return ok },
+		Feature:       FeatureRefCompare,
+		CloudSupport:  true,
+		ServerSupport: true,
+	},
+	{
 		Name:          "RepoEditor",
 		HumanLabel:    "repo edit",
 		Check:         func(c Client) bool { _, ok := c.(RepoEditor); return ok },

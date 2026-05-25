@@ -1,0 +1,6 @@
+# branch compare shows ahead/behind commit counts.
+bb-fake cloud
+
+bitbottle branch compare main..feature testworkspace/cloud-repo-a -k
+stdout 'main..feature'
+stdout 'Ahead by'

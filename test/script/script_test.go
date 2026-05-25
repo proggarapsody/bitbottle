@@ -450,6 +450,15 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 				map[string]any{"id": 2, "label": "Desktop", "text": "ssh-rsa AAAA...desktop"},
 			}),
 		},
+		// compare/commits (ahead) — used by branch compare (Server/DC)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/compare/commits",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{"id": "abc1234", "message": "feat: new thing\n", "author": map[string]any{"name": "Test User"}, "authorTimestamp": int64(1704067200000)},
+			}),
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
@@ -526,6 +535,46 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Body: testhelpers.CloudPagedResponse([]any{
 				map[string]any{"id": 1, "label": "Laptop", "key": "ssh-rsa AAAA...laptop"},
 			}),
+		},
+		// test report summary — used by pipeline test-report view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/test_reports",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"total_count":         10,
+				"success_count":       8,
+				"failed_count":        2,
+				"error_count":         0,
+				"skipped_count":       1,
+				"duration_in_seconds": 12.5,
+			},
+		},
+		// test cases list — used by pipeline test-case list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/test_reports/test_cases",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"name": "TestFoo", "class_name": "com.example.Foo", "status": "FAILED", "duration_in_seconds": 0.5, "error_details": "assertion failed"},
+				map[string]any{"name": "TestBar", "class_name": "com.example.Bar", "status": "PASSED", "duration_in_seconds": 0.2},
+			}),
+		},
+		// branch compare commits (ahead) — used by branch compare (Cloud)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/commits/feature",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"hash": "abc1234", "message": "feat: new thing\n", "author": map[string]any{"raw": "Test User"}, "date": "2024-01-01T00:00:00Z", "links": map[string]any{"html": map[string]any{"href": ""}}},
+			}),
+		},
+		// branch compare commits (behind) — used by branch compare (Cloud)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/commits/main",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{}),
 		},
 	}
 	return newTLSServer(ts, stubs...)

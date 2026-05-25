@@ -238,3 +238,55 @@ bitbottle pipeline artifact download PIPELINE_UUID WORKSPACE/REPO \
 **Cloud** — List: `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/artifacts` (paginated). Download: `GET /repositories/{ws}/{slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/artifacts/{name}` (binary stream). UUIDs are automatically wrapped in curly braces.
 
 **Server/DC** — not supported. Returns a `host.unsupported` error.
+
+---
+
+# Pipeline Test Reports
+
+View JUnit test results for a Bitbucket Cloud pipeline step. This feature is **Cloud only**.
+
+## Commands
+
+```bash
+# View test report summary for a pipeline step
+bitbottle pipeline test-report view PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID
+
+# List individual test cases
+bitbottle pipeline test-case list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID
+
+# Filter test cases by status
+bitbottle pipeline test-case list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID --status FAILED
+
+# Limit results
+bitbottle pipeline test-case list PIPELINE_UUID WORKSPACE/REPO --step STEP_UUID --limit 20
+```
+
+`test-report view` and `test-case list` support `--json`, `--jq`, `--yaml`, and `--template`.
+
+## Flags
+
+| Command | Flag | Description |
+|---|---|---|
+| all | `--step STEP_UUID` | Step UUID (required) |
+| all | `--hostname HOST` | Override the Bitbucket host |
+| `test-case list` | `--status STATUS` | Filter by `PASSED`, `FAILED`, or `SKIPPED` |
+| `test-case list` | `--limit N` | Max results (default 50) |
+
+## JSON output
+
+`test-report view` fields: `total` (int), `passed` (int), `failed` (int), `skipped` (int), `duration_ms` (int).
+
+`test-case list` fields: `name` (string), `class_name` (string), `status` (string), `duration_ms` (int), `failure_message` (string, omitted when empty).
+
+## MCP tools
+
+| Tool | Description |
+|---|---|
+| `get_pipeline_test_report` | Get test report summary. Params: `project`, `slug`, `pipeline_uuid`, `step_uuid` (all required), `hostname` |
+| `list_pipeline_test_cases` | List test cases. Params: `project`, `slug`, `pipeline_uuid`, `step_uuid` (all required), `status`, `limit`, `hostname` |
+
+## Backend details
+
+**Cloud** — Summary: `GET /2.0/repositories/{ws}/{slug}/pipelines/{uuid}/steps/{step_uuid}/test_reports`. Cases: `GET .../test_reports/test_cases` (paginated). UUIDs are automatically wrapped in curly braces. Duration is returned in seconds (`duration_in_seconds`) and converted to milliseconds.
+
+**Server/DC** — not supported. Returns a `host.unsupported` error.

@@ -347,6 +347,13 @@ type FakeClient struct {
 	// PipelineConfigClient methods (Cloud-only; satisfies backend.PipelineConfigClient when set)
 	GetPipelinesConfigFn    func(ws, slug string) (backend.PipelineConfig, error)
 	UpdatePipelinesConfigFn func(ws, slug string, in backend.PipelineConfig) (backend.PipelineConfig, error)
+
+	// PipelineTestReportClient methods (Cloud-only)
+	GetPipelineTestReportFn  func(ws, slug, pipelineUUID, stepUUID string) (backend.PipelineTestReport, error)
+	ListPipelineTestCasesFn  func(ws, slug, pipelineUUID, stepUUID string, filter backend.TestCaseFilter) ([]backend.PipelineTestCase, error)
+
+	// RefComparer methods (Cloud + Server/DC)
+	CompareRefsFn func(ns, slug, base, head string, limit int) (backend.RefComparison, error)
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -407,6 +414,8 @@ var (
 	_ backend.AuditClient              = (*FakeClient)(nil)
 	_ backend.CommitCherryPicker       = (*FakeClient)(nil)
 	_ backend.PipelineConfigClient     = (*FakeClient)(nil)
+	_ backend.PipelineTestReportClient = (*FakeClient)(nil)
+	_ backend.RefComparer              = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2483,4 +2492,42 @@ func (c *FakeClient) UpdatePipelinesConfig(ws, slug string, in backend.PipelineC
 		c.T.Fatalf("unexpected call to FakeClient.UpdatePipelinesConfig; set UpdatePipelinesConfigFn in your test")
 	}
 	return backend.PipelineConfig{}, nil
+}
+
+// ── PipelineTestReportClient ──────────────────────────────────────────────────
+
+var _ backend.PipelineTestReportClient = (*FakeClient)(nil)
+
+func (c *FakeClient) GetPipelineTestReport(ws, slug, pipelineUUID, stepUUID string) (backend.PipelineTestReport, error) {
+	if c.GetPipelineTestReportFn != nil {
+		return c.GetPipelineTestReportFn(ws, slug, pipelineUUID, stepUUID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipelineTestReport; set GetPipelineTestReportFn in your test")
+	}
+	return backend.PipelineTestReport{}, nil
+}
+
+func (c *FakeClient) ListPipelineTestCases(ws, slug, pipelineUUID, stepUUID string, filter backend.TestCaseFilter) ([]backend.PipelineTestCase, error) {
+	if c.ListPipelineTestCasesFn != nil {
+		return c.ListPipelineTestCasesFn(ws, slug, pipelineUUID, stepUUID, filter)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListPipelineTestCases; set ListPipelineTestCasesFn in your test")
+	}
+	return nil, nil
+}
+
+// ── RefComparer ───────────────────────────────────────────────────────────────
+
+var _ backend.RefComparer = (*FakeClient)(nil)
+
+func (c *FakeClient) CompareRefs(ns, slug, base, head string, limit int) (backend.RefComparison, error) {
+	if c.CompareRefsFn != nil {
+		return c.CompareRefsFn(ns, slug, base, head, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.CompareRefs; set CompareRefsFn in your test")
+	}
+	return backend.RefComparison{}, nil
 }
