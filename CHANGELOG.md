@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.109.0](https://github.com/proggarapsody/bitbottle/compare/v1.108.0...v1.109.0) (2026-05-25)
+
+
+### Features
+
+* **pipeline/sshkey:** pipeline config enable/disable (Cloud) + SSH keys for Server/DC ([5493bac](https://github.com/proggarapsody/bitbottle/commit/5493bac386778359a3fb93b9d3bd2dd5389dfa67))
+
 ## [1.108.0](https://github.com/proggarapsody/bitbottle/compare/v1.107.0...v1.108.0) (2026-05-25)
 
 
