@@ -9,8 +9,8 @@ import (
 
 // serverDryRunResponse is the Bitbucket Server dry-run merge response body.
 type serverDryRunResponse struct {
-	CanMerge bool               `json:"canMerge"`
-	Vetoes   []serverMergeVeto  `json:"vetoes"`
+	CanMerge bool              `json:"canMerge"`
+	Vetoes   []serverMergeVeto `json:"vetoes"`
 }
 
 type serverMergeVeto struct {

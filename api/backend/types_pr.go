@@ -218,10 +218,10 @@ type CreateReviewerGroupInput struct {
 // conflicted files — vetoes carry the conflict description instead).
 // Vetoes lists blocking conditions returned by Bitbucket Server / Data Center.
 type MergeDryRunResult struct {
-	CanMerge        bool         `json:"can_merge"`
-	Message         string       `json:"message,omitempty"`
-	ConflictedFiles []string     `json:"conflicted_files,omitempty"`
-	Vetoes          []MergeVeto  `json:"vetoes,omitempty"`
+	CanMerge        bool        `json:"can_merge"`
+	Message         string      `json:"message,omitempty"`
+	ConflictedFiles []string    `json:"conflicted_files,omitempty"`
+	Vetoes          []MergeVeto `json:"vetoes,omitempty"`
 }
 
 // MergeVeto is a single blocking condition returned by the Bitbucket Server
