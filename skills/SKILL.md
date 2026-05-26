@@ -24,7 +24,7 @@ disagrees with this doc; the binary wins.
 | PR lifecycle (list/view/create/merge/merge-preview/approve/comment/activity/review/commits/files/participants/ready/unready/task/suggestion/comment-react/default-reviewer/reviewer-group/…) | `references/pr.md` |
 | Repos, branches, tags, file/tree, visibility, edit, transfer, watcher, repo label list/create/update/delete, repo pr-settings get, repo pr-settings set, repo download list/upload/get/delete, repo clone (MCP: `clone_repo`) | `references/repos.md` |
 | Commits (view/files/status/comment/comment-react) | `references/commit.md` |
-| Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list, SSH key pair, known hosts (Cloud only) | `references/pipeline.md` |
+| Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list, SSH key pair, known hosts, OIDC config/keys (Cloud only) | `references/pipeline.md` |
 | Pipeline runners — list / create / delete (Cloud only) | `references/runner.md` |
 | Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
 | Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch, activity/change log (Cloud only) | `references/issues.md` |
@@ -166,6 +166,10 @@ bitbottle pipeline ssh known-hosts list [WORKSPACE/REPO]
 bitbottle pipeline ssh known-hosts view UUID [WORKSPACE/REPO]
 bitbottle pipeline ssh known-hosts add HOSTNAME [WORKSPACE/REPO] [--key KEY] [--key-type rsa|ecdsa|ed25519]
 bitbottle pipeline ssh known-hosts delete UUID [WORKSPACE/REPO] [--confirm]
+
+# Pipeline OIDC configuration (Cloud only)
+bitbottle pipeline oidc config WORKSPACE [--json]
+bitbottle pipeline oidc keys WORKSPACE [--json]
 ```
 
 ```bash

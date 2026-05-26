@@ -84,3 +84,29 @@ type PipelineCache struct {
 	FileSizeBytes int64  `json:"fileSizeBytes"`
 	CreatedOn     string `json:"createdOn"`
 }
+
+// PipelineOIDCConfig is the OIDC discovery document published by Bitbucket
+// Cloud Pipelines for workload-identity federation.
+type PipelineOIDCConfig struct {
+	Issuer                 string   `json:"issuer"`
+	JWKSURI                string   `json:"jwks_uri"`
+	SubjectTypesSupported  []string `json:"subject_types_supported"`
+	ResponseTypesSupported []string `json:"response_types_supported"`
+	ClaimsSupported        []string `json:"claims_supported"`
+}
+
+// PipelineOIDCKey is a single JSON Web Key from the Bitbucket Cloud Pipelines
+// JWKS endpoint.
+type PipelineOIDCKey struct {
+	Kid string `json:"kid"`
+	Kty string `json:"kty"`
+	Alg string `json:"alg"`
+	Use string `json:"use"`
+	N   string `json:"n"`
+	E   string `json:"e"`
+}
+
+// PipelineOIDCKeys is the JWKS key-set published by Bitbucket Cloud Pipelines.
+type PipelineOIDCKeys struct {
+	Keys []PipelineOIDCKey `json:"keys"`
+}

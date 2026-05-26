@@ -46,7 +46,7 @@ func TestAllFeatureSpecs_ServerSupport(t *testing.T) {
 
 func TestAllFeatureSpecs_Coverage(t *testing.T) {
 	t.Parallel()
-	// All 73 expected names must be present in AllFeatureSpecs.
+	// All 74 expected names must be present in AllFeatureSpecs.
 	expected := []string{
 		"AdminClient", "AuditClient", "BranchModelClient", "BranchProtector", "BranchRuleClient",
 		"CloudProjectClient",
@@ -62,6 +62,7 @@ func TestAllFeatureSpecs_Coverage(t *testing.T) {
 		"PATClient", "PermissionsClient", "PipelineArtifactClient", "PipelineCacheClient", "PipelineClient",
 		"PipelineConfigClient",
 		"PipelineKnownHostsClient",
+		"PipelineOIDCClient",
 		"PipelineScheduleClient", "PipelineSSHKeyPairClient", "PipelineTestReportClient", "PipelineTriggerClient",
 		"RefComparer",
 		"RepoDownloadClient", "RepoEditor", "RepoForker", "RepoForksLister",

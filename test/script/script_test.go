@@ -1051,6 +1051,37 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/snippets/testuser/Xqjyp1GV/comments/17",
 			Status:     http.StatusNoContent,
 		},
+		// pipeline OIDC config — used by pipeline oidc config
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/pipelines-config/identity/oidc/.well-known/openid-configuration",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"issuer":                   "https://api.bitbucket.org/2.0/workspaces/testworkspace/pipelines-config/identity/oidc",
+				"jwks_uri":                 "https://api.bitbucket.org/2.0/workspaces/testworkspace/pipelines-config/identity/oidc/keys.json",
+				"subject_types_supported":  []string{"public"},
+				"response_types_supported": []string{"id_token"},
+				"claims_supported":         []string{"sub", "iss", "iat", "exp"},
+			},
+		},
+		// pipeline OIDC keys — used by pipeline oidc keys
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/pipelines-config/identity/oidc/keys.json",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"keys": []map[string]any{
+					{
+						"kid": "key-id-1",
+						"kty": "RSA",
+						"alg": "RS256",
+						"use": "sig",
+						"n":   "modulus-base64",
+						"e":   "AQAB",
+					},
+				},
+			},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

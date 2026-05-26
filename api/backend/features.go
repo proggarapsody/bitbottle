@@ -649,6 +649,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: true,
 	},
+	{
+		Name:          "PipelineOIDCClient",
+		HumanLabel:    "pipeline OIDC configuration",
+		Check:         func(c Client) bool { _, ok := c.(PipelineOIDCClient); return ok },
+		Feature:       FeaturePipelineOIDC,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.
