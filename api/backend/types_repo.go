@@ -120,6 +120,16 @@ type BranchRuleInput struct {
 	Value   int
 }
 
+// UpdateBranchRuleInput carries the patch parameters for updating a branch restriction rule.
+// A nil pointer means "no change"; non-nil overwrites the current value.
+// For Users and Groups, a non-nil empty slice clears the existing entries.
+type UpdateBranchRuleInput struct {
+	Pattern *string
+	Users   *[]string
+	Groups  *[]string
+	Value   *int
+}
+
 // DeployKey is the domain representation of a repository deploy key (SSH public key).
 type DeployKey struct {
 	ID       int    `json:"id"`

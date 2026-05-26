@@ -84,3 +84,38 @@ func TestCloudClient_DeleteBranchRule(t *testing.T) {
 	assert.Equal(t, http.MethodDelete, gotMethod)
 	assert.Equal(t, "/repositories/myws/my-repo/branch-restrictions/7", gotPath)
 }
+
+func TestCloudClient_UpdateBranchRule(t *testing.T) {
+	t.Parallel()
+	var gotMethod, gotPath string
+	var gotBody map[string]any
+	// Two requests: GET (fetch current) then PUT (apply patch)
+	reqCount := 0
+	client := newCloudBranchRuleServer(t, func(w http.ResponseWriter, r *http.Request) {
+		reqCount++
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet {
+			gotMethod = r.Method
+			gotPath = r.URL.Path
+			_, _ = w.Write([]byte(`{"id":5,"kind":"push","pattern":"main","value":0}`))
+			return
+		}
+		assert.Equal(t, http.MethodPut, r.Method)
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &gotBody)
+		_, _ = w.Write([]byte(`{"id":5,"kind":"push","pattern":"release/*","value":0}`))
+	})
+	newPattern := "release/*"
+	rule, err := client.UpdateBranchRule("myws", "my-repo", 5, backend.UpdateBranchRuleInput{
+		Pattern: &newPattern,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 5, rule.ID)
+	assert.Equal(t, "push", rule.Kind)
+	assert.Equal(t, "release/*", rule.Pattern)
+	assert.Equal(t, http.MethodGet, gotMethod)
+	assert.Equal(t, "/repositories/myws/my-repo/branch-restrictions/5", gotPath)
+	assert.Equal(t, 2, reqCount)
+	assert.Equal(t, "release/*", gotBody["pattern"])
+	assert.Equal(t, "push", gotBody["kind"])
+}

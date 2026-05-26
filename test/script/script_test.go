@@ -955,6 +955,20 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 					"links": map[string]any{"html": map[string]any{"href": "https://bitbucket.org/otherws/"}}},
 			}),
 		},
+		// GET branch-restriction by ID — used by branch-rule update (fetch-first)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/branch-restrictions/1",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"id": 1, "kind": "push", "pattern": "main", "value": 0},
+		},
+		// PUT branch-restriction by ID — used by branch-rule update
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/branch-restrictions/1",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"id": 1, "kind": "push", "pattern": "release/*", "value": 0},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }
