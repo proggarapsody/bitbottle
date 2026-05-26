@@ -623,6 +623,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: false,
 	},
+	{
+		Name:          "WorkspaceProjectPermsClient",
+		HumanLabel:    "workspace project permissions",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(WorkspaceProjectPermsClient); return ok },
+		Feature:       FeatureWorkspaceProjectPerms,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.

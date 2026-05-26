@@ -353,6 +353,11 @@ type FakeClient struct {
 	// WorkspaceSearcher methods (Cloud-only; satisfies backend.WorkspaceSearcher when set)
 	SearchWorkspacesFn func(opts backend.WorkspaceSearchOpts) ([]backend.Workspace, error)
 
+	// WorkspaceProjectPermsClient methods (Cloud-only; satisfies backend.WorkspaceProjectPermsClient when set)
+	ListWorkspaceProjectPermsFn  func(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error)
+	GrantWorkspaceProjectPermFn  func(workspace, projectKey string, in backend.WorkspaceProjectPermInput) error
+	RevokeWorkspaceProjectPermFn func(workspace, projectKey, subjectSlug string, isGroup bool) error
+
 	// RepoLabelClient methods (both backends; satisfies backend.RepoLabelClient when set)
 	ListRepoLabelsFn  func(ns, slug string) ([]backend.RepoLabel, error)
 	CreateRepoLabelFn func(ns, slug string, in backend.CreateRepoLabelInput) (backend.RepoLabel, error)
@@ -486,6 +491,7 @@ var (
 	_ backend.WorkspacePermsClient            = (*FakeClient)(nil)
 	_ backend.IssueActivityClient             = (*FakeClient)(nil)
 	_ backend.WorkspaceSearcher               = (*FakeClient)(nil)
+	_ backend.WorkspaceProjectPermsClient     = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2946,6 +2952,38 @@ func (c *FakeClient) DeletePipelineKnownHost(ns, slug, uuid string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeletePipelineKnownHost; set DeletePipelineKnownHostFn in your test")
+	}
+	return nil
+}
+
+// ── WorkspaceProjectPermsClient ───────────────────────────────────────────────
+
+func (c *FakeClient) ListWorkspaceProjectPerms(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error) {
+	if c.ListWorkspaceProjectPermsFn != nil {
+		return c.ListWorkspaceProjectPermsFn(workspace, projectKey, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaceProjectPerms; set ListWorkspaceProjectPermsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GrantWorkspaceProjectPerm(workspace, projectKey string, in backend.WorkspaceProjectPermInput) error {
+	if c.GrantWorkspaceProjectPermFn != nil {
+		return c.GrantWorkspaceProjectPermFn(workspace, projectKey, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GrantWorkspaceProjectPerm; set GrantWorkspaceProjectPermFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RevokeWorkspaceProjectPerm(workspace, projectKey, subjectSlug string, isGroup bool) error {
+	if c.RevokeWorkspaceProjectPermFn != nil {
+		return c.RevokeWorkspaceProjectPermFn(workspace, projectKey, subjectSlug, isGroup)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RevokeWorkspaceProjectPerm; set RevokeWorkspaceProjectPermFn in your test")
 	}
 	return nil
 }
