@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.121.0](https://github.com/proggarapsody/bitbottle/compare/v1.120.0...v1.121.0) (2026-05-26)
+
+
+### Features
+
+* **branch-rule:** add branch-rule update command (Cloud) ([2c51d9e](https://github.com/proggarapsody/bitbottle/commit/2c51d9e6274848ebfbad5b543f2b9e91a0a8e3c8))
+
+
+### Bug Fixes
+
+* **ci:** correct build path and add issues:write in nightly-e2e ([7ffe9a9](https://github.com/proggarapsody/bitbottle/commit/7ffe9a9bb7f7ccecc5dec519af5ced164ed1f3fc))
+
 ## [1.120.0](https://github.com/proggarapsody/bitbottle/compare/v1.119.0...v1.120.0) (2026-05-26)
 
 
