@@ -529,6 +529,14 @@ Current state of every command area against gh feature parity:
 | REPO-CLONE | **Repo Clone** | `bitbottle repo clone [HOST/]PROJECT/REPO [DIR] [--ssh\|--https]` — resolve the Bitbucket clone URL via the repo API then shell out to `git clone`, and auto-inject `bitbottle.host`, `bitbottle.project`, `bitbottle.slug` into the new repo's `.git/config` so subsequent `bitbottle` commands work without `-R`. Cloud: `GET /repositories/{ws}/{slug}` (`links.clone[]`); Server: `GET /rest/api/1.0/projects/{k}/repos/{s}` (`links.clone[]`). No new backend interface — reuses existing `RepoClient.GetRepository`. Pattern: write-op (shells out to `exec.Command("git","clone",...)`, typed ErrNotFound on missing repo, ErrTransport on git failure). MCP tool `clone_repo`. `gh repo clone` equivalent. — scope **REPO-CLONE** | Both | 2 | ✅ |
 | PR-PARTICIPANT-UPDATE | **PR Participant Role/State Update** | `bitbottle pr participant update PR_ID --user ACCOUNT_ID (--approve\|--unapprove\|--state changes_requested\|null) [PROJECT/REPO]` — update a single participant's approval state via the Cloud Participants API (distinct from the top-level `pr approve`/`pr unapprove` which operate on the authenticated user). Cloud: `PUT /repositories/{ws}/{slug}/pullrequests/{id}/participants/{account_id}`. Server: typed `host.unsupported` (Server uses comment-based approval, no participants endpoint). New optional interface `PRParticipantUpdater` with `UpdatePRParticipant(ns, slug string, prID int, accountID, state string) (PRParticipant, error)`. Pattern: single write-op with typed errors (ErrPermission, ErrNotFound). MCP tool `update_pr_participant`. Closes the Cloud reviewer-lifecycle gap: agents doing code-review automation can set reviewer states programmatically. — scope **PR-PARTICIPANT-UPDATE** | Cloud | 2 | ✅ |
 | WORKSPACE-PROJECT-PERMS | **Cloud Workspace Project Permissions** | `workspace project perms list WORKSPACE PROJECT_KEY [--json]`, `workspace project perms grant WORKSPACE PROJECT_KEY --user SLUG\|--group SLUG PERM [read\|write\|admin\|create-repo]`, `workspace project perms revoke WORKSPACE PROJECT_KEY --user SLUG\|--group SLUG [--confirm]` — manage per-project member permissions within a Cloud workspace (distinct from workspace-level `workspace perms` ✅ which is membership, and from Cloud `project list` ✅). Cloud: `GET /workspaces/{ws}/projects/{key}/permissions/users` + `/groups` (paginated each), `PUT /workspaces/{ws}/projects/{key}/permissions/users/{user}` + `/groups/{slug}`, `DELETE` same. Server/DC → typed `host.unsupported` (Server project perms already shipped under `perms` ✅). New optional interface `WorkspaceProjectPermsClient`. Pattern: `paging.Collect[T]` for list, write-op with typed errors. MCP triplet `list_workspace_project_perms`, `grant_workspace_project_perm`, `revoke_workspace_project_perm`. Closes the Cloud project-permissions gap. — scope **WORKSPACE-PROJECT-PERMS** | Cloud | 3 | ✅ |
+| BRANCH-RULE-UPDATE | **Update existing Cloud branch restriction** | `branch-rule update [PROJECT/REPO] ID [--pattern PATTERN] [--users u1,u2] [--groups g1,g2] [--value N]` — patch a single branch-restriction rule without delete+recreate. Cloud: `PUT /repositories/{ws}/{slug}/branch-restrictions/{id}`. Cloud only — Server has `branch protect` which is structurally different. Extends existing `BranchRuleClient` with `UpdateBranchRule(ns, slug string, id int, in UpdateBranchRuleInput) (BranchRule, error)`. `UpdateBranchRuleInput` uses `*string`/`*[]string`/`*int` for partial PUT semantics. MCP tool `update_branch_rule`. — scope **BRANCH-RULE-UPDATE** | Cloud | 1 | 🔲 |
+| CLOUD-PROJECT-REVIEWERS | **Cloud Project Default Reviewers** | `workspace project default-reviewer list WORKSPACE PROJECT_KEY [--limit N] [--json]`, `workspace project default-reviewer add WORKSPACE PROJECT_KEY --user ACCOUNT_ID`, `workspace project default-reviewer remove WORKSPACE PROJECT_KEY --user ACCOUNT_ID [--confirm]` — manage default reviewers at the workspace-project level (distinct from per-repo DEFAULT-REVIEWERS ✅). Cloud: `GET /workspaces/{ws}/projects/{key}/default-reviewers` (paginated), `PUT /workspaces/{ws}/projects/{key}/default-reviewers/{selected_user}`, `DELETE` same. Server/DC → typed `host.unsupported`. New optional interface `CloudProjectDefaultReviewerClient`. MCP triplet `list_project_default_reviewers`, `add_project_default_reviewer`, `remove_project_default_reviewer`. Project-level reviewers cascade to every repo in the project. — scope **CLOUD-PROJECT-REVIEWERS** | Cloud | 2 | 🔲 |
+| SNIPPET-COMMENTS | **Cloud Snippet Comments** | `snippet comment list SNIPPET_ID [WORKSPACE] [--limit N] [--json]`, `snippet comment add SNIPPET_ID --body TEXT [WORKSPACE]`, `snippet comment delete SNIPPET_ID COMMENT_ID [WORKSPACE] [--confirm]` — comment thread on a Cloud snippet (parity with `pr comment` ✅ and `issue comment` ✅). Cloud: `GET/POST /snippets/{workspace}/{snippet_id}/comments` (paginated), `DELETE /snippets/{workspace}/{snippet_id}/comments/{comment_id}`. Cloud only. Extends shipped `SnippetClient` with `ListSnippetComments`, `AddSnippetComment`, `DeleteSnippetComment`. Domain type `SnippetComment{ID, Body, User, CreatedOn, WebURL}`. MCP triplet. — scope **SNIPPET-COMMENTS** | Cloud | 2 | 🔲 |
+| PR-MERGE-PREVIEW | **PR Merge Preview / Dry-Run** | `pr merge PR_ID --dry-run [--strategy ff\|squash\|merge-commit] [PROJECT/REPO] [--json]` — preview a PR merge without committing: returns would-be merge metadata and `conflicts` array of file paths. Cloud: `POST /repositories/{ws}/{slug}/pullrequests/{id}/merge?dry_run=true`. Server: `POST /rest/api/1.0/projects/{k}/repos/{s}/pull-requests/{id}/merge/dry-run` (Server 7.0+). Both backends. Extends `PRMerger` interface with `DryRunMergePR(in DryRunMergePRInput) (MergeDryRunResult, error)`. Domain type `MergeDryRunResult{CanMerge, MessagePreview, ConflictedPaths, Vetoes []MergeVeto}`. MCP tool `dry_run_merge_pr`. — scope **PR-MERGE-PREVIEW** | Both | 2 | 🔲 |
+| PIPE-OIDC | **Pipeline OIDC Configuration** | `pipeline oidc config get [PROJECT/REPO] [--json]`, `pipeline oidc keys [PROJECT/REPO] [--json]` — read the OIDC configuration Cloud Pipelines emits as a workload-identity provider. Cloud: `GET /workspaces/{ws}/pipelines-config/identity/oidc/.well-known/openid-configuration`, `GET /workspaces/{ws}/pipelines-config/identity/oidc/keys.json`. Cloud only. New optional interface `PipelineOIDCClient` with `GetPipelineOIDCConfig(ws string)` and `GetPipelineOIDCKeys(ws string)`. MCP pair `get_pipeline_oidc_config`, `get_pipeline_oidc_keys`. Closes the workload-identity gap for agents bootstrapping cloud-provider federation. — scope **PIPE-OIDC** | Cloud | 2 | 🔲 |
+| REPO-HOOK-SCRIPTS | **Server/DC Repo Hook Settings** | `repo hook list [PROJECT/REPO] [--json]`, `repo hook view [PROJECT/REPO] HOOK_KEY [--json]`, `repo hook enable [PROJECT/REPO] HOOK_KEY`, `repo hook disable [PROJECT/REPO] HOOK_KEY`, `repo hook settings get/set [PROJECT/REPO] HOOK_KEY [--config-file FILE]` — manage per-repository hook plugins (distinct from `webhook` ✅). Server: `GET /rest/api/1.0/projects/{k}/repos/{s}/settings/hooks`, `GET/PUT/DELETE .../hooks/{hookKey}/enabled`, `GET/PUT .../hooks/{hookKey}/settings`. Cloud → typed `host.unsupported`. New optional interface `RepoHookClient`. MCP quintet. — scope **REPO-HOOK-SCRIPTS** | Server/DC | 3 | 🔲 |
+| CLOUD-CODE-INSIGHTS | **Cloud Code Insights Reports & Annotations** | `code-insights report list/view/put/delete HASH [KEY] [PROJECT/REPO]`, `code-insights annotation list/put HASH REPORT_KEY [PROJECT/REPO]` — Cloud counterpart to the Server/DC Code Insights surface (✅ scope CI). Cloud: `GET/PUT/DELETE /repositories/{ws}/{slug}/commit/{commit}/reports/{reportId}`, annotation sub-resource same. Server/DC → reuses existing CI commands. New optional interface `CloudCodeInsightsClient`. MCP sextet. Closes Cloud parity gap with shipped Server CI scope. — scope **CLOUD-CODE-INSIGHTS** | Cloud | 3 | 🔲 |
+| HOST-INFO | **Host Capabilities & Version Info** | `host info [--hostname H] [--json]` — print backend type (cloud/server/datacenter), API base URL, server version (Server/DC only), and the resolved capability matrix (`AllFeatureSpecs`). New optional interface `HostInfoClient` with `GetHostInfo() (HostInfo, error)`. Domain type `HostInfo{BackendType, BaseURL, Version, BuildNumber, DisplayName, SupportedFeatures []string}`. MCP tool `get_host_info`. High-leverage orientation primitive for agents: one call to discover what features are available before issuing capability-gated calls. — scope **HOST-INFO** | Both | 2 | 🔲 |
 | ISSUE-ACTIVITY | **Cloud Issue Activity Log** | `bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json]` — view the full change history of a Cloud issue (state/priority/assignee/component/milestone/title transitions + comment events). Cloud: `GET /repositories/{ws}/{slug}/issues/{id}/changes` (paginated; each item has `kind`, `old_val`, `new_val`, `created_on`, `user`). Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `IssueActivityClient` with `ListIssueActivity(ns, slug string, issueID int, limit int) ([]IssueChange, error)` (via `paging.Collect[T]`). Domain type `IssueChange{ID, Kind, OldVal, NewVal, CreatedOn, User}`. MCP tools `list_issue_activity`. Completes the issue audit trail alongside `issue view` ✅ and issue comments ✅. — scope **ISSUE-ACTIVITY** | Cloud | 1 | ✅ |
 | WORKSPACES-SEARCH | **Workspace Search with Filters** | `bitbottle workspace search [--query Q] [--role owner\|collaborator\|member] [--limit N] [--json]` — paginated workspace search with role and slug/name query filters (current `workspace list` returns all workspaces without filters). Cloud: `GET /2.0/workspaces?q=...&role=...` (paginated). Cloud only — Server/DC returns typed `host.unsupported` (Server uses projects, not workspaces). Extends existing `WorkspaceClient` with a `SearchWorkspaces(opts WorkspaceSearchOpts) ([]Workspace, error)` method (via `paging.Collect[T]`). Pattern: list via `paging.Collect[T]`. MCP tool `search_workspaces`. Fills the filter gap on the existing workspace surface. — scope **WORKSPACES-SEARCH** | Cloud | 1 | ✅ |
 
@@ -3607,6 +3615,216 @@ type WorkspaceSearchOpts struct {
 
 ---
 
+### BRANCH-RULE-UPDATE — Update existing Cloud branch restriction
+
+**Status:** 🔲
+
+BRANCH-RULE (✅) shipped list/add/delete for Cloud branch restrictions but stopped short of the PUT endpoint. The Bitbucket Cloud API supports `PUT /repositories/{ws}/{slug}/branch-restrictions/{id}` for in-place field updates — preserving the rule's ID and `created_on` timestamp. Tweaking one field (e.g. raising required-approvers from 1 → 2) currently requires destroy+recreate, which churns the rule ID and breaks audit trails.
+
+**Interface:** Extends existing `BranchRuleClient` with `UpdateBranchRule(ns, slug string, id int, in UpdateBranchRuleInput) (BranchRule, error)`. `UpdateBranchRuleInput` uses `*string`/`*[]string`/`*int` nullable fields for partial-PUT semantics.
+
+**Commands:** `branch-rule update [PROJECT/REPO] ID [--pattern PATTERN] [--users u1,u2] [--groups g1,g2] [--value N]`
+
+**Backends:** Cloud (`PUT /repositories/{ws}/{slug}/branch-restrictions/{id}`). Server → typed `host.unsupported`.
+
+**MCP tools:** `update_branch_rule`
+
+**Definition of Done:**
+- [ ] `api/backend/client_branch_rule.go` — `UpdateBranchRule` added to `BranchRuleClient` interface
+- [ ] `api/cloud/branch_rule.go` — `UpdateBranchRule` impl
+- [ ] `pkg/cmd/branch-rule/update/update.go` + test
+- [ ] `pkg/cmd/mcp/tools_branch_rule.go` entry + `handlers_branch_rule.go` method + test
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/branch_rule_update.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/branch-rule.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### CLOUD-PROJECT-REVIEWERS — Cloud Project Default Reviewers
+
+**Status:** 🔲
+
+DEFAULT-REVIEWERS (✅) shipped per-repo default reviewers for both Cloud and Server. Cloud additionally exposes a project-level default reviewer collection at `/workspaces/{ws}/projects/{key}/default-reviewers` whose entries cascade to every repo inside that project — the canonical way to set team-wide PR review policy without touching N repos. This scope adds the missing CRUD surface as a separate command tree under `workspace project default-reviewer ...`.
+
+**Interface:** New optional interface `CloudProjectDefaultReviewerClient` with `ListProjectDefaultReviewers(ws, projectKey string, limit int) ([]User, error)`, `AddProjectDefaultReviewer(ws, projectKey, accountID string) error`, `RemoveProjectDefaultReviewer(ws, projectKey, accountID string) error`.
+
+**Commands:** `workspace project default-reviewer list WORKSPACE PROJECT_KEY [--limit N] [--json]`, `add WORKSPACE PROJECT_KEY --user ACCOUNT_ID`, `remove WORKSPACE PROJECT_KEY --user ACCOUNT_ID [--confirm]`
+
+**Backends:** Cloud only. Server/DC → typed `host.unsupported`.
+
+**MCP tools:** `list_project_default_reviewers`, `add_project_default_reviewer`, `remove_project_default_reviewer`
+
+**Definition of Done:**
+- [ ] `api/backend/client_cloud_project_reviewers.go` — interface + feature const + `AsCloudProjectDefaultReviewerClient`
+- [ ] `api/cloud/workspace_project_reviewers.go` — impl
+- [ ] `pkg/cmd/workspace/project/defaultreviewer/` — list/add/remove commands
+- [ ] `pkg/cmd/mcp/` triplet
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/workspace_project_default_reviewer.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/workspace.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### SNIPPET-COMMENTS — Cloud Snippet Comments
+
+**Status:** 🔲
+
+SNIPPETS (✅) shipped basic snippet CRUD but skipped the comments collection. Snippets are Bitbucket's gist equivalent and the Cloud API exposes a full comment thread per snippet at `/snippets/{ws}/{id}/comments`. Today an agent doing code-review on a snippet must use raw `api` calls. Extends the existing `SnippetClient` interface with three new methods.
+
+**Interface:** Extends `SnippetClient` with `ListSnippetComments(ws, snippetID string, limit int) ([]SnippetComment, error)`, `AddSnippetComment(ws, snippetID, body string) (SnippetComment, error)`, `DeleteSnippetComment(ws, snippetID string, commentID int) error`. New domain type `SnippetComment{ID int, Content string, User User, CreatedOn time.Time}`.
+
+**Commands:** `snippet comment list SNIPPET_ID [WORKSPACE] [--limit N] [--json]`, `snippet comment add SNIPPET_ID --body TEXT [WORKSPACE]`, `snippet comment delete SNIPPET_ID COMMENT_ID [WORKSPACE] [--confirm]`
+
+**Backends:** Cloud only. Server/DC → typed `host.unsupported` (no snippet concept).
+
+**MCP tools:** `list_snippet_comments`, `add_snippet_comment`, `delete_snippet_comment`
+
+**Definition of Done:**
+- [ ] `api/backend/client_snippet.go` — three methods added to `SnippetClient` interface
+- [ ] `api/cloud/snippet.go` — impls
+- [ ] `pkg/cmd/snippet/comment/` — list/add/delete commands
+- [ ] `pkg/cmd/mcp/` triplet entries
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/snippet_comment.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/snippet.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PR-MERGE-PREVIEW — PR Merge Preview / Dry-Run
+
+**Status:** 🔲
+
+The shipped `pr merge` command is fire-and-forget. Agents wanting to know whether a merge will succeed (and which files conflict) have to trust the lossy `mergeable: bool` field on `pr view`, or clone locally. Both Cloud and Server expose a true dry-run endpoint returning conflicted paths and plugin vetoes. This scope adds `--dry-run` as a top-level flag on the existing `pr merge` command (no state change, no `--confirm` required).
+
+**Interface:** Extends `PRMerger` interface with `DryRunMergePR(ns, slug string, prID int, in DryRunMergePRInput) (MergeDryRunResult, error)`. Domain type `MergeDryRunResult{CanMerge bool, MessagePreview string, ConflictedPaths []string, Vetoes []MergeVeto}`. `MergeVeto{SummaryMessage, DetailedMessage string}`.
+
+**Commands:** `pr merge PR_ID --dry-run [--strategy ff|squash|merge-commit] [PROJECT/REPO] [--json]`
+
+**Backends:** Cloud (`POST /repositories/{ws}/{slug}/pullrequests/{id}/merge?dry_run=true`). Server 7.0+ (`POST /rest/api/1.0/projects/{k}/repos/{s}/pull-requests/{id}/merge/dry-run`). Both backends.
+
+**MCP tools:** `dry_run_merge_pr`
+
+**Definition of Done:**
+- [ ] `api/backend/client_pr.go` — `DryRunMergePR` added to `PRMerger` interface + domain types
+- [ ] `api/cloud/pr_merge.go` — `DryRunMergePR` impl
+- [ ] `api/server/pr_merge.go` — `DryRunMergePR` impl (Server 7.0+)
+- [ ] `pkg/cmd/pr/merge/merge.go` — `--dry-run` flag wired
+- [ ] `pkg/cmd/mcp/` triplet entry + handler + test
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/pr_merge_dry_run.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/pr.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### PIPE-OIDC — Pipeline OIDC Configuration
+
+**Status:** 🔲
+
+Bitbucket Cloud Pipelines acts as an OIDC identity provider so pipeline steps can mint short-lived tokens for AWS/GCP/Azure without storing long-lived secrets. The two endpoints expose the discovery document and the JWKS keyset needed to register Pipelines as a trusted IdP. Today an agent setting up `iam:AssumeRoleWithWebIdentity` or GCP Workload Identity Federation must fetch these manually via `bitbottle api`. Two read-only CLI verbs + MCP tools; no write side.
+
+**Interface:** New optional interface `PipelineOIDCClient` with `GetPipelineOIDCConfig(ws string) (PipelineOIDCConfig, error)` and `GetPipelineOIDCKeys(ws string) (PipelineOIDCKeySet, error)`. Domain types `PipelineOIDCConfig{Issuer, JWKSURI string, SubjectTypesSupported, IDTokenSigningAlgValuesSupported []string}` and `PipelineOIDCKeySet{Keys []JSONWebKey}`.
+
+**Commands:** `pipeline oidc config get [PROJECT/REPO] [--json]`, `pipeline oidc keys [PROJECT/REPO] [--json]`
+
+**Backends:** Cloud only (`GET /workspaces/{ws}/pipelines-config/identity/oidc/.well-known/openid-configuration`, `GET /workspaces/{ws}/pipelines-config/identity/oidc/keys.json`). Server/DC → typed `host.unsupported`.
+
+**MCP tools:** `get_pipeline_oidc_config`, `get_pipeline_oidc_keys`
+
+**Definition of Done:**
+- [ ] `api/backend/client_pipeline_oidc.go` — interface + feature const + `AsPipelineOIDCClient`
+- [ ] `api/cloud/pipeline_oidc.go` — impl
+- [ ] `pkg/cmd/pipeline/oidc/` — config get + keys commands
+- [ ] `pkg/cmd/mcp/` pair
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/pipeline_oidc.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/pipeline.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### REPO-HOOK-SCRIPTS — Server/DC Repo Hook Settings
+
+**Status:** 🔲
+
+Bitbucket Server/DC plugin model exposes "hook scripts" — Java plugins that fire on `git push` events (pre-receive / post-receive), distinct from outbound webhooks (✅). Common plugins: Yet Another Commit Checker, ScriptRunner, branch-name enforcers, corporate-policy hooks. The settings payload is opaque JSON (plugin-defined schema), so `set` takes `--config-file FILE`; `get` round-trips it for `jq` edit workflows.
+
+**Interface:** New optional interface `RepoHookClient` with `ListRepoHooks(project, slug string) ([]RepoHook, error)`, `GetRepoHook(project, slug, hookKey string) (RepoHook, error)`, `EnableRepoHook(project, slug, hookKey string) error`, `DisableRepoHook(project, slug, hookKey string) error`, `GetRepoHookSettings(project, slug, hookKey string) (json.RawMessage, error)`, `SetRepoHookSettings(project, slug, hookKey string, cfg json.RawMessage) error`. Domain type `RepoHook{Key, Name, Version string, Enabled bool, Configured bool}`.
+
+**Commands:** `repo hook list [PROJECT/REPO] [--json]`, `view [PROJECT/REPO] HOOK_KEY [--json]`, `enable/disable [PROJECT/REPO] HOOK_KEY`, `settings get/set [PROJECT/REPO] HOOK_KEY [--config-file FILE]`
+
+**Backends:** Server/DC only (`/rest/api/1.0/projects/{k}/repos/{s}/settings/hooks`). Cloud → typed `host.unsupported`.
+
+**MCP tools:** `list_repo_hooks`, `view_repo_hook`, `enable_repo_hook`, `disable_repo_hook`, `get_repo_hook_settings`, `set_repo_hook_settings`
+
+**Definition of Done:**
+- [ ] `api/backend/client_repo_hook.go` — interface + feature const + `AsRepoHookClient`
+- [ ] `api/server/repo_hook.go` — impl
+- [ ] `pkg/cmd/repo/hook/` — list/view/enable/disable/settings subcommands
+- [ ] `pkg/cmd/mcp/` sextet
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/repo_hook.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/repo.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### CLOUD-CODE-INSIGHTS — Cloud Code Insights Reports & Annotations
+
+**Status:** 🔲
+
+The shipped CI scope covers Bitbucket Server/DC Code Insights only (`/rest/insights/1.0/...`). Bitbucket Cloud has a structurally different but parallel API at `/repositories/{ws}/{slug}/commit/{commit}/reports/...`. Today an agent posting linter/SAST results against a Cloud commit must use `bitbottle api`. This scope adds a new optional interface `CloudCodeInsightsClient` wired as the Cloud branch of the existing `code-insights` command tree — same CLI verbs, different adapter.
+
+**Interface:** New optional interface `CloudCodeInsightsClient` with `ListCodeInsightsReports`, `GetCodeInsightsReport`, `PutCodeInsightsReport`, `DeleteCodeInsightsReport`, `ListCodeInsightsAnnotations`, `PutCodeInsightsAnnotation`. Reuses existing `CodeInsightsReport` and `CodeInsightsAnnotation` domain types (add optional Cloud-specific fields `Reporter`, `LogoURL` as omit-empty).
+
+**Commands:** `code-insights report list/view/put/delete HASH [REPORT_KEY] [PROJECT/REPO]`, `code-insights annotation list/put HASH REPORT_KEY [PROJECT/REPO]`
+
+**Backends:** Cloud only (`/repositories/{ws}/{slug}/commit/{commit}/reports/...`). Server/DC keeps existing CI adapter.
+
+**MCP tools:** `list_code_insights_reports`, `get_code_insights_report`, `put_code_insights_report`, `delete_code_insights_report`, `list_code_insights_annotations`, `put_code_insights_annotation`
+
+**Definition of Done:**
+- [ ] `api/backend/client_cloud_code_insights.go` — interface + feature const + `AsCloudCodeInsightsClient`
+- [ ] `api/cloud/code_insights.go` — impl
+- [ ] `pkg/cmd/code-insights/` — Cloud adapter wired via `requireFeature[T]`
+- [ ] `pkg/cmd/mcp/` sextet
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/cloud_code_insights.txtar`
+- [ ] `skills/SKILL.md` + `skills/references/code-insights.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### HOST-INFO — Host Capabilities & Version Info
+
+**Status:** 🔲
+
+Today an agent starting work against a new Bitbucket host has no single endpoint to discover (a) which backend type it is, (b) what version (matters for Server feature gates like `pr unready` 8.0+ requirement), (c) which optional `AsXxxClient` capabilities the host implements. The pieces exist internally — `ServerCapabilities.GetApplicationProperties()`, `api/server/version.go`'s parsed `Version`, and `AllFeatureSpecs` — but no command surfaces them. `context` (✅) answers "where am I?"; `host info` answers "what can I do here?".
+
+**Interface:** New optional interface `HostInfoClient` with `GetHostInfo() (HostInfo, error)`. Domain type `HostInfo{BackendType, BaseURL, Version, BuildNumber, DisplayName string, SupportedFeatures []string}`. For Cloud, `Version`/`BuildNumber` are empty/"rolling"; `SupportedFeatures` lists the Cloud feature set.
+
+**Commands:** `host info [--hostname H] [--json]`
+
+**Backends:** Both. Cloud wraps the standard Cloud version probe; Server wraps `GetApplicationProperties()`.
+
+**MCP tools:** `get_host_info`
+
+**Definition of Done:**
+- [ ] `api/backend/client_host_info.go` — interface + feature const + `AsHostInfoClient`
+- [ ] `api/cloud/host_info.go` + `api/server/host_info.go` — impls
+- [ ] `pkg/cmd/host/info/info.go` — command
+- [ ] `pkg/cmd/host/host.go` — parent group
+- [ ] `pkg/cmd/mcp/` pair
+- [ ] `test/testhelpers/client.go` — FakeClient updated
+- [ ] `test/script/testdata/host_info.txtar`
+- [ ] `skills/SKILL.md` updated
+- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
 ## Implementation Order
 
 > **P0 testing-strategy tier added 2026-05-18 after deep analysis of cycles 90–99 (see § Testing Strategy).** Every behaviour bug shipped in that window — [#387](https://github.com/proggarapsody/bitbottle/pull/387), [#394](https://github.com/proggarapsody/bitbottle/pull/394), [#390](https://github.com/proggarapsody/bitbottle/pull/390), [#384](https://github.com/proggarapsody/bitbottle/pull/384)/[#388](https://github.com/proggarapsody/bitbottle/pull/388)/[#391](https://github.com/proggarapsody/bitbottle/pull/391), [`08b3d9a`](https://github.com/proggarapsody/bitbottle/commit/08b3d9a) — was a seam bug invisible to unit + adapter tiers. These four scopes close the gap. Land them before any further feature scope.
@@ -3675,3 +3893,11 @@ type WorkspaceSearchOpts struct {
 | 57 | **WORKSPACE-PROJECT-PERMS** Cloud Workspace Project Permissions | Access control: manage per-project member permissions in Cloud workspaces. Cloud only. |
 | 58 | **ISSUE-ACTIVITY** Cloud Issue Activity Log | Audit: view full change history for a Cloud issue. Cloud only. |
 | 59 | **WORKSPACES-SEARCH** Workspace Search with Filters | DX: paginated workspace search with role/query filters. Cloud only. |
+| 60 | **BRANCH-RULE-UPDATE** Update Cloud branch restriction | CRUD: close the PUT gap on branch restrictions (add/delete shipped). Cloud only. |
+| 61 | **CLOUD-PROJECT-REVIEWERS** Cloud Project Default Reviewers | Access control: project-level cascade default reviewers, distinct from per-repo. Cloud only. |
+| 62 | **SNIPPET-COMMENTS** Cloud Snippet Comments | Comments: list/add/delete comments on snippets (parity with pr/issue/commit). Cloud only. |
+| 63 | **PR-MERGE-PREVIEW** PR Merge Dry-Run | Agent safety: preview merge result + conflict paths before committing. Both backends. |
+| 64 | **PIPE-OIDC** Pipeline OIDC Configuration | CI/security: expose OIDC config + JWKS for cloud-provider federation without long-lived secrets. Cloud only. |
+| 65 | **REPO-HOOK-SCRIPTS** Server/DC Repo Hook Settings | Admin: manage per-repo plugin hooks (YACC, ScriptRunner, branch enforcer). Server/DC only. |
+| 66 | **CLOUD-CODE-INSIGHTS** Cloud Code Insights Reports & Annotations | Observability: Cloud CI reports/annotations parity with shipped Server CI scope. Cloud only. |
+| 67 | **HOST-INFO** Host Capabilities & Version Info | DX: single call to discover backend type, version, and available feature matrix. Both backends. |
