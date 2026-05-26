@@ -85,11 +85,15 @@ func (c *Client) DeleteBranchRule(ns, slug string, id int) error {
 // Value must NOT use omitempty: this is a full-replacement PUT, and value=0
 // is a valid explicit setting (e.g. clearing a required-approvals count).
 type updateBranchRuleBody struct {
-	Kind    string        `json:"kind"`
-	Pattern string        `json:"pattern"`
-	Value   int           `json:"value"`
-	Users   []struct{ Nickname string `json:"nickname"` } `json:"users,omitempty"`
-	Groups  []struct{ Slug string `json:"slug"` } `json:"groups,omitempty"`
+	Kind    string `json:"kind"`
+	Pattern string `json:"pattern"`
+	Value   int    `json:"value"`
+	Users   []struct {
+		Nickname string `json:"nickname"`
+	} `json:"users,omitempty"`
+	Groups []struct {
+		Slug string `json:"slug"`
+	} `json:"groups,omitempty"`
 }
 
 // getBranchRule fetches a single branch restriction rule by ID.
@@ -125,13 +129,17 @@ func (c *Client) UpdateBranchRule(ns, slug string, id int, in backend.UpdateBran
 		body.Value = *in.Value
 	}
 	if in.Users != nil {
-		body.Users = make([]struct{ Nickname string `json:"nickname"` }, len(*in.Users))
+		body.Users = make([]struct {
+			Nickname string `json:"nickname"`
+		}, len(*in.Users))
 		for i, u := range *in.Users {
 			body.Users[i].Nickname = u
 		}
 	}
 	if in.Groups != nil {
-		body.Groups = make([]struct{ Slug string `json:"slug"` }, len(*in.Groups))
+		body.Groups = make([]struct {
+			Slug string `json:"slug"`
+		}, len(*in.Groups))
 		for i, g := range *in.Groups {
 			body.Groups[i].Slug = g
 		}
