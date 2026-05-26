@@ -8,6 +8,8 @@ jobs:
   e2e:
     name: E2E (${{ matrix.backend }})
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     strategy:
       fail-fast: false
       matrix:
@@ -18,7 +20,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Build binary
-        run: go build -o bitbottle .
+        run: go build -o bitbottle ./cmd/bitbottle
       - name: Run E2E testscripts
         env:
           BITBOTTLE_E2E: "1"
