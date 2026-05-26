@@ -60,6 +60,9 @@ bitbottle pr reviewer-group list [PROJ/repo]                 # list reviewer gro
 bitbottle pr reviewer-group add [PROJ/repo] --name NAME --users u1,u2  # create reviewer group
 bitbottle pr reviewer-group remove [PROJ/repo] NAME          # remove reviewer group by name
 bitbottle pr reviewer-group remove [PROJ/repo] --id ID       # remove reviewer group by condition ID
+bitbottle pr merge-preview 42                              # dry-run merge check — reports conflicts/vetoes without merging
+bitbottle pr merge-preview 42 --strategy squash            # check with a specific strategy (ff|squash|merge-commit)
+bitbottle pr merge-preview 42 --json                       # JSON output (can_merge, message, conflicted_files, vetoes)
 ```
 
 The `pr comment list` output includes inline review comments (file:line

@@ -209,3 +209,25 @@ type CreateReviewerGroupInput struct {
 	UserSlugs         []string // reviewer user slugs
 	RequiredApprovals int      // default 1
 }
+
+// MergeDryRunResult is the result of a dry-run merge check on a pull request.
+// CanMerge is true when the PR can be merged without conflicts.
+// Message is a human-readable summary from the backend (may be empty).
+// ConflictedFiles lists file paths that have merge conflicts (Cloud only;
+// empty on Server because the Server dry-run endpoint does not enumerate
+// conflicted files — vetoes carry the conflict description instead).
+// Vetoes lists blocking conditions returned by Bitbucket Server / Data Center.
+type MergeDryRunResult struct {
+	CanMerge        bool        `json:"can_merge"`
+	Message         string      `json:"message,omitempty"`
+	ConflictedFiles []string    `json:"conflicted_files,omitempty"`
+	Vetoes          []MergeVeto `json:"vetoes,omitempty"`
+}
+
+// MergeVeto is a single blocking condition returned by the Bitbucket Server
+// dry-run merge endpoint. SummaryMessage is a short label; DetailMessage is
+// the full explanation.
+type MergeVeto struct {
+	SummaryMessage string `json:"summary_message"`
+	DetailMessage  string `json:"detail_message,omitempty"`
+}
