@@ -309,10 +309,13 @@ type FakeClient struct {
 	UpdateRepoPRSettingsFn func(ns, slug string, in backend.RepoPRSettingsInput) (backend.RepoPRSettings, error)
 
 	// Snippet methods (Cloud-only; satisfies backend.SnippetClient when set)
-	ListSnippetsFn  func(workspace string, limit int) ([]backend.Snippet, error)
-	GetSnippetFn    func(workspace, id string) (backend.Snippet, error)
-	CreateSnippetFn func(workspace string, in backend.CreateSnippetInput) (backend.Snippet, error)
-	DeleteSnippetFn func(workspace, id string) error
+	ListSnippetsFn         func(workspace string, limit int) ([]backend.Snippet, error)
+	GetSnippetFn           func(workspace, id string) (backend.Snippet, error)
+	CreateSnippetFn        func(workspace string, in backend.CreateSnippetInput) (backend.Snippet, error)
+	DeleteSnippetFn        func(workspace, id string) error
+	ListSnippetCommentsFn  func(workspace, snippetID string, limit int) ([]backend.SnippetComment, error)
+	AddSnippetCommentFn    func(workspace, snippetID, body string) (backend.SnippetComment, error)
+	DeleteSnippetCommentFn func(workspace, snippetID string, commentID int) error
 
 	// Group methods (Server-only; satisfies backend.GroupClient when set)
 	ListGroupsFn  func(filter string, limit int) ([]backend.Group, error)
@@ -2213,6 +2216,36 @@ func (c *FakeClient) DeleteSnippet(workspace, id string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteSnippet; set DeleteSnippetFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListSnippetComments(workspace, snippetID string, limit int) ([]backend.SnippetComment, error) {
+	if c.ListSnippetCommentsFn != nil {
+		return c.ListSnippetCommentsFn(workspace, snippetID, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListSnippetComments; set ListSnippetCommentsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddSnippetComment(workspace, snippetID, body string) (backend.SnippetComment, error) {
+	if c.AddSnippetCommentFn != nil {
+		return c.AddSnippetCommentFn(workspace, snippetID, body)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddSnippetComment; set AddSnippetCommentFn in your test")
+	}
+	return backend.SnippetComment{}, nil
+}
+
+func (c *FakeClient) DeleteSnippetComment(workspace, snippetID string, commentID int) error {
+	if c.DeleteSnippetCommentFn != nil {
+		return c.DeleteSnippetCommentFn(workspace, snippetID, commentID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteSnippetComment; set DeleteSnippetCommentFn in your test")
 	}
 	return nil
 }

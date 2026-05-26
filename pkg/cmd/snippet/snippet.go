@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/snippet/comment"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/snippet/create"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/snippet/delete"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/snippet/list"
@@ -29,5 +30,6 @@ func NewCmdSnippet(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(view.NewCmdView(f))
 	cmd.AddCommand(create.NewCmdCreate(f))
 	cmd.AddCommand(delete.NewCmdDelete(f))
+	cmd.AddCommand(comment.NewCmdSnippetComment(f))
 	return cmd
 }

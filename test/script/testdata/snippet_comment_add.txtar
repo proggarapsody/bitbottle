@@ -1,0 +1,6 @@
+# snippet comment add — post a comment to a Cloud snippet.
+bb-fake cloud
+
+bitbottle snippet comment add Xqjyp1GV testuser --body 'Nice snippet!' -k
+stdout '42'
+stdout 'Xqjyp1GV'

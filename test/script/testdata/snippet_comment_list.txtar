@@ -1,0 +1,10 @@
+# snippet comment list — list comments on a Cloud snippet.
+bb-fake cloud
+
+bitbottle snippet comment list Xqjyp1GV testuser -k
+stdout 'Nice snippet'
+stdout 'Alice'
+
+bitbottle snippet comment list Xqjyp1GV testuser -k --json
+stdout '"id"'
+stdout '"author"'
