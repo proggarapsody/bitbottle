@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.123.0](https://github.com/proggarapsody/bitbottle/compare/v1.122.0...v1.123.0) (2026-05-26)
+
+
+### Features
+
+* **snippet:** add snippet comment list/add/delete commands (Cloud) ([3e8bdfa](https://github.com/proggarapsody/bitbottle/commit/3e8bdfa4a85768b97cb2602611dc94075ee3faf5))
+
 ## [1.122.0](https://github.com/proggarapsody/bitbottle/compare/v1.121.0...v1.122.0) (2026-05-26)
 
 
