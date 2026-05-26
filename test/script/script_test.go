@@ -802,6 +802,38 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/users/alice",
 			Status:     http.StatusNoContent,
 		},
+		// workspace project default-reviewer list — used by workspace project default-reviewer list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/default-reviewers",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"account_id":   "abc123",
+					"display_name": "Alice",
+					"nickname":     "alice",
+					"links":        map[string]any{"avatar": map[string]any{"href": "https://bitbucket.org/account/alice/avatar"}},
+				},
+			}),
+		},
+		// workspace project default-reviewer add — used by workspace project default-reviewer add
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/default-reviewers/abc123",
+			Status:     http.StatusOK,
+			Body: map[string]any{
+				"account_id":   "abc123",
+				"display_name": "Alice",
+				"nickname":     "alice",
+				"links":        map[string]any{"avatar": map[string]any{"href": "https://bitbucket.org/account/alice/avatar"}},
+			},
+		},
+		// workspace project default-reviewer remove — used by workspace project default-reviewer remove
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/default-reviewers/abc123",
+			Status:     http.StatusNoContent,
+		},
 		// workspace pipeline-variable list — used by workspace pipeline-variable list
 		{
 			Method:     http.MethodGet,

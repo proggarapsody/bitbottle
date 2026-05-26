@@ -15,3 +15,6 @@ var _ backend.PRChangesRequester = (*cloud.Client)(nil)
 // Cloud-only optional capability — Server falls through AsPRCommentResolver
 // to a typed host.unsupported.
 var _ backend.PRCommentResolver = (*cloud.Client)(nil)
+
+// Compile-time assertion: cloud.Client satisfies backend.WorkspaceProjectDefaultReviewerClient.
+var _ backend.WorkspaceProjectDefaultReviewerClient = (*cloud.Client)(nil)

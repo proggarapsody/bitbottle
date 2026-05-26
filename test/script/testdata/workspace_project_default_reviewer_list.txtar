@@ -1,0 +1,9 @@
+# workspace project default-reviewer list.
+bb-fake cloud
+
+bitbottle workspace project default-reviewer list testworkspace PROJ -k
+stdout 'abc123'
+stdout 'Alice'
+
+bitbottle workspace project default-reviewer list testworkspace PROJ -k --json
+stdout '"account_id"'
