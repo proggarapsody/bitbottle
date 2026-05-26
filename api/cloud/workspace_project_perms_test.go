@@ -81,11 +81,12 @@ func TestCloudClient_ListWorkspaceProjectPerms_MergesBoth(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/workspaces/myws/projects/PROJ/permissions/users" {
+		switch r.URL.Path {
+		case "/workspaces/myws/projects/PROJ/permissions/users":
 			_, _ = w.Write([]byte(wsProjectUserPermsJSON))
-		} else if r.URL.Path == "/workspaces/myws/projects/PROJ/permissions/groups" {
+		case "/workspaces/myws/projects/PROJ/permissions/groups":
 			_, _ = w.Write([]byte(wsProjectGroupPermsJSON))
-		} else {
+		default:
 			_, _ = w.Write([]byte(`{"values":[]}`))
 		}
 	}))
