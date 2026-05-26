@@ -8,6 +8,7 @@ import (
 	cmdConfig "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/config"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/list"
 	cmdLogs "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/logs"
+	cmdOIDC "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/oidc"
 	cmdRerun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/rerun"
 	cmdRun "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/run"
 	cmdSSH "github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/ssh"
@@ -49,5 +50,6 @@ directory.`,
 	cmd.AddCommand(cmdTestReport.NewCmdTestReport(f))
 	cmd.AddCommand(cmdTestReport.NewCmdTestCase(f))
 	cmd.AddCommand(cmdSSH.NewCmdPipelineSSH(f))
+	cmd.AddCommand(cmdOIDC.NewCmdPipelineOIDC(f))
 	return cmd
 }

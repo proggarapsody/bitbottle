@@ -429,6 +429,10 @@ type FakeClient struct {
 	GetPipelineKnownHostFn    func(ns, slug, uuid string) (backend.PipelineKnownHost, error)
 	AddPipelineKnownHostFn    func(ns, slug string, in backend.PipelineKnownHostInput) (backend.PipelineKnownHost, error)
 	DeletePipelineKnownHostFn func(ns, slug, uuid string) error
+
+	// PipelineOIDCClient methods (Cloud-only; satisfies backend.PipelineOIDCClient when set)
+	GetPipelineOIDCConfigFn func(workspace string) (backend.PipelineOIDCConfig, error)
+	GetPipelineOIDCKeysFn   func(workspace string) (backend.PipelineOIDCKeys, error)
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -506,6 +510,7 @@ var (
 	_ backend.WorkspaceProjectPermsClient           = (*FakeClient)(nil)
 	_ backend.WorkspaceProjectDefaultReviewerClient = (*FakeClient)(nil)
 	_ backend.PRMergePreviewClient                  = (*FakeClient)(nil)
+	_ backend.PipelineOIDCClient                    = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -3082,4 +3087,24 @@ func (c *FakeClient) RemoveProjectDefaultReviewer(workspace, projectKey, account
 		c.T.Fatalf("unexpected call to FakeClient.RemoveProjectDefaultReviewer; set RemoveProjectDefaultReviewerFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) GetPipelineOIDCConfig(workspace string) (backend.PipelineOIDCConfig, error) {
+	if c.GetPipelineOIDCConfigFn != nil {
+		return c.GetPipelineOIDCConfigFn(workspace)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipelineOIDCConfig; set GetPipelineOIDCConfigFn in your test")
+	}
+	return backend.PipelineOIDCConfig{}, nil
+}
+
+func (c *FakeClient) GetPipelineOIDCKeys(workspace string) (backend.PipelineOIDCKeys, error) {
+	if c.GetPipelineOIDCKeysFn != nil {
+		return c.GetPipelineOIDCKeysFn(workspace)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetPipelineOIDCKeys; set GetPipelineOIDCKeysFn in your test")
+	}
+	return backend.PipelineOIDCKeys{}, nil
 }

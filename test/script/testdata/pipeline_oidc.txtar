@@ -1,0 +1,14 @@
+# pipeline oidc config prints issuer; pipeline oidc keys prints key IDs.
+bb-fake cloud
+
+bitbottle pipeline oidc config testworkspace -k
+stdout 'issuer='
+
+bitbottle pipeline oidc config testworkspace -k --json
+stdout '"issuer"'
+
+bitbottle pipeline oidc keys testworkspace -k
+stdout 'key-id-1'
+
+bitbottle pipeline oidc keys testworkspace -k --json
+stdout '"keys"'

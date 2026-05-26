@@ -356,3 +356,42 @@ All commands support `--json`, `--jq`, `--yaml`, and `--template` where applicab
 **Cloud** — Key pair: `GET/PUT /2.0/repositories/{ws}/{slug}/pipelines_config/ssh/key_pair`. Known hosts: `GET/POST /2.0/repositories/{ws}/{slug}/pipelines_config/ssh/known_hosts` (list paginated), `GET/DELETE .../known_hosts/{uuid}`.
 
 **Server/DC** — not supported. Returns a `host.unsupported` error.
+
+---
+
+# Pipeline OIDC Configuration
+
+Read the OIDC discovery document and JWKS key-set that Bitbucket Cloud Pipelines publishes for workload-identity federation (AWS, GCP, Azure). This feature is **Cloud only**.
+
+## Commands
+
+```bash
+# View the OIDC discovery document
+bitbottle pipeline oidc config WORKSPACE
+bitbottle pipeline oidc config WORKSPACE --json
+
+# View the JWKS key set
+bitbottle pipeline oidc keys WORKSPACE
+bitbottle pipeline oidc keys WORKSPACE --json
+```
+
+`WORKSPACE` is a required positional argument (workspace slug).
+
+## Flags
+
+| Command | Flag | Description |
+|---|---|---|
+| all | `--hostname HOST` | Override the Bitbucket host |
+
+## MCP tools
+
+| Tool | Description |
+|---|---|
+| `get_pipeline_oidc_config` | Get OIDC discovery document. Params: `workspace` (required), `hostname` |
+| `get_pipeline_oidc_keys` | Get JWKS key set. Params: `workspace` (required), `hostname` |
+
+## Backend details
+
+**Cloud** — Config: `GET /2.0/workspaces/{workspace}/pipelines-config/identity/oidc/.well-known/openid-configuration`. Keys: `GET /2.0/workspaces/{workspace}/pipelines-config/identity/oidc/keys.json`.
+
+**Server/DC** — not supported. Returns a `host.unsupported` error.
