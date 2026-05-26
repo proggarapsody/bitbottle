@@ -641,6 +641,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: false,
 	},
+	{
+		Name:          "PRMergePreviewClient",
+		HumanLabel:    "PR merge preview",
+		Check:         func(c Client) bool { _, ok := c.(PRMergePreviewClient); return ok },
+		Feature:       FeaturePRMergePreview,
+		CloudSupport:  true,
+		ServerSupport: true,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.

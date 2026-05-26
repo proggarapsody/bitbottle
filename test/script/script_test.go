@@ -242,6 +242,13 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/1/participants/alice",
 			Status:     http.StatusNoContent,
 		},
+		// POST PR merge dry-run — used by pr merge-preview
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/1/merge/dry-run",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"canMerge": true, "vetoes": []any{}},
+		},
 		// GET reviewer-group conditions — used by pr reviewer-group list
 		{
 			Method:     http.MethodGet,
@@ -543,6 +550,13 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pullrequests/10",
 			Status:     http.StatusOK,
 			Body:       cloudPR(10, "Cloud fix", "OPEN"),
+		},
+		// POST PR merge dry-run — used by pr merge-preview (Cloud)
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/repositories/TESTWORKSPACE/cloud-repo-a/pullrequests/10/merge",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"can_merge_without_conflicts": true, "message": "Looks good"},
 		},
 		// GET repo — used by repo clone (and repo view)
 		{

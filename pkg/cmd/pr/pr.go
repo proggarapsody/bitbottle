@@ -12,6 +12,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	cmdApprove "github.com/proggarapsody/bitbottle/pkg/cmd/pr/approve"
 	cmdDecline "github.com/proggarapsody/bitbottle/pkg/cmd/pr/decline"
+	cmdMergePreview "github.com/proggarapsody/bitbottle/pkg/cmd/pr/mergepreview"
 	cmdParticipantUpdate "github.com/proggarapsody/bitbottle/pkg/cmd/pr/participant/update"
 	cmdReady "github.com/proggarapsody/bitbottle/pkg/cmd/pr/ready"
 	cmdReopen "github.com/proggarapsody/bitbottle/pkg/cmd/pr/reopen"
@@ -36,6 +37,7 @@ hosts are configured.`,
 	cmd.AddCommand(NewCmdPRView(f))
 	cmd.AddCommand(NewCmdPRCreate(f))
 	cmd.AddCommand(NewCmdPRMerge(f))
+	cmd.AddCommand(cmdMergePreview.NewCmdMergePreview(f))
 	cmd.AddCommand(cmdApprove.NewCmdApprove(f))
 	cmd.AddCommand(NewCmdPRDiff(f))
 	cmd.AddCommand(NewCmdPRCheckout(f))

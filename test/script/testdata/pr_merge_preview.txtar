@@ -1,0 +1,11 @@
+# pr merge-preview performs a dry-run merge check on a pull request.
+
+# Server: can merge
+bb-fake server
+bitbottle pr merge-preview 1 -R $BB_HOST/PROJ/alpha-repo -k
+stdout 'Can merge cleanly'
+
+# Cloud: can merge
+bb-fake cloud
+bitbottle pr merge-preview 10 -R bitbucket.org/testworkspace/cloud-repo-a
+stdout 'Can merge cleanly'

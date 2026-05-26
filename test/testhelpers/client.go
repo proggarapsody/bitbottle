@@ -99,6 +99,9 @@ type FakeClient struct {
 	// PR activity
 	GetPRActivityFn func(ns, slug string, id int, limit int) ([]backend.PRActivityEvent, error)
 
+	// PR merge preview (both backends; satisfies backend.PRMergePreviewClient when set)
+	DryRunMergePRFn func(ns, slug string, prID int, strategy string) (backend.MergeDryRunResult, error)
+
 	// Commit status methods
 	ListCommitStatusesFn func(ns, slug, hash string) ([]backend.CommitStatus, error)
 	ReportCommitStatusFn func(ns, slug, hash string, input backend.CommitStatusInput) (backend.CommitStatus, error)
@@ -502,6 +505,7 @@ var (
 	_ backend.WorkspaceSearcher                     = (*FakeClient)(nil)
 	_ backend.WorkspaceProjectPermsClient           = (*FakeClient)(nil)
 	_ backend.WorkspaceProjectDefaultReviewerClient = (*FakeClient)(nil)
+	_ backend.PRMergePreviewClient                  = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -1084,6 +1088,16 @@ func (c *FakeClient) GetPRActivity(ns, slug string, id int, limit int) ([]backen
 		c.T.Fatalf("unexpected call to FakeClient.GetPRActivity; set GetPRActivityFn in your test")
 	}
 	return nil, nil
+}
+
+func (c *FakeClient) DryRunMergePR(ns, slug string, prID int, strategy string) (backend.MergeDryRunResult, error) {
+	if c.DryRunMergePRFn != nil {
+		return c.DryRunMergePRFn(ns, slug, prID, strategy)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DryRunMergePR; set DryRunMergePRFn in your test")
+	}
+	return backend.MergeDryRunResult{}, nil
 }
 
 func (c *FakeClient) ListCommitStatuses(ns, slug, hash string) ([]backend.CommitStatus, error) {
