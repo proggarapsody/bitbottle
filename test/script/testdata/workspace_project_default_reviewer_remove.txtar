@@ -1,0 +1,5 @@
+# workspace project default-reviewer remove.
+bb-fake cloud
+
+bitbottle workspace project default-reviewer remove testworkspace PROJ --user abc123 --confirm -k
+stdout 'Removed'

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	cmdDefaultReviewer "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/project/defaultreviewer"
 	cmdPerms "github.com/proggarapsody/bitbottle/pkg/cmd/workspace/project/perms"
 )
 
@@ -20,5 +21,6 @@ func NewCmdWorkspaceProject(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewCmdEdit(f))
 	cmd.AddCommand(NewCmdDelete(f))
 	cmd.AddCommand(cmdPerms.NewCmdWorkspaceProjectPerms(f))
+	cmd.AddCommand(cmdDefaultReviewer.NewCmdWorkspaceProjectDefaultReviewer(f))
 	return cmd
 }

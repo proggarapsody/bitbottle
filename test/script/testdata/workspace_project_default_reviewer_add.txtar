@@ -1,0 +1,5 @@
+# workspace project default-reviewer add.
+bb-fake cloud
+
+bitbottle workspace project default-reviewer add testworkspace PROJ --user abc123 -k
+stdout 'Added'

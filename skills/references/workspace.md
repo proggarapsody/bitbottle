@@ -256,3 +256,38 @@ bitbottle workspace project perms revoke myworkspace PROJ --user alice --confirm
 bitbottle workspace project perms revoke myworkspace PROJ --group devs --confirm
 # Omit --confirm on a TTY to get an interactive confirmation prompt
 ```
+
+## Workspace Project Default Reviewers (Cloud only)
+
+Manage default reviewers at the project level. Default reviewers cascade to
+every repository in the project. These are distinct from per-repo default
+reviewers (`repo default-reviewer *`) and workspace project permissions.
+Returns `host.unsupported` on Bitbucket Server/DC.
+
+### workspace project default-reviewer list
+
+List default reviewers for a workspace project.
+
+```bash
+bitbottle workspace project default-reviewer list myworkspace PROJ
+bitbottle workspace project default-reviewer list myworkspace PROJ --json
+```
+
+Output columns: ACCOUNT ID, DISPLAY NAME, NICKNAME
+
+### workspace project default-reviewer add
+
+Add a user as a default reviewer on a workspace project.
+
+```bash
+bitbottle workspace project default-reviewer add myworkspace PROJ --user abc123
+```
+
+### workspace project default-reviewer remove
+
+Remove a user from the default reviewers of a workspace project.
+
+```bash
+bitbottle workspace project default-reviewer remove myworkspace PROJ --user abc123 --confirm
+# Omit --confirm on a TTY to get an interactive confirmation prompt
+```

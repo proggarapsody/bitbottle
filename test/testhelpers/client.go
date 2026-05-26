@@ -359,6 +359,11 @@ type FakeClient struct {
 	GrantWorkspaceProjectPermFn  func(workspace, projectKey string, in backend.WorkspaceProjectPermInput) error
 	RevokeWorkspaceProjectPermFn func(workspace, projectKey, subjectSlug string, isGroup bool) error
 
+	// WorkspaceProjectDefaultReviewerClient methods (Cloud-only; satisfies backend.WorkspaceProjectDefaultReviewerClient when set)
+	ListProjectDefaultReviewersFn  func(workspace, projectKey string, limit int) ([]backend.ProjectDefaultReviewer, error)
+	AddProjectDefaultReviewerFn    func(workspace, projectKey, accountID string) error
+	RemoveProjectDefaultReviewerFn func(workspace, projectKey, accountID string) error
+
 	// RepoLabelClient methods (both backends; satisfies backend.RepoLabelClient when set)
 	ListRepoLabelsFn  func(ns, slug string) ([]backend.RepoLabel, error)
 	CreateRepoLabelFn func(ns, slug string, in backend.CreateRepoLabelInput) (backend.RepoLabel, error)
@@ -428,71 +433,72 @@ var (
 	_ backend.Client = (*FakeClient)(nil)
 
 	// Optional interfaces — FakeClient implements all of these.
-	_ backend.AdminClient                     = (*FakeClient)(nil)
-	_ backend.BranchModelClient               = (*FakeClient)(nil)
-	_ backend.BranchProtector                 = (*FakeClient)(nil)
-	_ backend.BranchRuleClient                = (*FakeClient)(nil)
-	_ backend.CodeInsightsClient              = (*FakeClient)(nil)
-	_ backend.CodeSearcher                    = (*FakeClient)(nil)
-	_ backend.CommitFileClient                = (*FakeClient)(nil)
-	_ backend.DefaultReviewerClient           = (*FakeClient)(nil)
-	_ backend.DefaultReviewersResolver        = (*FakeClient)(nil)
-	_ backend.DeployKeyClient                 = (*FakeClient)(nil)
-	_ backend.DeploymentClient                = (*FakeClient)(nil)
-	_ backend.DiffClient                      = (*FakeClient)(nil)
-	_ backend.IssueClient                     = (*FakeClient)(nil)
-	_ backend.PermissionsClient               = (*FakeClient)(nil)
-	_ backend.PipelineCacheClient             = (*FakeClient)(nil)
-	_ backend.PipelineClient                  = (*FakeClient)(nil)
-	_ backend.PipelineScheduleClient          = (*FakeClient)(nil)
-	_ backend.PipelineTriggerClient           = (*FakeClient)(nil)
-	_ backend.PRBranchUpdater                 = (*FakeClient)(nil)
-	_ backend.PRCommitClient                  = (*FakeClient)(nil)
-	_ backend.PRFileClient                    = (*FakeClient)(nil)
-	_ backend.PRParticipantClient             = (*FakeClient)(nil)
-	_ backend.PRParticipantUpdater            = (*FakeClient)(nil)
-	_ backend.PRStatusLister                  = (*FakeClient)(nil)
-	_ backend.RepoEditor                      = (*FakeClient)(nil)
-	_ backend.RepoPRSettingsClient            = (*FakeClient)(nil)
-	_ backend.RepoForker                      = (*FakeClient)(nil)
-	_ backend.RepoForksLister                 = (*FakeClient)(nil)
-	_ backend.RepoTransferClient              = (*FakeClient)(nil)
-	_ backend.RepoWatcherClient               = (*FakeClient)(nil)
-	_ backend.ReviewerGroupClient             = (*FakeClient)(nil)
-	_ backend.SnippetClient                   = (*FakeClient)(nil)
-	_ backend.SSHKeyClient                    = (*FakeClient)(nil)
-	_ backend.WorkspaceClient                 = (*FakeClient)(nil)
-	_ backend.WorkspaceMemberClient           = (*FakeClient)(nil)
-	_ backend.WorkspaceVariableClient         = (*FakeClient)(nil)
-	_ backend.WorkspacePipelineVariableClient = (*FakeClient)(nil)
-	_ backend.PRReviewerRemover               = (*FakeClient)(nil)
-	_ backend.WorkspaceWebhookClient          = (*FakeClient)(nil)
-	_ backend.GroupClient                     = (*FakeClient)(nil)
-	_ backend.GroupMemberClient               = (*FakeClient)(nil)
-	_ backend.ServerProjectClient             = (*FakeClient)(nil)
-	_ backend.PATClient                       = (*FakeClient)(nil)
-	_ backend.IssueAttacher                   = (*FakeClient)(nil)
-	_ backend.IssueVoter                      = (*FakeClient)(nil)
-	_ backend.IssueWatcher                    = (*FakeClient)(nil)
-	_ backend.RepoLabelClient                 = (*FakeClient)(nil)
-	_ backend.RunnerClient                    = (*FakeClient)(nil)
-	_ backend.SourceWriter                    = (*FakeClient)(nil)
-	_ backend.AuditClient                     = (*FakeClient)(nil)
-	_ backend.CommitCherryPicker              = (*FakeClient)(nil)
-	_ backend.PipelineConfigClient            = (*FakeClient)(nil)
-	_ backend.PipelineTestReportClient        = (*FakeClient)(nil)
-	_ backend.PipelineSSHKeyPairClient        = (*FakeClient)(nil)
-	_ backend.PipelineKnownHostsClient        = (*FakeClient)(nil)
-	_ backend.RefComparer                     = (*FakeClient)(nil)
-	_ backend.RepoDownloadClient              = (*FakeClient)(nil)
-	_ backend.MilestoneClient                 = (*FakeClient)(nil)
-	_ backend.IssueVersionClient              = (*FakeClient)(nil)
-	_ backend.CloudProjectClient              = (*FakeClient)(nil)
-	_ backend.MirrorClient                    = (*FakeClient)(nil)
-	_ backend.WorkspacePermsClient            = (*FakeClient)(nil)
-	_ backend.IssueActivityClient             = (*FakeClient)(nil)
-	_ backend.WorkspaceSearcher               = (*FakeClient)(nil)
-	_ backend.WorkspaceProjectPermsClient     = (*FakeClient)(nil)
+	_ backend.AdminClient                           = (*FakeClient)(nil)
+	_ backend.BranchModelClient                     = (*FakeClient)(nil)
+	_ backend.BranchProtector                       = (*FakeClient)(nil)
+	_ backend.BranchRuleClient                      = (*FakeClient)(nil)
+	_ backend.CodeInsightsClient                    = (*FakeClient)(nil)
+	_ backend.CodeSearcher                          = (*FakeClient)(nil)
+	_ backend.CommitFileClient                      = (*FakeClient)(nil)
+	_ backend.DefaultReviewerClient                 = (*FakeClient)(nil)
+	_ backend.DefaultReviewersResolver              = (*FakeClient)(nil)
+	_ backend.DeployKeyClient                       = (*FakeClient)(nil)
+	_ backend.DeploymentClient                      = (*FakeClient)(nil)
+	_ backend.DiffClient                            = (*FakeClient)(nil)
+	_ backend.IssueClient                           = (*FakeClient)(nil)
+	_ backend.PermissionsClient                     = (*FakeClient)(nil)
+	_ backend.PipelineCacheClient                   = (*FakeClient)(nil)
+	_ backend.PipelineClient                        = (*FakeClient)(nil)
+	_ backend.PipelineScheduleClient                = (*FakeClient)(nil)
+	_ backend.PipelineTriggerClient                 = (*FakeClient)(nil)
+	_ backend.PRBranchUpdater                       = (*FakeClient)(nil)
+	_ backend.PRCommitClient                        = (*FakeClient)(nil)
+	_ backend.PRFileClient                          = (*FakeClient)(nil)
+	_ backend.PRParticipantClient                   = (*FakeClient)(nil)
+	_ backend.PRParticipantUpdater                  = (*FakeClient)(nil)
+	_ backend.PRStatusLister                        = (*FakeClient)(nil)
+	_ backend.RepoEditor                            = (*FakeClient)(nil)
+	_ backend.RepoPRSettingsClient                  = (*FakeClient)(nil)
+	_ backend.RepoForker                            = (*FakeClient)(nil)
+	_ backend.RepoForksLister                       = (*FakeClient)(nil)
+	_ backend.RepoTransferClient                    = (*FakeClient)(nil)
+	_ backend.RepoWatcherClient                     = (*FakeClient)(nil)
+	_ backend.ReviewerGroupClient                   = (*FakeClient)(nil)
+	_ backend.SnippetClient                         = (*FakeClient)(nil)
+	_ backend.SSHKeyClient                          = (*FakeClient)(nil)
+	_ backend.WorkspaceClient                       = (*FakeClient)(nil)
+	_ backend.WorkspaceMemberClient                 = (*FakeClient)(nil)
+	_ backend.WorkspaceVariableClient               = (*FakeClient)(nil)
+	_ backend.WorkspacePipelineVariableClient       = (*FakeClient)(nil)
+	_ backend.PRReviewerRemover                     = (*FakeClient)(nil)
+	_ backend.WorkspaceWebhookClient                = (*FakeClient)(nil)
+	_ backend.GroupClient                           = (*FakeClient)(nil)
+	_ backend.GroupMemberClient                     = (*FakeClient)(nil)
+	_ backend.ServerProjectClient                   = (*FakeClient)(nil)
+	_ backend.PATClient                             = (*FakeClient)(nil)
+	_ backend.IssueAttacher                         = (*FakeClient)(nil)
+	_ backend.IssueVoter                            = (*FakeClient)(nil)
+	_ backend.IssueWatcher                          = (*FakeClient)(nil)
+	_ backend.RepoLabelClient                       = (*FakeClient)(nil)
+	_ backend.RunnerClient                          = (*FakeClient)(nil)
+	_ backend.SourceWriter                          = (*FakeClient)(nil)
+	_ backend.AuditClient                           = (*FakeClient)(nil)
+	_ backend.CommitCherryPicker                    = (*FakeClient)(nil)
+	_ backend.PipelineConfigClient                  = (*FakeClient)(nil)
+	_ backend.PipelineTestReportClient              = (*FakeClient)(nil)
+	_ backend.PipelineSSHKeyPairClient              = (*FakeClient)(nil)
+	_ backend.PipelineKnownHostsClient              = (*FakeClient)(nil)
+	_ backend.RefComparer                           = (*FakeClient)(nil)
+	_ backend.RepoDownloadClient                    = (*FakeClient)(nil)
+	_ backend.MilestoneClient                       = (*FakeClient)(nil)
+	_ backend.IssueVersionClient                    = (*FakeClient)(nil)
+	_ backend.CloudProjectClient                    = (*FakeClient)(nil)
+	_ backend.MirrorClient                          = (*FakeClient)(nil)
+	_ backend.WorkspacePermsClient                  = (*FakeClient)(nil)
+	_ backend.IssueActivityClient                   = (*FakeClient)(nil)
+	_ backend.WorkspaceSearcher                     = (*FakeClient)(nil)
+	_ backend.WorkspaceProjectPermsClient           = (*FakeClient)(nil)
+	_ backend.WorkspaceProjectDefaultReviewerClient = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -2995,6 +3001,38 @@ func (c *FakeClient) RevokeWorkspaceProjectPerm(workspace, projectKey, subjectSl
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.RevokeWorkspaceProjectPerm; set RevokeWorkspaceProjectPermFn in your test")
+	}
+	return nil
+}
+
+// ── WorkspaceProjectDefaultReviewerClient ────────────────────────────────────
+
+func (c *FakeClient) ListProjectDefaultReviewers(workspace, projectKey string, limit int) ([]backend.ProjectDefaultReviewer, error) {
+	if c.ListProjectDefaultReviewersFn != nil {
+		return c.ListProjectDefaultReviewersFn(workspace, projectKey, limit)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListProjectDefaultReviewers; set ListProjectDefaultReviewersFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) AddProjectDefaultReviewer(workspace, projectKey, accountID string) error {
+	if c.AddProjectDefaultReviewerFn != nil {
+		return c.AddProjectDefaultReviewerFn(workspace, projectKey, accountID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.AddProjectDefaultReviewer; set AddProjectDefaultReviewerFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) RemoveProjectDefaultReviewer(workspace, projectKey, accountID string) error {
+	if c.RemoveProjectDefaultReviewerFn != nil {
+		return c.RemoveProjectDefaultReviewerFn(workspace, projectKey, accountID)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.RemoveProjectDefaultReviewer; set RemoveProjectDefaultReviewerFn in your test")
 	}
 	return nil
 }
