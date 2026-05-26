@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.120.0](https://github.com/proggarapsody/bitbottle/compare/v1.119.0...v1.120.0) (2026-05-26)
+
+
+### Features
+
+* **workspace:** add workspace project perms commands and MCP tools (Cloud) ([9effe12](https://github.com/proggarapsody/bitbottle/commit/9effe12f35e44ce7434c044f95df4221d5ab1e1b))
+
 ## [1.119.0](https://github.com/proggarapsody/bitbottle/compare/v1.118.0...v1.119.0) (2026-05-25)
 
 
