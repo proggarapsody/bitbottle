@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.124.0](https://github.com/proggarapsody/bitbottle/compare/v1.123.0...v1.124.0) (2026-05-26)
+
+
+### Features
+
+* **pr:** add pr merge-preview dry-run command ([73646d3](https://github.com/proggarapsody/bitbottle/commit/73646d38213a80f13a417ecde8798614bb0285ae))
+
 ## [1.123.0](https://github.com/proggarapsody/bitbottle/compare/v1.122.0...v1.123.0) (2026-05-26)
 
 
