@@ -1,0 +1,6 @@
+# snippet comment delete — delete a comment from a Cloud snippet.
+bb-fake cloud
+
+bitbottle snippet comment delete Xqjyp1GV 17 testuser --confirm -k
+stdout '17'
+stdout 'Xqjyp1GV'

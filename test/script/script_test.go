@@ -1001,6 +1001,42 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusOK,
 			Body:       map[string]any{"id": 1, "kind": "push", "pattern": "release/*", "value": 0},
 		},
+		// GET snippet comments — used by snippet comment list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/snippets/testuser/Xqjyp1GV/comments",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"id":         17,
+					"content":    map[string]any{"raw": "Nice snippet!"},
+					"created_on": "2024-01-01T12:00:00Z",
+					"updated_on": "2024-01-01T12:00:00Z",
+					"author":     map[string]any{"display_name": "Alice"},
+					"links":      map[string]any{"html": map[string]any{"href": "https://bitbucket.org/snippets/testuser/Xqjyp1GV/_/diff#comment-17"}},
+				},
+			}),
+		},
+		// POST snippet comment — used by snippet comment add
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/snippets/testuser/Xqjyp1GV/comments",
+			Status:     http.StatusCreated,
+			Body: map[string]any{
+				"id":         42,
+				"content":    map[string]any{"raw": "Nice snippet!"},
+				"created_on": "2024-03-01T08:00:00Z",
+				"updated_on": "2024-03-01T08:00:00Z",
+				"author":     map[string]any{"display_name": "Alice"},
+				"links":      map[string]any{"html": map[string]any{"href": "https://bitbucket.org/snippets/testuser/Xqjyp1GV/_/diff#comment-42"}},
+			},
+		},
+		// DELETE snippet comment — used by snippet comment delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/snippets/testuser/Xqjyp1GV/comments/17",
+			Status:     http.StatusNoContent,
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

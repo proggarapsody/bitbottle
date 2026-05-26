@@ -10,6 +10,9 @@ type SnippetClient interface {
 	GetSnippet(workspace, id string) (Snippet, error)
 	CreateSnippet(workspace string, in CreateSnippetInput) (Snippet, error)
 	DeleteSnippet(workspace, id string) error
+	ListSnippetComments(workspace, snippetID string, limit int) ([]SnippetComment, error)
+	AddSnippetComment(workspace, snippetID, body string) (SnippetComment, error)
+	DeleteSnippetComment(workspace, snippetID string, commentID int) error
 }
 
 // FeatureSnippets names the snippets capability for typed-error reporting.
@@ -43,4 +46,14 @@ type CreateSnippetInput struct {
 	Title     string
 	IsPrivate bool
 	Files     []SnippetFile
+}
+
+// SnippetComment is the domain representation of a comment on a Bitbucket Cloud snippet.
+type SnippetComment struct {
+	ID        int    `json:"id"`
+	Body      string `json:"body"`
+	CreatedOn string `json:"created_on"`
+	UpdatedOn string `json:"updated_on"`
+	Author    string `json:"author"` // display name
+	WebURL    string `json:"web_url"`
 }
