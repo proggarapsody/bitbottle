@@ -82,10 +82,12 @@ func (c *Client) DeleteBranchRule(ns, slug string, id int) error {
 }
 
 // updateBranchRuleBody is the PUT body for updating a branch restriction rule.
+// Value must NOT use omitempty: this is a full-replacement PUT, and value=0
+// is a valid explicit setting (e.g. clearing a required-approvals count).
 type updateBranchRuleBody struct {
 	Kind    string        `json:"kind"`
 	Pattern string        `json:"pattern"`
-	Value   int           `json:"value,omitempty"`
+	Value   int           `json:"value"`
 	Users   []struct{ Nickname string `json:"nickname"` } `json:"users,omitempty"`
 	Groups  []struct{ Slug string `json:"slug"` } `json:"groups,omitempty"`
 }

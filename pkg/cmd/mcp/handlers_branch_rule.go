@@ -105,8 +105,8 @@ func (h *handlers) updateBranchRule(_ context.Context, req mcplib.CallToolReques
 		gs := strings.Split(groupsStr, ",")
 		in.Groups = &gs
 	}
-	// Check if value was explicitly provided — use presence of non-zero value as signal
-	// (MCP doesn't have a "changed" concept, so we treat any non-zero value as a change)
+	// Check if value was explicitly provided. Default sentinel is -1 (impossible valid value);
+	// value >= 0 means explicitly set — this correctly allows value=0 to be sent.
 	if value := req.GetInt("value", -1); value >= 0 {
 		in.Value = &value
 	}
