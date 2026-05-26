@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.122.0](https://github.com/proggarapsody/bitbottle/compare/v1.121.0...v1.122.0) (2026-05-26)
+
+
+### Features
+
+* **workspace:** add workspace project default reviewer commands (Cloud) ([324d39d](https://github.com/proggarapsody/bitbottle/commit/324d39d01d759be8d6266776154432ab43fa079b))
+
 ## [1.121.0](https://github.com/proggarapsody/bitbottle/compare/v1.120.0...v1.121.0) (2026-05-26)
 
 
