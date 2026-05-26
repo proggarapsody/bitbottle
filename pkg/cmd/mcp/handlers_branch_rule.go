@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"strings"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -81,4 +82,37 @@ func (h *handlers) deleteBranchRule(_ context.Context, req mcplib.CallToolReques
 		return errResultErr(err), nil
 	}
 	return jsonResult(map[string]any{"id": id, "status": "deleted"})
+}
+
+func (h *handlers) updateBranchRule(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	id := req.GetInt("id", 0)
+	if id <= 0 {
+		return errResult("missing required parameter: id"), nil
+	}
+	br, ns, slug, err := h.resolveBranchRuleClient(req)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	var in backend.UpdateBranchRuleInput
+	if pattern := req.GetString("pattern", ""); pattern != "" {
+		in.Pattern = &pattern
+	}
+	if usersStr := req.GetString("users", ""); usersStr != "" {
+		us := strings.Split(usersStr, ",")
+		in.Users = &us
+	}
+	if groupsStr := req.GetString("groups", ""); groupsStr != "" {
+		gs := strings.Split(groupsStr, ",")
+		in.Groups = &gs
+	}
+	// Check if value was explicitly provided. Default sentinel is -1 (impossible valid value);
+	// value >= 0 means explicitly set — this correctly allows value=0 to be sent.
+	if value := req.GetInt("value", -1); value >= 0 {
+		in.Value = &value
+	}
+	updated, err := br.UpdateBranchRule(ns, slug, id, in)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	return jsonResult(updated)
 }

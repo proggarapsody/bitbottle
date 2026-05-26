@@ -109,3 +109,50 @@ func TestDeleteBranchRule_MissingID(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "id")
 }
+
+func TestUpdateBranchRule_Success(t *testing.T) {
+	t.Parallel()
+	var gotInput backend.UpdateBranchRuleInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		UpdateBranchRuleFn: func(ns, slug string, id int, in backend.UpdateBranchRuleInput) (backend.BranchRule, error) {
+			assert.Equal(t, "myws", ns)
+			assert.Equal(t, "my-repo", slug)
+			assert.Equal(t, 5, id)
+			gotInput = in
+			return backend.BranchRule{ID: 5, Kind: "push", Pattern: "release/*"}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleCloudConfig, fake)
+	result, err := h.updateBranchRule(context.Background(), makeReq(map[string]any{
+		"repo":    "myws/my-repo",
+		"id":      float64(5),
+		"pattern": "release/*",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "5", "release/*")
+	require.NotNil(t, gotInput.Pattern)
+	assert.Equal(t, "release/*", *gotInput.Pattern)
+}
+
+func TestUpdateBranchRule_MissingID(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleCloudConfig, &testhelpers.FakeClient{T: t})
+	result, err := h.updateBranchRule(context.Background(), makeReq(map[string]any{
+		"repo":    "myws/my-repo",
+		"pattern": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "id")
+}
+
+func TestUpdateBranchRule_MissingRepo(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleCloudConfig, &testhelpers.FakeClient{T: t})
+	result, err := h.updateBranchRule(context.Background(), makeReq(map[string]any{
+		"id":      float64(5),
+		"pattern": "main",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "repo")
+}

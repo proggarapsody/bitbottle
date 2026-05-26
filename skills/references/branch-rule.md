@@ -16,11 +16,17 @@ bitbottle branch-rule add WORKSPACE/REPO --kind require_approvals_to_merge --pat
 # Add a push restriction (prevent direct pushes to main)
 bitbottle branch-rule add WORKSPACE/REPO --kind push --pattern main
 
+# Update a rule by numeric ID (at least one flag required)
+bitbottle branch-rule update WORKSPACE/REPO 7 --pattern release/*
+bitbottle branch-rule update WORKSPACE/REPO 7 --value 3
+bitbottle branch-rule update WORKSPACE/REPO 7 --users alice,bob
+bitbottle branch-rule update WORKSPACE/REPO 7 --groups dev-team
+
 # Delete a rule by numeric ID
 bitbottle branch-rule delete WORKSPACE/REPO 7
 ```
 
-`list` and `add` support `--json`, `--jq`, `--yaml`, and `--template`.
+`list`, `add`, and `update` support `--json`, `--jq`, `--yaml`, and `--template`.
 
 ## Flags
 
@@ -30,6 +36,10 @@ bitbottle branch-rule delete WORKSPACE/REPO 7
 | `add` | `--kind STRING` | Branch restriction kind (required) |
 | `add` | `--pattern STRING` | Branch pattern to restrict (required) |
 | `add` | `--value N` | Numeric value for the rule, e.g. required approvals (optional, default 0) |
+| `update` | `--pattern STRING` | New branch pattern |
+| `update` | `--users u1,u2` | Comma-separated user slugs (replaces existing; empty string clears) |
+| `update` | `--groups g1,g2` | Comma-separated group slugs (replaces existing; empty string clears) |
+| `update` | `--value N` | Numeric value for the rule |
 
 ## Common kinds
 
@@ -62,11 +72,12 @@ JSON fields: `id` (int), `kind` (string), `pattern` (string), `value` (int, omit
 |---|---|
 | `list_branch_rules` | List branch restriction rules. Params: `repo` (required), `hostname` |
 | `add_branch_rule` | Add a rule. Params: `repo`, `kind` (required), `pattern` (required), `value` (int), `hostname` |
+| `update_branch_rule` | Update a rule. Params: `repo`, `id` (required int), `pattern`, `users`, `groups`, `value` (int), `hostname` |
 | `delete_branch_rule` | Delete a rule. Params: `repo`, `id` (required int), `hostname` |
 
 ## Backend details
 
-**Cloud only** — `GET/POST/DELETE /repositories/{workspace}/{slug}/branch-restrictions`
+**Cloud only** — `GET/POST/PUT/DELETE /repositories/{workspace}/{slug}/branch-restrictions[/{id}]`
 
 Returns paginated `{"values": [...]}`. Each entry: `{"id": 1, "kind": "push", "pattern": "main", "value": 0}`.
 

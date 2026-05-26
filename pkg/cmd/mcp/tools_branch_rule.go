@@ -59,4 +59,29 @@ func registerBranchRuleTools(s *mcpserver.MCPServer, h *handlers) {
 		),
 		h.deleteBranchRule,
 	)
+
+	s.AddTool(
+		mcplib.NewTool("update_branch_rule",
+			mcplib.WithDescription("Update a branch restriction rule in a repository"),
+			optHostname,
+			reqRepo,
+			mcplib.WithNumber("id",
+				mcplib.Description("Branch rule ID"),
+				mcplib.Required(),
+			),
+			mcplib.WithString("pattern",
+				mcplib.Description("New branch pattern (e.g. main, feature/*)"),
+			),
+			mcplib.WithString("users",
+				mcplib.Description("Comma-separated user slugs (replaces existing)"),
+			),
+			mcplib.WithString("groups",
+				mcplib.Description("Comma-separated group slugs (replaces existing)"),
+			),
+			mcplib.WithNumber("value",
+				mcplib.Description("Numeric value for the rule (e.g. required approvers count)"),
+			),
+		),
+		h.updateBranchRule,
+	)
 }

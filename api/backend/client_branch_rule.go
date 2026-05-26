@@ -7,6 +7,7 @@ type BranchRuleClient interface {
 	ListBranchRules(ns, slug string) ([]BranchRule, error)
 	AddBranchRule(ns, slug string, input BranchRuleInput) (BranchRule, error)
 	DeleteBranchRule(ns, slug string, id int) error
+	UpdateBranchRule(ns, slug string, id int, in UpdateBranchRuleInput) (BranchRule, error)
 }
 
 // FeatureBranchRules names the branch-rules capability for typed-error reporting.

@@ -80,3 +80,74 @@ func (c *Client) DeleteBranchRule(ns, slug string, id int) error {
 	path := fmt.Sprintf("/repositories/%s/%s/branch-restrictions/%d", url.PathEscape(ns), url.PathEscape(slug), id)
 	return c.delete(path)
 }
+
+// updateBranchRuleBody is the PUT body for updating a branch restriction rule.
+// Value must NOT use omitempty: this is a full-replacement PUT, and value=0
+// is a valid explicit setting (e.g. clearing a required-approvals count).
+type updateBranchRuleBody struct {
+	Kind    string `json:"kind"`
+	Pattern string `json:"pattern"`
+	Value   int    `json:"value"`
+	Users   []struct {
+		Nickname string `json:"nickname"`
+	} `json:"users,omitempty"`
+	Groups []struct {
+		Slug string `json:"slug"`
+	} `json:"groups,omitempty"`
+}
+
+// getBranchRule fetches a single branch restriction rule by ID.
+// GET /repositories/{workspace}/{slug}/branch-restrictions/{id}
+func (c *Client) getBranchRule(ns, slug string, id int) (backend.BranchRule, error) {
+	path := fmt.Sprintf("/repositories/%s/%s/branch-restrictions/%d", url.PathEscape(ns), url.PathEscape(slug), id)
+	var w cloudgen.CloudBranchRule
+	if err := c.getJSON(path, &w); err != nil {
+		return backend.BranchRule{}, err
+	}
+	return toBranchRuleDomain(w), nil
+}
+
+// UpdateBranchRule updates a branch restriction rule using a fetch-first + PUT strategy.
+// PUT /repositories/{workspace}/{slug}/branch-restrictions/{id}
+func (c *Client) UpdateBranchRule(ns, slug string, id int, in backend.UpdateBranchRuleInput) (backend.BranchRule, error) {
+	if ns == "" || slug == "" {
+		return backend.BranchRule{}, fmt.Errorf("workspace and repo required")
+	}
+	current, err := c.getBranchRule(ns, slug, id)
+	if err != nil {
+		return backend.BranchRule{}, err
+	}
+	body := updateBranchRuleBody{
+		Kind:    current.Kind,
+		Pattern: current.Pattern,
+		Value:   current.Value,
+	}
+	if in.Pattern != nil {
+		body.Pattern = *in.Pattern
+	}
+	if in.Value != nil {
+		body.Value = *in.Value
+	}
+	if in.Users != nil {
+		body.Users = make([]struct {
+			Nickname string `json:"nickname"`
+		}, len(*in.Users))
+		for i, u := range *in.Users {
+			body.Users[i].Nickname = u
+		}
+	}
+	if in.Groups != nil {
+		body.Groups = make([]struct {
+			Slug string `json:"slug"`
+		}, len(*in.Groups))
+		for i, g := range *in.Groups {
+			body.Groups[i].Slug = g
+		}
+	}
+	path := fmt.Sprintf("/repositories/%s/%s/branch-restrictions/%d", url.PathEscape(ns), url.PathEscape(slug), id)
+	var w cloudgen.CloudBranchRule
+	if err := c.putJSON(path, body, &w); err != nil {
+		return backend.BranchRule{}, err
+	}
+	return toBranchRuleDomain(w), nil
+}

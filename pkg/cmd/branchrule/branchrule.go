@@ -27,5 +27,6 @@ the repository is inferred from the "origin" git remote in the current directory
 	cmd.AddCommand(NewCmdList(f))
 	cmd.AddCommand(NewCmdAdd(f))
 	cmd.AddCommand(NewCmdDelete(f))
+	cmd.AddCommand(NewCmdUpdate(f))
 	return cmd
 }

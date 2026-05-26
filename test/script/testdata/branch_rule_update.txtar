@@ -1,0 +1,6 @@
+# branch-rule update patches a branch restriction rule and prints the result.
+bb-fake cloud
+
+bitbottle branch-rule update testworkspace/cloud-repo-a 1 --pattern release/* -k
+stdout 'push'
+stdout 'release/\*'

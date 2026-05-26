@@ -229,6 +229,7 @@ type FakeClient struct {
 	ListBranchRulesFn  func(ns, slug string) ([]backend.BranchRule, error)
 	AddBranchRuleFn    func(ns, slug string, input backend.BranchRuleInput) (backend.BranchRule, error)
 	DeleteBranchRuleFn func(ns, slug string, id int) error
+	UpdateBranchRuleFn func(ns, slug string, id int, in backend.UpdateBranchRuleInput) (backend.BranchRule, error)
 
 	// Deploy key methods (both backends; satisfies backend.DeployKeyClient when set)
 	ListDeployKeysFn  func(ns, slug string) ([]backend.DeployKey, error)
@@ -1822,6 +1823,16 @@ func (c *FakeClient) DeleteBranchRule(ns, slug string, id int) error {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteBranchRule; set DeleteBranchRuleFn in your test")
 	}
 	return nil
+}
+
+func (c *FakeClient) UpdateBranchRule(ns, slug string, id int, in backend.UpdateBranchRuleInput) (backend.BranchRule, error) {
+	if c.UpdateBranchRuleFn != nil {
+		return c.UpdateBranchRuleFn(ns, slug, id, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.UpdateBranchRule; set UpdateBranchRuleFn in your test")
+	}
+	return backend.BranchRule{}, nil
 }
 
 func (c *FakeClient) ListDeployKeys(ns, slug string) ([]backend.DeployKey, error) {
