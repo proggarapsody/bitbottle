@@ -14,6 +14,7 @@ type ListOptions struct {
 	Hostname   string
 	Workspace  string
 	ProjectKey string
+	Limit      int
 }
 
 // NewCmdList constructs the `workspace project perms list` cobra command.
@@ -34,6 +35,7 @@ func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Comman
 		},
 	}
 	cmd.Flags().StringVar(&opts.Hostname, "hostname", "", "Bitbucket hostname (Cloud only)")
+	cmd.Flags().IntVar(&opts.Limit, "limit", 50, "Maximum number of results (0 = no cap)")
 	format.RegisterOutputFlags(cmd)
 	return cmd
 }
@@ -51,7 +53,7 @@ func listRun(f *factory.Factory, opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	perms, err := wpc.ListWorkspaceProjectPerms(opts.Workspace, opts.ProjectKey)
+	perms, err := wpc.ListWorkspaceProjectPerms(opts.Workspace, opts.ProjectKey, opts.Limit)
 	if err != nil {
 		return err
 	}

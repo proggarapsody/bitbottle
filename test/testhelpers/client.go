@@ -354,7 +354,7 @@ type FakeClient struct {
 	SearchWorkspacesFn func(opts backend.WorkspaceSearchOpts) ([]backend.Workspace, error)
 
 	// WorkspaceProjectPermsClient methods (Cloud-only; satisfies backend.WorkspaceProjectPermsClient when set)
-	ListWorkspaceProjectPermsFn  func(workspace, projectKey string) ([]backend.WorkspaceProjectPerm, error)
+	ListWorkspaceProjectPermsFn  func(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error)
 	GrantWorkspaceProjectPermFn  func(workspace, projectKey string, in backend.WorkspaceProjectPermInput) error
 	RevokeWorkspaceProjectPermFn func(workspace, projectKey, subjectSlug string, isGroup bool) error
 
@@ -2958,9 +2958,9 @@ func (c *FakeClient) DeletePipelineKnownHost(ns, slug, uuid string) error {
 
 // ── WorkspaceProjectPermsClient ───────────────────────────────────────────────
 
-func (c *FakeClient) ListWorkspaceProjectPerms(workspace, projectKey string) ([]backend.WorkspaceProjectPerm, error) {
+func (c *FakeClient) ListWorkspaceProjectPerms(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error) {
 	if c.ListWorkspaceProjectPermsFn != nil {
-		return c.ListWorkspaceProjectPermsFn(workspace, projectKey)
+		return c.ListWorkspaceProjectPermsFn(workspace, projectKey, limit)
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ListWorkspaceProjectPerms; set ListWorkspaceProjectPermsFn in your test")

@@ -2,7 +2,7 @@ package backend
 
 // WorkspaceProjectPermsClient is Cloud-only; Server/DC returns host.unsupported.
 type WorkspaceProjectPermsClient interface {
-	ListWorkspaceProjectPerms(workspace, projectKey string) ([]WorkspaceProjectPerm, error)
+	ListWorkspaceProjectPerms(workspace, projectKey string, limit int) ([]WorkspaceProjectPerm, error)
 	GrantWorkspaceProjectPerm(workspace, projectKey string, in WorkspaceProjectPermInput) error
 	RevokeWorkspaceProjectPerm(workspace, projectKey, subjectSlug string, isGroup bool) error
 }
@@ -11,8 +11,8 @@ type WorkspaceProjectPermsClient interface {
 // a Cloud workspace project. Exactly one of User/Group is non-nil.
 type WorkspaceProjectPerm struct {
 	Permission string
-	User       *User             // nil if this is a group permission
-	Group      *WorkspaceGroup   // nil if this is a user permission
+	User       *User           // nil if this is a group permission
+	Group      *WorkspaceGroup // nil if this is a user permission
 }
 
 // WorkspaceGroup is the Cloud representation of a workspace group as used in

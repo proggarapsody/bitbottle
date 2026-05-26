@@ -36,7 +36,7 @@ func (h *handlers) listWorkspaceProjectPerms(_ context.Context, req mcplib.CallT
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	perms, err := wpc.ListWorkspaceProjectPerms(ws, projectKey)
+	perms, err := wpc.ListWorkspaceProjectPerms(ws, projectKey, 0)
 	if err != nil {
 		return errResultErr(err), nil
 	}

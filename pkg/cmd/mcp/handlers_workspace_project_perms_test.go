@@ -17,7 +17,7 @@ func TestListWorkspaceProjectPerms_Success(t *testing.T) {
 	alice := &backend.User{Slug: "alice", DisplayName: "Alice"}
 	fake := &testhelpers.FakeClient{
 		T: t,
-		ListWorkspaceProjectPermsFn: func(workspace, projectKey string) ([]backend.WorkspaceProjectPerm, error) {
+		ListWorkspaceProjectPermsFn: func(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error) {
 			assert.Equal(t, "myworkspace", workspace)
 			assert.Equal(t, "PROJ", projectKey)
 			return []backend.WorkspaceProjectPerm{

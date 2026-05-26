@@ -41,7 +41,7 @@ func TestCloudClient_ListWorkspaceProjectPerms_UserPath(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
-	got, err := client.ListWorkspaceProjectPerms("myws", "PROJ")
+	got, err := client.ListWorkspaceProjectPerms("myws", "PROJ", 0)
 	require.NoError(t, err)
 	assert.Contains(t, gotPaths, "/workspaces/myws/projects/PROJ/permissions/users")
 	assert.Contains(t, gotPaths, "/workspaces/myws/projects/PROJ/permissions/groups")
@@ -67,7 +67,7 @@ func TestCloudClient_ListWorkspaceProjectPerms_GroupPath(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
-	got, err := client.ListWorkspaceProjectPerms("myws", "PROJ")
+	got, err := client.ListWorkspaceProjectPerms("myws", "PROJ", 0)
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	assert.Equal(t, "read", got[0].Permission)
@@ -92,7 +92,7 @@ func TestCloudClient_ListWorkspaceProjectPerms_MergesBoth(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
-	got, err := client.ListWorkspaceProjectPerms("myws", "PROJ")
+	got, err := client.ListWorkspaceProjectPerms("myws", "PROJ", 0)
 	require.NoError(t, err)
 	require.Len(t, got, 3) // 2 users + 1 group
 }
@@ -183,6 +183,6 @@ func TestCloudClient_ListWorkspaceProjectPerms_PropagatesAPIError(t *testing.T) 
 	t.Cleanup(srv.Close)
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 
-	_, err := client.ListWorkspaceProjectPerms("myws", "PROJ")
+	_, err := client.ListWorkspaceProjectPerms("myws", "PROJ", 0)
 	require.Error(t, err)
 }

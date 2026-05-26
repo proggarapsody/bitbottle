@@ -37,7 +37,7 @@ type cloudProjectGroupPermEntry struct {
 // ListWorkspaceProjectPerms returns both user and group permissions for a Cloud
 // workspace project.  It calls GET /permissions/users and GET /permissions/groups,
 // collects each via paging.Collect, and merges the results into one slice.
-func (c *Client) ListWorkspaceProjectPerms(workspace, projectKey string) ([]backend.WorkspaceProjectPerm, error) {
+func (c *Client) ListWorkspaceProjectPerms(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error) {
 	usersPath := fmt.Sprintf("/workspaces/%s/projects/%s/permissions/users",
 		url.PathEscape(workspace), url.PathEscape(projectKey))
 	groupsPath := fmt.Sprintf("/workspaces/%s/projects/%s/permissions/groups",
@@ -62,7 +62,7 @@ func (c *Client) ListWorkspaceProjectPerms(workspace, projectKey string) ([]back
 			})
 		}
 		return out, nil
-	}, 0)
+	}, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (c *Client) ListWorkspaceProjectPerms(workspace, projectKey string) ([]back
 			})
 		}
 		return out, nil
-	}, 0)
+	}, limit)
 	if err != nil {
 		return nil, err
 	}

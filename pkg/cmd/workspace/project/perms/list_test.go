@@ -19,6 +19,7 @@ func TestNewCmdList_Flags(t *testing.T) {
 	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig})
 	cmd := perms.NewCmdList(f, nil)
 	assert.NotNil(t, cmd.Flag("hostname"))
+	assert.NotNil(t, cmd.Flag("limit"))
 	assert.NotNil(t, cmd.Flag("json")) // registered via format.RegisterOutputFlags inside the command
 }
 
@@ -34,9 +35,10 @@ func TestList_PrintsPermissions(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
 		T: t,
-		ListWorkspaceProjectPermsFn: func(workspace, projectKey string) ([]backend.WorkspaceProjectPerm, error) {
+		ListWorkspaceProjectPermsFn: func(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error) {
 			assert.Equal(t, "myws", workspace)
 			assert.Equal(t, "PROJ", projectKey)
+			assert.Equal(t, 50, limit)
 			alice := &backend.User{Slug: "alice", DisplayName: "Alice"}
 			return []backend.WorkspaceProjectPerm{
 				{Permission: "write", User: alice},
@@ -63,7 +65,7 @@ func TestList_JSONOutput(t *testing.T) {
 	alice := &backend.User{Slug: "alice", DisplayName: "Alice"}
 	fake := &testhelpers.FakeClient{
 		T: t,
-		ListWorkspaceProjectPermsFn: func(workspace, projectKey string) ([]backend.WorkspaceProjectPerm, error) {
+		ListWorkspaceProjectPermsFn: func(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error) {
 			return []backend.WorkspaceProjectPerm{
 				{Permission: "admin", User: alice},
 			}, nil
