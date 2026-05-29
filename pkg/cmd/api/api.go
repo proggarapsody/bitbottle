@@ -43,8 +43,20 @@ func NewCmdAPI(f *factory.Factory) *cobra.Command {
 
 The endpoint is a Bitbucket-relative path. Cloud paths begin with "2.0/"
 (e.g. "2.0/user"); Server / Data Center paths begin with "rest/api/1.0/"
-(e.g. "rest/api/1.0/projects/PROJ/repos/REPO"). The current host's scheme,
-hostname, auth token, and TLS settings are applied automatically.`,
+(e.g. "rest/api/1.0/projects/PROJ/repos/REPO"). The resolved host's scheme,
+auth token, TLS settings, and debug logging are applied automatically via
+the same factory as all other commands.
+
+Host resolution order:
+  1. --hostname flag (explicit override)
+  2. Single configured host (no ambiguity)
+  3. bitbottle.host git config in the current repo (BaseRepo detection)
+  4. Error: multiple hosts configured, --hostname required
+
+Examples:
+  bitbottle api rest/api/1.0/application-properties -k
+  bitbottle api 2.0/user --hostname bitbucket.org
+  bitbottle api rest/api/1.0/projects/PROJ/repos/REPO/pull-requests --jq '.values[].title'`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runAPI(cmd, f, args[0], opts)
