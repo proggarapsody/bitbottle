@@ -9,7 +9,7 @@
 #    "all_open_prs":[{num,title,score}]}
 #
 # Keyword set: scope slug tokens (split on -) + lowercased words from
-# BACKLOG.md row Commands cell, length >= 3, excluding common stop-words.
+# docs/backlog/BACKLOG.md row Commands cell, length >= 3, excluding common stop-words.
 # A PR is considered overlapping if it scores >= 2 keyword matches against
 # its title+body.
 #
@@ -49,12 +49,12 @@ add_kw() {
 }
 add_kw "${SCOPE//-/ }"
 
-if [[ -f BACKLOG.md ]]; then
+if [[ -f docs/backlog/BACKLOG.md ]]; then
   row=$(awk -v slug="$SCOPE" '
     /^## Backlog/ { inblk=1; next }
     inblk && /^## / { inblk=0 }
     inblk && $0 ~ "\\| " slug " \\|" { print; exit }
-  ' BACKLOG.md || true)
+  ' docs/backlog/BACKLOG.md || true)
   if [[ -n "$row" ]]; then
     IFS='|' read -r _ _ _ commands _ _ _ <<<"$row"
     add_kw "$commands"

@@ -55,7 +55,7 @@ Declarative reference tables (halt routing, outcome enum, cadence) live in
    overlap with files touched in any open PR (`gh pr diff <N>
    --name-only`). A surprise stale branch holding a registry file is
    far cheaper to address up front than during a rolling rebase.
-3. Read `BACKLOG.md` headings so the rest of the loop has accurate
+3. Read `docs/backlog/BACKLOG.md` headings so the rest of the loop has accurate
    context.
 4. **Smell scan** (≤60 seconds). Surface any structural debt the recent
    ship loop has accumulated, so the next mode pick is informed rather
@@ -86,11 +86,11 @@ inventory + smell scan acknowledged.
 **Goal**: produce a single, named scope to ship this iteration.
 
 **Decision flow**
-1. **Open backlog?** Look at `BACKLOG.md` → `## Backlog` table. Anything
+1. **Open backlog?** Look at `docs/backlog/BACKLOG.md` → `## Backlog` table. Anything
    with `Status` ≠ ✅ is open. If there are open scopes, list them with
    their one-line description and **ask the author which scope to ship**.
 2. **All shipped?** Research new features. In order:
-   - Re-read `BACKLOG.md` → `## Philosophy` and `## Full Functionality
+   - Re-read `docs/backlog/BACKLOG.md` → `## Philosophy` and `## Full Functionality
      Map` for any 🚧/🆕 row added since the last consolidation.
    - Look at `reference/gh/` for nearby `gh` commands bitbottle doesn't
      have yet (parity gaps).
@@ -118,7 +118,7 @@ inventory + smell scan acknowledged.
    `rows_dropped_by_feasibility`. Empty brainstorm runs (0 rows after
    rule application) count toward the 3-empty shutdown counter.
 4. **Bundle check** — if the chosen scope's estimated diff is **<30 files**
-   AND the next 🔲 row in `BACKLOG.md` is also **<30 files** AND the two
+   AND the next 🔲 row in `docs/backlog/BACKLOG.md` is also **<30 files** AND the two
    are deeply disjoint, propose a **two-scope bundle** with a combined
    cap of **<60 files of meaningful (non-refactor) change**. Author
    confirms before proceeding.
@@ -167,7 +167,7 @@ scope and only that scope.
 1. Draft the PRD from current context — problem, in-scope, out-of-scope,
    API surface, test plan. (Automate this with your tool's PRD-drafting
    workflow if available.)
-2. **Obsolescence check.** Before filing, scan `BACKLOG.md` for any 🔲
+2. **Obsolescence check.** Before filing, scan `docs/backlog/BACKLOG.md` for any 🔲
    row whose command surface would supersede or duplicate this one
    (e.g. `environment variable …` would have been superseded by a
    later `variable --scope deployment`). If found, either widen this
@@ -193,7 +193,7 @@ scope and only that scope.
    "<prd>" --label prd`.
 5. **Capture the issue number** — every later phase references it
    (`refs #NNN`, `Closes #NNN`).
-6. Sanity-check the PRD against `BACKLOG.md` → "Architecture Contract
+6. Sanity-check the PRD against `docs/backlog/BACKLOG.md` → "Architecture Contract
    (per scope)" and "Definition of Done". Those rows are non-negotiable
    and must appear in the PRD's checklist.
 
@@ -266,7 +266,7 @@ worktree.
 - Include the layer order below as a one-line ordering hint; do not
   re-list architecture. Point at `docs/agent-primer.md` instead.
 
-**Layer order** (per `BACKLOG.md` Architecture Contract)
+**Layer order** (per `docs/backlog/BACKLOG.md` Architecture Contract)
 1. `api/backend/client.go` — new interface(s), or extend the composite
    `Client`. New types in `api/backend/types.go`.
 2. `api/cloud/<domain>.go` + `_test.go`.
@@ -291,14 +291,21 @@ opens.
 
 **In-repo docs** (update only what the scope actually changed)
 - `README.md` — new command section, examples.
-- `BACKLOG.md` — flip the row to ✅, update the "Full Functionality
-  Map" entries. **The flip lands in the same commit as the feat work,
-  NOT in a follow-up `chore: mark X shipped in BACKLOG` PR.** Across
+- `docs/backlog/BACKLOG.md` + `docs/backlog/SHIPPED.md` — **move the
+  scope, don't flip it.** Cut the scope's Up-Next table row AND its
+  `### SCOPE — Title` detail section from `docs/backlog/BACKLOG.md`,
+  then prepend a dated entry to `docs/backlog/SHIPPED.md` (see that
+  file's "How to add an entry" section for the format). Update the
+  "Full Functionality Map" entries in `docs/backlog/BACKLOG.md` (the ✅ markers
+  there are cross-references and stay). **Both edits land in the same
+  commit as the feat work**, NOT in a follow-up `chore:` PR. Across
   cycles 77–86 in the May-17 autonomous stream, the post-merge chore-PR
   pattern produced 8 extra PRs and 4 duplicate commits on `main`
   (MCP-VALIDATION, JSON-STABILITY, ERR-EMPTY-400, and BACKEND-TYPE-STRICT
-  each landed twice). One feat commit that touches both code and BACKLOG
-  is the correct shape.
+  each landed twice). One feat commit that touches code + `docs/backlog/BACKLOG.md`
+  + `SHIPPED.md` is the correct shape. The
+  `auto-iter/scripts/pre-merge-mechanical.sh` §4 check blocks any commit
+  that touches ONLY `docs/backlog/BACKLOG.md` or ONLY `SHIPPED.md` (no code).
 - `AGENTS.md` — only if a new project-wide rule emerged (a new pattern
   for adapters, a new invariant, etc.).
 - `skills/SKILL.md` — single-file Claude skill bundled with the npm
@@ -497,7 +504,7 @@ updated docs.
 3. **Compact** — if the iteration ran inside a long agent session,
    use the agent's compact / clear command so the next iteration starts
    with clean context. Everything important survives in: the merged PR,
-   the release notes, `BACKLOG.md`, and `docs/manual-tests/`. Anything
+   the release notes, `docs/backlog/BACKLOG.md`, and `docs/manual-tests/`. Anything
    that wouldn't survive a compact either belongs in those durable places
    or didn't matter.
 

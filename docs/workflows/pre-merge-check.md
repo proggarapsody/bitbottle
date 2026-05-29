@@ -118,7 +118,7 @@ Match against the changed-file list from §0. Multiple rules can fire.
 | User-visible UX change (output format, new subcommand) | `README.md` | BLOCKER |
 | Branch strategy / commit / release / setup change | `CONTRIBUTING.md`, `AGENTS.md` | BLOCKER |
 | New invariant or pattern (transport policy, paging helper, etc.) | `AGENTS.md` "Key rules for AI agents" | WARN |
-| Backlog item is now done | `BACKLOG.md` (mark complete / remove) | BLOCKER |
+| Backlog item is now done | **Move**, don't flip: cut the row + scope-detail section from `docs/backlog/BACKLOG.md` and prepend a dated entry to `docs/backlog/SHIPPED.md`. Both edits in the same `feat:` commit as the code. The pre-merge mechanical check's §4 blocks commits touching ONLY one of those files. | BLOCKER |
 | Auth, hosts.yml, or token handling | `skills/references/auth.md` | BLOCKER |
 | `api/backend/{client,types,errors}.go` changed | `docs/agent-primer.md` still accurate (architecture vocabulary, invariants, exemplar-file table) | BLOCKER |
 | `docs/workflows/iteration-cycle/` changed | `AGENTS.md` still references correct file paths; agent command files (e.g. `.claude/commands/auto-iter.md`) still point at correct sections | WARN |
@@ -175,7 +175,7 @@ description explicitly justifies the exception.
   prefers minimal comments and the trend across recent PRs is upward.
 
 Skip when the diff touches only docs, CI config, dependencies, or
-`BACKLOG.md`.
+`docs/backlog/BACKLOG.md` / `docs/backlog/SHIPPED.md`.
 
 ## 7. Release-please boundaries — BLOCKER
 

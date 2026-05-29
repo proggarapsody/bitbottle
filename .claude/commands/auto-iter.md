@@ -122,7 +122,7 @@ The TDD subagent prompt MUST include:
    - No raw `net/http.Client` outside `api/internal/httpx/`.
    - No `pkg/cmd/**` imports of `api/cloud` or `api/server` directly.
    - PR title MUST start with `feat(scope):` / `fix(scope):` (Conventional Commit).
-   - BACKLOG status flip goes in the same feat commit — NOT a follow-up `chore:` PR.
+   - BACKLOG→SHIPPED **move** goes in the same feat commit: cut the row + scope-detail section from `docs/backlog/BACKLOG.md`, prepend a dated entry to `docs/backlog/SHIPPED.md`. Both edits land with the code in one commit — NOT a follow-up `chore:` PR. See [`docs/backlog/SHIPPED.md`](../../docs/backlog/SHIPPED.md) "How to add an entry" for the format. `auto-iter/scripts/pre-merge-mechanical.sh` §4 blocks commits touching only BACKLOG.md or only SHIPPED.md.
 6. Subagent does full red → green → refactor, runs `go test ./... -race`, commits, runs
    `bash scripts/tdd-check.sh` before returning. Does NOT push or open the PR.
 

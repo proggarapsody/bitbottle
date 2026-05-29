@@ -12,17 +12,17 @@ TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 cd "$TMPDIR"
 git init -q -b main
-mkdir -p .claude/auto-iter
+mkdir -p .claude/auto-iter docs/backlog
 
 # Helper: write a fresh fixture
 write_cycles() { printf '%s\n' "$@" > .claude/auto-iter/cycles.jsonl; }
 write_backlog() {
-  cat > BACKLOG.md <<'MD'
+  cat > docs/backlog/BACKLOG.md <<'MD'
 ## Backlog
 | ID | Scope | Status |
 |---|---|---|
 MD
-  for line in "$@"; do printf '%s\n' "$line" >> BACKLOG.md; done
+  for line in "$@"; do printf '%s\n' "$line" >> docs/backlog/BACKLOG.md; done
 }
 
 # Case 1: empty cycles + empty backlog -> brainstorm, counter=1

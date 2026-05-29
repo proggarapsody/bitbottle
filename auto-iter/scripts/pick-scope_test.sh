@@ -12,9 +12,10 @@ TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 cd "$TMPDIR"
 git init -q -b main
+mkdir -p docs/backlog
 
 # Case 1: backlog with one open scope, no Scope Details section -> has_scope_details=false
-cat > BACKLOG.md <<'MD'
+cat > docs/backlog/BACKLOG.md <<'MD'
 ## Backlog
 | ID | Scope | Commands | Backends | Tier | Status |
 |---|---|---|---|---|---|
@@ -34,7 +35,7 @@ else
 fi
 
 # Case 2: scope WITH a ## Scope Details anchor
-cat > BACKLOG.md <<'MD'
+cat > docs/backlog/BACKLOG.md <<'MD'
 ## Backlog
 | ID | Scope | Commands | Backends | Tier | Status |
 |---|---|---|---|---|---|
@@ -53,7 +54,7 @@ else
 fi
 
 # Case 3: tier "DX" string survives
-cat > BACKLOG.md <<'MD'
+cat > docs/backlog/BACKLOG.md <<'MD'
 ## Backlog
 | ID | Scope | Commands | Backends | Tier | Status |
 |---|---|---|---|---|---|
@@ -67,7 +68,7 @@ else
 fi
 
 # Case 4: backlog has only ✅ rows -> halt backlog_empty
-cat > BACKLOG.md <<'MD'
+cat > docs/backlog/BACKLOG.md <<'MD'
 ## Backlog
 | ID | Scope | Commands | Backends | Tier | Status |
 |---|---|---|---|---|---|
@@ -84,20 +85,20 @@ else
   fi
 fi
 
-# Case 5: BACKLOG.md missing entirely
-rm BACKLOG.md
+# Case 5: docs/backlog/BACKLOG.md missing entirely
+rm docs/backlog/BACKLOG.md
 if OUT="$(bash "$SCRIPT" 2>/dev/null)"; then
-  fail "expected non-zero exit when BACKLOG.md missing"
+  fail "expected non-zero exit when docs/backlog/BACKLOG.md missing"
 else
   if echo "$OUT" | jq -e '.halt=="backlog_missing"' >/dev/null; then
-    ok "missing BACKLOG.md -> halt backlog_missing"
+    ok "missing docs/backlog/BACKLOG.md -> halt backlog_missing"
   else
     fail "wrong halt: $OUT"
   fi
 fi
 
 # Case 6: 🔲 outside ## Backlog section must be ignored
-cat > BACKLOG.md <<'MD'
+cat > docs/backlog/BACKLOG.md <<'MD'
 ## Definition of Done
 - ✅ shipped, 🔲 open, 🟡 in-progress
 

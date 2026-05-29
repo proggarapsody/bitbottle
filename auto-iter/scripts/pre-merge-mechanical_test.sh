@@ -110,29 +110,48 @@ fi
 git checkout -q origin/main
 git checkout -q -b feat/backlog-test
 
-# Case 8: BACKLOG.md flip in standalone commit -> backlog_flip_isolated BLOCKER
+# Case 8: docs/backlog/BACKLOG.md move in standalone commit -> backlog_flip_isolated BLOCKER
+mkdir -p docs/backlog
 echo "feat code" > myfile.go
 git add myfile.go
 git commit -q -m "feat(x): add feature code"
-echo "| PIPELINE-OBSERVABILITY | ✅ |" > BACKLOG.md
-git add BACKLOG.md
-git commit -q -m "chore: mark shipped in BACKLOG"  # standalone BACKLOG-only commit
+echo "| PIPELINE-OBSERVABILITY | row removed | Cloud | 1 |" > docs/backlog/BACKLOG.md
+git add docs/backlog/BACKLOG.md
+git commit -q -m "chore: move shipped row out of BACKLOG"  # standalone BACKLOG-only commit
 OUT="$(bash "$SCRIPT")"
 if echo "$OUT" | jq -e '.findings | map(.check) | index("backlog_flip_isolated") != null' >/dev/null; then
-  ok "standalone BACKLOG-only commit -> backlog_flip_isolated finding"
+  ok "standalone docs/backlog/BACKLOG-only commit -> backlog_flip_isolated finding"
 else
   fail "expected backlog_flip_isolated, got: $OUT"
 fi
 
-# Case 9: BACKLOG.md flip in same feat commit -> no backlog_flip_isolated
-git reset --hard HEAD~2 -q  # back to origin/main equivalent
+# Case 8b: docs/backlog/SHIPPED.md-only commit also flagged
+git reset --hard HEAD~2 -q
+mkdir -p docs/backlog
 echo "feat code" > myfile.go
-echo "| PIPELINE-OBSERVABILITY | ✅ |" > BACKLOG.md
-git add myfile.go BACKLOG.md
-git commit -q -m "feat(x): ship scope and flip BACKLOG"
+git add myfile.go
+git commit -q -m "feat(x): add feature code"
+echo "## 2026-01-01 — DEMO" > docs/backlog/SHIPPED.md
+git add docs/backlog/SHIPPED.md
+git commit -q -m "chore: log shipped scope"
+OUT="$(bash "$SCRIPT")"
+if echo "$OUT" | jq -e '.findings | map(.check) | index("backlog_flip_isolated") != null' >/dev/null; then
+  ok "standalone docs/backlog/SHIPPED-only commit -> backlog_flip_isolated finding"
+else
+  fail "expected backlog_flip_isolated for SHIPPED, got: $OUT"
+fi
+
+# Case 9: BACKLOG→SHIPPED move co-located with feat code -> no backlog_flip_isolated
+git reset --hard HEAD~2 -q  # back to origin/main equivalent
+mkdir -p docs/backlog
+echo "feat code" > myfile.go
+echo "| BACKLOG row removed |" > docs/backlog/BACKLOG.md
+echo "## SHIPPED entry added" > docs/backlog/SHIPPED.md
+git add myfile.go docs/backlog/BACKLOG.md docs/backlog/SHIPPED.md
+git commit -q -m "feat(x): ship scope and move BACKLOG entry to SHIPPED"
 OUT="$(bash "$SCRIPT")"
 if echo "$OUT" | jq -e '[.findings[] | select(.check=="backlog_flip_isolated")] | length == 0' >/dev/null; then
-  ok "BACKLOG flip co-located in feat commit -> no backlog_flip_isolated"
+  ok "BACKLOG→SHIPPED move co-located in feat commit -> no backlog_flip_isolated"
 else
   fail "expected no backlog_flip_isolated, got: $OUT"
 fi

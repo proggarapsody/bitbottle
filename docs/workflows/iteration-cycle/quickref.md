@@ -132,9 +132,9 @@ stream then needed 2 brainstorm cycles, ~160K extra Opus tokens. Cycle 64
 empirically demonstrated 22 rows in a single 5-min brainstorm — capacity
 is not the limiter, the prompt target is. To keep autonomous brainstorms
 honest, every emitted row must satisfy **all** of the following or be
-dropped before it lands in `BACKLOG.md`:
+dropped before it lands in `docs/backlog/BACKLOG.md`:
 
-1. **No-overlap.** Scan existing ✅ rows and the Functionality Map. Reject anything redundant with already-shipped scope. _(This is the single load-bearing rule — it killed PR-TEMPLATE retroactively at cyc 39 because `repo file get` already covered it.)_
+1. **No-overlap.** Scan `docs/backlog/SHIPPED.md` + the Functionality Map in `docs/backlog/BACKLOG.md`. Reject anything redundant with already-shipped scope. _(This is the single load-bearing rule — it killed PR-TEMPLATE retroactively at cyc 39 because `repo file get` already covered it.)_
 2. **Backend declared.** Each row marks `Cloud` / `Server` / `Both`. If `Both`, both endpoints must be named.
 3. **Shape match.** Each row declares which canonical pattern it follows (`List*` via `paging.Collect`, write op with typed errors, MCP triplet, etc.). New shapes require a §architecture-audit cycle, not a brainstorm row.
 
@@ -295,8 +295,10 @@ jq -s 'map(select(.step | startswith("step2_halt")) | .duration_ms / 1000)' \
 - ❌ Skipping pre-merge-check or design-judge "because the change is small".
 - ❌ Editing `CHANGELOG.md`, `.release-please-manifest.json`, or `<!-- x-release-please-version -->` lines on a non-release branch.
 - ❌ Force-pushing or `--no-verify`.
-- ❌ Opening a separate `chore: mark X shipped in BACKLOG` PR after the feat PR merges. **The BACKLOG status flip belongs in the feat commit itself** (see [README.md §4](README.md#section-4--sync-docs-and-tooling-neutral-context)). Across cycles 77–86 the post-merge chore-PR pattern produced 8 extra PRs and 4 duplicate commits on `main` (MCP-VALIDATION, JSON-STABILITY, ERR-EMPTY-400, BACKEND-TYPE-STRICT each landed twice).
-- ❌ Marking a `BACKLOG.md` row ✅ before the corresponding feat PR has merged. (Flipping in the same commit is correct; flipping in a separate earlier PR is not.)
+- ❌ Opening a separate `chore: mark X shipped in BACKLOG` PR after the feat PR merges. **The BACKLOG→SHIPPED move belongs in the feat commit itself** (see [README.md §4](README.md#section-4--sync-docs-and-tooling-neutral-context)). Across cycles 77–86 the post-merge chore-PR pattern produced 8 extra PRs and 4 duplicate commits on `main` (MCP-VALIDATION, JSON-STABILITY, ERR-EMPTY-400, BACKEND-TYPE-STRICT each landed twice).
+- ❌ **Marking the row ✅ in place inside `docs/backlog/BACKLOG.md`.** Reorg (2026-05-29): a shipped scope is **moved** — cut its Up-Next table row + `### SCOPE` detail section from `docs/backlog/BACKLOG.md`, prepend a dated entry to `docs/backlog/SHIPPED.md`. Both edits land in the same `feat:` commit. The `auto-iter/scripts/pre-merge-mechanical.sh` §4 check enforces this: a commit touching ONLY `docs/backlog/BACKLOG.md` or ONLY `docs/backlog/SHIPPED.md` is the standalone-chore anti-pattern.
+- ❌ Moving a row out of `docs/backlog/BACKLOG.md` before the corresponding feat PR has merged. (The move in the same commit is correct; an earlier separate PR is not.)
+- ❌ Editing a `SHIPPED.md` entry after it lands. SHIPPED.md is append-only. If a shipped scope breaks, file a fresh BACKLOG entry to fix it.
 - ❌ Multiple feature PRs in one cycle without §1 bundle-check or parallel-mode rules being satisfied.
 - ❌ Embedding diff content in halt messages — reference PR URL only.
 - ❌ Running TDD inline in the orchestrator instead of dispatching to a code-generation model `Task` subagent. Across the May-17 stream this produced `dispatch_violation:true` on cycles 77 and 79 — both were "scope already shipped historically" cases that should have been caught earlier (see §1.5 already-shipped check in [`autonomous.md`](autonomous.md)).

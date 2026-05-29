@@ -4,9 +4,15 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| PR-SETTINGS | Per-repo PR settings (required approvers, tasks, builds, merge strategies) | Both | 2 | ✅ |
-| PIPE-RERUN | Re-trigger a pipeline at the same commit | Cloud | 1 | ✅ |
-| CHERRY-PICK | Cherry-pick commit onto a branch (branch-utils) | Server/DC | 1 | ✅ |
+| **CLOUD-DISCOVERY** | **Onboarding-blocking:** `workspace list` and `workspace search` return HTTP 410 — Atlassian deprecated `/2.0/workspaces` (CHANGE-2770). Migrate to `/2.0/user/permissions/workspaces`. Fresh users currently have no in-tool way to find their workspace slug (MCP-01, MCP-02, MCP-03). | Cloud | 1 | ✅ P0 |
+| **SCRIPT-TRUST** | **Headline CLI fix:** scripts cannot trust bitbottle's contract surface — audit exit-code discipline (BB-12); unify `-R` flag + ref-parser across all commands (BB-13, BB-14). See [audit](../audits/cli-comparison-2026-05-27.md). | Both | 3 | ✅ P0 |
+| **FMT-CONTRACT** | Formatter middleware consistency: `--jq` must error (or work) the same on every command; `--template` trailing newline; "not found" hint wording (BB-17, BB-18, BB-19); restore dropped DTO fields in `user view --json` (MCP-15). | Both | 1.25 | ✅ P0 |
+| **MCP-INPUT-VALIDATION** | MCP arg validators are inconsistent: wrong-type `id` reports "missing" (MCP-06); `id=0` falsely "missing" (MCP-07); negative ids reach API (MCP-08); empty string `""` in `merge_pr` strategy enum (MCP-09); asymmetric inline-anchor checks on `add_pr_comment` (MCP-10); no client-side hash format check on `add_commit_comment` (MCP-11); malformed branch names accepted (MCP-12); `update_pr` no-op reaches API (MCP-13); `compare_refs.repo` rejects 1-seg but accepts 3-seg (MCP-14). | Both | 2.5 | ✅ P1 |
+| **MCP-TAXONOMY** | Tool catalog consistency: collapse three repo-arg shapes into one (`{project, slug}` is dominant — migrate `compare_refs`/`list_pr_commits`/`list_pr_files` away from `{repo}` and `set/get_repo_pr_settings` from `{project, repo}`) (MCP-04); refuse unknown hostnames instead of silently falling back to Server URL paths (MCP-05); add structured host-gating metadata so AI clients can filter Server/Cloud-only tools instead of relying on description prose (MCP-16). | Both | 1.5 | ✅ P1 |
+| **PR-GUARDS** | PR state-machine pre-check (`pr approve` silently succeeds on DECLINED — BB-07, BB-20); client-side `--state` enum validation (BB-11, BB-21). | Both | 1.5 | ✅ P1 |
+| **CLOUD-WIRE** | Cloud API drift fixes: `/permissions/` → `/permissions-config/` (BB-08); `/commits/` → `/commit/` for commit comments (BB-09); `pipeline trigger` response struct (BB-10). | Cloud | 1.5 | ✅ P1 |
+| **REF-UX** | `branch create`/`tag create` `--start-at` ergonomics — promote to 3rd positional or default to HEAD (BB-15, BB-16). | Both | 0.5 | ✅ P2 |
+| **BACKLOG-MIGRATION** | Sweep remaining shipped scope detail sections (every `### XYZ` whose `Status:` reads `✅` and whose feat commit is on `main`) from this file into [`SHIPPED.md`](SHIPPED.md). Each move happens in a `chore(backlog):` commit, one scope per commit, so history is bisectable. After this scope finishes, every `### ` heading in this file maps to **unshipped** work only. | DX | 0.5 | ✅ P2 |
 
 ## Philosophy
 
@@ -3004,58 +3010,6 @@ type Group struct {
 
 ---
 
-### PR-SETTINGS — Per-Repo PR Settings
-
-**Status:** ✅
-
-Bitbucket exposes per-repo pull-request configuration that's distinct from branch protections and from the branching model: required number of approvers, "all approvers must approve", "all tasks must be resolved", required green builds, and which merge strategies are allowed. Today these can only be set in the web UI (Server) or by hand-rolling a `PUT /repositories/{ws}/{slug}` payload (Cloud). This scope ships the read/write CLI surface that completes the trio: BRANCH-RULE (Cloud ref restrictions ✅), BRANCH-PROTECT (Server ref restrictions ✅), PR-SETTINGS (PR merge gate, both backends).
-
-**Interface:**
-```go
-// api/backend/client_repo_pr_settings.go
-type RepoPRSettingsClient interface {
-    GetRepoPRSettings(ns, slug string) (RepoPRSettings, error)
-    UpdateRepoPRSettings(ns, slug string, in RepoPRSettingsInput) (RepoPRSettings, error)
-}
-
-type RepoPRSettings struct {
-    RequiredApprovers           int
-    RequiredAllApprovers        bool
-    RequiredAllTasksComplete    bool
-    RequiredSuccessfulBuilds    int
-    MergeStrategy               string   // default
-    AllowedStrategies           []string // subset of {ff, ff-only, rebase, squash, merge-commit}
-}
-
-// Pointer fields → only set the ones the user passed.
-type RepoPRSettingsInput struct {
-    RequiredApprovers           *int
-    RequiredAllApprovers        *bool
-    RequiredAllTasksComplete    *bool
-    RequiredSuccessfulBuilds    *int
-    MergeStrategy               *string
-    AllowedStrategies           *[]string
-}
-```
-
-**Commands:** `bitbottle repo pr-settings get [PROJECT/REPO] [--json]`, `bitbottle repo pr-settings set [PROJECT/REPO] [--required-approvers N] [--required-all-approvers[=false]] [--required-all-tasks-complete[=false]] [--required-successful-builds N] [--merge-strategy STRAT] [--allowed-strategies s1,s2,...]`
-
-**Backends:** Server (`GET /rest/api/1.0/projects/{ns}/repos/{slug}/settings/pull-requests`, `POST` same path with merge config body). Cloud (`GET /repositories/{ws}/{slug}` for read, `PUT /repositories/{ws}/{slug}` for the subset Cloud supports — `fork_policy` + the project-level merge defaults; fields not honoured by Cloud return `ErrUnsupportedOnHost` per-field rather than failing the whole call).
-
-**MCP tools:** `get_repo_pr_settings`, `set_repo_pr_settings`
-
-**Definition of Done:**
-- [x] `api/backend/client_repo_pr_settings.go` — interface + `RepoPRSettings` + `RepoPRSettingsInput`
-- [x] `api/cloud/repo_pr_settings.go` + `api/cloud/repo_pr_settings_test.go` (subset support + typed errors on Cloud-unsupported fields)
-- [x] `api/server/repo_pr_settings.go` + `api/server/repo_pr_settings_test.go`
-- [x] `pkg/cmd/repo/pr-settings/` (get, set) + tests
-- [x] MCP pair (`tools.go` + `handlers.go` + `handlers_test.go`)
-- [x] `test/script/testdata/repo_pr_settings_*.txtar` for both backends
-- [x] `skills/SKILL.md` + `skills/references/repos.md`
-- [x] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
 ### EXT-SCAFFOLD — Extension Scaffold
 
 **Status:** ✅
@@ -3822,6 +3776,212 @@ Today an agent starting work against a new Bitbucket host has no single endpoint
 - [ ] `test/script/testdata/host_info.txtar`
 - [ ] `skills/SKILL.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
+
+---
+
+### SCRIPT-TRUST — Exit codes + `-R` flag + ref parser (BB-12, BB-13, BB-14)
+
+**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit (`~/cli-comparison-2026-05-27.md` §6–§7).
+
+**Why P0:** Two bugs combined make every other bug in the audit invisible to scripts. (1) Exit codes are inconsistent: `bitbottle pipeline trigger`'s JSON unmarshal error prints to stderr but exits 0; `commit comment list`'s "Resource not found." exits 0; `workspace project perms list`'s same error string exits 1. (2) `-R` flag is advertised in every command's INHERITED FLAGS but silently ignored on most non-PR commands (`repo view`, `branch list/create/delete`, `tag list/delete`, `pipeline list/run`); users get a confusing "accepts N arg(s), received 0" instead of the actual root cause. A CI script using bitbottle can't tell when the wrong thing happened.
+
+**Shape:**
+
+1. **Exit-code audit** — grep `cmd/**/*.go` for the `fmt.Println(err); return nil` anti-pattern; replace with `return err`. Add a contract test (`pkg/cmd/contract_test.go`) that runs every leaf cobra command with intentionally-bad input via testscript and asserts `exit != 0` on any line printed to stderr matching the error prefix catalogue.
+2. **`-R` flag unification** — either (a) wire `-R` resolution into every command's pre-positional-validation step, OR (b) remove `-R` from `PersistentFlags()` and only register it where actually wired. Recommend (a) — preserves help-text expectations and gh-CLI ergonomics. Touch `pkg/cmd/factory/repo.go` or the equivalent, audit every `cmd.Args = cobra.ExactArgs(N)` to use `cobra.MaximumNArgs(N)` when `-R` could provide the positional.
+3. **Ref-parser unification** — `repo view` rejects 3-part `HOST/PROJECT/REPO` while `branch list` accepts it. Extract a single `parseRepoRef(string) (host, project, slug, error)` helper used by every command. Document the accepted forms in one place.
+
+**Definition of Done:**
+
+- [ ] `pkg/cmd/contract_test.go` — exit-code contract test for every leaf command.
+- [ ] `pkg/cmd/*/cmd.go` — every command with `-R` advertised actually resolves it.
+- [ ] `pkg/cmd/internal/repo/ref.go` (or similar) — single `parseRepoRef` helper; all commands use it.
+- [ ] Test corpus: `.txtar` script per affected command proving `-R` resolves the positional.
+- [ ] Regression test: `repo view bitbucket.org/ws/repo` accepted.
+- [ ] Regression test: every error path prints `exit != 0`.
+
+---
+
+### FMT-CONTRACT — `--jq` / `--template` / hint consistency (BB-17, BB-18, BB-19)
+
+**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
+
+**Why P0:** Output-format middleware silently misbehaves. (1) `--jq` errors clearly on `pr list` ("--jq requires --json") but is silently ignored on `pr view` and `repo view` — those return the full text view instead of the requested field. Scripts that do `state=$(bitbottle pr view 1 --jq .state)` set `state` to the entire PR view text. (2) `--template` output has no trailing newline. (3) "Not found" hint says "may have been deleted" when the resource never existed (`pr view 99999`).
+
+**Shape:**
+
+1. **Centralize `--jq requires --json` check** in the formatter middleware (`pkg/cmd/internal/format/` or wherever the inherited formatting flags live). Every command goes through this middleware before its `RunE` body, so the check fires uniformly.
+2. **Trailing newline on `--template`** — `fmt.Fprintln` not `fmt.Fprint`. One-line fix.
+3. **Hint accuracy** — for resource-not-found, drop "may have been deleted" wording. Use neutral "Pull request #N does not exist in this repo." Or, cheaper: do a `repo.maxPRId` check and conditional ("may have been deleted" only if N ≤ max).
+
+**Definition of Done:**
+
+- [ ] `pkg/cmd/internal/format/middleware.go` — centralized `--jq` check applies to every command.
+- [ ] `.txtar` script proving `--jq .title` without `--json` errors uniformly on `pr view`, `repo view`, `pr list`, `branch list`.
+- [ ] `--template` output has trailing newline.
+- [ ] Updated errfmt catalogue entries with neutral wording.
+- [ ] HINT-FLAG-CONTRACT (already P0) extended to also check hint wording for "deleted" implications.
+- [ ] `bitbottle user view --json` returns `account_id`, `uuid`, `created_on`, and `links.html.href` in addition to `name`/`slug` (MCP-15 — sourced from the 2026-05-27 MCP sweep). DTO projection currently drops every Cloud-stable identifier; AI agents using the MCP `get_current_user` tool lose machine-readable handles.
+
+---
+
+### PR-GUARDS — PR state-machine + `--state` enum validation (BB-07, BB-11, BB-20, BB-21)
+
+**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
+
+**Why P1:** Two related defect classes. (1) `pr approve` succeeds with exit 0 + "Approved pull request #N" on a DECLINED PR — because the Bitbucket Cloud API returns 200 for participant approval regardless of PR state. `pr decline` and `pr merge` correctly reject DECLINED/MERGED PRs (because the API returns 400 there). So bitbottle is "right by accident" three times, and wrong on the one path the API is permissive on. (2) `pr list --state INVALID_STATE` (and `--state ""`) silently returns all 11 PRs across MERGED/OPEN/DECLINED — no client-side validation.
+
+**Shape:**
+
+1. **`validateMutablePRState(pr) error`** in `api/backend/pr_state.go` — returns typed error if state ∈ {DECLINED, MERGED, SUPERSEDED}. Called by `pr approve`, `pr unapprove`, `pr request-changes`, `pr edit`, before the mutation request. Decline/merge keep their server-side 400 path but also benefit from earlier client-side rejection.
+2. **`--state` enum validation** at flag-parse time. Add a `pflag.Var`-style helper `EnumFlag([]string{"OPEN","MERGED","DECLINED","SUPERSEDED"}, &target, caseInsensitive)`. Wire on `pr list`'s `--state`. Reject `""`, `INVALID_STATE`, and any other off-enum value with `ErrInvalidRequest`.
+
+**Definition of Done:**
+
+- [ ] `api/backend/pr_state.go` — `validateMutablePRState` helper + tests.
+- [ ] `pkg/cmd/pr/{approve,unapprove,request-changes,edit}/*.go` — call the guard before the API request.
+- [ ] `pkg/cmd/internal/enumflag/enumflag.go` — generic enum flag helper.
+- [ ] `pkg/cmd/pr/list/list.go` — `--state` uses enum flag.
+- [ ] `.txtar` scripts: `pr_approve_on_declined.txtar`, `pr_list_state_invalid.txtar`.
+- [ ] Regression test: `pr approve N` on DECLINED PR exits 1 with typed error.
+
+---
+
+### CLOUD-WIRE — Cloud API path + response-struct drift (BB-08, BB-09, BB-10)
+
+**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
+
+**Why P1:** Three Cloud-only wire-level defects. (1) `workspace project perms list` calls `/permissions/users` but the correct path is `/permissions-config/users` — 404. (2) `commit comment {list,add,edit,delete}` all hardcode `/commits/{hash}/comments` (plural) but Bitbucket Cloud uses `/commit/{hash}/comments` (singular) — 404 on all four operations. (3) `pipeline trigger`'s response struct types `CloudTriggerResponseLinks.links.self` as `[]CloudTriggerResponseSelfLink` (slice) but the API returns a single object — JSON unmarshal failure, no useful output (and exit 0, see BB-12).
+
+**Shape:**
+
+1. **Endpoint fixes** — `api/cloud/workspace_project_perms.go`: change `/permissions/users` → `/permissions-config/users`. `api/cloud/commit_comment.go` lines 32, 52, 65, 74: change `/commits/{hash}/comments` → `/commit/{hash}/comments`. Both are ~4 lines + regression tests against captured fixtures.
+2. **Pipeline trigger struct** — fix the generator (or hand-correct the type) so `links.self` is `*CloudTriggerResponseSelfLink` (single, nullable). Add a unit test loading a captured pipeline-trigger response fixture and asserting unmarshal success.
+3. **Add live-wire (tier 6) tests** for each of the three fixed endpoints to prevent silent re-drift if Atlassian moves the paths again.
+
+**Definition of Done:**
+
+- [ ] `api/cloud/workspace_project_perms.go` — path corrected.
+- [ ] `api/cloud/commit_comment.go` — all four operations use `/commit/` (singular).
+- [ ] `api/cloud/pipeline_trigger.go` (or generated equivalent) — `links.self` typed correctly + unmarshal regression test.
+- [ ] `test/testdata/fixtures/pipeline_trigger_response.json` — captured live response.
+- [ ] `.txtar` scripts: `workspace_project_perms_list.txtar`, `commit_comment_lifecycle.txtar`, `pipeline_trigger.txtar`.
+- [ ] Nightly `BITBOTTLE_E2E=1` runs against real Cloud sandbox for all three.
+
+---
+
+### REF-UX — `branch create`/`tag create` `--start-at` ergonomics (BB-15, BB-16)
+
+**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
+
+**Why P2:** Both `branch create` and `tag create` show `USAGE: PROJECT/REPO NAME [flags]` in `--help`, implying NAME is sufficient. In practice both require `--start-at` (the flag itself says `(required)` but the signature line doesn't reflect that). Users mimicking `git branch NAME [START_POINT]` ergonomics get rejected with "required flag(s) \"start-at\" not set." Low severity (CLI works once the flag is supplied) but high friction for new users.
+
+**Shape:**
+
+Pick one:
+
+- **Option A (recommended):** Promote `--start-at` to a 3rd positional. Signature becomes `PROJECT/REPO NAME START_AT [flags]`. Matches `git branch` ergonomics. Keep `--start-at` as an alias for back-compat for one minor release.
+- **Option B:** Default `--start-at` to the repo's HEAD when omitted. `branch create proj/repo mybranch` creates a branch off current `main`/`master`/default-branch. Lower discoverability but lower friction.
+
+**Definition of Done:**
+
+- [ ] Decision recorded in an ADR (`docs/adr/`).
+- [ ] `pkg/cmd/branch/create/create.go` — new signature.
+- [ ] `pkg/cmd/tag/create/create.go` — same treatment.
+- [ ] `.txtar` script proving 3-positional usage works.
+- [ ] README + `skills/SKILL.md` updated with new usage examples.
+- [ ] Migration note in CHANGELOG.
+
+---
+
+### CLOUD-DISCOVERY — Migrate off deprecated `/2.0/workspaces` (MCP-01, MCP-02, MCP-03)
+
+**Status:** ✅ — sourced from the 2026-05-27 MCP sweep (Phase 3).
+
+**Why P0:** Atlassian deprecated `GET /2.0/workspaces` under CHANGE-2770; the endpoint returns `HTTP 410 Gone`. bitbottle's `ListWorkspaces` and `SearchWorkspaces` both hit this URL (`api/cloud/workspaces.go:26` and `:60`), so **every `bitbottle workspace list` and `bitbottle workspace search` invocation 410s** today. The migration target is `GET /2.0/user/permissions/workspaces` (which still returns the workspace objects, wrapped under `value[].workspace`). The downstream impact is bigger than the surface fix — with both discovery commands broken, a fresh user with valid auth has **no in-tool path to find their workspace slug**, and every Cloud command requires a slug. The MCP server inherits the same blindness. Verified live: during Phase 3 the tester (with valid auth) couldn't discover the workspace slug `proggarapsody_main` through any bitbottle command, and only found it by inspecting an earlier report header.
+
+**Shape:**
+
+1. **Switch endpoint** — change the path in `ListWorkspaces` from `/workspaces` to `/user/permissions/workspaces`.
+2. **Adjust the unmarshal struct** — the new response wraps each workspace under `value[].workspace`, and adds a `permission` field. Either update the existing `cloudPagedResponse[CloudWorkspace]` decoder to dereference `.workspace`, or introduce a new `CloudUserWorkspacePermission` DTO with a `.Workspace` field and a converter.
+3. **Same surgery on `SearchWorkspaces`** — the `q=slug~"..."` query param syntax still works against the new endpoint (server-side filtering documented).
+4. **Contract test against a recorded 410** — a `httptest` server returning 410 on `/workspaces` should make the test fail before the fix.
+5. **Errfmt catalogue entry for HTTP 410** — current behavior is to render Atlassian's raw "CHANGE-2770 - Functionality has been deprecated" string. Add a typed `ErrEndpointDeprecated` so future deprecations get a clean message and a doc link.
+
+**Definition of Done:**
+
+- [ ] `api/cloud/workspaces.go` switched to `/2.0/user/permissions/workspaces` on both `ListWorkspaces` and `SearchWorkspaces`.
+- [ ] Cloud-gen DTO regenerated (or hand-written) for `UserWorkspacePermission`.
+- [ ] Adapter test: feed a recorded `/2.0/user/permissions/workspaces` response, assert correct domain `Workspace` slice.
+- [ ] Live wire test: `bitbottle workspace list` returns ≥1 workspace for the test account.
+- [ ] `.txtar` for the CLI command verifying it does NOT 410 anymore.
+- [ ] New `ErrEndpointDeprecated` in `api/backend/errors.go` + catalogue entry in errfmt + `AllCodes` slice — caught by the existing catalogue test.
+- [ ] CHANGELOG note + skills/SKILL.md sentence reminding agents that workspace discovery now works.
+
+---
+
+### MCP-INPUT-VALIDATION — Tighten client-side validators across MCP tools (MCP-06 through MCP-14)
+
+**Status:** ✅ — sourced from the 2026-05-27 MCP sweep (Phase 3).
+
+**Why P1:** MCP arg validation is inconsistent — some fields validate beautifully (`inline_side` enum, 1-segment repo on `compare_refs`, missing-required-string), but adjacent fields on the same tools forward garbage to the HTTP layer and return a generic upstream 404. AI agents reading the error can't tell whether their input was malformed or the resource doesn't exist. Concretely, the negative-input matrix surfaced **nine** distinct gaps:
+
+- **MCP-06** Wrong-type `id` → reported as "missing required parameter: id" instead of "id must be integer".
+- **MCP-07** `id: 0` → falsely "missing" (Go zero-value issue in MCP unmarshal). Hits every numeric-id tool.
+- **MCP-08** Negative `id` → passes through, generic 404.
+- **MCP-09** `merge_pr.strategy` enum lists `""` as a valid value; error messages show "must be one of , merge, squash, …" (note the bare comma).
+- **MCP-10** `add_pr_comment` inline-anchor asymmetry: `inline_path` w/o `inline_line` is caught client-side, but `inline_line` w/o `inline_path` is not.
+- **MCP-11** `add_commit_comment.hash` not validated for length/hex; "a" or "NOT_HEX_!@#" reaches Cloud and returns generic 404.
+- **MCP-12** `create_branch.name` accepts `"/"`, leading/trailing slashes, and other refs that Git refuses by spec.
+- **MCP-13** `update_pr` with neither `title` nor `body` hits the API instead of returning a clean "nothing to update".
+- **MCP-14** `compare_refs.repo` rejects 1-segment input cleanly but silently accepts 3-segment (`bitbucket.org/proj/repo`).
+
+These are individually small but collectively they prevent any safe automated retry policy on the MCP surface.
+
+**Shape:**
+
+1. **Shared `argval` helper** in `pkg/cmd/mcp/argval/` — typed extractors: `Int(name, required, min=)`, `Hash(name, minLen=7)`, `RefName(name)`, `EnumOneOf(name, allowed)`, `MutuallyRequired(field, dependency)`, `OneOfRequired(fields)`. Each extractor returns a structured error mapped to MCP's tool-error envelope so the client gets `{code: "arg.invalid_type", field: "id", got: "string"}`-style payloads.
+2. **Migrate every handler** in `pkg/cmd/mcp/handlers_*.go` to call the new helpers in their first 3–5 lines.
+3. **Fix the strategy enum** for `merge_pr` — drop `""` from the canonical list, treat empty as "use default" via a separate branch.
+4. **Sweep all existing tool registrations** for similar zero-value pitfalls — anywhere a number can legally be 0 (limits, pagination), confirm `_, ok := args[name]` is used not `args[name].(int) > 0`.
+5. **Tabulate per-handler arg specs** in a generated table — one row per `{tool, field, type, required, validators}`. Becomes the spec source for both runtime check and JSONSchema export.
+
+**Definition of Done:**
+
+- [ ] `pkg/cmd/mcp/argval/argval.go` lands with typed extractors + tests.
+- [ ] All 254 tool handlers migrated; grep for the old ad-hoc `args["x"]` access patterns returns 0 hits outside the package.
+- [ ] Test matrix replaying the 38 Phase-3 negative cases — every one returns a structured error with the right `code` and `field`.
+- [ ] `merge_pr` strategy enum no longer lists `""`.
+- [ ] New `.txtar` covering each of MCP-06 through MCP-14 with the corrected error envelope.
+- [ ] CHANGELOG line per bug class (some users may be relying on permissive validation today).
+
+---
+
+### MCP-TAXONOMY — Unify tool catalog (MCP-04, MCP-05, MCP-16)
+
+**Status:** ✅ — sourced from the 2026-05-27 MCP sweep (Phase 3).
+
+**Why P1:** The 254-tool catalog has three structural inconsistencies that force AI clients to special-case bitbottle:
+
+- **MCP-04** Three competing repo-arg shapes for the same concept: `{project, slug}` (15+ tools, dominant), `{repo}` as `WORKSPACE/REPO` (compare_refs, list_pr_commits, list_pr_files), and `{project, repo}` (set/get_repo_pr_settings). Agents that learn the convention from `get_pr` then fail on `compare_refs`.
+- **MCP-05** Unknown hostnames silently fall back to Bitbucket Server URL paths (`/rest/api/1.0/...`) rather than rejecting with "unknown host" — verified with `hostname=not-a-real-host.example`. Typos in `hostname` produce confusing dial errors against bogus Server URLs.
+- **MCP-16** Server-only tools (e.g., `set_repo_pr_settings`, branch protection set, group-related ops) are registered for every host. The "this is Server-only" signal is buried in description prose. An AI client picking tools by name + first sentence will pick a Cloud-broken tool and discover it only at runtime via `host.unsupported`.
+
+**Shape:**
+
+1. **Pick `{project, slug}` as the canonical repo-arg shape** (it's the majority and matches the CLI's `PROJECT/REPO`). Migrate `compare_refs`, `list_pr_commits`, `list_pr_files` to `{project, slug}`; migrate `get/set_repo_pr_settings` from `{project, repo}` to `{project, slug}`. Keep one release of back-compat (accept the old shape with a deprecation warning in the tool result).
+2. **Reject unknown hostnames at config load** — when `hostname` is provided but isn't in `~/.config/bitbottle/hosts.yml`, return a typed error before any HTTP is attempted. Don't infer Server vs Cloud from URL shape on unknown hosts.
+3. **Add `meta.backends: ["server"|"cloud"]` to every tool registration**, exposed via an `_meta` field on the `tools/list` response (MCP allows arbitrary `_meta`). Existing prose descriptions stay for human readers. At call time, if the configured host's backend isn't in the tool's allowlist, return `host.unsupported` with the allowed list in the structured error.
+4. **Optional Phase 2:** filter the `tools/list` response by backend when a single hostname is active — clients see only the tools that can actually run. Behind a `BITBOTTLE_MCP_HOST_FILTER=1` env flag so existing clients aren't surprised.
+
+**Definition of Done:**
+
+- [ ] Repo-arg shape unified to `{project, slug}` across all 18+ tools currently using alternates; back-compat warnings in place.
+- [ ] `pkg/cmd/mcp/tools_*.go` files emit `_meta.backends` in every `AddTool` call.
+- [ ] Unknown-hostname returns `ErrUnknownHost` with the list of configured hosts in the error envelope (sourced from `hosts.yml`).
+- [ ] Adapter test: registering a tool with `backends: ["server"]` and calling it with `hostname=bitbucket.org` returns `host.unsupported` *before* HTTP is attempted (currently it makes the HTTP call first).
+- [ ] Regression test: schema-shape grep — no tool definition uses `repo` or `{project, repo}` for the repo arg.
+- [ ] Skills/SKILL.md updated with the unified arg-shape convention.
 
 ---
 
