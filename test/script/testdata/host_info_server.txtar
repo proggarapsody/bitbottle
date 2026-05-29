@@ -1,0 +1,12 @@
+# host info shows backend type, version, and features for a Server backend.
+bb-fake server
+
+bitbottle host info -k
+stdout 'server'
+stdout 'Backend:'
+stdout 'Features:'
+
+bitbottle host info -k --json
+stdout '"backend_type"'
+stdout '"version"'
+stdout '"supported_features"'

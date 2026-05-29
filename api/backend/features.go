@@ -657,6 +657,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		CloudSupport:  true,
 		ServerSupport: false,
 	},
+	{
+		Name:          "HostInfoClient",
+		HumanLabel:    "host info",
+		Check:         func(c Client) bool { _, ok := c.(HostInfoClient); return ok },
+		Feature:       FeatureHostInfo,
+		CloudSupport:  true,
+		ServerSupport: true,
+	},
 }
 
 // specFor returns the FeatureSpec for the given Feature constant.

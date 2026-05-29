@@ -11,6 +11,39 @@
 
 ---
 
+## 2026-05-29 — HOST-INFO
+
+### HOST-INFO — Host Capabilities & Version Info
+
+- **Feat commit:** `feat(host): add host info command (Cloud + Server)` (2026-05-29)
+- **Backends:** Both (Cloud + Server/DC)
+- **Estimate (planned):** 2 days
+
+Today an agent starting work against a new Bitbucket host has no single endpoint to discover (a) which backend type it is, (b) what version (matters for Server feature gates like `pr unready` 8.0+ requirement), (c) which optional `AsXxxClient` capabilities the host implements. The pieces exist internally — `ServerCapabilities.GetApplicationProperties()`, `api/server/version.go`'s parsed `Version`, and `AllFeatureSpecs` — but no command surfaces them. `context` (✅) answers "where am I?"; `host info` answers "what can I do here?".
+
+**Interface (shipped):**
+```go
+// api/backend/client_host_info.go
+type HostInfoClient interface {
+    GetHostInfo() (HostInfo, error)
+}
+
+type HostInfo struct {
+    BackendType       string   `json:"backend_type"`
+    BaseURL           string   `json:"base_url"`
+    Version           string   `json:"version,omitempty"`
+    BuildNumber       string   `json:"build_number,omitempty"`
+    DisplayName       string   `json:"display_name"`
+    SupportedFeatures []string `json:"supported_features"`
+}
+```
+
+**Commands:** `host info [--hostname H] [--json]`
+
+**MCP tools:** `get_host_info`
+
+---
+
 ## 2026-05-25 — Bootstrap migration
 
 Three scopes pulled from BACKLOG.md "Up Next" that had shipped before the file split. Each has a corresponding `feat:` commit; ✅ markers in the Full Functionality Map cross-reference these.

@@ -31,6 +31,7 @@ type HTTPClient = httpx.Doer
 // Client is the Bitbucket Cloud HTTP client.
 type Client struct {
 	http             *httpx.Transport
+	baseURL          string // the configured base URL (e.g. "https://api.bitbucket.org/2.0")
 	cachedUsername   string
 	cachedUsernameMu sync.Mutex
 }
@@ -48,6 +49,7 @@ func NewClient(httpClient HTTPClient, baseURL, token, username string) *Client {
 			httpx.ContentTypeWhenBody,
 			cloudPaginator{},
 		).UseDomainErrors(hostFromURL(baseURL)),
+		baseURL: baseURL,
 	}
 }
 

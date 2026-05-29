@@ -43,6 +43,7 @@ disagrees with this doc; the binary wins.
 | Group management — group list, group create, group delete, group member list, group member add, group member remove (Server/DC only) | `references/groups.md` |
 | Project CRUD — project server-list, project create, project view, project edit, project delete (Server/DC only); project list WORKSPACE (Cloud only) | `references/project.md` |
 | auth pat list/create/revoke (Server/DC only) | `references/auth.md` |
+| Host info — backend type, base URL, version, feature matrix (`host info [--json]`) | `references/host.md` |
 
 Load both when a task spans areas. Don't load speculatively.
 

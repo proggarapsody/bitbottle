@@ -433,6 +433,9 @@ type FakeClient struct {
 	// PipelineOIDCClient methods (Cloud-only; satisfies backend.PipelineOIDCClient when set)
 	GetPipelineOIDCConfigFn func(workspace string) (backend.PipelineOIDCConfig, error)
 	GetPipelineOIDCKeysFn   func(workspace string) (backend.PipelineOIDCKeys, error)
+
+	// HostInfoClient methods (both backends; satisfies backend.HostInfoClient when set)
+	GetHostInfoFn func() (backend.HostInfo, error)
 }
 
 // ── Compile-time interface assertions ─────────────────────────────────────────
@@ -511,6 +514,7 @@ var (
 	_ backend.WorkspaceProjectDefaultReviewerClient = (*FakeClient)(nil)
 	_ backend.PRMergePreviewClient                  = (*FakeClient)(nil)
 	_ backend.PipelineOIDCClient                    = (*FakeClient)(nil)
+	_ backend.HostInfoClient                        = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -3107,4 +3111,14 @@ func (c *FakeClient) GetPipelineOIDCKeys(workspace string) (backend.PipelineOIDC
 		c.T.Fatalf("unexpected call to FakeClient.GetPipelineOIDCKeys; set GetPipelineOIDCKeysFn in your test")
 	}
 	return backend.PipelineOIDCKeys{}, nil
+}
+
+func (c *FakeClient) GetHostInfo() (backend.HostInfo, error) {
+	if c.GetHostInfoFn != nil {
+		return c.GetHostInfoFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetHostInfo; set GetHostInfoFn in your test")
+	}
+	return backend.HostInfo{}, nil
 }

@@ -232,3 +232,16 @@ type IssueChange struct {
 	CreatedOn time.Time `json:"created_on"`
 	User      User      `json:"user"`
 }
+
+// HostInfo describes the connected Bitbucket host: its backend type, base URL,
+// optional version information (Server/DC only), and the Feature constants it
+// supports. Used by `host info` and the `get_host_info` MCP tool as a
+// single-call orientation primitive.
+type HostInfo struct {
+	BackendType       string   `json:"backend_type"` // "cloud" | "server" | "datacenter"
+	BaseURL           string   `json:"base_url"`
+	Version           string   `json:"version,omitempty"`      // Server/DC only
+	BuildNumber       string   `json:"build_number,omitempty"` // Server/DC only
+	DisplayName       string   `json:"display_name"`
+	SupportedFeatures []string `json:"supported_features"`
+}
