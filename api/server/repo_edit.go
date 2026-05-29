@@ -17,6 +17,7 @@ func (c *Client) EditRepo(ns, slug string, in backend.EditRepoInput) (backend.Re
 	}
 	var w servergen.RestRepository
 	path := fmt.Sprintf("/projects/%s/repos/%s", url.PathEscape(ns), url.PathEscape(slug))
+	// OCC: not required — Bitbucket Server repo metadata PUT does not version entity
 	if err := c.putJSON(path, body, &w); err != nil {
 		return backend.Repository{}, err
 	}

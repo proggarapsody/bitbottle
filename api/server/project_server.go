@@ -120,6 +120,7 @@ func (c *Client) UpdateServerProject(key string, in backend.UpdateServerProjectI
 		req.Public = *in.Public
 	}
 	var w restProject
+	// OCC: not required — fetches first for field-merge, but Server project PUT does not require version token
 	if err := c.putJSON(fmt.Sprintf("/projects/%s", url.PathEscape(key)), req, &w); err != nil {
 		return backend.ServerProject{}, err
 	}

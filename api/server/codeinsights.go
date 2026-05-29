@@ -184,7 +184,10 @@ func (c *Client) AddAnnotations(project, slug, hash, key string, in []backend.Co
 	for _, a := range in {
 		wanns = append(wanns, toGenAnnotation(a))
 	}
-	body := map[string]any{"annotations": wanns}
+	type annotationsBody struct {
+		Annotations []servergen.RestAnnotation `json:"annotations"`
+	}
+	body := annotationsBody{Annotations: wanns}
 	return c.codeInsightsHTTP.PostJSON(annotationBasePath(project, slug, hash, key), body, nil)
 }
 
