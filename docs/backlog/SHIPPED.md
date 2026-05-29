@@ -11,6 +11,18 @@
 
 ---
 
+## 2026-05-29 — CLOUD-DISCOVERY
+
+### CLOUD-DISCOVERY — Migrate off deprecated `/2.0/workspaces` (MCP-01, MCP-02, MCP-03)
+
+- **Feat commit:** `feat(workspace): migrate workspace list/search to /user/permissions/workspaces` (2026-05-29)
+- **Backends:** Cloud
+- **Estimate (planned):** 1 day
+
+Atlassian deprecated `GET /2.0/workspaces` under CHANGE-2770; the endpoint returns HTTP 410 Gone. Both `workspace list` and `workspace search` were broken, leaving fresh users with no in-tool way to find their workspace slug. Migration target: `GET /2.0/user/permissions/workspaces` (workspaces now wrapped under `value[].workspace`). Added `cloudWorkspacePermission` DTO, updated both list/search unmarshal paths, fixed all test fixtures. Also added `ErrEndpointDeprecated` / `CodeEndpointDeprecated` to the errors catalogue so future 410s get a clean typed message with an upgrade link.
+
+---
+
 ## 2026-05-29 — HOST-INFO
 
 ### HOST-INFO — Host Capabilities & Version Info

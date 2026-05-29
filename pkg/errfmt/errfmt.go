@@ -96,6 +96,10 @@ var catalogue = map[backend.ErrorCode]entry{
 		title: "The request was rejected by {{.Host}} as invalid.",
 		hints: []string{"Check that all required fields are set and values are within the expected range."},
 	},
+	backend.CodeEndpointDeprecated: {
+		title: "API endpoint deprecated on {{.Host}}.",
+		hints: []string{"This Bitbucket API endpoint has been removed. Update bitbottle: https://github.com/proggarapsody/bitbottle/releases"},
+	},
 }
 
 // Render writes a friendly error explanation to ios.ErrOut.

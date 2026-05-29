@@ -10,6 +10,13 @@ import (
 	"github.com/proggarapsody/bitbottle/api/internal/paging"
 )
 
+// cloudWorkspacePermission is the DTO for the /user/permissions/workspaces
+// response envelope (CHANGE-2770: /workspaces deprecated, HTTP 410).
+type cloudWorkspacePermission struct {
+	Permission string                  `json:"permission"`
+	Workspace  cloudgen.CloudWorkspace `json:"workspace"`
+}
+
 func toWorkspaceDomain(w cloudgen.CloudWorkspace) backend.Workspace {
 	return backend.Workspace{
 		UUID:   stripBraces(w.UUID),
@@ -23,25 +30,25 @@ func toWorkspaceDomain(w cloudgen.CloudWorkspace) backend.Workspace {
 // Pagination is driven by paging.Collect; limit caps total items (0 = no cap,
 // follow Cloud's default page size to exhaustion).
 func (c *Client) ListWorkspaces(limit int) ([]backend.Workspace, error) {
-	path := "/workspaces"
+	path := "/user/permissions/workspaces"
 	if limit > 0 {
 		path = fmt.Sprintf("%s?pagelen=%d", path, limit)
 	}
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Workspace, error) {
-		var page cloudPagedResponse[cloudgen.CloudWorkspace]
+		var page cloudPagedResponse[cloudWorkspacePermission]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Workspace, 0, len(page.Values))
-		for _, w := range page.Values {
-			out = append(out, toWorkspaceDomain(w))
+		for _, item := range page.Values {
+			out = append(out, toWorkspaceDomain(item.Workspace))
 		}
 		return out, nil
 	}, limit)
 }
 
 // SearchWorkspaces searches workspaces matching the given opts.
-// Cloud: GET /2.0/workspaces with optional q and role query params.
+// Cloud: GET /2.0/user/permissions/workspaces with optional q and role query params.
 func (c *Client) SearchWorkspaces(opts backend.WorkspaceSearchOpts) ([]backend.Workspace, error) {
 	params := url.Values{}
 	if opts.Query != "" {
@@ -57,18 +64,18 @@ func (c *Client) SearchWorkspaces(opts backend.WorkspaceSearchOpts) ([]backend.W
 		}
 		params.Set("pagelen", fmt.Sprintf("%d", pagelen))
 	}
-	path := "/workspaces"
+	path := "/user/permissions/workspaces"
 	if encoded := params.Encode(); encoded != "" {
 		path = path + "?" + encoded
 	}
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.Workspace, error) {
-		var page cloudPagedResponse[cloudgen.CloudWorkspace]
+		var page cloudPagedResponse[cloudWorkspacePermission]
 		if err := json.Unmarshal(body, &page); err != nil {
 			return nil, err
 		}
 		out := make([]backend.Workspace, 0, len(page.Values))
-		for _, w := range page.Values {
-			out = append(out, toWorkspaceDomain(w))
+		for _, item := range page.Values {
+			out = append(out, toWorkspaceDomain(item.Workspace))
 		}
 		return out, nil
 	}, opts.Limit)

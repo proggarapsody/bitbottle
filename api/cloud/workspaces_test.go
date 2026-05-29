@@ -14,10 +14,10 @@ import (
 
 const wsPageJSON = `{
   "values": [
-    {"uuid":"{aaaaaaaa-1111-1111-1111-111111111111}","slug":"acme","name":"Acme Inc",
-     "links":{"html":{"href":"https://bitbucket.org/acme/"}}},
-    {"uuid":"{bbbbbbbb-2222-2222-2222-222222222222}","slug":"beta","name":"Beta Co",
-     "links":{"html":{"href":"https://bitbucket.org/beta/"}}}
+    {"permission":"owner","workspace":{"uuid":"{aaaaaaaa-1111-1111-1111-111111111111}","slug":"acme","name":"Acme Inc",
+     "links":{"html":{"href":"https://bitbucket.org/acme/"}}}},
+    {"permission":"member","workspace":{"uuid":"{bbbbbbbb-2222-2222-2222-222222222222}","slug":"beta","name":"Beta Co",
+     "links":{"html":{"href":"https://bitbucket.org/beta/"}}}}
   ]
 }`
 
@@ -42,7 +42,7 @@ func TestCloudClient_ListWorkspaces_IssuesCorrectPath(t *testing.T) {
 	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
 	_, err := client.ListWorkspaces(0)
 	require.NoError(t, err)
-	assert.Equal(t, "/workspaces", gotPath)
+	assert.Equal(t, "/user/permissions/workspaces", gotPath)
 }
 
 func TestCloudClient_ListWorkspaces_IncludesPagelenWhenLimited(t *testing.T) {
