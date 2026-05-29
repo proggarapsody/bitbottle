@@ -46,11 +46,21 @@ fi
 # Cloud client must NOT implement the interface methods (otherwise the type
 # assertion in the helper succeeds and ErrUnsupportedOnHost gets deferred to
 # call-time instead of being the gate result).
+#
+# Exception: interfaces where CloudSupport=true AND ServerSupport=true in
+# AllFeatureSpecs are intentionally both-backend. List them here so the
+# rule doesn't false-positive on them. Update when a new both-backend
+# optional interface is added.
+both_backend_ifaces="DiffClient RefComparer CommitFileClient DefaultReviewerClient PRCommitClient PRFileClient PRParticipantClient DeployKeyClient SSHKeyClient RepoEditor RepoForksLister RepoTransferClient RepoWatcherClient RepoLabelClient PRMergePreviewClient SourceWriter HostInfoClient"
 new_helpers=$(git diff "$BASE"...HEAD -- api/backend/ 2>/dev/null \
   | grep -E '^\+func As[A-Z][A-Za-z]+Client\b' \
   | sed 's/.*func As\([A-Z][A-Za-z]*\)Client.*/\1/' | sort -u || true)
 for helper in $new_helpers; do
   iface="${helper}Client"
+  # Skip intentionally both-backend interfaces.
+  if echo "$both_backend_ifaces" | grep -qw "$iface"; then
+    continue
+  fi
   # Extract the method names from the interface definition.
   methods=$(awk "/type ${iface} interface {/,/^}/" api/backend/*.go 2>/dev/null \
     | grep -E '^\s+[A-Z][A-Za-z]+\(' \

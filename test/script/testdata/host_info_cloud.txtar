@@ -1,0 +1,11 @@
+# host info shows backend type and features for a Cloud backend.
+bb-fake cloud
+
+bitbottle host info -k
+stdout 'cloud'
+stdout 'Backend:'
+stdout 'Features:'
+
+bitbottle host info -k --json
+stdout '"backend_type"'
+stdout '"supported_features"'

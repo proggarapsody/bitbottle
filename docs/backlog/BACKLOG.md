@@ -542,7 +542,6 @@ Current state of every command area against gh feature parity:
 | PIPE-OIDC | **Pipeline OIDC Configuration** | `pipeline oidc config get [PROJECT/REPO] [--json]`, `pipeline oidc keys [PROJECT/REPO] [--json]` — read the OIDC configuration Cloud Pipelines emits as a workload-identity provider. Cloud: `GET /workspaces/{ws}/pipelines-config/identity/oidc/.well-known/openid-configuration`, `GET /workspaces/{ws}/pipelines-config/identity/oidc/keys.json`. Cloud only. New optional interface `PipelineOIDCClient` with `GetPipelineOIDCConfig(ws string)` and `GetPipelineOIDCKeys(ws string)`. MCP pair `get_pipeline_oidc_config`, `get_pipeline_oidc_keys`. Closes the workload-identity gap for agents bootstrapping cloud-provider federation. — scope **PIPE-OIDC** | Cloud | 2 | ✅ |
 | REPO-HOOK-SCRIPTS | **Server/DC Repo Hook Settings** | `repo hook list [PROJECT/REPO] [--json]`, `repo hook view [PROJECT/REPO] HOOK_KEY [--json]`, `repo hook enable [PROJECT/REPO] HOOK_KEY`, `repo hook disable [PROJECT/REPO] HOOK_KEY`, `repo hook settings get/set [PROJECT/REPO] HOOK_KEY [--config-file FILE]` — manage per-repository hook plugins (distinct from `webhook` ✅). Server: `GET /rest/api/1.0/projects/{k}/repos/{s}/settings/hooks`, `GET/PUT/DELETE .../hooks/{hookKey}/enabled`, `GET/PUT .../hooks/{hookKey}/settings`. Cloud → typed `host.unsupported`. New optional interface `RepoHookClient`. MCP quintet. — scope **REPO-HOOK-SCRIPTS** | Server/DC | 3 | 🔲 |
 | CLOUD-CODE-INSIGHTS | **Cloud Code Insights Reports & Annotations** | `code-insights report list/view/put/delete HASH [KEY] [PROJECT/REPO]`, `code-insights annotation list/put HASH REPORT_KEY [PROJECT/REPO]` — Cloud counterpart to the Server/DC Code Insights surface (✅ scope CI). Cloud: `GET/PUT/DELETE /repositories/{ws}/{slug}/commit/{commit}/reports/{reportId}`, annotation sub-resource same. Server/DC → reuses existing CI commands. New optional interface `CloudCodeInsightsClient`. MCP sextet. Closes Cloud parity gap with shipped Server CI scope. — scope **CLOUD-CODE-INSIGHTS** | Cloud | 3 | 🔲 |
-| HOST-INFO | **Host Capabilities & Version Info** | `host info [--hostname H] [--json]` — print backend type (cloud/server/datacenter), API base URL, server version (Server/DC only), and the resolved capability matrix (`AllFeatureSpecs`). New optional interface `HostInfoClient` with `GetHostInfo() (HostInfo, error)`. Domain type `HostInfo{BackendType, BaseURL, Version, BuildNumber, DisplayName, SupportedFeatures []string}`. MCP tool `get_host_info`. High-leverage orientation primitive for agents: one call to discover what features are available before issuing capability-gated calls. — scope **HOST-INFO** | Both | 2 | 🔲 |
 | ISSUE-ACTIVITY | **Cloud Issue Activity Log** | `bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json]` — view the full change history of a Cloud issue (state/priority/assignee/component/milestone/title transitions + comment events). Cloud: `GET /repositories/{ws}/{slug}/issues/{id}/changes` (paginated; each item has `kind`, `old_val`, `new_val`, `created_on`, `user`). Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `IssueActivityClient` with `ListIssueActivity(ns, slug string, issueID int, limit int) ([]IssueChange, error)` (via `paging.Collect[T]`). Domain type `IssueChange{ID, Kind, OldVal, NewVal, CreatedOn, User}`. MCP tools `list_issue_activity`. Completes the issue audit trail alongside `issue view` ✅ and issue comments ✅. — scope **ISSUE-ACTIVITY** | Cloud | 1 | ✅ |
 | WORKSPACES-SEARCH | **Workspace Search with Filters** | `bitbottle workspace search [--query Q] [--role owner\|collaborator\|member] [--limit N] [--json]` — paginated workspace search with role and slug/name query filters (current `workspace list` returns all workspaces without filters). Cloud: `GET /2.0/workspaces?q=...&role=...` (paginated). Cloud only — Server/DC returns typed `host.unsupported` (Server uses projects, not workspaces). Extends existing `WorkspaceClient` with a `SearchWorkspaces(opts WorkspaceSearchOpts) ([]Workspace, error)` method (via `paging.Collect[T]`). Pattern: list via `paging.Collect[T]`. MCP tool `search_workspaces`. Fills the filter gap on the existing workspace surface. — scope **WORKSPACES-SEARCH** | Cloud | 1 | ✅ |
 
@@ -3748,33 +3747,6 @@ The shipped CI scope covers Bitbucket Server/DC Code Insights only (`/rest/insig
 - [ ] `test/testhelpers/client.go` — FakeClient updated
 - [ ] `test/script/testdata/cloud_code_insights.txtar`
 - [ ] `skills/SKILL.md` + `skills/references/code-insights.md` updated
-- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
-### HOST-INFO — Host Capabilities & Version Info
-
-**Status:** 🔲
-
-Today an agent starting work against a new Bitbucket host has no single endpoint to discover (a) which backend type it is, (b) what version (matters for Server feature gates like `pr unready` 8.0+ requirement), (c) which optional `AsXxxClient` capabilities the host implements. The pieces exist internally — `ServerCapabilities.GetApplicationProperties()`, `api/server/version.go`'s parsed `Version`, and `AllFeatureSpecs` — but no command surfaces them. `context` (✅) answers "where am I?"; `host info` answers "what can I do here?".
-
-**Interface:** New optional interface `HostInfoClient` with `GetHostInfo() (HostInfo, error)`. Domain type `HostInfo{BackendType, BaseURL, Version, BuildNumber, DisplayName string, SupportedFeatures []string}`. For Cloud, `Version`/`BuildNumber` are empty/"rolling"; `SupportedFeatures` lists the Cloud feature set.
-
-**Commands:** `host info [--hostname H] [--json]`
-
-**Backends:** Both. Cloud wraps the standard Cloud version probe; Server wraps `GetApplicationProperties()`.
-
-**MCP tools:** `get_host_info`
-
-**Definition of Done:**
-- [ ] `api/backend/client_host_info.go` — interface + feature const + `AsHostInfoClient`
-- [ ] `api/cloud/host_info.go` + `api/server/host_info.go` — impls
-- [ ] `pkg/cmd/host/info/info.go` — command
-- [ ] `pkg/cmd/host/host.go` — parent group
-- [ ] `pkg/cmd/mcp/` pair
-- [ ] `test/testhelpers/client.go` — FakeClient updated
-- [ ] `test/script/testdata/host_info.txtar`
-- [ ] `skills/SKILL.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---

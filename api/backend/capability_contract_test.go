@@ -46,7 +46,7 @@ func TestAllFeatureSpecs_ServerSupport(t *testing.T) {
 
 func TestAllFeatureSpecs_Coverage(t *testing.T) {
 	t.Parallel()
-	// All 74 expected names must be present in AllFeatureSpecs.
+	// All 75 expected names must be present in AllFeatureSpecs.
 	expected := []string{
 		"AdminClient", "AuditClient", "BranchModelClient", "BranchProtector", "BranchRuleClient",
 		"CloudProjectClient",
@@ -54,6 +54,7 @@ func TestAllFeatureSpecs_Coverage(t *testing.T) {
 		"CodeSearcher", "CommentReactor", "CommitCherryPicker", "CommitCommentReactor", "CommitFileClient",
 		"DefaultReviewerClient", "DefaultReviewersResolver", "DeployKeyClient", "DeploymentClient",
 		"DiffClient", "GroupClient", "GroupMemberClient",
+		"HostInfoClient",
 		"IPAllowlistClient",
 		"IssueActivityClient", "IssueAttacher", "IssueClient", "IssueVersionClient", "IssueVoter", "IssueWatcher",
 		"MilestoneClient", "MirrorClient",
@@ -83,6 +84,7 @@ func TestAllFeatureSpecs_Coverage(t *testing.T) {
 		}
 	}
 	if len(backend.AllFeatureSpecs) != len(expected) {
-		t.Errorf("AllFeatureSpecs has %d entries, expected %d — add/remove from expected slice", len(backend.AllFeatureSpecs), len(expected))
+		t.Errorf("AllFeatureSpecs has %d entries, expected %d — add/remove from expected slice",
+			len(backend.AllFeatureSpecs), len(expected))
 	}
 }
