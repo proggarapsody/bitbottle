@@ -237,6 +237,9 @@ func ClassifyHTTPError(host string, err *HTTPError) *DomainError {
 	case 400, 422:
 		de.Kind = ErrInvalidRequest
 		de.Code = CodeInvalidRequest
+	case 410:
+		de.Kind = ErrEndpointDeprecated
+		de.Code = CodeEndpointDeprecated
 	default:
 		if err.StatusCode >= 500 {
 			de.Kind = ErrTransport
