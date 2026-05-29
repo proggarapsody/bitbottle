@@ -110,8 +110,12 @@ func (c *Client) DeleteRepo(ns, slug string) error {
 }
 
 func (c *Client) RenameRepo(ns, slug, newName string) (backend.Repository, error) {
-	body := map[string]string{"name": newName}
+	type renameBody struct {
+		Name string `json:"name"`
+	}
+	body := renameBody{Name: newName}
 	var w servergen.RestRepository
+	// OCC: not required — rename PUT does not version entity
 	if err := c.putJSON(fmt.Sprintf("/projects/%s/repos/%s", ns, slug), body, &w); err != nil {
 		return backend.Repository{}, err
 	}
