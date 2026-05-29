@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.127.1](https://github.com/proggarapsody/bitbottle/compare/v1.127.0...v1.127.1) (2026-05-29)
+
+
+### Bug Fixes
+
+* **workspace:** wire HTTP 410 → ErrEndpointDeprecated; add SearchWorkspaces path test ([c528384](https://github.com/proggarapsody/bitbottle/commit/c528384bcaad5387ff626c8b6afd6ce085e62d47))
+
 ## [1.127.0](https://github.com/proggarapsody/bitbottle/compare/v1.126.2...v1.127.0) (2026-05-29)
 
 
