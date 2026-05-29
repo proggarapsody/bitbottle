@@ -989,16 +989,20 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 				},
 			}),
 		},
-		// GET /workspaces — used by workspace search
+		// GET /user/permissions/workspaces — used by workspace list/search (CHANGE-2770: /workspaces deprecated)
 		{
 			Method:     http.MethodGet,
-			PathSuffix: "/workspaces",
+			PathSuffix: "/user/permissions/workspaces",
 			Status:     http.StatusOK,
 			Body: testhelpers.CloudPagedResponse([]any{
-				map[string]any{"uuid": "{ws-uuid-1}", "slug": "myworkspace", "name": "My Workspace",
-					"links": map[string]any{"html": map[string]any{"href": "https://bitbucket.org/myworkspace/"}}},
-				map[string]any{"uuid": "{ws-uuid-2}", "slug": "otherws", "name": "Other WS",
-					"links": map[string]any{"html": map[string]any{"href": "https://bitbucket.org/otherws/"}}},
+				map[string]any{"permission": "owner", "workspace": map[string]any{
+					"uuid": "{ws-uuid-1}", "slug": "myworkspace", "name": "My Workspace",
+					"links": map[string]any{"html": map[string]any{"href": "https://bitbucket.org/myworkspace/"}},
+				}},
+				map[string]any{"permission": "member", "workspace": map[string]any{
+					"uuid": "{ws-uuid-2}", "slug": "otherws", "name": "Other WS",
+					"links": map[string]any{"html": map[string]any{"href": "https://bitbucket.org/otherws/"}},
+				}},
 			}),
 		},
 		// GET branch-restriction by ID — used by branch-rule update (fetch-first)

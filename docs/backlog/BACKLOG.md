@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| **CLOUD-DISCOVERY** | **Onboarding-blocking:** `workspace list` and `workspace search` return HTTP 410 — Atlassian deprecated `/2.0/workspaces` (CHANGE-2770). Migrate to `/2.0/user/permissions/workspaces`. Fresh users currently have no in-tool way to find their workspace slug (MCP-01, MCP-02, MCP-03). | Cloud | 1 | ✅ P0 |
 | **SCRIPT-TRUST** | **Headline CLI fix:** scripts cannot trust bitbottle's contract surface — audit exit-code discipline (BB-12); unify `-R` flag + ref-parser across all commands (BB-13, BB-14). See [audit](../audits/cli-comparison-2026-05-27.md). | Both | 3 | ✅ P0 |
 | **FMT-CONTRACT** | Formatter middleware consistency: `--jq` must error (or work) the same on every command; `--template` trailing newline; "not found" hint wording (BB-17, BB-18, BB-19); restore dropped DTO fields in `user view --json` (MCP-15). | Both | 1.25 | ✅ P0 |
 | **MCP-INPUT-VALIDATION** | MCP arg validators are inconsistent: wrong-type `id` reports "missing" (MCP-06); `id=0` falsely "missing" (MCP-07); negative ids reach API (MCP-08); empty string `""` in `merge_pr` strategy enum (MCP-09); asymmetric inline-anchor checks on `add_pr_comment` (MCP-10); no client-side hash format check on `add_commit_comment` (MCP-11); malformed branch names accepted (MCP-12); `update_pr` no-op reaches API (MCP-13); `compare_refs.repo` rejects 1-seg but accepts 3-seg (MCP-14). | Both | 2.5 | ✅ P1 |
@@ -3863,32 +3862,6 @@ Pick one:
 - [ ] `.txtar` script proving 3-positional usage works.
 - [ ] README + `skills/SKILL.md` updated with new usage examples.
 - [ ] Migration note in CHANGELOG.
-
----
-
-### CLOUD-DISCOVERY — Migrate off deprecated `/2.0/workspaces` (MCP-01, MCP-02, MCP-03)
-
-**Status:** ✅ — sourced from the 2026-05-27 MCP sweep (Phase 3).
-
-**Why P0:** Atlassian deprecated `GET /2.0/workspaces` under CHANGE-2770; the endpoint returns `HTTP 410 Gone`. bitbottle's `ListWorkspaces` and `SearchWorkspaces` both hit this URL (`api/cloud/workspaces.go:26` and `:60`), so **every `bitbottle workspace list` and `bitbottle workspace search` invocation 410s** today. The migration target is `GET /2.0/user/permissions/workspaces` (which still returns the workspace objects, wrapped under `value[].workspace`). The downstream impact is bigger than the surface fix — with both discovery commands broken, a fresh user with valid auth has **no in-tool path to find their workspace slug**, and every Cloud command requires a slug. The MCP server inherits the same blindness. Verified live: during Phase 3 the tester (with valid auth) couldn't discover the workspace slug `proggarapsody_main` through any bitbottle command, and only found it by inspecting an earlier report header.
-
-**Shape:**
-
-1. **Switch endpoint** — change the path in `ListWorkspaces` from `/workspaces` to `/user/permissions/workspaces`.
-2. **Adjust the unmarshal struct** — the new response wraps each workspace under `value[].workspace`, and adds a `permission` field. Either update the existing `cloudPagedResponse[CloudWorkspace]` decoder to dereference `.workspace`, or introduce a new `CloudUserWorkspacePermission` DTO with a `.Workspace` field and a converter.
-3. **Same surgery on `SearchWorkspaces`** — the `q=slug~"..."` query param syntax still works against the new endpoint (server-side filtering documented).
-4. **Contract test against a recorded 410** — a `httptest` server returning 410 on `/workspaces` should make the test fail before the fix.
-5. **Errfmt catalogue entry for HTTP 410** — current behavior is to render Atlassian's raw "CHANGE-2770 - Functionality has been deprecated" string. Add a typed `ErrEndpointDeprecated` so future deprecations get a clean message and a doc link.
-
-**Definition of Done:**
-
-- [ ] `api/cloud/workspaces.go` switched to `/2.0/user/permissions/workspaces` on both `ListWorkspaces` and `SearchWorkspaces`.
-- [ ] Cloud-gen DTO regenerated (or hand-written) for `UserWorkspacePermission`.
-- [ ] Adapter test: feed a recorded `/2.0/user/permissions/workspaces` response, assert correct domain `Workspace` slice.
-- [ ] Live wire test: `bitbottle workspace list` returns ≥1 workspace for the test account.
-- [ ] `.txtar` for the CLI command verifying it does NOT 410 anymore.
-- [ ] New `ErrEndpointDeprecated` in `api/backend/errors.go` + catalogue entry in errfmt + `AllCodes` slice — caught by the existing catalogue test.
-- [ ] CHANGELOG note + skills/SKILL.md sentence reminding agents that workspace discovery now works.
 
 ---
 

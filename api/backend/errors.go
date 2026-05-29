@@ -28,6 +28,9 @@ var (
 	ErrConflict          = errors.New("conflict")
 	ErrTransport         = errors.New("transport error")
 	ErrInvalidRequest    = errors.New("invalid request")
+	// ErrEndpointDeprecated is returned when a Bitbucket API endpoint returns
+	// HTTP 410 Gone indicating the endpoint has been removed (e.g. CHANGE-2770).
+	ErrEndpointDeprecated = errors.New("endpoint deprecated")
 )
 
 // ErrorCode is a stable, dotted token identifying a specific user-visible
@@ -73,6 +76,9 @@ const (
 
 	// request cluster — malformed or invalid input
 	CodeInvalidRequest ErrorCode = "request.invalid"
+
+	// endpoint cluster — API endpoint removed or deprecated
+	CodeEndpointDeprecated ErrorCode = "endpoint.deprecated"
 )
 
 // AllCodes lists every published ErrorCode. The errfmt test suite iterates
@@ -99,6 +105,7 @@ var AllCodes = []ErrorCode{
 	CodeNetworkTLSUnknownAuthority,
 	CodeTransportTimeout,
 	CodeInvalidRequest,
+	CodeEndpointDeprecated,
 }
 
 // DomainError wraps an underlying cause with structured context for renderers

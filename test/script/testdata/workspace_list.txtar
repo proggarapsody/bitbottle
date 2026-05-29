@@ -1,0 +1,5 @@
+# workspace list — basic listing via /user/permissions/workspaces.
+bb-fake cloud
+bitbottle workspace list -k
+stdout 'myworkspace'
+stdout 'otherws'
