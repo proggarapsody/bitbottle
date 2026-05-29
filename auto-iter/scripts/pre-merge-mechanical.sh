@@ -94,18 +94,23 @@ if git ls-files | grep -qE '(\.DS_Store|\.log$|coverage\.out)'; then
   add_finding "3" "artifact_tracked" "tracked .DS_Store / *.log / coverage.out files present"
 fi
 
-# === §4 BACKLOG.md flip isolation check ===
-# If any commit in the range touches ONLY BACKLOG.md (nothing else), that is the
-# "separate chore PR" anti-pattern. The BACKLOG flip must land in the same commit
-# as the feat work. See iteration-cycle §4 and quickref anti-patterns.
+# === §4 BACKLOG/SHIPPED isolation check ===
+# Reorg (2026-05-29): shipping a scope is a MOVE from docs/backlog/BACKLOG.md to
+# docs/backlog/SHIPPED.md, performed in the same commit as the feat work. So a
+# commit that touches ONLY one of those files (and nothing else) is the
+# "separate chore PR" anti-pattern. The move must land in the same commit as the
+# feat work. See iteration-cycle §4 and quickref anti-patterns.
 if git rev-parse --verify --quiet origin/main >/dev/null && [[ "$branch" != "main" ]]; then
   while IFS= read -r sha; do
     [[ -z "$sha" ]] && continue
     files_in_commit=$(git diff-tree --no-commit-id -r --name-only "$sha" 2>/dev/null || true)
     file_count=$(printf '%s\n' "$files_in_commit" | grep -c '[^[:space:]]' || true)
-    if [[ "$file_count" -eq 1 ]] && printf '%s\n' "$files_in_commit" | grep -qxF "BACKLOG.md"; then
-      add_finding "4" "backlog_flip_isolated" \
-        "commit $sha touches only BACKLOG.md — the status flip must land in the same commit as the feat work, not a standalone chore commit"
+    if [[ "$file_count" -eq 1 ]]; then
+      if printf '%s\n' "$files_in_commit" | grep -qxE "(docs/backlog/BACKLOG\.md|docs/backlog/SHIPPED\.md|BACKLOG\.md)"; then
+        only=$(printf '%s\n' "$files_in_commit" | head -1)
+        add_finding "4" "backlog_flip_isolated" \
+          "commit $sha touches only $only — the BACKLOG→SHIPPED move must land in the same commit as the feat work, not a standalone chore commit"
+      fi
     fi
   done < <(git log origin/main..HEAD --format='%H' 2>/dev/null || true)
 fi

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Pick the next open scope from BACKLOG.md's ## Backlog table.
+# Pick the next open scope from docs/backlog/BACKLOG.md's ## Backlog table.
 #
 # Reads:
-#   BACKLOG.md
+#   docs/backlog/BACKLOG.md  (queue — unshipped scopes only after 2026-05-29 reorg)
 #
 # Emits:
 #   {"slug":"WORKSPACE-MEMBERS","scope_name":"Workspace Members",
@@ -22,7 +22,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$DIR/_common.sh"
 
 cd "$(repo_root)"
-BACKLOG_FILE="BACKLOG.md"
+BACKLOG_FILE="docs/backlog/BACKLOG.md"
 
 if [[ ! -f "$BACKLOG_FILE" ]]; then
   halt "backlog_missing" "$BACKLOG_FILE not found"

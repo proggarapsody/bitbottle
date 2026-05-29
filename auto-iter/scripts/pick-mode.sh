@@ -3,7 +3,7 @@
 #
 # Reads:
 #   .claude/auto-iter/cycles.jsonl  (cycle counter + brainstorm history)
-#   BACKLOG.md                       (open scope count)
+#   docs/backlog/BACKLOG.md          (open scope count — queue, post-reorg)
 #
 # Emits:
 #   {"cycle":N,"mode":"iteration|architecture|brainstorm|stop",
@@ -11,7 +11,7 @@
 #
 # Algorithm (canonical — see docs/workflows/iteration-cycle/quickref.md § Model tier per phase):
 #   counter = max(cycle) over non-skip rows, +1
-#   open    = grep 🔲 in BACKLOG.md ## Backlog table
+#   open    = grep 🔲 in docs/backlog/BACKLOG.md ## Backlog table
 #   empties = consecutive brainstorm_added_0 rows from the tail
 #
 #   open==0 AND empties>=3            -> stop
@@ -26,7 +26,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$(repo_root)"
 
 CYCLES_FILE=".claude/auto-iter/cycles.jsonl"
-BACKLOG_FILE="BACKLOG.md"
+BACKLOG_FILE="docs/backlog/BACKLOG.md"
 
 # --- counter: max cycle over rows that are NOT skip_in_progress ---
 counter=1

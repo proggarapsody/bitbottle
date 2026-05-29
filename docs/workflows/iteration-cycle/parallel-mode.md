@@ -46,7 +46,7 @@ that every scope makes) are:
 - `api/backend/types.go` (new domain types)
 - `api/backend/host_unsupported_test.go` (capability-gating coverage)
 - `README.md` (new sections, additive)
-- `BACKLOG.md` (status flips)
+- `docs/backlog/BACKLOG.md` (row removals) + `docs/backlog/SHIPPED.md` (entries appended; see [SHIPPED.md](../../backlog/SHIPPED.md) for the format)
 
 These conflict in every parallel run. Resolution rule for **all** of
 them is **union — both sides remain.** Reviewers and merging agents

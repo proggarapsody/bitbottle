@@ -13,6 +13,7 @@ STUBDIR=$(mktemp -d)
 trap "rm -rf '$TMPDIR' '$STUBDIR'" EXIT
 cd "$TMPDIR"
 git init -q -b main
+mkdir -p docs/backlog
 
 # Programmable gh stub: reads from STUB_PRS env var
 cat > "$STUBDIR/gh" <<'GH'
@@ -23,7 +24,7 @@ GH
 chmod +x "$STUBDIR/gh"
 export PATH="$STUBDIR:$PATH"
 
-cat > BACKLOG.md <<'MD'
+cat > docs/backlog/BACKLOG.md <<'MD'
 ## Backlog
 | ID | Scope | Commands | Backends | Tier | Status |
 |---|---|---|---|---|---|
