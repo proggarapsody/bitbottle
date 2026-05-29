@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.125.0](https://github.com/proggarapsody/bitbottle/compare/v1.124.0...v1.125.0) (2026-05-26)
+
+
+### Features
+
+* **pipeline:** add pipeline oidc config and keys commands (Cloud) ([22717de](https://github.com/proggarapsody/bitbottle/commit/22717de6d78525d80c50d675fbb6e74e9a8347f8))
+
 ## [1.124.0](https://github.com/proggarapsody/bitbottle/compare/v1.123.0...v1.124.0) (2026-05-26)
 
 
