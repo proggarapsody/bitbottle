@@ -110,6 +110,21 @@ func TestCloudClient_ListProjects_IssuesCorrectPath(t *testing.T) {
 	assert.Equal(t, "/workspaces/acme/projects", gotPath)
 }
 
+func TestCloudClient_SearchWorkspaces_IssuesCorrectPath(t *testing.T) {
+	t.Parallel()
+	var gotPath string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.SearchWorkspaces(backend.WorkspaceSearchOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, "/user/permissions/workspaces", gotPath)
+}
+
 func TestCloudClient_SearchWorkspaces_NoFilters(t *testing.T) {
 	t.Parallel()
 	var gotQuery string
