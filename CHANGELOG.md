@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.126.2](https://github.com/proggarapsody/bitbottle/compare/v1.126.1...v1.126.2) (2026-05-29)
+
+
+### Bug Fixes
+
+* **server:** OCC-audit — ban map literal bodies + contract test ([2ee6d6f](https://github.com/proggarapsody/bitbottle/commit/2ee6d6fdc680569ccd817fd4631f95a1c9b7bf02)), closes [#529](https://github.com/proggarapsody/bitbottle/issues/529)
+
 ## [1.126.1](https://github.com/proggarapsody/bitbottle/compare/v1.126.0...v1.126.1) (2026-05-29)
 
 
