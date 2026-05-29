@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.126.0](https://github.com/proggarapsody/bitbottle/compare/v1.125.0...v1.126.0) (2026-05-29)
+
+
+### Features
+
+* **host:** add host info command (Cloud + Server) ([41ec156](https://github.com/proggarapsody/bitbottle/commit/41ec156bf51e3c9639f5cf7f1cec7870672a2f08))
+
 ## [1.125.0](https://github.com/proggarapsody/bitbottle/compare/v1.124.0...v1.125.0) (2026-05-26)
 
 
