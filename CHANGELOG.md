@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.127.0](https://github.com/proggarapsody/bitbottle/compare/v1.126.2...v1.127.0) (2026-05-29)
+
+
+### Features
+
+* **workspace:** migrate workspace list/search to /user/permissions/workspaces ([1584b12](https://github.com/proggarapsody/bitbottle/commit/1584b1201128ddff8fd56b6768f5c6573810f05e))
+
 ## [1.126.2](https://github.com/proggarapsody/bitbottle/compare/v1.126.1...v1.126.2) (2026-05-29)
 
 
