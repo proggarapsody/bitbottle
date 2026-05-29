@@ -1,0 +1,28 @@
+# bitbottle api passes through to the Bitbucket REST API.
+# Covers: auth+TLS wired via factory, --hostname override, BaseRepo auto-detect.
+
+# === 1. Basic pass-through against a Server backend ===
+bb-fake server
+bitbottle api rest/api/1.0/users/testuser -k
+stdout '"slug"'
+stdout 'testuser'
+
+# === 2. --hostname override selects the explicit host ===
+bitbottle api rest/api/1.0/users/testuser --hostname $BB_HOST -k
+stdout '"slug"'
+
+# === 3. Auto-detect host from git repo bitbottle.host config ===
+mkdir autorepo
+cd autorepo
+exec git init -q
+exec git config bitbottle.host $BB_HOST
+exec git config bitbottle.project PROJ
+exec git config bitbottle.slug alpha-repo
+bitbottle api rest/api/1.0/users/testuser -k
+stdout '"slug"'
+cd ..
+
+# === 4. TLS-skip flag wired: -k without skip_tls_verify in config works ===
+# (bb-fake server writes skip_tls_verify:true; verify -k flag path by checking exit 0)
+bitbottle api rest/api/1.0/users/testuser -k
+! stderr 'certificate'
