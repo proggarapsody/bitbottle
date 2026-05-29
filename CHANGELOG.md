@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.126.1](https://github.com/proggarapsody/bitbottle/compare/v1.126.0...v1.126.1) (2026-05-29)
+
+
+### Bug Fixes
+
+* **api:** add factory-parity script test + improve --hostname docs ([44d7b20](https://github.com/proggarapsody/bitbottle/commit/44d7b20478e30baf73274c4f88c6f9a14056e38f))
+
 ## [1.126.0](https://github.com/proggarapsody/bitbottle/compare/v1.125.0...v1.126.0) (2026-05-29)
 
 
