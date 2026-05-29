@@ -33,7 +33,12 @@ func (c *Client) GetHostInfo() (backend.HostInfo, error) {
 		displayName = "Bitbucket Server"
 	}
 
-	features := supportedFeatures(false)
+	var features []string
+	for _, spec := range backend.AllFeatureSpecs {
+		if spec.ServerSupport {
+			features = append(features, string(spec.Feature))
+		}
+	}
 
 	return backend.HostInfo{
 		BackendType:       backendType,
@@ -43,19 +48,4 @@ func (c *Client) GetHostInfo() (backend.HostInfo, error) {
 		DisplayName:       displayName,
 		SupportedFeatures: features,
 	}, nil
-}
-
-// supportedFeatures returns the Feature constant strings from AllFeatureSpecs
-// where the given backend supports it.
-// isCloud=true → CloudSupport==true entries; isCloud=false → ServerSupport==true entries.
-func supportedFeatures(isCloud bool) []string {
-	var out []string
-	for _, spec := range backend.AllFeatureSpecs {
-		if isCloud && spec.CloudSupport {
-			out = append(out, string(spec.Feature))
-		} else if !isCloud && spec.ServerSupport {
-			out = append(out, string(spec.Feature))
-		}
-	}
-	return out
 }
