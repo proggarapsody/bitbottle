@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.127.2](https://github.com/proggarapsody/bitbottle/compare/v1.127.1...v1.127.2) (2026-05-31)
+
+
+### Bug Fixes
+
+* **cli:** SCRIPT-TRUST — exit codes + -R unification + ref parser ([8bdc4f2](https://github.com/proggarapsody/bitbottle/commit/8bdc4f2954f6858680bfa7e230382d3f4fa8ef72))
+
 ## [1.127.1](https://github.com/proggarapsody/bitbottle/compare/v1.127.0...v1.127.1) (2026-05-29)
 
 
