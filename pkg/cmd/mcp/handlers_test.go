@@ -67,6 +67,17 @@ func extractText(t *testing.T, result *mcplib.CallToolResult) string {
 	return text.Text
 }
 
+// extractTextAt returns the text of the i-th content block, for results that
+// carry more than one block (e.g. a deprecation note prepended to the body).
+func extractTextAt(t *testing.T, result *mcplib.CallToolResult, i int) string {
+	t.Helper()
+	require.NotNil(t, result)
+	require.Greater(t, len(result.Content), i)
+	text, ok := result.Content[i].(mcplib.TextContent)
+	require.True(t, ok)
+	return text.Text
+}
+
 // ---- list_hosts ----
 
 func TestListHosts_ReturnsSingleHost(t *testing.T) {

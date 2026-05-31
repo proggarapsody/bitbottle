@@ -10,11 +10,7 @@ import (
 
 func (h *handlers) getRepoPRSettings(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
-	project, err := requireString(req, "project")
-	if err != nil {
-		return errResultErr(err), nil
-	}
-	repo, err := requireString(req, "repo")
+	project, slug, deprecated, err := repoFromProjectSlugOrProjectRepo(req)
 	if err != nil {
 		return errResultErr(err), nil
 	}
@@ -28,20 +24,20 @@ func (h *handlers) getRepoPRSettings(_ context.Context, req mcplib.CallToolReque
 		return errResultErr(err), nil
 	}
 
-	settings, err := prc.GetRepoPRSettings(project, repo)
+	settings, err := prc.GetRepoPRSettings(project, slug)
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	return jsonResult(settings)
+	res, err := jsonResult(settings)
+	if err != nil {
+		return res, err
+	}
+	return withDeprecation(res, deprecated), nil
 }
 
 func (h *handlers) setRepoPRSettings(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
-	project, err := requireString(req, "project")
-	if err != nil {
-		return errResultErr(err), nil
-	}
-	repo, err := requireString(req, "repo")
+	project, slug, deprecated, err := repoFromProjectSlugOrProjectRepo(req)
 	if err != nil {
 		return errResultErr(err), nil
 	}
@@ -100,9 +96,13 @@ func (h *handlers) setRepoPRSettings(_ context.Context, req mcplib.CallToolReque
 		return errResultErr(err), nil
 	}
 
-	settings, err := prc.UpdateRepoPRSettings(project, repo, in)
+	settings, err := prc.UpdateRepoPRSettings(project, slug, in)
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	return jsonResult(settings)
+	res, err := jsonResult(settings)
+	if err != nil {
+		return res, err
+	}
+	return withDeprecation(res, deprecated), nil
 }

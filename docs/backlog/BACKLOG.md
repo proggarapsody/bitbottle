@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| **MCP-TAXONOMY** | Tool catalog consistency: collapse three repo-arg shapes into one (`{project, slug}` is dominant — migrate `compare_refs`/`list_pr_commits`/`list_pr_files` away from `{repo}` and `set/get_repo_pr_settings` from `{project, repo}`) (MCP-04); refuse unknown hostnames instead of silently falling back to Server URL paths (MCP-05); add structured host-gating metadata so AI clients can filter Server/Cloud-only tools instead of relying on description prose (MCP-16). | Both | 1.5 | ✅ P1 |
 | **PR-GUARDS** | PR state-machine pre-check (`pr approve` silently succeeds on DECLINED — BB-07, BB-20); client-side `--state` enum validation (BB-11, BB-21). | Both | 1.5 | ✅ P1 |
 | **CLOUD-WIRE** | Cloud API drift fixes: `/permissions/` → `/permissions-config/` (BB-08); `/commits/` → `/commit/` for commit comments (BB-09); `pipeline trigger` response struct (BB-10). | Cloud | 1.5 | ✅ P1 |
 | **REF-UX** | `branch create`/`tag create` `--start-at` ergonomics — promote to 3rd positional or default to HEAD (BB-15, BB-16). | Both | 0.5 | ✅ P2 |
@@ -3813,34 +3812,6 @@ Pick one:
 - [ ] `.txtar` script proving 3-positional usage works.
 - [ ] README + `skills/SKILL.md` updated with new usage examples.
 - [ ] Migration note in CHANGELOG.
-
----
-
-### MCP-TAXONOMY — Unify tool catalog (MCP-04, MCP-05, MCP-16)
-
-**Status:** ✅ — sourced from the 2026-05-27 MCP sweep (Phase 3).
-
-**Why P1:** The 254-tool catalog has three structural inconsistencies that force AI clients to special-case bitbottle:
-
-- **MCP-04** Three competing repo-arg shapes for the same concept: `{project, slug}` (15+ tools, dominant), `{repo}` as `WORKSPACE/REPO` (compare_refs, list_pr_commits, list_pr_files), and `{project, repo}` (set/get_repo_pr_settings). Agents that learn the convention from `get_pr` then fail on `compare_refs`.
-- **MCP-05** Unknown hostnames silently fall back to Bitbucket Server URL paths (`/rest/api/1.0/...`) rather than rejecting with "unknown host" — verified with `hostname=not-a-real-host.example`. Typos in `hostname` produce confusing dial errors against bogus Server URLs.
-- **MCP-16** Server-only tools (e.g., `set_repo_pr_settings`, branch protection set, group-related ops) are registered for every host. The "this is Server-only" signal is buried in description prose. An AI client picking tools by name + first sentence will pick a Cloud-broken tool and discover it only at runtime via `host.unsupported`.
-
-**Shape:**
-
-1. **Pick `{project, slug}` as the canonical repo-arg shape** (it's the majority and matches the CLI's `PROJECT/REPO`). Migrate `compare_refs`, `list_pr_commits`, `list_pr_files` to `{project, slug}`; migrate `get/set_repo_pr_settings` from `{project, repo}` to `{project, slug}`. Keep one release of back-compat (accept the old shape with a deprecation warning in the tool result).
-2. **Reject unknown hostnames at config load** — when `hostname` is provided but isn't in `~/.config/bitbottle/hosts.yml`, return a typed error before any HTTP is attempted. Don't infer Server vs Cloud from URL shape on unknown hosts.
-3. **Add `meta.backends: ["server"|"cloud"]` to every tool registration**, exposed via an `_meta` field on the `tools/list` response (MCP allows arbitrary `_meta`). Existing prose descriptions stay for human readers. At call time, if the configured host's backend isn't in the tool's allowlist, return `host.unsupported` with the allowed list in the structured error.
-4. **Optional Phase 2:** filter the `tools/list` response by backend when a single hostname is active — clients see only the tools that can actually run. Behind a `BITBOTTLE_MCP_HOST_FILTER=1` env flag so existing clients aren't surprised.
-
-**Definition of Done:**
-
-- [ ] Repo-arg shape unified to `{project, slug}` across all 18+ tools currently using alternates; back-compat warnings in place.
-- [ ] `pkg/cmd/mcp/tools_*.go` files emit `_meta.backends` in every `AddTool` call.
-- [ ] Unknown-hostname returns `ErrUnknownHost` with the list of configured hosts in the error envelope (sourced from `hosts.yml`).
-- [ ] Adapter test: registering a tool with `backends: ["server"]` and calling it with `hostname=bitbucket.org` returns `host.unsupported` *before* HTTP is attempted (currently it makes the HTTP call first).
-- [ ] Regression test: schema-shape grep — no tool definition uses `repo` or `{project, repo}` for the repo arg.
-- [ ] Skills/SKILL.md updated with the unified arg-shape convention.
 
 ---
 

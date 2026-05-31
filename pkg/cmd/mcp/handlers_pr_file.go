@@ -11,11 +11,7 @@ import (
 
 func (h *handlers) listPRFiles(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
-	repo, err := requireString(req, "repo")
-	if err != nil {
-		return errResultErr(err), nil
-	}
-	ns, slug, err := splitRepo(repo)
+	ns, slug, deprecated, err := repoFromProjectSlugOrRepo(req)
 	if err != nil {
 		return errResultErr(err), nil
 	}
@@ -39,5 +35,9 @@ func (h *handlers) listPRFiles(_ context.Context, req mcplib.CallToolRequest) (*
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	return jsonResult(files)
+	res, err := jsonResult(files)
+	if err != nil {
+		return res, err
+	}
+	return withDeprecation(res, deprecated), nil
 }

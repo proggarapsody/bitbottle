@@ -84,6 +84,10 @@ var catalogue = map[backend.ErrorCode]entry{
 		title: "`{{.Feature}}` is not available on {{.Host}}.",
 		hints: []string{"This command targets a different Bitbucket flavour. Run `bitbottle config get backend_type` to verify the host."},
 	},
+	backend.CodeHostUnknown: {
+		title: "Unknown host {{.Host}}.",
+		hints: []string{"This host is not configured. Run `bitbottle auth status` to list configured hosts, or `bitbottle auth login --hostname {{.Host}}` to add it."},
+	},
 	backend.CodeNetworkTLSUnknownAuthority: {
 		title: "TLS verification failed for {{.Host}}.",
 		hints: []string{"For self-signed CAs, pass `-k` or set `skip_tls_verify: true` in your host config."},

@@ -13,22 +13,30 @@ func registerPRCommitTools(s *mcpserver.MCPServer, h *handlers) {
 	optHostname := mcplib.WithString("hostname",
 		mcplib.Description("Bitbucket hostname (omit when only one host is configured)"),
 	)
-	reqRepo := mcplib.WithString("repo",
-		mcplib.Description("Repository as PROJECT/REPO or WORKSPACE/REPO"),
-		mcplib.Required(),
+	optProject := mcplib.WithString("project",
+		mcplib.Description("Project key (Server) or workspace slug (Cloud)"),
+	)
+	optSlug := mcplib.WithString("slug",
+		mcplib.Description("Repository slug"),
+	)
+	optLegacyRepo := mcplib.WithString("repo",
+		mcplib.Description("DEPRECATED: use project + slug. Repository as PROJECT/REPO or WORKSPACE/REPO."),
 	)
 	reqPRID := mcplib.WithNumber("pr_id",
 		mcplib.Description("Pull request ID"),
 		mcplib.Required(),
 	)
 
-	s.AddTool(
+	addGatedTool(s, h,
 		mcplib.NewTool("list_pr_commits",
 			mcplib.WithDescription("List commits in a pull request"),
 			optHostname,
-			reqRepo,
+			optProject,
+			optSlug,
+			optLegacyRepo,
 			reqPRID,
 		),
+		backendsBoth,
 		h.listPRCommits,
 	)
 }

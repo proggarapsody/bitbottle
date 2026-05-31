@@ -29,7 +29,7 @@ func TestGetRepoPRSettings_Success(t *testing.T) {
 	h := newHandlersWithFake(t, singleHostConfig, fake)
 	result, err := h.getRepoPRSettings(context.Background(), makeReq(map[string]any{
 		"project": "MYPROJ",
-		"repo":    "my-repo",
+		"slug":    "my-repo",
 	}))
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -38,11 +38,34 @@ func TestGetRepoPRSettings_Success(t *testing.T) {
 	assert.Equal(t, "my-repo", gotSlug)
 }
 
+// MCP-04: legacy {project, repo} shape still works, with a deprecation note.
+func TestGetRepoPRSettings_LegacyRepoShape_StillWorksWithDeprecation(t *testing.T) {
+	t.Parallel()
+	var gotSlug string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetRepoPRSettingsFn: func(ns, slug string) (backend.RepoPRSettings, error) {
+			gotSlug = slug
+			return backend.RepoPRSettings{RequiredApprovers: 2}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getRepoPRSettings(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ",
+		"repo":    "my-repo",
+	}))
+	require.NoError(t, err)
+	require.False(t, result.IsError)
+	assert.Equal(t, "my-repo", gotSlug)
+	require.Len(t, result.Content, 2)
+	assert.Contains(t, extractTextAt(t, result, 0), "DEPRECATION")
+}
+
 func TestGetRepoPRSettings_MissingProject(t *testing.T) {
 	t.Parallel()
 	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{T: t})
 	result, err := h.getRepoPRSettings(context.Background(), makeReq(map[string]any{
-		"repo": "my-repo",
+		"slug": "my-repo",
 	}))
 	require.NoError(t, err)
 	assertErrorResult(t, result, "project")
@@ -55,7 +78,7 @@ func TestGetRepoPRSettings_MissingRepo(t *testing.T) {
 		"project": "MYPROJ",
 	}))
 	require.NoError(t, err)
-	assertErrorResult(t, result, "repo")
+	assertErrorResult(t, result, "slug")
 }
 
 func TestSetRepoPRSettings_Success(t *testing.T) {
@@ -71,7 +94,7 @@ func TestSetRepoPRSettings_Success(t *testing.T) {
 	h := newHandlersWithFake(t, singleHostConfig, fake)
 	result, err := h.setRepoPRSettings(context.Background(), makeReq(map[string]any{
 		"project":            "MYPROJ",
-		"repo":               "my-repo",
+		"slug":               "my-repo",
 		"required_approvers": float64(3),
 		"merge_strategy":     "squash",
 	}))
@@ -89,7 +112,7 @@ func TestSetRepoPRSettings_NoFields_ReturnsError(t *testing.T) {
 	h := newHandlersWithFake(t, singleHostConfig, &testhelpers.FakeClient{T: t})
 	result, err := h.setRepoPRSettings(context.Background(), makeReq(map[string]any{
 		"project": "MYPROJ",
-		"repo":    "my-repo",
+		"slug":    "my-repo",
 	}))
 	require.NoError(t, err)
 	assertErrorResult(t, result, "no fields to update")
@@ -106,7 +129,7 @@ func TestSetRepoPRSettings_APIError(t *testing.T) {
 	h := newHandlersWithFake(t, singleHostConfig, fake)
 	result, err := h.setRepoPRSettings(context.Background(), makeReq(map[string]any{
 		"project":            "MYPROJ",
-		"repo":               "my-repo",
+		"slug":               "my-repo",
 		"required_approvers": float64(1),
 	}))
 	require.NoError(t, err)
