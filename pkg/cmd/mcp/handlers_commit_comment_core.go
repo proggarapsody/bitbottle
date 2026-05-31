@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/reactions"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/mcp/argval"
 )
 
 func (h *handlers) listCommitComments(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
@@ -127,9 +128,11 @@ func (h *handlers) addCommitComment(_ context.Context, req mcplib.CallToolReques
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	hash, err := requireString(req, "hash")
-	if err != nil {
-		return errResultErr(err), nil
+	// MCP-11: validate hash format client-side (hex, >= 7 chars) so "a" or
+	// "NOT_HEX" never reaches the Cloud API as a generic 404.
+	hash, hashErr := argval.Hash(req.GetArguments(), "hash", 7)
+	if hashErr != nil {
+		return errResultArg(hashErr), nil
 	}
 	body, err := requireString(req, "body")
 	if err != nil {
@@ -167,9 +170,9 @@ func (h *handlers) editCommitComment(_ context.Context, req mcplib.CallToolReque
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 	body, err := requireString(req, "body")
 	if err != nil {
@@ -202,9 +205,9 @@ func (h *handlers) deleteCommitComment(_ context.Context, req mcplib.CallToolReq
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)

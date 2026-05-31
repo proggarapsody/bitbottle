@@ -11,10 +11,12 @@ import (
 )
 
 // splitRepo splits a "WORKSPACE/REPO" string into (namespace, slug).
-// Returns an error when the string does not contain exactly one slash separator
-// or either part is empty.
+// Returns an error unless the string is exactly two non-empty slash-separated
+// segments. MCP-14: a 3-segment value like "bitbucket.org/proj/repo" used to
+// slip through (SplitN kept the tail in the slug); it is now rejected so
+// 1-segment and 3-segment inputs fail consistently.
 func splitRepo(repo string) (string, string, error) {
-	parts := strings.SplitN(repo, "/", 2)
+	parts := strings.Split(repo, "/")
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		return "", "", fmt.Errorf("repo must be in WORKSPACE/REPO format, got %q", repo)
 	}

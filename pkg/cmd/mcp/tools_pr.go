@@ -97,6 +97,7 @@ func registerPRTools(s *mcpserver.MCPServer, h *handlers) {
 			),
 			mcplib.WithString("strategy",
 				mcplib.Description("Merge strategy for immediate merge: merge, squash, rebase (default: server default)"),
+				mcplib.Enum("merge", "squash", "rebase"),
 			),
 			mcplib.WithBoolean("auto",
 				mcplib.Description("Queue PR for auto-merge when all checks pass instead of merging immediately"),

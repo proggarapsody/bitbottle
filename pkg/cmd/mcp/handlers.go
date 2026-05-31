@@ -10,6 +10,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/mcp/argval"
 	"github.com/proggarapsody/bitbottle/pkg/errfmt"
 )
 
@@ -71,6 +72,17 @@ type errorEnvelope struct {
 	Hints    []string `json:"hints,omitempty"`
 }
 
+// errResultArg renders a client-side argument-validation failure as a JSON
+// envelope carrying the dotted code, field, and offending value, so MCP
+// clients can branch on {code, field, got} without parsing prose. Falls
+// back to the plain message if marshalling somehow fails.
+func errResultArg(e *argval.Error) *mcplib.CallToolResult {
+	if data, mErr := json.Marshal(e); mErr == nil {
+		return mcplib.NewToolResultError(string(data))
+	}
+	return mcplib.NewToolResultError(e.Error())
+}
+
 func errResultErr(err error) *mcplib.CallToolResult {
 	var de *backend.DomainError
 	if errors.As(err, &de) {
@@ -123,6 +135,20 @@ func splitTrimmed(s, sep string) []string {
 		result = append(result, strings.TrimSpace(p))
 	}
 	return result
+}
+
+// requireIntArg extracts a required, positive integer argument (e.g. a PR
+// or comment id) via argval, distinguishing missing / wrong-type / negative
+// inputs. It returns a ready-to-return error result when validation fails.
+// Centralising this means every numeric-id tool gets the MCP-06/07/08 fixes
+// at once: explicit 0 with Min(1) is rejected as out-of-range (ids start at
+// 1), a string id reports a type error, and a missing key reports missing.
+func requireIntArg(req mcplib.CallToolRequest, key string) (int, *mcplib.CallToolResult) {
+	v, _, err := argval.Int(req.GetArguments(), key, argval.Required(), argval.Min(1))
+	if err != nil {
+		return 0, errResultArg(err)
+	}
+	return v, nil
 }
 
 func requireString(req mcplib.CallToolRequest, key string) (string, error) {

@@ -23,9 +23,9 @@ func (h *handlers) prSuggestionApply(_ context.Context, req mcplib.CallToolReque
 	if prID == 0 {
 		return errResult("missing required parameter: pr_id"), nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 	suggestionID := req.GetInt("suggestion_id", 0)
 	if suggestionID == 0 {

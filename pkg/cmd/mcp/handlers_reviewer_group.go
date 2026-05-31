@@ -75,9 +75,9 @@ func (h *handlers) addReviewerGroup(_ context.Context, req mcplib.CallToolReques
 }
 
 func (h *handlers) removeReviewerGroup(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id <= 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	rg, ns, slug, err := h.resolveReviewerGroupClient(req)
 	if err != nil {

@@ -70,9 +70,9 @@ func (h *handlers) addBranchRule(_ context.Context, req mcplib.CallToolRequest) 
 }
 
 func (h *handlers) deleteBranchRule(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id <= 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	br, ns, slug, err := h.resolveBranchRuleClient(req)
 	if err != nil {
@@ -85,9 +85,9 @@ func (h *handlers) deleteBranchRule(_ context.Context, req mcplib.CallToolReques
 }
 
 func (h *handlers) updateBranchRule(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id <= 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	br, ns, slug, err := h.resolveBranchRuleClient(req)
 	if err != nil {
