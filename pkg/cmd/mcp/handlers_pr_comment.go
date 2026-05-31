@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/reactions"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/mcp/argval"
 )
 
 func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
@@ -20,9 +21,9 @@ func (h *handlers) listPRComments(_ context.Context, req mcplib.CallToolRequest)
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
@@ -88,9 +89,9 @@ func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	body, err := requireString(req, "body")
 	if err != nil {
@@ -99,6 +100,12 @@ func (h *handlers) addPRComment(_ context.Context, req mcplib.CallToolRequest) (
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
 		return errResultErr(err), nil
+	}
+	// MCP-10: the inline anchor is symmetric — inline_path and inline_line
+	// must be supplied together. Previously only inline_path without
+	// inline_line was caught; inline_line without inline_path slipped through.
+	if anchorErr := argval.MutuallyRequired(req.GetArguments(), "inline_path", "inline_line"); anchorErr != nil {
+		return errResultArg(anchorErr), nil
 	}
 	in := backend.AddPRCommentInput{Text: body}
 	if inlinePath := req.GetString("inline_path", ""); inlinePath != "" {
@@ -140,13 +147,13 @@ func (h *handlers) editPRComment(_ context.Context, req mcplib.CallToolRequest) 
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 	body, err := requireString(req, "body")
 	if err != nil {
@@ -173,13 +180,13 @@ func (h *handlers) deletePRComment(_ context.Context, req mcplib.CallToolRequest
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
@@ -208,9 +215,9 @@ func (h *handlers) submitPRReview(_ context.Context, req mcplib.CallToolRequest)
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	action := req.GetString("action", "")
@@ -305,13 +312,13 @@ func (h *handlers) resolvePRComment(_ context.Context, req mcplib.CallToolReques
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 	client, err := h.resolveBackend(hostname)
 	if err != nil {

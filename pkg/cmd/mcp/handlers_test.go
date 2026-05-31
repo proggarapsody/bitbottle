@@ -1139,6 +1139,7 @@ func TestUpdatePR_BackendError_ReturnsErrorResult(t *testing.T) {
 		"project": "MYPROJ",
 		"slug":    "my-repo",
 		"id":      float64(7),
+		"title":   "New title",
 	}))
 	require.NoError(t, err)
 	assertErrorResult(t, result, "422")
@@ -2818,11 +2819,11 @@ func TestAddCommitComment_CreatesComment(t *testing.T) {
 	result, err := h.addCommitComment(context.Background(), makeReq(map[string]any{
 		"project": "MYPROJ",
 		"slug":    "my-repo",
-		"hash":    "abc123",
+		"hash":    "abc1234",
 		"body":    "hello comment",
 	}))
 	require.NoError(t, err)
-	assert.Equal(t, "abc123", gotHash)
+	assert.Equal(t, "abc1234", gotHash)
 	assert.Equal(t, "hello comment", gotBody)
 	assertJSONContains(t, result, "99", "hello comment")
 }
@@ -2833,7 +2834,7 @@ func TestAddCommitComment_MissingBody_ReturnsError(t *testing.T) {
 	result, err := h.addCommitComment(context.Background(), makeReq(map[string]any{
 		"project": "MYPROJ",
 		"slug":    "my-repo",
-		"hash":    "abc123",
+		"hash":    "abc1234",
 	}))
 	require.NoError(t, err)
 	assertErrorResult(t, result, "body")
@@ -2977,7 +2978,9 @@ func TestMergePR_InvalidStrategy_ReturnsError(t *testing.T) {
 		"project": "PROJ", "slug": "repo", "id": float64(1), "strategy": "invalid",
 	}))
 	require.NoError(t, err)
-	assertErrorResult(t, result, `invalid value "invalid" for strategy`)
+	// MCP-09: the allowed set no longer includes "" so the message lists
+	// only real strategies (no leading bare comma).
+	assertErrorResult(t, result, "must be one of merge, squash, rebase")
 }
 
 func TestMergePR_EmptyStrategy_IsValid(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/mcp/argval"
 )
 
 func (h *handlers) listPRs(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
@@ -49,9 +50,9 @@ func (h *handlers) getPR(_ context.Context, req mcplib.CallToolRequest) (*mcplib
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -117,18 +118,21 @@ func (h *handlers) mergePR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
-	strategy := req.GetString("strategy", "")
-	if err := validateEnum("strategy", strategy, "", "merge", "squash", "rebase"); err != nil {
-		return errResult(err.Error()), nil
+	// MCP-09: strategy is optional; empty means "use the server default".
+	// Only non-empty values are validated, and the allowed set never
+	// contains "" (so the error can't read "must be one of , merge, ...").
+	strategy, sErr := argval.EnumOneOf(req.GetArguments(), "strategy", []string{"merge", "squash", "rebase"})
+	if sErr != nil {
+		return errResultArg(sErr), nil
 	}
 	auto := req.GetBool("auto", false)
 	autoStrategy := req.GetString("auto_strategy", "merge")
-	if err := validateEnum("auto_strategy", autoStrategy, "merge", "squash", "rebase"); err != nil {
-		return errResult(err.Error()), nil
+	if asErr := validateEnum("auto_strategy", autoStrategy, "merge", "squash", "rebase"); asErr != nil {
+		return errResult(asErr.Error()), nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -160,9 +164,9 @@ func (h *handlers) approvePR(_ context.Context, req mcplib.CallToolRequest) (*mc
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -185,9 +189,9 @@ func (h *handlers) getPRDiff(_ context.Context, req mcplib.CallToolRequest) (*mc
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -211,9 +215,14 @@ func (h *handlers) updatePR(_ context.Context, req mcplib.CallToolRequest) (*mcp
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
+	}
+	// MCP-13: a no-op update (neither title nor body) is rejected client-side
+	// rather than round-tripping to the API.
+	if noOpErr := argval.OneOfRequired(req.GetArguments(), "title", "body"); noOpErr != nil {
+		return errResultArg(noOpErr), nil
 	}
 	title := req.GetString("title", "")
 	body := req.GetString("body", "")
@@ -242,9 +251,9 @@ func (h *handlers) declinePR(_ context.Context, req mcplib.CallToolRequest) (*mc
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -267,9 +276,9 @@ func (h *handlers) reopenPR(_ context.Context, req mcplib.CallToolRequest) (*mcp
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -296,9 +305,9 @@ func (h *handlers) unapprovePR(_ context.Context, req mcplib.CallToolRequest) (*
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -321,9 +330,9 @@ func (h *handlers) readyPR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -350,9 +359,9 @@ func (h *handlers) unreadyPR(_ context.Context, req mcplib.CallToolRequest) (*mc
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -379,9 +388,9 @@ func (h *handlers) requestReview(_ context.Context, req mcplib.CallToolRequest) 
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	reviewers, err := requireString(req, "reviewers")
 	if err != nil {

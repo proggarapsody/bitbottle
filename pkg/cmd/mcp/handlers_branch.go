@@ -6,6 +6,7 @@ import (
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/mcp/argval"
 )
 
 func (h *handlers) listBranches(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
@@ -46,9 +47,11 @@ func (h *handlers) createBranch(_ context.Context, req mcplib.CallToolRequest) (
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	name, err := requireString(req, "name")
-	if err != nil {
-		return errResultErr(err), nil
+	// MCP-12: reject Git-invalid branch names ("/", leading/trailing slashes,
+	// "..", control chars, etc.) client-side instead of forwarding to the API.
+	name, nameErr := argval.RefName(req.GetArguments(), "name")
+	if nameErr != nil {
+		return errResultArg(nameErr), nil
 	}
 	startAt, err := requireString(req, "start_at")
 	if err != nil {

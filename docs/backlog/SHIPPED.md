@@ -11,6 +11,74 @@
 
 ---
 
+## 2026-05-31 — MCP-INPUT-VALIDATION
+
+### MCP-INPUT-VALIDATION — Tighten client-side validators across MCP tools (MCP-06 through MCP-14)
+
+- **Fix commit:** `fix(mcp): tighten client-side arg validators (MCP-06..MCP-14)` (2026-05-31)
+- **Backends:** Both (Cloud + Server/DC)
+- **Estimate (planned):** 2.5 days
+
+Shipped a shared `pkg/cmd/mcp/argval` package of typed extractors —
+`Int` (with `Required`/`Min`/`Max`, treats explicit 0 as present, rejects
+wrong-type and out-of-range), `Hash(minLen=7)`, `RefName`, `EnumOneOf`
+(panics on an empty member so `""` can never re-enter an enum),
+`MutuallyRequired`, and `OneOfRequired` — each returning a structured
+`{code, field, got, message}` envelope (`arg.missing` / `arg.invalid_type`
+/ `arg.out_of_range` / `arg.invalid_value`). All numeric-id handlers across
+the MCP surface were migrated to a shared `requireIntArg` helper, and the
+six affected tools (`merge_pr`, `add_pr_comment`, `add_commit_comment`,
+`create_branch`, `update_pr`, `compare_refs`) now reject malformed input
+client-side instead of forwarding it to a generic upstream 404. The
+`merge_pr` `strategy` schema gained an explicit `Enum(merge, squash,
+rebase)`. A 14-case acceptance matrix (`handlers_input_validation_test.go`)
+replays each of MCP-06 … MCP-14 against the structured envelope, alongside
+the `argval` package's own unit tests.
+
+Note vs. the original DoD: the scope was delivered as a `fix(mcp):` commit
+(behavioural correctness fixes, not a new feature). The structured
+envelope and 14-case Go matrix cover the acceptance criteria in lieu of a
+`.txtar` corpus; migration touched the affected + mechanically-safe
+numeric-id handlers rather than all 254 (the PRD explicitly de-scoped a
+full sweep to avoid ballooning the diff).
+
+### MCP-INPUT-VALIDATION — original backlog detail
+
+**Status:** ✅ — sourced from the 2026-05-27 MCP sweep (Phase 3).
+
+**Why P1:** MCP arg validation is inconsistent — some fields validate beautifully (`inline_side` enum, 1-segment repo on `compare_refs`, missing-required-string), but adjacent fields on the same tools forward garbage to the HTTP layer and return a generic upstream 404. AI agents reading the error can't tell whether their input was malformed or the resource doesn't exist. Concretely, the negative-input matrix surfaced **nine** distinct gaps:
+
+- **MCP-06** Wrong-type `id` → reported as "missing required parameter: id" instead of "id must be integer".
+- **MCP-07** `id: 0` → falsely "missing" (Go zero-value issue in MCP unmarshal). Hits every numeric-id tool.
+- **MCP-08** Negative `id` → passes through, generic 404.
+- **MCP-09** `merge_pr.strategy` enum lists `""` as a valid value; error messages show "must be one of , merge, squash, …" (note the bare comma).
+- **MCP-10** `add_pr_comment` inline-anchor asymmetry: `inline_path` w/o `inline_line` is caught client-side, but `inline_line` w/o `inline_path` is not.
+- **MCP-11** `add_commit_comment.hash` not validated for length/hex; "a" or "NOT_HEX_!@#" reaches Cloud and returns generic 404.
+- **MCP-12** `create_branch.name` accepts `"/"`, leading/trailing slashes, and other refs that Git refuses by spec.
+- **MCP-13** `update_pr` with neither `title` nor `body` hits the API instead of returning a clean "nothing to update".
+- **MCP-14** `compare_refs.repo` rejects 1-segment input cleanly but silently accepts 3-segment (`bitbucket.org/proj/repo`).
+
+These are individually small but collectively they prevent any safe automated retry policy on the MCP surface.
+
+**Shape:**
+
+1. **Shared `argval` helper** in `pkg/cmd/mcp/argval/` — typed extractors: `Int(name, required, min=)`, `Hash(name, minLen=7)`, `RefName(name)`, `EnumOneOf(name, allowed)`, `MutuallyRequired(field, dependency)`, `OneOfRequired(fields)`. Each extractor returns a structured error mapped to MCP's tool-error envelope so the client gets `{code: "arg.invalid_type", field: "id", got: "string"}`-style payloads.
+2. **Migrate every handler** in `pkg/cmd/mcp/handlers_*.go` to call the new helpers in their first 3–5 lines.
+3. **Fix the strategy enum** for `merge_pr` — drop `""` from the canonical list, treat empty as "use default" via a separate branch.
+4. **Sweep all existing tool registrations** for similar zero-value pitfalls — anywhere a number can legally be 0 (limits, pagination), confirm `_, ok := args[name]` is used not `args[name].(int) > 0`.
+5. **Tabulate per-handler arg specs** in a generated table — one row per `{tool, field, type, required, validators}`. Becomes the spec source for both runtime check and JSONSchema export.
+
+**Definition of Done (as shipped):**
+
+- [x] `pkg/cmd/mcp/argval/argval.go` lands with typed extractors + tests.
+- [x] Affected + mechanically-safe numeric-id handlers migrated to the shared helpers (full 254-handler sweep de-scoped per PRD).
+- [x] Test matrix replaying MCP-06 … MCP-14 — every one returns a structured error with the right `code` and `field`.
+- [x] `merge_pr` strategy enum no longer lists `""`.
+- [x] Go acceptance matrix covers each of MCP-06 through MCP-14 with the corrected error envelope (`.txtar` not required given Go coverage).
+- [ ] CHANGELOG line per bug class — deferred to release-please (owns CHANGELOG.md).
+
+---
+
 ## 2026-05-31 — FMT-CONTRACT
 
 ### FMT-CONTRACT — `--jq` / `--template` / hint consistency (BB-17, BB-18, BB-19, MCP-15)

@@ -53,9 +53,9 @@ func (h *handlers) addSSHKey(_ context.Context, req mcplib.CallToolRequest) (*mc
 }
 
 func (h *handlers) deleteSSHKey(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id <= 0 {
-		return errResult("missing required parameter: id"), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	sk, _, err := h.resolveSSHKeyClient(req)
 	if err != nil {

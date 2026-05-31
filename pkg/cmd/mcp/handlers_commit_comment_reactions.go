@@ -23,9 +23,9 @@ func (h *handlers) listCommitCommentReactions(_ context.Context, req mcplib.Call
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 
 	client, err := h.resolveBackend(hostname)
@@ -60,9 +60,9 @@ func (h *handlers) addCommitCommentReaction(_ context.Context, req mcplib.CallTo
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 	emoji, err := requireString(req, "emoji")
 	if err != nil {
@@ -100,9 +100,9 @@ func (h *handlers) removeCommitCommentReaction(_ context.Context, req mcplib.Cal
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	commentID := req.GetInt("comment_id", 0)
-	if commentID == 0 {
-		return errResult("missing required parameter: comment_id"), nil
+	commentID, cidErr := requireIntArg(req, "comment_id")
+	if cidErr != nil {
+		return cidErr, nil
 	}
 	emoji, err := requireString(req, "emoji")
 	if err != nil {
