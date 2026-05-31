@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.127.4](https://github.com/proggarapsody/bitbottle/compare/v1.127.3...v1.127.4) (2026-05-31)
+
+
+### Bug Fixes
+
+* **mcp:** MCP-INPUT-VALIDATION — typed arg validators (MCP-06…14) ([a0d7758](https://github.com/proggarapsody/bitbottle/commit/a0d77584ad120ad93bd8b8ac203ec3946ecebac3))
+
 ## [1.127.3](https://github.com/proggarapsody/bitbottle/compare/v1.127.2...v1.127.3) (2026-05-31)
 
 
