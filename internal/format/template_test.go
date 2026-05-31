@@ -19,7 +19,19 @@ func TestWriteTemplate_RendersFields(t *testing.T) {
 	var buf bytes.Buffer
 	data := map[string]any{"id": 42, "title": "Fix auth"}
 	require.NoError(t, WriteTemplate(&buf, `{{.id}}: {{.title}}`, data))
-	assert.Equal(t, "42: Fix auth", buf.String())
+	// Output is newline-terminated so piped consumers get a clean line break.
+	assert.Equal(t, "42: Fix auth\n", buf.String())
+}
+
+// TestWriteTemplate_TrailingNewline is the FMT-CONTRACT regression: template
+// output must end with exactly one newline (text/template appends none), so a
+// template that itself ends without a newline still produces a clean line.
+func TestWriteTemplate_TrailingNewline(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	require.NoError(t, WriteTemplate(&buf, `{{.title}}`, map[string]any{"title": "Hello"}))
+	assert.Equal(t, "Hello\n", buf.String())
+	assert.True(t, strings.HasSuffix(buf.String(), "\n"))
 }
 
 func TestWriteTemplate_ParseError(t *testing.T) {

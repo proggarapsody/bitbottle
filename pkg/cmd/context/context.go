@@ -105,7 +105,7 @@ func Build(f *factory.Factory, hostname string) (Context, error) {
 	ctx := Context{
 		Host:    host,
 		Backend: backendKind(f, host),
-		User:    ContextUser(user),
+		User:    ContextUser{Slug: user.Slug, DisplayName: user.DisplayName},
 	}
 
 	if baseRepoErr != nil {

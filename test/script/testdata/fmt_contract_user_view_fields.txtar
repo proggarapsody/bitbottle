@@ -1,0 +1,19 @@
+# FMT-CONTRACT (MCP-15): `user view --json` must include the Cloud-stable
+# machine-readable identifiers (account_id, uuid, created_on, links.html.href)
+# in addition to name/slug, so the MCP get_current_user tool and scripts have a
+# durable handle.
+bb-fake cloud
+
+bitbottle user view --json -k
+stdout 'account_id'
+stdout '557058:acc-id'
+stdout 'uuid'
+stdout '\{user-uuid\}'
+stdout 'created_on'
+stdout '2018-01-01T00:00:00Z'
+stdout 'links'
+stdout 'https://bitbucket.org/testuser/'
+
+# the nested links.html.href is reachable via --jq (single-element array)
+bitbottle user view --json --jq '.[].links.html.href' -k
+stdout '^"https://bitbucket.org/testuser/"$'

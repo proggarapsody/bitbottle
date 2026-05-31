@@ -522,7 +522,15 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Method:     http.MethodGet,
 			PathSuffix: "/user",
 			Status:     http.StatusOK,
-			Body:       map[string]any{"uuid": "{uuid}", "username": "testuser", "display_name": "Test User"},
+			Body: map[string]any{
+				"uuid":         "{user-uuid}",
+				"account_id":   "557058:acc-id",
+				"nickname":     "testuser",
+				"username":     "testuser",
+				"display_name": "Test User",
+				"created_on":   "2018-01-01T00:00:00Z",
+				"links":        map[string]any{"html": map[string]any{"href": "https://bitbucket.org/testuser/"}},
+			},
 		},
 		// repo list
 		{

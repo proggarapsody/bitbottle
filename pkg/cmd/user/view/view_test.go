@@ -80,6 +80,87 @@ func TestView_JSONOutput(t *testing.T) {
 	assert.Contains(t, got, "name")
 }
 
+// TestView_JSON_IncludesCloudIdentifiers is the MCP-15 regression: the
+// machine-readable Cloud identifiers must appear in --json output (and be
+// reachable by --jq for the nested links.html.href).
+func TestView_JSON_IncludesCloudIdentifiers(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{
+				Slug:        "proggarapsody",
+				DisplayName: "Aleksey K",
+				AccountID:   "557058:abc-123",
+				UUID:        "{1234-uuid}",
+				CreatedOn:   "2018-01-01T00:00:00Z",
+				HTMLURL:     "https://bitbucket.org/proggarapsody/",
+			}, nil
+		},
+	}
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig, BackendType: "cloud"})
+	factorytest.UseBackend(f, fake)
+
+	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	assert.Contains(t, got, "account_id")
+	assert.Contains(t, got, "557058:abc-123")
+	assert.Contains(t, got, "uuid")
+	assert.Contains(t, got, "{1234-uuid}")
+	assert.Contains(t, got, "created_on")
+	assert.Contains(t, got, "2018-01-01T00:00:00Z")
+	assert.Contains(t, got, "links")
+	assert.Contains(t, got, "https://bitbucket.org/proggarapsody/")
+}
+
+// TestView_JQ_NestedLinks proves --jq can reach the nested links.html.href.
+func TestView_JQ_NestedLinks(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{Slug: "p", HTMLURL: "https://bitbucket.org/p/"}, nil
+		},
+	}
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: cloudConfig, BackendType: "cloud"})
+	factorytest.UseBackend(f, fake)
+
+	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
+	// user view emits a single-element array; reach into it with .[].
+	cmd.SetArgs([]string{"--json", "--jq", ".[].links.html.href"})
+	require.NoError(t, cmd.Execute())
+	assert.Contains(t, out.String(), "https://bitbucket.org/p/")
+}
+
+// TestView_JSON_ServerOmitsCloudFields verifies the identifiers are omitted
+// (not emitted as empty/null) on a backend that lacks them, e.g. Server/DC.
+func TestView_JSON_ServerOmitsCloudFields(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{Slug: "jdoe", DisplayName: "Jane Doe"}, nil
+		},
+	}
+	f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: serverConfig})
+	factorytest.UseBackend(f, fake)
+
+	cmd := view.NewCmdView(f, nil)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"--json"})
+	require.NoError(t, cmd.Execute())
+
+	got := out.String()
+	assert.NotContains(t, got, "account_id")
+	assert.NotContains(t, got, "uuid")
+	assert.NotContains(t, got, "links")
+}
+
 func TestView_GetCurrentUserError(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{

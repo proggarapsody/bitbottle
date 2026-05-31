@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
+	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
 // EnableRepoOverride registers a persistent -R/--repo flag on cmd and wires
@@ -29,6 +30,14 @@ func EnableRepoOverride(cmd *cobra.Command, f *Factory) {
 			if err := prev(c, args); err != nil {
 				return err
 			}
+		}
+		// Cobra runs only the single deepest PersistentPreRunE in a chain, so
+		// this hook shadows the root's output-format guard for commands under
+		// this group. Re-apply the shared contract here so --jq/--json/--yaml/
+		// --template rules and color-disable hold uniformly (FMT-CONTRACT).
+		cmdutil.ApplyNoColorFlag(c, f.IOStreams)
+		if err := cmdutil.ValidateOutputFlags(c, f.IOStreams); err != nil {
+			return err
 		}
 		repo, _ := c.Flags().GetString("repo")
 		if repo == "" {

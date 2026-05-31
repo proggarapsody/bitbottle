@@ -454,6 +454,38 @@ func TestGetCurrentUser_ReturnsUserJSON(t *testing.T) {
 	assertJSONContains(t, result, "alice", "Alice")
 }
 
+// TestGetCurrentUser_ExposesCloudIdentifiers is the MCP-15 regression: the
+// get_current_user envelope must carry the machine-readable Cloud identifiers
+// (account_id, uuid, created_on, links.html.href) so AI clients have a stable
+// handle that survives nickname changes.
+func TestGetCurrentUser_ExposesCloudIdentifiers(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		GetCurrentUserFn: func() (backend.User, error) {
+			return backend.User{
+				Slug:        "proggarapsody",
+				DisplayName: "Aleksey K",
+				AccountID:   "557058:abc-123",
+				UUID:        "{1234-uuid}",
+				CreatedOn:   "2018-01-01T00:00:00Z",
+				Links:       &backend.UserLinks{HTML: &backend.Link{Href: "https://bitbucket.org/proggarapsody/"}},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.getCurrentUser(context.Background(), makeReq(nil))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "account_id", "557058:abc-123")
+	assertJSONContains(t, result, "uuid", "{1234-uuid}")
+	assertJSONContains(t, result, "created_on", "2018-01-01T00:00:00Z")
+	// links.html.href is nested; verify the URL and the nesting keys appear.
+	got := extractText(t, result)
+	assert.Contains(t, got, "https://bitbucket.org/proggarapsody/")
+	assert.Contains(t, got, "\"links\"")
+	assert.Contains(t, got, "\"html\"")
+	assert.Contains(t, got, "\"href\"")
+}
+
 func TestGetCurrentUser_BackendError_ReturnsErrorResult(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{

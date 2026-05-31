@@ -185,7 +185,8 @@ func TestPrinter_Template_SingleItem(t *testing.T) {
 	p.SetSingleItem()
 	p.AddItem(testItem{42, "Fix auth", "OPEN"})
 	require.NoError(t, p.Render())
-	assert.Equal(t, "42 - Fix auth", buf.String())
+	// Template output is newline-terminated (FMT-CONTRACT).
+	assert.Equal(t, "42 - Fix auth\n", buf.String())
 }
 
 func TestPrinter_Template_EmptyExpr_Error(t *testing.T) {

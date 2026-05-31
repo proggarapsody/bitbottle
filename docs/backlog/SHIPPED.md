@@ -11,6 +11,25 @@
 
 ---
 
+## 2026-05-31 — FMT-CONTRACT
+
+### FMT-CONTRACT — `--jq` / `--template` / hint consistency (BB-17, BB-18, BB-19, MCP-15)
+
+- **Fix commit:** `fix(fmt): unify --jq guard, template trailing newline, neutral not-found hint, user-view Cloud IDs` (2026-05-31)
+- **Backends:** Both (Cloud + Server/DC)
+- **Estimate (planned):** 1.25 days
+
+Output-format middleware silently misbehaved, breaking scripts. Four fixes, one PR:
+
+1. **`--jq` consistency (BB-17)** — root's `PersistentPreRunE` carried the `--jq requires --json` guard plus the json/yaml/template mutual-exclusion, but cobra runs only the single *deepest* `PersistentPreRunE` in a command chain. `factory.EnableRepoOverride` (the `-R` flag wiring) installs its own hook on every command group, which shadowed the root guard — so `pr view --jq .x` / `repo view --jq .x` silently ignored `--jq` and returned the full text view, while `status`/`pr list` correctly errored. Extracted the contract into `cmdutil.ValidateOutputFlags`, called from **both** root's hook and the repo-override hook. Now `--jq` without `--json` errors identically on `pr view`, `repo view`, `pr list`, `branch list`; `--jq` with `--json` applies on all of them.
+2. **`--template` trailing newline (BB-18)** — `format.WriteTemplate` now newline-terminates rendered output (text/template appends none), matching `--json`/`--yaml` encoders.
+3. **Hint accuracy (BB-19)** — the `pr.not_found` errfmt catalogue hint no longer claims the PR "may have been deleted" (misleading when `pr view 99999` never existed); reworded to the neutral "No pull request #N exists in this repo."
+4. **MCP-15** — `backend.User` gained `AccountID`/`UUID`/`CreatedOn`/`Links.HTML.Href` (Cloud-stable identifiers, populated from `GET /user`). `user view --json` exposes them (JSONOnly so the TTY table stays slug+name) and the MCP `get_current_user` tool marshals them, giving AI clients durable machine-readable handles.
+
+A `.txtar` corpus (`fmt_contract_jq_requires_json`, `fmt_contract_jq_applies`, `fmt_contract_template_newline`, `fmt_contract_user_view_fields`) proves all four behaviours end-to-end.
+
+---
+
 ## 2026-05-31 — SCRIPT-TRUST
 
 ### SCRIPT-TRUST — Exit codes + `-R` flag + ref parser (BB-12, BB-13, BB-14)
