@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.127.3](https://github.com/proggarapsody/bitbottle/compare/v1.127.2...v1.127.3) (2026-05-31)
+
+
+### Bug Fixes
+
+* **fmt:** FMT-CONTRACT — --jq/--template/hint consistency + user-view fields ([b9147bd](https://github.com/proggarapsody/bitbottle/commit/b9147bd98d2d67f4a80c3a1f0abefcf6dc61434b))
+
 ## [1.127.2](https://github.com/proggarapsody/bitbottle/compare/v1.127.1...v1.127.2) (2026-05-31)
 
 
