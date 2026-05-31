@@ -234,6 +234,13 @@ func (c *Client) GetCurrentUser() (backend.User, error) {
 		AccountID   string `json:"account_id"`
 		DisplayName string `json:"display_name"`
 		Nickname    string `json:"nickname"`
+		UUID        string `json:"uuid"`
+		CreatedOn   string `json:"created_on"`
+		Links       struct {
+			HTML struct {
+				Href string `json:"href"`
+			} `json:"html"`
+		} `json:"links"`
 	}
 	if err := c.getJSON("/user", &w); err != nil {
 		return backend.User{}, err
@@ -244,8 +251,16 @@ func (c *Client) GetCurrentUser() (backend.User, error) {
 	if slug == "" {
 		slug = w.AccountID
 	}
-	return backend.User{
+	u := backend.User{
 		Slug:        slug,
 		DisplayName: w.DisplayName,
-	}, nil
+		AccountID:   w.AccountID,
+		UUID:        w.UUID,
+		CreatedOn:   w.CreatedOn,
+		HTMLURL:     w.Links.HTML.Href,
+	}
+	if w.Links.HTML.Href != "" {
+		u.Links = &backend.UserLinks{HTML: &backend.Link{Href: w.Links.HTML.Href}}
+	}
+	return u, nil
 }

@@ -71,6 +71,7 @@ func TestRender_Catalogue(t *testing.T) {
 			resource: "pull-request",
 			want: []string{
 				"Pull request #42 not found on git.example.com",
+				"No pull request #42 exists in this repo",
 				"`bitbottle pr list`",
 			},
 		},
@@ -379,4 +380,25 @@ func TestRender_CodePrecedence(t *testing.T) {
 			t.Errorf("unknown code should fall through to Kind path, got %q", got)
 		}
 	})
+}
+
+// TestRender_PRNotFound_NeutralHint is the FMT-CONTRACT regression (BB-19):
+// the pr.not_found hint must not claim the PR "may have been deleted" — that
+// is misleading when the PR never existed (e.g. `pr view 99999`). The hint
+// stays neutral.
+func TestRender_PRNotFound_NeutralHint(t *testing.T) {
+	ios := iostreams.Test()
+	errfmt.Render(ios, &backend.DomainError{
+		Code: backend.CodePRNotFound,
+		Kind: backend.ErrNotFound,
+		Host: "git.example.com",
+		ID:   "99999",
+	})
+	got := ios.ErrOut.(*bytes.Buffer).String()
+	if strings.Contains(got, "may have been deleted") {
+		t.Errorf("hint must not claim deletion when the PR may never have existed, got %q", got)
+	}
+	if !strings.Contains(got, "No pull request #99999 exists in this repo") {
+		t.Errorf("expected neutral existence hint, got %q", got)
+	}
 }

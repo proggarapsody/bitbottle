@@ -18,6 +18,12 @@ func WriteTemplate(w io.Writer, tmpl string, v any) error {
 	if err := t.Execute(w, v); err != nil {
 		return fmt.Errorf("--template: execute: %w", err)
 	}
+	// Terminate the rendered output with a newline so piped consumers and
+	// terminals get a clean line break (parity with --json/--yaml, which the
+	// encoders newline-terminate). text/template never appends one itself.
+	if _, err := fmt.Fprintln(w); err != nil {
+		return fmt.Errorf("--template: execute: %w", err)
+	}
 	return nil
 }
 

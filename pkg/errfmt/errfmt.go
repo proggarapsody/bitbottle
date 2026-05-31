@@ -54,7 +54,7 @@ var catalogue = map[backend.ErrorCode]entry{
 	},
 	backend.CodePRNotFound: {
 		title: "Pull request #{{.ID}} not found on {{.Host}}.",
-		hints: []string{"It may have been deleted. Run `bitbottle pr list` to see open PRs."},
+		hints: []string{"No pull request #{{.ID}} exists in this repo. Run `bitbottle pr list` to see open PRs."},
 	},
 	backend.CodePRMergeConflict: {
 		title: "Pull request #{{.ID}} cannot be merged: conflicts with the target branch on {{.Host}}.",

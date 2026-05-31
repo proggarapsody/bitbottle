@@ -1,8 +1,6 @@
 package root
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/alias"
@@ -70,30 +68,11 @@ func NewCmdRoot(f *factory.Factory) *cobra.Command {
 				f.DebugHTTP = true
 			}
 
-			jsonMode := c.Flags().Changed("json")
-			yamlMode, _ := c.Flags().GetBool("yaml")
-			jqExpr, _ := c.Flags().GetString("jq")
-			tmpl, _ := c.Flags().GetString("template")
-
-			// Mutual-exclusion: pick exactly one output format.
-			if jsonMode && yamlMode {
-				return fmt.Errorf("--json and --yaml are mutually exclusive")
-			}
-			if jsonMode && tmpl != "" {
-				return fmt.Errorf("--json and --template are mutually exclusive")
-			}
-			if yamlMode && tmpl != "" {
-				return fmt.Errorf("--yaml and --template are mutually exclusive")
-			}
-			if jqExpr != "" && !jsonMode {
-				return fmt.Errorf("--jq requires --json")
-			}
-
-			// Structured output: disable color so consumers get raw values.
-			if jsonMode || yamlMode || tmpl != "" {
-				f.IOStreams.SetColorEnabled(false)
-			}
-			return nil
+			// Output-format contract (mutual-exclusion + --jq requires --json +
+			// color disable for structured modes). Shared with the repo-override
+			// PersistentPreRunE so command groups that install their own hook
+			// don't silently skip these checks. See cmdutil.ValidateOutputFlags.
+			return cmdutil.ValidateOutputFlags(c, f.IOStreams)
 		},
 	}
 

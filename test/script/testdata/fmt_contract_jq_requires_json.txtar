@@ -1,0 +1,23 @@
+# FMT-CONTRACT (BB-17): --jq without --json must error identically on every
+# command, whether the command routes through the shared formatter for all
+# formats (pr list, branch list) or only for non-table output (pr view, repo
+# view). The bug was that command groups installing their own PersistentPreRunE
+# (via the -R override) shadowed the root output-format guard, so pr view /
+# repo view silently ignored --jq instead of erroring.
+bb-fake server
+
+# pr view — errors (previously silently returned the full text view)
+! bitbottle pr view 1 -R $BB_HOST/PROJ/alpha-repo -k --jq .title
+stderr '--jq requires --json'
+
+# repo view — errors (previously silently returned the full text view)
+! bitbottle repo view -R $BB_HOST/PROJ/alpha-repo -k --jq .slug
+stderr '--jq requires --json'
+
+# pr list — already errored; must stay consistent
+! bitbottle pr list -R $BB_HOST/PROJ/alpha-repo -k --jq .title
+stderr '--jq requires --json'
+
+# branch list — must error identically
+! bitbottle branch list -R $BB_HOST/PROJ/alpha-repo -k --jq .name
+stderr '--jq requires --json'

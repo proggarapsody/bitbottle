@@ -17,9 +17,34 @@ type Options struct {
 }
 
 // User is the domain representation of a Bitbucket user.
+//
+// AccountID, UUID, CreatedOn and HTMLURL are Cloud-stable machine-readable
+// identifiers. They are empty on Bitbucket Server/DC (which has no equivalent)
+// and on read paths that don't request them; the omitempty tags keep the wire
+// shape clean. MCP's get_current_user marshals this struct directly, so the
+// json tags here are the public contract: callers get a durable handle
+// (account_id / uuid) that survives nickname/display-name changes, plus the
+// profile URL under links.html.href to mirror Bitbucket Cloud's own shape.
 type User struct {
-	Slug        string
-	DisplayName string
+	Slug        string     `json:"slug,omitempty"`
+	DisplayName string     `json:"name,omitempty"`
+	AccountID   string     `json:"account_id,omitempty"`
+	UUID        string     `json:"uuid,omitempty"`
+	CreatedOn   string     `json:"created_on,omitempty"`
+	HTMLURL     string     `json:"-"`
+	Links       *UserLinks `json:"links,omitempty"`
+}
+
+// UserLinks mirrors the subset of Bitbucket Cloud's user "links" object that
+// bitbottle exposes. Only the html.href profile URL is carried today.
+type UserLinks struct {
+	HTML *Link `json:"html,omitempty"`
+}
+
+// Link is a single {href} entry, the atom of Bitbucket Cloud's HAL-style
+// links objects.
+type Link struct {
+	Href string `json:"href,omitempty"`
 }
 
 // CommentReaction is the domain representation of an emoji reaction on a

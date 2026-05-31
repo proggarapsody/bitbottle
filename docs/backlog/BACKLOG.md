@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| **FMT-CONTRACT** | Formatter middleware consistency: `--jq` must error (or work) the same on every command; `--template` trailing newline; "not found" hint wording (BB-17, BB-18, BB-19); restore dropped DTO fields in `user view --json` (MCP-15). | Both | 1.25 | ✅ P0 |
 | **MCP-INPUT-VALIDATION** | MCP arg validators are inconsistent: wrong-type `id` reports "missing" (MCP-06); `id=0` falsely "missing" (MCP-07); negative ids reach API (MCP-08); empty string `""` in `merge_pr` strategy enum (MCP-09); asymmetric inline-anchor checks on `add_pr_comment` (MCP-10); no client-side hash format check on `add_commit_comment` (MCP-11); malformed branch names accepted (MCP-12); `update_pr` no-op reaches API (MCP-13); `compare_refs.repo` rejects 1-seg but accepts 3-seg (MCP-14). | Both | 2.5 | ✅ P1 |
 | **MCP-TAXONOMY** | Tool catalog consistency: collapse three repo-arg shapes into one (`{project, slug}` is dominant — migrate `compare_refs`/`list_pr_commits`/`list_pr_files` away from `{repo}` and `set/get_repo_pr_settings` from `{project, repo}`) (MCP-04); refuse unknown hostnames instead of silently falling back to Server URL paths (MCP-05); add structured host-gating metadata so AI clients can filter Server/Cloud-only tools instead of relying on description prose (MCP-16). | Both | 1.5 | ✅ P1 |
 | **PR-GUARDS** | PR state-machine pre-check (`pr approve` silently succeeds on DECLINED — BB-07, BB-20); client-side `--state` enum validation (BB-11, BB-21). | Both | 1.5 | ✅ P1 |
@@ -1209,7 +1208,7 @@ type DomainError struct {
 | `auth.invalid_token` | 401 | Token expired or revoked. Run `bitbottle auth refresh`. |
 | `perm.write_required` | 403 on a write op | Your token lacks write scope on this repo. |
 | `repo.not_found` | 404 on repo path | Check `PROJECT/REPO` casing; on Server use the project key, not the project name. |
-| `pr.not_found` | 404 on pr path | The PR may have been deleted; try `bitbottle pr list`. |
+| `pr.not_found` | 404 on pr path | No pull request #N exists in this repo; run `bitbottle pr list`. |
 | `pr.merge.conflict` | 409 on merge | Resolve conflicts locally and push, then retry. |
 | `pr.merge.behind` | 409 + "behind" | Update branch from base, then retry (`gh pr update-branch` analogue). |
 | `pr.create.duplicate_branch` | 409 on create | A PR for this source/target already exists. |
@@ -3746,29 +3745,6 @@ The shipped CI scope covers Bitbucket Server/DC Code Insights only (`/rest/insig
 - [ ] `test/script/testdata/cloud_code_insights.txtar`
 - [ ] `skills/SKILL.md` + `skills/references/code-insights.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
-### FMT-CONTRACT — `--jq` / `--template` / hint consistency (BB-17, BB-18, BB-19)
-
-**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
-
-**Why P0:** Output-format middleware silently misbehaves. (1) `--jq` errors clearly on `pr list` ("--jq requires --json") but is silently ignored on `pr view` and `repo view` — those return the full text view instead of the requested field. Scripts that do `state=$(bitbottle pr view 1 --jq .state)` set `state` to the entire PR view text. (2) `--template` output has no trailing newline. (3) "Not found" hint says "may have been deleted" when the resource never existed (`pr view 99999`).
-
-**Shape:**
-
-1. **Centralize `--jq requires --json` check** in the formatter middleware (`pkg/cmd/internal/format/` or wherever the inherited formatting flags live). Every command goes through this middleware before its `RunE` body, so the check fires uniformly.
-2. **Trailing newline on `--template`** — `fmt.Fprintln` not `fmt.Fprint`. One-line fix.
-3. **Hint accuracy** — for resource-not-found, drop "may have been deleted" wording. Use neutral "Pull request #N does not exist in this repo." Or, cheaper: do a `repo.maxPRId` check and conditional ("may have been deleted" only if N ≤ max).
-
-**Definition of Done:**
-
-- [ ] `pkg/cmd/internal/format/middleware.go` — centralized `--jq` check applies to every command.
-- [ ] `.txtar` script proving `--jq .title` without `--json` errors uniformly on `pr view`, `repo view`, `pr list`, `branch list`.
-- [ ] `--template` output has trailing newline.
-- [ ] Updated errfmt catalogue entries with neutral wording.
-- [ ] HINT-FLAG-CONTRACT (already P0) extended to also check hint wording for "deleted" implications.
-- [ ] `bitbottle user view --json` returns `account_id`, `uuid`, `created_on`, and `links.html.href` in addition to `name`/`slug` (MCP-15 — sourced from the 2026-05-27 MCP sweep). DTO projection currently drops every Cloud-stable identifier; AI agents using the MCP `get_current_user` tool lose machine-readable handles.
 
 ---
 
