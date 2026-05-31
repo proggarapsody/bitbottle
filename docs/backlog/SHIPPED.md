@@ -11,6 +11,24 @@
 
 ---
 
+## 2026-05-31 — SCRIPT-TRUST
+
+### SCRIPT-TRUST — Exit codes + `-R` flag + ref parser (BB-12, BB-13, BB-14)
+
+- **Fix commits:** `fix(cli): unify repo-ref parser; accept HOST/PROJECT/REPO everywhere` + `fix(cli): wire -R/--repo on every command; add exit-code contract test` (2026-05-31)
+- **Backends:** Both (Cloud + Server/DC)
+- **Estimate (planned):** 3 days
+
+Scripts could not trust bitbottle's contract surface. Three fixes, one PR:
+
+1. **Exit-code contract** — added `pkg/cmd/contract_test.go`, which walks every leaf cobra command, runs it with intentionally-bad input, and asserts that any command writing to stderr exits non-zero (guards against the `print-then-return-nil` anti-pattern). Leaves that shell out to external processes (`skill`, `extension`, `mcp`, `completion`, `alias`) are skipped — their exit-code behaviour is covered by their own package tests.
+2. **`-R`/`--repo` unification** — `-R` was advertised in every command's INHERITED FLAGS but silently ignored on most non-PR commands because their `cobra.ExactArgs(N)` forced a positional repo ref. Loosened the leading repo positional to optional (`ExactArgs(N)` → `MaximumNArgs(1)` / `RangeArgs(N-1, N)`) on ~30 commands across branch, tag, commit, pipeline, codeinsights, webhook, deployment, environment and variable. Each splits args via the new `repoarg.SplitLeadingRepo` and falls back to `factory.ResolveTarget`, so `-R` / `BB_REPO` / pinned defaults now resolve the repo everywhere.
+3. **Ref-parser unification** — added `pkg/cmd/internal/repoarg/ref.go` with the single `ParseRef` helper accepting `PROJECT/REPO` and `HOST/PROJECT/REPO`. `factory.ResolveTarget` routes through it, and `repo view` migrated off the 2-part-only `bbrepo.Parse`. Regression: `repo view bitbucket.org/ws/repo` (3-part) is now accepted everywhere.
+
+A `.txtar` corpus (`script_trust_repo_flag.txtar`, `script_trust_error_exit.txtar`) proves `-R` resolves the positional, 3-part refs are accepted, and error paths exit non-zero.
+
+---
+
 ## 2026-05-29 — CLOUD-DISCOVERY
 
 ### CLOUD-DISCOVERY — Migrate off deprecated `/2.0/workspaces` (MCP-01, MCP-02, MCP-03)

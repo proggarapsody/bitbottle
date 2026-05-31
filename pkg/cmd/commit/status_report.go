@@ -8,6 +8,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 var validStates = []string{"SUCCESSFUL", "FAILED", "INPROGRESS", "STOPPED"}
@@ -23,14 +24,15 @@ func NewCmdCommitStatusReport(f *factory.Factory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "report PROJECT/REPO HASH",
+		Use:   "report [PROJECT/REPO] HASH",
 		Short: "Report a build status against a commit",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !isValidState(state) {
 				return fmt.Errorf("invalid --state %q: must be one of SUCCESSFUL, FAILED, INPROGRESS, STOPPED", state)
 			}
-			ref, err := factory.ResolveTarget(f, args, hostname)
+			repoArgs, rest := repoarg.SplitLeadingRepo(args, 1)
+			ref, err := factory.ResolveTarget(f, repoArgs, hostname)
 			if err != nil {
 				return err
 			}
@@ -45,7 +47,7 @@ func NewCmdCommitStatusReport(f *factory.Factory) *cobra.Command {
 				Name:        name,
 				Description: description,
 			}
-			status, err := client.ReportCommitStatus(ref.Project, ref.Slug, args[1], input)
+			status, err := client.ReportCommitStatus(ref.Project, ref.Slug, rest[0], input)
 			if err != nil {
 				return err
 			}

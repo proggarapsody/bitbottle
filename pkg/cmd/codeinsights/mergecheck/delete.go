@@ -7,6 +7,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // DeleteOptions holds parsed flags for `code-insights merge-check delete`.
@@ -20,12 +21,12 @@ type DeleteOptions struct {
 func NewCmdDelete(f *factory.Factory, runF func(*DeleteOptions) error) *cobra.Command {
 	opts := &DeleteOptions{}
 	cmd := &cobra.Command{
-		Use:   "delete PROJECT/REPO KEY",
+		Use:   "delete [PROJECT/REPO] KEY",
 		Short: "Delete a merge-check configuration — EXPERIMENTAL",
 		Long: `Delete a merge-check configuration on Bitbucket Server.
 
 EXPERIMENTAL: This command uses a partly undocumented API.`,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -39,11 +40,12 @@ EXPERIMENTAL: This command uses a partly undocumented API.`,
 }
 
 func deleteRun(f *factory.Factory, opts *DeleteOptions) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	key := opts.Args[1]
+	key := rest[0]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err

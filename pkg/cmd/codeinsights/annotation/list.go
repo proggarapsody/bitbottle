@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // ListOptions holds parsed flags for `code-insights annotation list`.
@@ -20,9 +21,9 @@ type ListOptions struct {
 func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Command {
 	opts := &ListOptions{}
 	cmd := &cobra.Command{
-		Use:   "list PROJECT/REPO HASH KEY",
+		Use:   "list [PROJECT/REPO] HASH KEY",
 		Short: "List Code Insights annotations for a report",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
@@ -72,12 +73,13 @@ func annotationFields(f *factory.Factory, cfg format.OutputConfig) *format.Print
 }
 
 func listRun(f *factory.Factory, opts *ListOptions) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 2)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	hash := opts.Args[1]
-	key := opts.Args[2]
+	hash := rest[0]
+	key := rest[1]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err

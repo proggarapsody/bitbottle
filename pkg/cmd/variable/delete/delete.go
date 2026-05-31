@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/variable/shared"
 )
 
@@ -27,9 +28,9 @@ type Options struct {
 func NewCmdDelete(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "delete PROJECT/REPO KEY",
+		Use:   "delete [PROJECT/REPO] KEY",
 		Short: "Delete a variable",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -46,11 +47,12 @@ func NewCmdDelete(f *factory.Factory, runF func(*Options) error) *cobra.Command 
 }
 
 func deleteRun(f *factory.Factory, opts *Options) error {
-	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	key := opts.Args[1]
+	key := rest[0]
 
 	if !opts.Confirm {
 		if !f.IOStreams.IsStdoutTTY() {

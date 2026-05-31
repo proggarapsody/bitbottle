@@ -9,6 +9,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // terminalStates are pipeline states that signal completion.
@@ -36,9 +37,9 @@ type Options struct {
 func NewCmdWatch(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "watch PROJECT/REPO UUID",
+		Use:   "watch [PROJECT/REPO] UUID",
 		Short: "Watch a pipeline until it completes",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -53,7 +54,8 @@ func NewCmdWatch(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 }
 
 func watchRun(f *factory.Factory, opts *Options) error {
-	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
@@ -66,7 +68,7 @@ func watchRun(f *factory.Factory, opts *Options) error {
 		return err
 	}
 
-	uuid := opts.Args[1]
+	uuid := rest[0]
 	out := f.IOStreams.Out
 	lastState := ""
 

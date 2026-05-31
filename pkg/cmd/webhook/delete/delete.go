@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // Options holds parsed flags for `webhook delete`.
@@ -23,9 +24,9 @@ type Options struct {
 func NewCmdDelete(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "delete PROJECT/REPO ID",
+		Use:   "delete [PROJECT/REPO] ID",
 		Short: "Delete a webhook",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -40,11 +41,12 @@ func NewCmdDelete(f *factory.Factory, runF func(*Options) error) *cobra.Command 
 }
 
 func deleteRun(f *factory.Factory, opts *Options) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	id := opts.Args[1]
+	id := rest[0]
 
 	if !opts.Confirm {
 		if !f.IOStreams.IsStdoutTTY() {

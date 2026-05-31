@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // DeleteOptions holds parsed flags for `branch protect delete`.
@@ -22,9 +23,9 @@ type DeleteOptions struct {
 func NewCmdDelete(f *factory.Factory, runF func(*DeleteOptions) error) *cobra.Command {
 	opts := &DeleteOptions{}
 	cmd := &cobra.Command{
-		Use:   "delete PROJECT/REPO ID",
+		Use:   "delete [PROJECT/REPO] ID",
 		Short: "Remove a branch restriction",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -38,11 +39,12 @@ func NewCmdDelete(f *factory.Factory, runF func(*DeleteOptions) error) *cobra.Co
 }
 
 func deleteRun(f *factory.Factory, opts *DeleteOptions) error {
-	id, err := strconv.Atoi(opts.Args[1])
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	id, err := strconv.Atoi(rest[0])
 	if err != nil {
-		return fmt.Errorf("ID must be numeric (got %q): %w", opts.Args[1], err)
+		return fmt.Errorf("ID must be numeric (got %q): %w", rest[0], err)
 	}
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}

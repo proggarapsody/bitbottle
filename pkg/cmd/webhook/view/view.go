@@ -5,6 +5,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/webhook/shared"
 )
 
@@ -21,9 +22,9 @@ type Options struct {
 func NewCmdView(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "view PROJECT/REPO ID",
+		Use:   "view [PROJECT/REPO] ID",
 		Short: "View a webhook",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
@@ -38,11 +39,12 @@ func NewCmdView(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 }
 
 func viewRun(f *factory.Factory, opts *Options) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	id := opts.Args[1]
+	id := rest[0]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err

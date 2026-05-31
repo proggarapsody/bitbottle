@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // SetOptions holds parsed flags for `code-insights merge-check set`.
@@ -24,12 +25,12 @@ type SetOptions struct {
 func NewCmdSet(f *factory.Factory, runF func(*SetOptions) error) *cobra.Command {
 	opts := &SetOptions{}
 	cmd := &cobra.Command{
-		Use:   "set PROJECT/REPO KEY",
-		Short: "Create or update a merge-check configuration — EXPERIMENTAL",
+		Use:   "set [PROJECT/REPO] KEY",
+		Short: "Create or update merge-check config — EXPERIMENTAL",
 		Long: `Create or update a merge-check configuration on Bitbucket Server.
 
 EXPERIMENTAL: This command uses a partly undocumented API.`,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -47,11 +48,12 @@ EXPERIMENTAL: This command uses a partly undocumented API.`,
 }
 
 func setRun(f *factory.Factory, opts *SetOptions) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	key := opts.Args[1]
+	key := rest[0]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err

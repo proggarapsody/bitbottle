@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/shared"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
@@ -23,9 +24,9 @@ type Options struct {
 func NewCmdSteps(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "steps PROJECT/REPO PIPELINE-UUID",
+		Use:   "steps [PROJECT/REPO] PIPELINE-UUID",
 		Short: "List the steps in a pipeline run",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
@@ -40,7 +41,8 @@ func NewCmdSteps(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 }
 
 func stepsRun(f *factory.Factory, opts *Options) error {
-	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
@@ -52,7 +54,7 @@ func stepsRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	steps, listErr := pc.ListPipelineSteps(ref.Project, ref.Slug, opts.Args[1])
+	steps, listErr := pc.ListPipelineSteps(ref.Project, ref.Slug, rest[0])
 	if listErr != nil && len(steps) == 0 {
 		return listErr
 	}
