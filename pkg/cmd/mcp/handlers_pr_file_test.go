@@ -38,11 +38,34 @@ func TestListPRFiles_Success(t *testing.T) {
 	}
 	h := newHandlersWithFake(t, singleHostConfig, fake)
 	result, err := h.listPRFiles(context.Background(), makeReq(map[string]any{
+		"project": "myproj",
+		"slug":    "my-repo",
+		"pr_id":   float64(42),
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "foo.go", "added")
+}
+
+// MCP-04: legacy {repo} shape still works, with a deprecation note prepended.
+func TestListPRFiles_LegacyRepoShape_StillWorksWithDeprecation(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPRFilesFn: func(ns, slug string, prID int) ([]backend.DiffStatEntry, error) {
+			assert.Equal(t, "MYPROJ", ns)
+			assert.Equal(t, "my-repo", slug)
+			return []backend.DiffStatEntry{{Path: "foo.go", Status: "added"}}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.listPRFiles(context.Background(), makeReq(map[string]any{
 		"repo":  "myproj/my-repo",
 		"pr_id": float64(42),
 	}))
 	require.NoError(t, err)
-	assertJSONContains(t, result, "foo.go", "added")
+	require.False(t, result.IsError)
+	require.Len(t, result.Content, 2)
+	assert.Contains(t, extractTextAt(t, result, 0), "DEPRECATION")
 }
 
 func TestListPRFiles_MissingRepo(t *testing.T) {
@@ -52,7 +75,7 @@ func TestListPRFiles_MissingRepo(t *testing.T) {
 		"pr_id": float64(42),
 	}))
 	require.NoError(t, err)
-	assertErrorResult(t, result, "repo")
+	assertErrorResult(t, result, "project")
 }
 
 func TestListPRFiles_MissingPRID(t *testing.T) {

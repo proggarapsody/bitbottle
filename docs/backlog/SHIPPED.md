@@ -11,6 +11,45 @@
 
 ---
 
+## 2026-05-31 — MCP-TAXONOMY
+
+### MCP-TAXONOMY — Unify tool catalog (MCP-04, MCP-05, MCP-16)
+
+- **Fix commit:** `fix(mcp): unify MCP tool catalog (MCP-04, MCP-05, MCP-16)` (2026-05-31)
+- **Backends:** Both (Cloud + Server/DC)
+- **Estimate (planned):** 1.5 days
+
+Collapsed three structural inconsistencies in the 254-tool MCP catalog that
+forced AI clients to special-case bitbottle:
+
+- **MCP-04 — canonical `{project, slug}` repo-arg shape.** Migrated the five
+  BACKLOG-named alternates — `compare_refs`, `list_pr_commits`,
+  `list_pr_files` (were `{repo}` = `WORKSPACE/REPO`), and
+  `get_repo_pr_settings` / `set_repo_pr_settings` (were `{project, repo}`) —
+  to `{project, slug}`. The old shape still works for one release; the tool
+  result prepends a `DEPRECATION` text block. Shared resolver helpers live in
+  `pkg/cmd/mcp/repo_arg.go` (`repoFromProjectSlugOrRepo`,
+  `repoFromProjectSlugOrProjectRepo`, `withDeprecation`). Many other tools
+  intentionally keep `{repo}` — the regression test is an allowlist of the
+  five migrated tools, not a global ban.
+- **MCP-05 — reject unknown hostnames.** `handlers.resolveBackend` now calls
+  `requireConfiguredHost`, which returns a typed
+  `*DomainError{Kind: ErrUnknownHost, Code: host.unknown}` listing the
+  configured hosts when a non-empty `hostname` isn't in `hosts.yml` — before
+  any HTTP or Server-vs-Cloud URL inference. Added `ErrUnknownHost` kind +
+  `CodeHostUnknown` code (wired through `AllCodes` + the errfmt catalogue).
+- **MCP-16 — `_meta.backends` + pre-HTTP gating.** A small registration
+  wrapper (`addGatedTool` in `pkg/cmd/mcp/tools_backends.go`) stamps
+  `_meta.backends` (`["server"]` / `["cloud"]` / both) onto a tool's
+  `tools/list` entry and wraps its handler with a pre-HTTP gate: a
+  single-backend tool invoked against the wrong flavour returns
+  `host.unsupported` (with the allowed list) before the backend is dialed.
+  Scoped to backend-specific tools — the five migrated tools were rewired
+  through the wrapper; the broader catalog defaults to both backends (no
+  gating), avoiding 250+ hand-edits. The optional Phase-2 host-filtered
+  `tools/list` (`BITBOTTLE_MCP_HOST_FILTER=1`) was skipped as out-of-scope
+  for the diff budget.
+
 ## 2026-05-31 — MCP-INPUT-VALIDATION
 
 ### MCP-INPUT-VALIDATION — Tighten client-side validators across MCP tools (MCP-06 through MCP-14)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
@@ -31,7 +32,41 @@ func (h *handlers) resolveBackend(hostname string) (backend.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	// MCP-05: a non-empty hostname that ResolveHost accepts on faith (it
+	// performs no config lookup when hostname is set) must still be a
+	// configured host. Reject unknown hostnames with a typed ErrUnknownHost
+	// here — before any HTTP or Server-vs-Cloud URL inference — so a typo in
+	// `hostname` surfaces as "unknown host" rather than a confusing dial
+	// error against a bogus Server URL.
+	if err := h.requireConfiguredHost(host); err != nil {
+		return nil, err
+	}
 	return h.f.Backend(host)
+}
+
+// requireConfiguredHost returns a typed *DomainError{Kind: ErrUnknownHost}
+// when host is not present in the local configuration. The error lists the
+// configured hosts so MCP clients can correct a typo without a second call.
+// Returns nil when host is configured (the common path).
+func (h *handlers) requireConfiguredHost(host string) error {
+	cfg, err := h.f.Config()
+	if err != nil {
+		return err
+	}
+	configured := cfg.Hosts()
+	for _, c := range configured {
+		if c == host {
+			return nil
+		}
+	}
+	sorted := append([]string(nil), configured...)
+	sort.Strings(sorted)
+	return &backend.DomainError{
+		Kind:    backend.ErrUnknownHost,
+		Code:    backend.CodeHostUnknown,
+		Host:    host,
+		Message: fmt.Sprintf("unknown host %q; configured hosts: %s", host, strings.Join(sorted, ", ")),
+	}
 }
 
 func jsonResult(v any) (*mcplib.CallToolResult, error) {

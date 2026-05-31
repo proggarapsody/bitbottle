@@ -82,6 +82,18 @@ bitbottle is inconsistent about repo targeting — match what `-h` says:
 
 Outside any Bitbucket checkout, the relevant positional/`-R` is mandatory.
 
+**MCP tools** use ONE canonical repo-arg shape: `{project, slug}` (plus an
+optional `hostname`) — `project` is the Server project key or Cloud workspace
+slug, `slug` is the repository slug. The few tools that historically took a
+single `repo` (`WORKSPACE/REPO`) string or `{project, repo}` — `compare_refs`,
+`list_pr_commits`, `list_pr_files`, `get_repo_pr_settings`,
+`set_repo_pr_settings` — now accept `{project, slug}`; the old shape still
+works for one release but the result carries a deprecation note. Each tool's
+`tools/list` entry also advertises `_meta.backends` (`["server"]`,
+`["cloud"]`, or both); calling a Server-only tool against a Cloud host (or vice
+versa) returns `host.unsupported` before any HTTP, and an unknown `hostname`
+returns `host.unknown` listing the configured hosts.
+
 ## Repo targeting & TLS
 
 ```bash

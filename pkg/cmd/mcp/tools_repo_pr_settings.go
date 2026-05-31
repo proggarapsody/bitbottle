@@ -10,33 +10,38 @@ func init() {
 }
 
 func registerRepoPRSettingsTools(s *mcpserver.MCPServer, h *handlers) {
-	s.AddTool(
+	addGatedTool(s, h,
 		mcplib.NewTool("get_repo_pr_settings",
 			mcplib.WithDescription("Show pull request gate settings for a repository (required approvers, merge strategy, etc.). Server / Data Center only — returns an error on Cloud."),
 			mcplib.WithString("project",
 				mcplib.Required(),
 				mcplib.Description("Project key (Server) or workspace slug (Cloud)"),
 			),
-			mcplib.WithString("repo",
-				mcplib.Required(),
+			mcplib.WithString("slug",
 				mcplib.Description("Repository slug"),
+			),
+			mcplib.WithString("repo",
+				mcplib.Description("DEPRECATED: use slug. Repository slug."),
 			),
 			mcplib.WithString("hostname",
 				mcplib.Description("Bitbucket hostname (omit when only one host is configured)"),
 			),
 		),
+		[]string{backendServer},
 		h.getRepoPRSettings,
 	)
-	s.AddTool(
+	addGatedTool(s, h,
 		mcplib.NewTool("set_repo_pr_settings",
 			mcplib.WithDescription("Update pull request gate settings for a repository (required approvers, merge strategy, allowed strategies, etc.). Server / Data Center only — returns an error on Cloud."),
 			mcplib.WithString("project",
 				mcplib.Required(),
 				mcplib.Description("Project key (Server) or workspace slug (Cloud)"),
 			),
-			mcplib.WithString("repo",
-				mcplib.Required(),
+			mcplib.WithString("slug",
 				mcplib.Description("Repository slug"),
+			),
+			mcplib.WithString("repo",
+				mcplib.Description("DEPRECATED: use slug. Repository slug."),
 			),
 			mcplib.WithNumber("required_approvers",
 				mcplib.Description("Minimum number of approvals required"),
@@ -60,6 +65,7 @@ func registerRepoPRSettingsTools(s *mcpserver.MCPServer, h *handlers) {
 				mcplib.Description("Bitbucket hostname (omit when only one host is configured)"),
 			),
 		),
+		[]string{backendServer},
 		h.setRepoPRSettings,
 	)
 }

@@ -25,9 +25,15 @@ var (
 	ErrAuth              = errors.New("authentication required")
 	ErrPermission        = errors.New("permission denied")
 	ErrUnsupportedOnHost = errors.New("operation unsupported on this host")
-	ErrConflict          = errors.New("conflict")
-	ErrTransport         = errors.New("transport error")
-	ErrInvalidRequest    = errors.New("invalid request")
+	// ErrUnknownHost is returned when a caller names a hostname that is not
+	// present in the local configuration (hosts.yml). Distinct from
+	// ErrUnsupportedOnHost (host is known, but the feature isn't) and ErrAuth
+	// (host is known, but the token is bad): the host itself is unrecognised,
+	// so no HTTP should be attempted against it.
+	ErrUnknownHost    = errors.New("unknown host")
+	ErrConflict       = errors.New("conflict")
+	ErrTransport      = errors.New("transport error")
+	ErrInvalidRequest = errors.New("invalid request")
 	// ErrEndpointDeprecated is returned when a Bitbucket API endpoint returns
 	// HTTP 410 Gone indicating the endpoint has been removed (e.g. CHANGE-2770).
 	ErrEndpointDeprecated = errors.New("endpoint deprecated")
@@ -65,8 +71,10 @@ const (
 	// branch cluster — branch-protection / write-side failures
 	CodeBranchProtected ErrorCode = "branch.protected"
 
-	// host cluster — feature unavailable on the targeted Bitbucket flavour
+	// host cluster — feature unavailable on the targeted Bitbucket flavour,
+	// or the named host is not configured at all
 	CodeHostUnsupported ErrorCode = "host.unsupported"
+	CodeHostUnknown     ErrorCode = "host.unknown"
 
 	// network cluster — pre-classify codes attached at the transport
 	// layer before an HTTPError exists. ClassifyTransportError stamps
@@ -102,6 +110,7 @@ var AllCodes = []ErrorCode{
 	CodePRAutoMergeBetaDisabled,
 	CodeBranchProtected,
 	CodeHostUnsupported,
+	CodeHostUnknown,
 	CodeNetworkTLSUnknownAuthority,
 	CodeTransportTimeout,
 	CodeInvalidRequest,
