@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| **SCRIPT-TRUST** | **Headline CLI fix:** scripts cannot trust bitbottle's contract surface — audit exit-code discipline (BB-12); unify `-R` flag + ref-parser across all commands (BB-13, BB-14). See [audit](../audits/cli-comparison-2026-05-27.md). | Both | 3 | ✅ P0 |
 | **FMT-CONTRACT** | Formatter middleware consistency: `--jq` must error (or work) the same on every command; `--template` trailing newline; "not found" hint wording (BB-17, BB-18, BB-19); restore dropped DTO fields in `user view --json` (MCP-15). | Both | 1.25 | ✅ P0 |
 | **MCP-INPUT-VALIDATION** | MCP arg validators are inconsistent: wrong-type `id` reports "missing" (MCP-06); `id=0` falsely "missing" (MCP-07); negative ids reach API (MCP-08); empty string `""` in `merge_pr` strategy enum (MCP-09); asymmetric inline-anchor checks on `add_pr_comment` (MCP-10); no client-side hash format check on `add_commit_comment` (MCP-11); malformed branch names accepted (MCP-12); `update_pr` no-op reaches API (MCP-13); `compare_refs.repo` rejects 1-seg but accepts 3-seg (MCP-14). | Both | 2.5 | ✅ P1 |
 | **MCP-TAXONOMY** | Tool catalog consistency: collapse three repo-arg shapes into one (`{project, slug}` is dominant — migrate `compare_refs`/`list_pr_commits`/`list_pr_files` away from `{repo}` and `set/get_repo_pr_settings` from `{project, repo}`) (MCP-04); refuse unknown hostnames instead of silently falling back to Server URL paths (MCP-05); add structured host-gating metadata so AI clients can filter Server/Cloud-only tools instead of relying on description prose (MCP-16). | Both | 1.5 | ✅ P1 |
@@ -3747,29 +3746,6 @@ The shipped CI scope covers Bitbucket Server/DC Code Insights only (`/rest/insig
 - [ ] `test/script/testdata/cloud_code_insights.txtar`
 - [ ] `skills/SKILL.md` + `skills/references/code-insights.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
-### SCRIPT-TRUST — Exit codes + `-R` flag + ref parser (BB-12, BB-13, BB-14)
-
-**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit (`~/cli-comparison-2026-05-27.md` §6–§7).
-
-**Why P0:** Two bugs combined make every other bug in the audit invisible to scripts. (1) Exit codes are inconsistent: `bitbottle pipeline trigger`'s JSON unmarshal error prints to stderr but exits 0; `commit comment list`'s "Resource not found." exits 0; `workspace project perms list`'s same error string exits 1. (2) `-R` flag is advertised in every command's INHERITED FLAGS but silently ignored on most non-PR commands (`repo view`, `branch list/create/delete`, `tag list/delete`, `pipeline list/run`); users get a confusing "accepts N arg(s), received 0" instead of the actual root cause. A CI script using bitbottle can't tell when the wrong thing happened.
-
-**Shape:**
-
-1. **Exit-code audit** — grep `cmd/**/*.go` for the `fmt.Println(err); return nil` anti-pattern; replace with `return err`. Add a contract test (`pkg/cmd/contract_test.go`) that runs every leaf cobra command with intentionally-bad input via testscript and asserts `exit != 0` on any line printed to stderr matching the error prefix catalogue.
-2. **`-R` flag unification** — either (a) wire `-R` resolution into every command's pre-positional-validation step, OR (b) remove `-R` from `PersistentFlags()` and only register it where actually wired. Recommend (a) — preserves help-text expectations and gh-CLI ergonomics. Touch `pkg/cmd/factory/repo.go` or the equivalent, audit every `cmd.Args = cobra.ExactArgs(N)` to use `cobra.MaximumNArgs(N)` when `-R` could provide the positional.
-3. **Ref-parser unification** — `repo view` rejects 3-part `HOST/PROJECT/REPO` while `branch list` accepts it. Extract a single `parseRepoRef(string) (host, project, slug, error)` helper used by every command. Document the accepted forms in one place.
-
-**Definition of Done:**
-
-- [ ] `pkg/cmd/contract_test.go` — exit-code contract test for every leaf command.
-- [ ] `pkg/cmd/*/cmd.go` — every command with `-R` advertised actually resolves it.
-- [ ] `pkg/cmd/internal/repo/ref.go` (or similar) — single `parseRepoRef` helper; all commands use it.
-- [ ] Test corpus: `.txtar` script per affected command proving `-R` resolves the positional.
-- [ ] Regression test: `repo view bitbucket.org/ws/repo` accepted.
-- [ ] Regression test: every error path prints `exit != 0`.
 
 ---
 

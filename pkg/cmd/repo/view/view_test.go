@@ -58,6 +58,32 @@ func TestRepoView_PrintsRepoDetails(t *testing.T) {
 	assert.Contains(t, got, "browse")
 }
 
+// TestRepoView_AcceptsThreePartRef is the SCRIPT-TRUST regression: before
+// the ref-parser unification, `repo view` parsed args via bbrepo.Parse,
+// which rejected the 3-part HOST/PROJECT/REPO form that `branch list` and
+// other commands already accepted. It now routes through the shared
+// resolver, so HOST/PROJECT/REPO is accepted here too.
+func TestRepoView_AcceptsThreePartRef(t *testing.T) {
+	t.Parallel()
+
+	var gotNS, gotSlug string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetRepoFn: func(ns, slug string) (backend.Repository, error) {
+			gotNS, gotSlug = ns, slug
+			return testhelpers.BackendRepoFactory(testhelpers.BackendRepoWithSlug(slug)), nil
+		},
+	}
+
+	f, _, _ := newRepoFactory(t, fake)
+	cmd := view.NewCmdView(f)
+	format.RegisterOutputFlags(cmd)
+	cmd.SetArgs([]string{"bitbucket.org/ws/repo"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, "ws", gotNS)
+	assert.Equal(t, "repo", gotSlug)
+}
+
 func TestRepoView_WebFlag_OpensBrowser(t *testing.T) {
 	t.Parallel()
 

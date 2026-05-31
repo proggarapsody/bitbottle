@@ -9,6 +9,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // SetOptions holds parsed flags for `code-insights report set`.
@@ -30,9 +31,9 @@ type SetOptions struct {
 func NewCmdSet(f *factory.Factory, runF func(*SetOptions) error) *cobra.Command {
 	opts := &SetOptions{}
 	cmd := &cobra.Command{
-		Use:   "set PROJECT/REPO HASH KEY",
+		Use:   "set [PROJECT/REPO] HASH KEY",
 		Short: "Create or update (upsert) a Code Insights report",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -77,12 +78,13 @@ func parseDatum(s string) (backend.CodeInsightsReportDatum, error) {
 }
 
 func setRun(f *factory.Factory, opts *SetOptions) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 2)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	hash := opts.Args[1]
-	key := opts.Args[2]
+	hash := rest[0]
+	key := rest[1]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err

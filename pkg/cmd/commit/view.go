@@ -8,6 +8,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
@@ -16,15 +17,16 @@ func NewCmdCommitView(f *factory.Factory) *cobra.Command {
 	var hostname string
 
 	cmd := &cobra.Command{
-		Use:   "view PROJECT/REPO HASH",
+		Use:   "view [PROJECT/REPO] HASH",
 		Short: "View a commit",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		// Multi-paragraph commit messages plus parent/diff metadata can
 		// overflow a terminal page; opt in to $PAGER on a TTY mirroring
 		// `git show`'s default.
 		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := factory.ResolveTarget(f, args, hostname)
+			repoArgs, rest := repoarg.SplitLeadingRepo(args, 1)
+			ref, err := factory.ResolveTarget(f, repoArgs, hostname)
 			if err != nil {
 				return err
 			}
@@ -34,7 +36,7 @@ func NewCmdCommitView(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			hash := args[1]
+			hash := rest[0]
 			c, err := client.GetCommit(ref.Project, ref.Slug, hash)
 			if err != nil {
 				return err

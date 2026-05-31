@@ -8,6 +8,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pipeline/shared"
 )
 
@@ -25,9 +26,9 @@ type Options struct {
 func NewCmdView(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "view PROJECT/REPO UUID",
+		Use:   "view [PROJECT/REPO] UUID",
 		Short: "View a pipeline",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
@@ -43,7 +44,8 @@ func NewCmdView(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 }
 
 func viewRun(f *factory.Factory, opts *Options) error {
-	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
@@ -55,7 +57,7 @@ func viewRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	pl, err := pc.GetPipeline(ref.Project, ref.Slug, opts.Args[1])
+	pl, err := pc.GetPipeline(ref.Project, ref.Slug, rest[0])
 	if err != nil {
 		return err
 	}

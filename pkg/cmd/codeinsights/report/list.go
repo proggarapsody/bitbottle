@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // ListOptions holds parsed flags for `code-insights report list`.
@@ -20,9 +21,9 @@ type ListOptions struct {
 func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Command {
 	opts := &ListOptions{}
 	cmd := &cobra.Command{
-		Use:   "list PROJECT/REPO HASH",
+		Use:   "list [PROJECT/REPO] HASH",
 		Short: "List Code Insights reports for a commit",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)
@@ -37,11 +38,12 @@ func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Comman
 }
 
 func listRun(f *factory.Factory, opts *ListOptions) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 1)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	hash := opts.Args[1]
+	hash := rest[0]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err

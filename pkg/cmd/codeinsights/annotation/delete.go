@@ -7,6 +7,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // DeleteOptions holds parsed flags for `code-insights annotation delete`.
@@ -20,9 +21,9 @@ type DeleteOptions struct {
 func NewCmdDelete(f *factory.Factory, runF func(*DeleteOptions) error) *cobra.Command {
 	opts := &DeleteOptions{}
 	cmd := &cobra.Command{
-		Use:   "delete PROJECT/REPO HASH KEY",
+		Use:   "delete [PROJECT/REPO] HASH KEY",
 		Short: "Delete all annotations under a Code Insights report",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -36,12 +37,13 @@ func NewCmdDelete(f *factory.Factory, runF func(*DeleteOptions) error) *cobra.Co
 }
 
 func deleteRun(f *factory.Factory, opts *DeleteOptions) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 2)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	hash := opts.Args[1]
-	key := opts.Args[2]
+	hash := rest[0]
+	key := rest[1]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err

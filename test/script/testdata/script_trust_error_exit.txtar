@@ -1,0 +1,23 @@
+# SCRIPT-TRUST: error paths must exit non-zero (so scripts can `set -e`).
+# Every assertion below uses `!` to require a non-zero exit code alongside
+# the diagnostic on stderr — no print-then-exit-0 swallow is tolerated.
+bb-fake server
+
+# Invalid repo ref → non-zero exit + guidance on stderr.
+! bitbottle repo view bogus -k
+stderr 'PROJECT/REPO'
+
+# Invalid 4-part ref → non-zero exit.
+! bitbottle branch list a/b/c/d -k
+
+# Missing required flag (--start-at) → non-zero exit.
+! bitbottle branch create PROJ/alpha-repo feature-x -k
+stderr 'start-at'
+
+# Non-numeric COMMENT_ID → non-zero exit + diagnostic.
+! bitbottle commit comment delete PROJ/alpha-repo abc123 notanumber -k
+stderr 'COMMENT_ID'
+
+# Unknown command → non-zero exit.
+! bitbottle bogus-subcommand
+stderr 'unknown command'

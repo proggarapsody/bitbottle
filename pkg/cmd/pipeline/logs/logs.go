@@ -8,6 +8,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
@@ -23,9 +24,9 @@ type Options struct {
 func NewCmdLogs(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "logs PROJECT/REPO PIPELINE-UUID STEP-UUID",
+		Use:   "logs [PROJECT/REPO] PIPELINE-UUID STEP-UUID",
 		Short: "Stream a pipeline step's log to stdout",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.RangeArgs(2, 3),
 		// Build logs are routinely thousands of lines; route through
 		// $PAGER on a TTY so users get scroll/search affordances.
 		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
@@ -42,7 +43,8 @@ func NewCmdLogs(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 }
 
 func logsRun(f *factory.Factory, opts *Options) error {
-	ref, err := factory.ResolveTarget(f, opts.Args, opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 2)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
@@ -54,7 +56,7 @@ func logsRun(f *factory.Factory, opts *Options) error {
 	if err != nil {
 		return err
 	}
-	rc, err := pc.GetPipelineStepLog(ref.Project, ref.Slug, opts.Args[1], opts.Args[2])
+	rc, err := pc.GetPipelineStepLog(ref.Project, ref.Slug, rest[0], rest[1])
 	if err != nil {
 		return err
 	}

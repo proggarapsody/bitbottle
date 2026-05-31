@@ -11,6 +11,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
 )
 
@@ -20,11 +21,12 @@ func NewCmdCommitCommentList(f *factory.Factory) *cobra.Command {
 	var withReactions bool
 
 	cmd := &cobra.Command{
-		Use:   "list PROJECT/REPO HASH",
+		Use:   "list [PROJECT/REPO] HASH",
 		Short: "List all comments on a commit",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := factory.ResolveTarget(f, args[:1], hostname)
+			repoArgs, rest := repoarg.SplitLeadingRepo(args, 1)
+			ref, err := factory.ResolveTarget(f, repoArgs, hostname)
 			if err != nil {
 				return err
 			}
@@ -32,7 +34,7 @@ func NewCmdCommitCommentList(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			hash := args[1]
+			hash := rest[0]
 			cmts, listErr := client.ListCommitComments(ref.Project, ref.Slug, hash, 0)
 			if listErr != nil && len(cmts) == 0 {
 				return listErr

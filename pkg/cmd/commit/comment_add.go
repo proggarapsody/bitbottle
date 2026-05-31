@@ -7,6 +7,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // NewCmdCommitCommentAdd posts a new comment on a commit.
@@ -14,14 +15,15 @@ func NewCmdCommitCommentAdd(f *factory.Factory) *cobra.Command {
 	var body, hostname string
 
 	cmd := &cobra.Command{
-		Use:   "add PROJECT/REPO HASH",
+		Use:   "add [PROJECT/REPO] HASH",
 		Short: "Add a comment to a commit",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if body == "" {
 				return fmt.Errorf("--body is required")
 			}
-			ref, err := factory.ResolveTarget(f, args[:1], hostname)
+			repoArgs, rest := repoarg.SplitLeadingRepo(args, 1)
+			ref, err := factory.ResolveTarget(f, repoArgs, hostname)
 			if err != nil {
 				return err
 			}
@@ -29,7 +31,7 @@ func NewCmdCommitCommentAdd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			hash := args[1]
+			hash := rest[0]
 			c, err := client.AddCommitComment(ref.Project, ref.Slug, hash, backend.AddCommitCommentInput{Body: body})
 			if err != nil {
 				return err

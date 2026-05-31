@@ -6,6 +6,7 @@ import (
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 	"github.com/proggarapsody/bitbottle/pkg/iostreams"
 )
 
@@ -13,11 +14,12 @@ func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
 	var hostname string
 
 	cmd := &cobra.Command{
-		Use:   "status PROJECT/REPO HASH",
+		Use:   "status [PROJECT/REPO] HASH",
 		Short: "List build / CI statuses for a commit",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := factory.ResolveTarget(f, args, hostname)
+			repoArgs, rest := repoarg.SplitLeadingRepo(args, 1)
+			ref, err := factory.ResolveTarget(f, repoArgs, hostname)
 			if err != nil {
 				return err
 			}
@@ -25,7 +27,7 @@ func NewCmdCommitStatus(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			statuses, err := client.ListCommitStatuses(ref.Project, ref.Slug, args[1])
+			statuses, err := client.ListCommitStatuses(ref.Project, ref.Slug, rest[0])
 			if err != nil {
 				return err
 			}

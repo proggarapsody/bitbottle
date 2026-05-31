@@ -1,0 +1,23 @@
+# SCRIPT-TRUST: -R/--repo resolves the repo positional on non-PR commands,
+# and the ref parser accepts the 3-part HOST/PROJECT/REPO form everywhere.
+bb-fake server
+
+# -R supplies the repo so no positional is needed. Before SCRIPT-TRUST,
+# `repo view` required a positional and ignored -R entirely.
+bitbottle repo view -R PROJ/alpha-repo -k
+stdout 'alpha-repo'
+
+# BB_REPO env var resolves the positional the same way -R does.
+env BB_REPO=PROJ/alpha-repo
+bitbottle repo view -k
+stdout 'alpha-repo'
+env BB_REPO=
+
+# 3-part HOST/PROJECT/REPO is accepted as a positional (regression:
+# `repo view` used to reject this while `branch list` accepted it).
+bitbottle repo view $BB_HOST/PROJ/alpha-repo -k
+stdout 'alpha-repo'
+
+# A bare positional (no slash) is rejected, not silently treated as a repo.
+! bitbottle repo view notarepo -k
+stderr 'PROJECT/REPO'

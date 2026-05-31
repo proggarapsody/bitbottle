@@ -11,6 +11,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // AddOptions holds parsed flags for `code-insights annotation add`.
@@ -35,7 +36,7 @@ type AddOptions struct {
 func NewCmdAdd(f *factory.Factory, runF func(*AddOptions) error) *cobra.Command {
 	opts := &AddOptions{}
 	cmd := &cobra.Command{
-		Use:   "add PROJECT/REPO HASH KEY",
+		Use:   "add [PROJECT/REPO] HASH KEY",
 		Short: "Add Code Insights annotations to a report (single or bulk)",
 		Long: `Add one or more Code Insights annotations to a report.
 
@@ -44,7 +45,7 @@ Single annotation: supply --path, --line, --severity, --type, --message.
 Bulk upload from JSON (array of annotation objects):
   bitbottle code-insights annotation add PROJ/REPO HASH KEY --from-json @annotations.json
   bitbottle code-insights annotation add PROJ/REPO HASH KEY --from-json -   # stdin`,
-		Args: cobra.ExactArgs(3),
+		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {
@@ -66,12 +67,13 @@ Bulk upload from JSON (array of annotation objects):
 }
 
 func addRun(f *factory.Factory, opts *AddOptions) error {
-	ref, err := factory.ResolveTarget(f, opts.Args[:1], opts.Hostname)
+	repoArgs, rest := repoarg.SplitLeadingRepo(opts.Args, 2)
+	ref, err := factory.ResolveTarget(f, repoArgs, opts.Hostname)
 	if err != nil {
 		return err
 	}
-	hash := opts.Args[1]
-	key := opts.Args[2]
+	hash := rest[0]
+	key := rest[1]
 	client, err := f.Backend(ref.Host)
 	if err != nil {
 		return err
