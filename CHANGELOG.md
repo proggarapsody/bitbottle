@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.127.5](https://github.com/proggarapsody/bitbottle/compare/v1.127.4...v1.127.5) (2026-05-31)
+
+
+### Bug Fixes
+
+* **mcp:** MCP-TAXONOMY — unify repo-arg shape, reject unknown host, backend meta ([0c17327](https://github.com/proggarapsody/bitbottle/commit/0c17327c167a2b88a66070babc0bbe86eb8a9bf5))
+
 ## [1.127.4](https://github.com/proggarapsody/bitbottle/compare/v1.127.3...v1.127.4) (2026-05-31)
 
 
