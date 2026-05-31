@@ -32,7 +32,7 @@ var validTypes = []string{"read-only", "no-deletes", "fast-forward-only", "pull-
 func NewCmdCreate(f *factory.Factory, runF func(*CreateOptions) error) *cobra.Command {
 	opts := &CreateOptions{}
 	cmd := &cobra.Command{
-		Use:   "create PROJECT/REPO",
+		Use:   "create [PROJECT/REPO]",
 		Short: "Add a branch restriction",
 		Long: `Add a branch restriction to a Bitbucket Server / DC repository.
 
@@ -46,7 +46,7 @@ like "release/*"). The --type flag chooses the restriction kind:
 
 Pass --user (repeatable) and --group (repeatable) to exempt specific users
 or groups from the restriction.`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {

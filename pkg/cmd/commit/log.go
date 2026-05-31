@@ -19,9 +19,9 @@ func NewCmdCommitLog(f *factory.Factory) *cobra.Command {
 	var hostname string
 
 	cmd := &cobra.Command{
-		Use:   "log PROJECT/REPO",
+		Use:   "log [PROJECT/REPO]",
 		Short: "List commits",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		// Long histories are the rule for repos with real history, so we
 		// always route through $PAGER on a TTY. The annotation handler at
 		// the root wires StartPager/StopPager around RunE — see

@@ -32,13 +32,13 @@ type Options struct {
 func NewCmdCreate(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{Active: true}
 	cmd := &cobra.Command{
-		Use:   "create PROJECT/REPO",
+		Use:   "create [PROJECT/REPO]",
 		Short: "Create a webhook",
 		Long: `Create a repository webhook subscribing to one or more events. Pass --url
 and --events (comma-separated). The optional --secret enables HMAC signing of
 delivery payloads. Use --secret=- to read it from stdin (keeps the value out
 of shell history) or --secret=@PATH to read from a file.`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {

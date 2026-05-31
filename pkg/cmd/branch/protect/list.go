@@ -23,9 +23,9 @@ type ListOptions struct {
 func NewCmdList(f *factory.Factory, runF func(*ListOptions) error) *cobra.Command {
 	opts := &ListOptions{Limit: 30}
 	cmd := &cobra.Command{
-		Use:   "list PROJECT/REPO",
+		Use:   "list [PROJECT/REPO]",
 		Short: "List branch restrictions",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmdutil.ValidatePositiveLimit(opts.Limit); err != nil {
 				return err

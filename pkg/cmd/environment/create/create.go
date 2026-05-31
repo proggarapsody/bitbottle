@@ -29,9 +29,9 @@ var validTypes = []string{"Test", "Staging", "Production"}
 func NewCmdCreate(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "create PROJECT/REPO",
+		Use:   "create [PROJECT/REPO]",
 		Short: "Create a deployment environment",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)

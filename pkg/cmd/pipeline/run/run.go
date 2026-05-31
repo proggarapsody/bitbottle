@@ -22,9 +22,9 @@ type Options struct {
 func NewCmdRun(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "run PROJECT/REPO",
+		Use:   "run [PROJECT/REPO]",
 		Short: "Trigger a pipeline",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			if runF != nil {

@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
-	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmdutil"
@@ -19,22 +18,17 @@ func NewCmdView(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "view [PROJECT/REPO]",
 		Short: "View a repository",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		// Repository descriptions plus the metadata block can overflow
 		// a terminal page; opt in to $PAGER on a TTY.
 		Annotations: map[string]string{cmdutil.PagerAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ref, err := bbrepo.Parse(args[0])
+			ref, err := factory.ResolveTarget(f, args, hostname)
 			if err != nil {
 				return err
 			}
 
-			host, err := resolveHostname(f, hostname)
-			if err != nil {
-				return err
-			}
-
-			client, err := f.Backend(host)
+			client, err := f.Backend(ref.Host)
 			if err != nil {
 				return err
 			}
@@ -85,23 +79,4 @@ func repoFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[bac
 	p.AddField(format.Field[backend.Repository]{Name: "description", Header: "DESCRIPTION", Extract: func(r backend.Repository) any { return r.Description }})
 	p.AddField(format.Field[backend.Repository]{Name: "webURL", Header: "URL", Extract: func(r backend.Repository) any { return r.WebURL }})
 	return p
-}
-
-func resolveHostname(f *factory.Factory, flag string) (string, error) {
-	if flag != "" {
-		return flag, nil
-	}
-	cfg, err := f.Config()
-	if err != nil {
-		return "", err
-	}
-	hosts := cfg.Hosts()
-	switch len(hosts) {
-	case 0:
-		return "", fmt.Errorf("not authenticated; run `bitbottle auth login` first")
-	case 1:
-		return hosts[0], nil
-	default:
-		return "", fmt.Errorf("multiple hosts configured; use --hostname to specify one")
-	}
 }

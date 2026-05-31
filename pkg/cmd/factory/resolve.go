@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
 
 // ResolveTarget returns the repository the command should act on.
@@ -107,15 +108,8 @@ func inferHost(f *Factory, ref *bbrepo.RepoRef) error {
 }
 
 // parseTargetArg accepts "HOST/PROJECT/REPO" or "PROJECT/REPO".
-// PROJECT-only-with-host inference happens in U3.
+// It delegates to repoarg.ParseRef, the single shared ref parser, so the
+// accepted forms stay identical across every command surface.
 func parseTargetArg(s string) (bbrepo.RepoRef, error) {
-	parts := strings.Split(s, "/")
-	switch len(parts) {
-	case 2:
-		return bbrepo.RepoRef{Project: parts[0], Slug: parts[1]}, nil
-	case 3:
-		return bbrepo.RepoRef{Host: parts[0], Project: parts[1], Slug: parts[2]}, nil
-	default:
-		return bbrepo.RepoRef{}, fmt.Errorf("invalid target %q: expected [HOST/]PROJECT/REPO", s)
-	}
+	return repoarg.ParseRef(s)
 }

@@ -22,9 +22,9 @@ type Options struct {
 func NewCmdList(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 	opts := &Options{}
 	cmd := &cobra.Command{
-		Use:   "list PROJECT/REPO",
+		Use:   "list [PROJECT/REPO]",
 		Short: "List webhooks",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			opts.Output = format.ConfigFromCmd(cmd)

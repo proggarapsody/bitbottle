@@ -18,9 +18,9 @@ func NewCmdTagList(f *factory.Factory) *cobra.Command {
 	var hostname string
 
 	cmd := &cobra.Command{
-		Use:   "list PROJECT/REPO",
+		Use:   "list [PROJECT/REPO]",
 		Short: "List tags",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmdutil.ValidatePositiveLimit(limit); err != nil {
 				return err
