@@ -142,6 +142,41 @@ func TestCloudClient_DeletePipelineVariable_LooksUpKeyAndDeletes(t *testing.T) {
 	assert.Equal(t, "/repositories/ws/repo/pipelines_config/variables/{v-x}", deletePath)
 }
 
+func TestCloudClient_GetPipelineVariable_ReturnsMatchingVariable(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[
+			{"uuid":"{v-1}","key":"DEPLOY_ENV","value":"prod","secured":false},
+			{"uuid":"{v-2}","key":"API_TOKEN","secured":true}
+		]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	got, err := client.GetPipelineVariable("ws", "repo", "DEPLOY_ENV")
+	require.NoError(t, err)
+	assert.Equal(t, "v-1", got.UUID)
+	assert.Equal(t, "DEPLOY_ENV", got.Key)
+	assert.Equal(t, "prod", got.Value)
+	assert.False(t, got.Secured)
+}
+
+func TestCloudClient_GetPipelineVariable_NotFoundReturnsTypedError(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"values":[]}`))
+	}))
+	t.Cleanup(srv.Close)
+	client := cloud.NewClient(srv.Client(), srv.URL, "tok", "")
+	_, err := client.GetPipelineVariable("ws", "repo", "MISSING")
+	require.Error(t, err)
+	var de *backend.DomainError
+	require.True(t, errors.As(err, &de), "want backend.DomainError, got %T", err)
+	assert.Equal(t, backend.ErrNotFound, de.Kind)
+	assert.Equal(t, "MISSING", de.ID)
+}
+
 func TestCloudClient_DeletePipelineVariable_NotFoundReturnsTypedError(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

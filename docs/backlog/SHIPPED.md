@@ -2,6 +2,16 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-02 — REPO-PIPELINE-VAR-VIEW — variable view KEY command
+
+`variable view [PROJECT/REPO] KEY [--scope repository|workspace|deployment] [--json]` — adds the
+missing `view` subcommand to the `variable` tree. Uses list-then-find at the ops layer
+(`GetVariableByKey` on the `VariableOps` interface) — safe for all three scopes without
+touching the `PipelineClient` interface. MCP tool `variable_view`. Txtar coverage in
+`test/script/testdata/variable_view.txtar`.
+
+---
+
 ## 2026-06-02 — DEPLOY-KEY-PERMISSION — --permission flag for deploy-key add
 
 `deploy-key add --permission read|read-write` — exposes Cloud deploy key write

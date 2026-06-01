@@ -36,6 +36,21 @@ func registerVariableTools(s *mcpserver.MCPServer, h *handlers) {
 	)
 
 	s.AddTool(
+		mcplib.NewTool("variable_view",
+			mcplib.WithDescription("View a single pipeline variable by key (Cloud only)"),
+			optHostname,
+			reqRepo,
+			mcplib.WithString("key",
+				mcplib.Description("Variable key to look up"),
+				mcplib.Required(),
+			),
+			optScope,
+			optEnvUUID,
+		),
+		h.variableView,
+	)
+
+	s.AddTool(
 		mcplib.NewTool("variable_set",
 			mcplib.WithDescription("Create or update a variable by key (upsert; Cloud only)"),
 			optHostname,

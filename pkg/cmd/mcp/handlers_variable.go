@@ -85,6 +85,95 @@ func (h *handlers) variableList(_ context.Context, req mcplib.CallToolRequest) (
 	}
 }
 
+// variableView handles the variable_view MCP tool.
+func (h *handlers) variableView(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+	hostname := req.GetString("hostname", "")
+	repo, err := requireString(req, "repo")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	ns, slug, err := splitRepo(repo)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	key, err := requireString(req, "key")
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	scope := req.GetString("scope", "repository")
+	envUUID := req.GetString("env_uuid", "")
+
+	client, err := h.resolveBackend(hostname)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+
+	switch scope {
+	case "repository":
+		pc, err := backend.AsPipelineClient(client, hostname)
+		if err != nil {
+			return errResultErr(err), nil
+		}
+		vars, err := pc.ListPipelineVariables(ns, slug)
+		if err != nil {
+			return errResultErr(err), nil
+		}
+		for _, v := range vars {
+			if v.Key == key {
+				if v.Secured {
+					v.Value = ""
+				}
+				return jsonResult(v)
+			}
+		}
+		return errResult(fmt.Sprintf("pipeline variable %q not found", key)), nil
+
+	case "workspace":
+		wc, err := backend.AsWorkspaceVariableClient(client, hostname)
+		if err != nil {
+			return errResultErr(err), nil
+		}
+		vars, err := wc.ListWorkspaceVariables(ns)
+		if err != nil {
+			return errResultErr(err), nil
+		}
+		for _, v := range vars {
+			if v.Key == key {
+				if v.Secured {
+					v.Value = ""
+				}
+				return jsonResult(v)
+			}
+		}
+		return errResult(fmt.Sprintf("pipeline variable %q not found", key)), nil
+
+	case "deployment":
+		if envUUID == "" {
+			return errResult("env_uuid is required for scope=deployment"), nil
+		}
+		dc, err := backend.AsDeploymentClient(client, hostname)
+		if err != nil {
+			return errResultErr(err), nil
+		}
+		vars, err := dc.ListEnvVariables(ns, slug, envUUID)
+		if err != nil {
+			return errResultErr(err), nil
+		}
+		for _, v := range vars {
+			if v.Key == key {
+				if v.Secured {
+					v.Value = ""
+				}
+				return jsonResult(v)
+			}
+		}
+		return errResult(fmt.Sprintf("variable %q not found in environment %s", key, envUUID)), nil
+
+	default:
+		return errResult(fmt.Sprintf("unknown scope %q; valid: repository, workspace, deployment", scope)), nil
+	}
+}
+
 // variableSet handles the variable_set MCP tool.
 func (h *handlers) variableSet(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	hostname := req.GetString("hostname", "")
