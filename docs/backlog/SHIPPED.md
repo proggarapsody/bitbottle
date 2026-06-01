@@ -11,6 +11,34 @@
 
 ---
 
+## 2026-05-31 — PR-GUARDS
+
+### PR-GUARDS — PR state-machine + `--state` enum validation (BB-07, BB-11, BB-20, BB-21)
+
+- **Fix commit:** `fix(pr): PR-GUARDS — state-machine guard + --state enum validation` (2026-05-31)
+- **Backends:** Both (Cloud + Server/DC)
+- **Estimate (planned):** 1.5 days
+
+**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
+
+**Why P1:** Two related defect classes. (1) `pr approve` succeeds with exit 0 + "Approved pull request #N" on a DECLINED PR — because the Bitbucket Cloud API returns 200 for participant approval regardless of PR state. `pr decline` and `pr merge` correctly reject DECLINED/MERGED PRs (because the API returns 400 there). So bitbottle is "right by accident" three times, and wrong on the one path the API is permissive on. (2) `pr list --state INVALID_STATE` (and `--state ""`) silently returns all 11 PRs across MERGED/OPEN/DECLINED — no client-side validation.
+
+**Shape:**
+
+1. **`ValidateMutablePRState(pr) error`** in `api/backend/pr_state.go` — returns typed `*DomainError{Kind: ErrConflict}` if state ∈ {DECLINED, MERGED, SUPERSEDED}. Called by `pr approve`, `pr unapprove`, `pr request-changes`, `pr edit`, before the mutation request.
+2. **`--state` enum validation** via `pkg/cmd/internal/enumflag/` `pflag.Value` helper. Rejects `""`, `INVALID_STATE`, and any off-enum value at parse time.
+
+**Definition of Done (as shipped):**
+
+- [x] `api/backend/pr_state.go` — `ValidateMutablePRState` helper + tests.
+- [x] `pkg/cmd/pr/{approve,unapprove,request-changes,edit}` — call the guard before the API request.
+- [x] `pkg/cmd/internal/enumflag/enumflag.go` — generic enum flag helper + tests.
+- [x] `pkg/cmd/pr/list.go` — `--state` uses enum flag, rejects invalid values.
+- [x] `.txtar` scripts: `pr_approve_on_declined.txtar`, `pr_list_state_invalid.txtar`.
+- [x] `pr approve N` on DECLINED PR exits 1 with typed error.
+
+---
+
 ## 2026-05-31 — MCP-TAXONOMY
 
 ### MCP-TAXONOMY — Unify tool catalog (MCP-04, MCP-05, MCP-16)

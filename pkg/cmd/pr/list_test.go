@@ -131,6 +131,47 @@ func TestNewCmdPRList_InvalidLimit(t *testing.T) {
 	assert.Contains(t, err.Error(), "--limit")
 }
 
+func TestNewCmdPRList_RejectsInvalidState(t *testing.T) {
+	t.Parallel()
+	for _, bad := range []string{"INVALID", "", "opn"} {
+		f, _, _ := factorytest.New(t, factorytest.Opts{})
+		cmd := pr.NewCmdPRList(f)
+		format.RegisterOutputFlags(cmd)
+		cmd.SetArgs([]string{"MYPROJ/my-service", "--state", bad})
+		err := cmd.Execute()
+		require.Error(t, err, "state %q should be rejected", bad)
+		assert.Contains(t, err.Error(), "invalid value")
+	}
+}
+
+func TestPRList_ValidStatesMapCorrectly(t *testing.T) {
+	t.Parallel()
+	cases := map[string]string{
+		"open":     "OPEN",
+		"opened":   "OPEN",
+		"closed":   "DECLINED",
+		"declined": "DECLINED",
+		"merged":   "MERGED",
+		"MERGED":   "MERGED", // case-insensitive accept, still maps right
+	}
+	for in, want := range cases {
+		var gotState string
+		fake := &testhelpers.FakeClient{
+			T: t,
+			ListPRsFn: func(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
+				gotState = state
+				return nil, nil
+			},
+		}
+		f, _, _ := newPRFactory(t, fake, newPRRunner())
+		cmd := pr.NewCmdPRList(f)
+		format.RegisterOutputFlags(cmd)
+		cmd.SetArgs([]string{"MYPROJ/my-service", "--state", in})
+		require.NoError(t, cmd.Execute(), "state %q should be accepted", in)
+		assert.Equal(t, want, gotState, "state %q mapped wrong", in)
+	}
+}
+
 func TestPRList_PartialResults(t *testing.T) {
 	t.Parallel()
 	listErr := errors.New("429 Too Many Requests")

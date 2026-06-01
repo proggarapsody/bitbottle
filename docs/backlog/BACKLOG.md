@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| **PR-GUARDS** | PR state-machine pre-check (`pr approve` silently succeeds on DECLINED — BB-07, BB-20); client-side `--state` enum validation (BB-11, BB-21). | Both | 1.5 | ✅ P1 |
 | **CLOUD-WIRE** | Cloud API drift fixes: `/permissions/` → `/permissions-config/` (BB-08); `/commits/` → `/commit/` for commit comments (BB-09); `pipeline trigger` response struct (BB-10). | Cloud | 1.5 | ✅ P1 |
 | **REF-UX** | `branch create`/`tag create` `--start-at` ergonomics — promote to 3rd positional or default to HEAD (BB-15, BB-16). | Both | 0.5 | ✅ P2 |
 | **BACKLOG-MIGRATION** | Sweep remaining shipped scope detail sections (every `### XYZ` whose `Status:` reads `✅` and whose feat commit is on `main`) from this file into [`SHIPPED.md`](SHIPPED.md). Each move happens in a `chore(backlog):` commit, one scope per commit, so history is bisectable. After this scope finishes, every `### ` heading in this file maps to **unshipped** work only. | DX | 0.5 | ✅ P2 |
@@ -3743,28 +3742,6 @@ The shipped CI scope covers Bitbucket Server/DC Code Insights only (`/rest/insig
 - [ ] `test/script/testdata/cloud_code_insights.txtar`
 - [ ] `skills/SKILL.md` + `skills/references/code-insights.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
-### PR-GUARDS — PR state-machine + `--state` enum validation (BB-07, BB-11, BB-20, BB-21)
-
-**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
-
-**Why P1:** Two related defect classes. (1) `pr approve` succeeds with exit 0 + "Approved pull request #N" on a DECLINED PR — because the Bitbucket Cloud API returns 200 for participant approval regardless of PR state. `pr decline` and `pr merge` correctly reject DECLINED/MERGED PRs (because the API returns 400 there). So bitbottle is "right by accident" three times, and wrong on the one path the API is permissive on. (2) `pr list --state INVALID_STATE` (and `--state ""`) silently returns all 11 PRs across MERGED/OPEN/DECLINED — no client-side validation.
-
-**Shape:**
-
-1. **`validateMutablePRState(pr) error`** in `api/backend/pr_state.go` — returns typed error if state ∈ {DECLINED, MERGED, SUPERSEDED}. Called by `pr approve`, `pr unapprove`, `pr request-changes`, `pr edit`, before the mutation request. Decline/merge keep their server-side 400 path but also benefit from earlier client-side rejection.
-2. **`--state` enum validation** at flag-parse time. Add a `pflag.Var`-style helper `EnumFlag([]string{"OPEN","MERGED","DECLINED","SUPERSEDED"}, &target, caseInsensitive)`. Wire on `pr list`'s `--state`. Reject `""`, `INVALID_STATE`, and any other off-enum value with `ErrInvalidRequest`.
-
-**Definition of Done:**
-
-- [ ] `api/backend/pr_state.go` — `validateMutablePRState` helper + tests.
-- [ ] `pkg/cmd/pr/{approve,unapprove,request-changes,edit}/*.go` — call the guard before the API request.
-- [ ] `pkg/cmd/internal/enumflag/enumflag.go` — generic enum flag helper.
-- [ ] `pkg/cmd/pr/list/list.go` — `--state` uses enum flag.
-- [ ] `.txtar` scripts: `pr_approve_on_declined.txtar`, `pr_list_state_invalid.txtar`.
-- [ ] Regression test: `pr approve N` on DECLINED PR exits 1 with typed error.
 
 ---
 

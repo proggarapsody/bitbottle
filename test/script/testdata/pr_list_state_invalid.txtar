@@ -1,0 +1,10 @@
+# pr list --state with an off-enum value is rejected at flag-parse time with
+# exit code 1 and a clear "invalid value" error listing the allowed states.
+bb-fake server
+
+! bitbottle pr list -R $BB_HOST/PROJ/alpha-repo --state INVALID -k
+stderr 'invalid value'
+
+# A valid state still works.
+bitbottle pr list -R $BB_HOST/PROJ/alpha-repo --state open -k
+stdout 'Fix the bug'

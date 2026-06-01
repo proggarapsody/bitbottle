@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	prshared "github.com/proggarapsody/bitbottle/pkg/cmd/pr/shared"
 )
@@ -19,6 +20,14 @@ func NewCmdUnapprove(f *factory.Factory) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ref, prID, client, err := prshared.ResolvePRTarget(f, args, hostnameFlag)
 			if err != nil {
+				return err
+			}
+
+			pr, err := client.GetPR(ref.Project, ref.Slug, prID)
+			if err != nil {
+				return err
+			}
+			if err := backend.ValidateMutablePRState(pr); err != nil {
 				return err
 			}
 
