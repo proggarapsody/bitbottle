@@ -35,8 +35,8 @@ func (c *Client) TriggerPipeline(ns, slug string, input backend.PipelineTriggerI
 	}
 
 	link := ""
-	if len(resp.Links.Self) > 0 {
-		link = resp.Links.Self[0].Href
+	if resp.Links.Self != nil {
+		link = resp.Links.Self.Href
 	}
 	return backend.PipelineTriggerResult{
 		UUID:  stripBraces(resp.UUID),

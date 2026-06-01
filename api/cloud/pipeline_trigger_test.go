@@ -12,6 +12,7 @@ import (
 
 	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/api/cloud"
+	cloudgen "github.com/proggarapsody/bitbottle/api/cloud/gen"
 )
 
 func newCloudTriggerServer(t *testing.T, handler http.HandlerFunc) *cloud.Client {
@@ -33,7 +34,7 @@ func TestCloudClient_TriggerPipeline_Success(t *testing.T) {
 		_, _ = w.Write([]byte(`{
 			"uuid": "{abc-123}",
 			"state": {"name": "PENDING"},
-			"links": {"self": [{"href": "https://api.bitbucket.org/2.0/repositories/myws/my-repo/pipelines/%7Babc-123%7D"}]}
+			"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/myws/my-repo/pipelines/%7Babc-123%7D"}}
 		}`))
 	})
 	result, err := client.TriggerPipeline("myws", "my-repo", backend.PipelineTriggerInput{
@@ -61,7 +62,7 @@ func TestCloudClient_TriggerPipeline_WithVariables(t *testing.T) {
 		_, _ = w.Write([]byte(`{
 			"uuid": "{def-456}",
 			"state": {"name": "PENDING"},
-			"links": {"self": [{"href": "https://api.bitbucket.org/2.0/repositories/myws/my-repo/pipelines/%7Bdef-456%7D"}]}
+			"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/myws/my-repo/pipelines/%7Bdef-456%7D"}}
 		}`))
 	})
 	result, err := client.TriggerPipeline("myws", "my-repo", backend.PipelineTriggerInput{
@@ -90,7 +91,7 @@ func TestCloudClient_TriggerPipeline_OmitsVariablesWhenEmpty(t *testing.T) {
 		_, _ = w.Write([]byte(`{
 			"uuid": "{abc-123}",
 			"state": {"name": "PENDING"},
-			"links": {"self": [{"href": "https://api.bitbucket.org/2.0/repositories/myws/my-repo/pipelines/%7Babc-123%7D"}]}
+			"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/myws/my-repo/pipelines/%7Babc-123%7D"}}
 		}`))
 	})
 	_, err := client.TriggerPipeline("myws", "my-repo", backend.PipelineTriggerInput{
@@ -101,6 +102,19 @@ func TestCloudClient_TriggerPipeline_OmitsVariablesWhenEmpty(t *testing.T) {
 	assert.False(t, hasVariables, "request body should not contain 'variables' key when no variables are provided, got: %v", gotBody)
 }
 
+// TestCloudTriggerResponseUnmarshal_SelfIsObject asserts that CloudTriggerResponseLinks.Self
+// is typed as *CloudTriggerResponseSelfLink (a single object, not a slice), matching the
+// Bitbucket Cloud API wire format (BB-10 fix).
+func TestCloudTriggerResponseUnmarshal_SelfIsObject(t *testing.T) {
+	t.Parallel()
+	const fixture = `{"links":{"self":{"href":"https://api.bitbucket.org/2.0/repositories/ws/repo/pipelines/UUID"}},"state":{"name":"PENDING"}}`
+	var resp cloudgen.CloudTriggerResponse
+	require.NoError(t, json.Unmarshal([]byte(fixture), &resp))
+	require.NotNil(t, resp.Links.Self, "links.self must not be nil")
+	assert.Equal(t, "https://api.bitbucket.org/2.0/repositories/ws/repo/pipelines/UUID", resp.Links.Self.Href)
+	assert.Equal(t, "PENDING", resp.State.Name)
+}
+
 func TestCloudClient_TriggerPipeline_NoSelfLink(t *testing.T) {
 	t.Parallel()
 	client := newCloudTriggerServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +122,7 @@ func TestCloudClient_TriggerPipeline_NoSelfLink(t *testing.T) {
 		_, _ = w.Write([]byte(`{
 			"uuid": "{ghi-789}",
 			"state": {"name": "PENDING"},
-			"links": {"self": []}
+			"links": {}
 		}`))
 	})
 	result, err := client.TriggerPipeline("myws", "my-repo", backend.PipelineTriggerInput{Branch: "main"})

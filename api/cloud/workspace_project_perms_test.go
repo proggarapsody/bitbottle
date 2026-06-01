@@ -32,7 +32,7 @@ func TestCloudClient_ListWorkspaceProjectPerms_UserPath(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPaths = append(gotPaths, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/workspaces/myws/projects/PROJ/permissions/users" {
+		if r.URL.Path == "/workspaces/myws/projects/PROJ/permissions-config/users" {
 			_, _ = w.Write([]byte(wsProjectUserPermsJSON))
 		} else {
 			_, _ = w.Write([]byte(`{"values":[]}`))
@@ -43,8 +43,8 @@ func TestCloudClient_ListWorkspaceProjectPerms_UserPath(t *testing.T) {
 
 	got, err := client.ListWorkspaceProjectPerms("myws", "PROJ", 0)
 	require.NoError(t, err)
-	assert.Contains(t, gotPaths, "/workspaces/myws/projects/PROJ/permissions/users")
-	assert.Contains(t, gotPaths, "/workspaces/myws/projects/PROJ/permissions/groups")
+	assert.Contains(t, gotPaths, "/workspaces/myws/projects/PROJ/permissions-config/users")
+	assert.Contains(t, gotPaths, "/workspaces/myws/projects/PROJ/permissions-config/groups")
 	// Two user entries + 0 group entries
 	require.Len(t, got, 2)
 	assert.Equal(t, "write", got[0].Permission)
@@ -58,7 +58,7 @@ func TestCloudClient_ListWorkspaceProjectPerms_GroupPath(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/workspaces/myws/projects/PROJ/permissions/groups" {
+		if r.URL.Path == "/workspaces/myws/projects/PROJ/permissions-config/groups" {
 			_, _ = w.Write([]byte(wsProjectGroupPermsJSON))
 		} else {
 			_, _ = w.Write([]byte(`{"values":[]}`))
@@ -82,9 +82,9 @@ func TestCloudClient_ListWorkspaceProjectPerms_MergesBoth(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/workspaces/myws/projects/PROJ/permissions/users":
+		case "/workspaces/myws/projects/PROJ/permissions-config/users":
 			_, _ = w.Write([]byte(wsProjectUserPermsJSON))
-		case "/workspaces/myws/projects/PROJ/permissions/groups":
+		case "/workspaces/myws/projects/PROJ/permissions-config/groups":
 			_, _ = w.Write([]byte(wsProjectGroupPermsJSON))
 		default:
 			_, _ = w.Write([]byte(`{"values":[]}`))
@@ -119,7 +119,7 @@ func TestCloudClient_GrantWorkspaceProjectPerm_User(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, http.MethodPut, gotMethod)
-	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions/users/alice", gotPath)
+	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions-config/users/alice", gotPath)
 	assert.Equal(t, "write", gotBody["permission"])
 }
 
@@ -140,7 +140,7 @@ func TestCloudClient_GrantWorkspaceProjectPerm_Group(t *testing.T) {
 		GroupSlug:  "devs",
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions/groups/devs", gotPath)
+	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions-config/groups/devs", gotPath)
 }
 
 func TestCloudClient_RevokeWorkspaceProjectPerm_User(t *testing.T) {
@@ -157,7 +157,7 @@ func TestCloudClient_RevokeWorkspaceProjectPerm_User(t *testing.T) {
 	err := client.RevokeWorkspaceProjectPerm("myws", "PROJ", "alice", false)
 	require.NoError(t, err)
 	assert.Equal(t, http.MethodDelete, gotMethod)
-	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions/users/alice", gotPath)
+	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions-config/users/alice", gotPath)
 }
 
 func TestCloudClient_RevokeWorkspaceProjectPerm_Group(t *testing.T) {
@@ -172,7 +172,7 @@ func TestCloudClient_RevokeWorkspaceProjectPerm_Group(t *testing.T) {
 
 	err := client.RevokeWorkspaceProjectPerm("myws", "PROJ", "devs", true)
 	require.NoError(t, err)
-	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions/groups/devs", gotPath)
+	assert.Equal(t, "/workspaces/myws/projects/PROJ/permissions-config/groups/devs", gotPath)
 }
 
 func TestCloudClient_ListWorkspaceProjectPerms_PropagatesAPIError(t *testing.T) {

@@ -770,7 +770,7 @@ type CloudTriggerResponse struct {
 
 // CloudTriggerResponseLinks defines model for CloudTriggerResponseLinks.
 type CloudTriggerResponseLinks struct {
-	Self []CloudTriggerResponseSelfLink `json:"self"`
+	Self *CloudTriggerResponseSelfLink `json:"self,omitempty"`
 }
 
 // CloudTriggerResponseSelfLink defines model for CloudTriggerResponseSelfLink.

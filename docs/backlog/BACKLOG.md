@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| **CLOUD-WIRE** | Cloud API drift fixes: `/permissions/` → `/permissions-config/` (BB-08); `/commits/` → `/commit/` for commit comments (BB-09); `pipeline trigger` response struct (BB-10). | Cloud | 1.5 | ✅ P1 |
 | **REF-UX** | `branch create`/`tag create` `--start-at` ergonomics — promote to 3rd positional or default to HEAD (BB-15, BB-16). | Both | 0.5 | ✅ P2 |
 | **BACKLOG-MIGRATION** | Sweep remaining shipped scope detail sections (every `### XYZ` whose `Status:` reads `✅` and whose feat commit is on `main`) from this file into [`SHIPPED.md`](SHIPPED.md). Each move happens in a `chore(backlog):` commit, one scope per commit, so history is bisectable. After this scope finishes, every `### ` heading in this file maps to **unshipped** work only. | DX | 0.5 | ✅ P2 |
 
@@ -3742,29 +3741,6 @@ The shipped CI scope covers Bitbucket Server/DC Code Insights only (`/rest/insig
 - [ ] `test/script/testdata/cloud_code_insights.txtar`
 - [ ] `skills/SKILL.md` + `skills/references/code-insights.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
-### CLOUD-WIRE — Cloud API path + response-struct drift (BB-08, BB-09, BB-10)
-
-**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
-
-**Why P1:** Three Cloud-only wire-level defects. (1) `workspace project perms list` calls `/permissions/users` but the correct path is `/permissions-config/users` — 404. (2) `commit comment {list,add,edit,delete}` all hardcode `/commits/{hash}/comments` (plural) but Bitbucket Cloud uses `/commit/{hash}/comments` (singular) — 404 on all four operations. (3) `pipeline trigger`'s response struct types `CloudTriggerResponseLinks.links.self` as `[]CloudTriggerResponseSelfLink` (slice) but the API returns a single object — JSON unmarshal failure, no useful output (and exit 0, see BB-12).
-
-**Shape:**
-
-1. **Endpoint fixes** — `api/cloud/workspace_project_perms.go`: change `/permissions/users` → `/permissions-config/users`. `api/cloud/commit_comment.go` lines 32, 52, 65, 74: change `/commits/{hash}/comments` → `/commit/{hash}/comments`. Both are ~4 lines + regression tests against captured fixtures.
-2. **Pipeline trigger struct** — fix the generator (or hand-correct the type) so `links.self` is `*CloudTriggerResponseSelfLink` (single, nullable). Add a unit test loading a captured pipeline-trigger response fixture and asserting unmarshal success.
-3. **Add live-wire (tier 6) tests** for each of the three fixed endpoints to prevent silent re-drift if Atlassian moves the paths again.
-
-**Definition of Done:**
-
-- [ ] `api/cloud/workspace_project_perms.go` — path corrected.
-- [ ] `api/cloud/commit_comment.go` — all four operations use `/commit/` (singular).
-- [ ] `api/cloud/pipeline_trigger.go` (or generated equivalent) — `links.self` typed correctly + unmarshal regression test.
-- [ ] `test/testdata/fixtures/pipeline_trigger_response.json` — captured live response.
-- [ ] `.txtar` scripts: `workspace_project_perms_list.txtar`, `commit_comment_lifecycle.txtar`, `pipeline_trigger.txtar`.
-- [ ] Nightly `BITBOTTLE_E2E=1` runs against real Cloud sandbox for all three.
 
 ---
 
