@@ -1,0 +1,14 @@
+# repo hook list shows installed hook scripts in tabular and JSON format.
+# repo hook enable/disable toggle the enabled state.
+bb-fake server
+
+bitbottle repo hook list -R $BB_HOST/PROJ/alpha-repo -k
+stdout 'com.example:hook-a'
+stdout 'Hook A'
+
+bitbottle repo hook list -R $BB_HOST/PROJ/alpha-repo -k --json
+stdout '"key"'
+stdout '"enabled"'
+
+bitbottle repo hook enable -R $BB_HOST/PROJ/alpha-repo com.example:hook-b -k
+stdout 'Enabled hook com.example:hook-b'

@@ -2,6 +2,7 @@ package testhelpers
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"testing"
 
@@ -210,6 +211,14 @@ type FakeClient struct {
 
 	// Source write methods (both backends; satisfies backend.SourceWriter when set)
 	PutFileFn func(ns, slug, path string, in backend.PutFileInput) error
+
+	// RepoHookClient (Server-only; satisfies backend.RepoHookClient when set)
+	ListRepoHooksFn       func(project, slug string) ([]backend.RepoHook, error)
+	GetRepoHookFn         func(project, slug, hookKey string) (backend.RepoHook, error)
+	EnableRepoHookFn      func(project, slug, hookKey string) error
+	DisableRepoHookFn     func(project, slug, hookKey string) error
+	GetRepoHookSettingsFn func(project, slug, hookKey string) (json.RawMessage, error)
+	SetRepoHookSettingsFn func(project, slug, hookKey string, cfg json.RawMessage) error
 
 	// Code Insights (Server-only; satisfies backend.CodeInsightsClient when set)
 	ListReportsFn       func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
@@ -515,6 +524,7 @@ var (
 	_ backend.PRMergePreviewClient                  = (*FakeClient)(nil)
 	_ backend.PipelineOIDCClient                    = (*FakeClient)(nil)
 	_ backend.HostInfoClient                        = (*FakeClient)(nil)
+	_ backend.RepoHookClient                        = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -3121,4 +3131,64 @@ func (c *FakeClient) GetHostInfo() (backend.HostInfo, error) {
 		c.T.Fatalf("unexpected call to FakeClient.GetHostInfo; set GetHostInfoFn in your test")
 	}
 	return backend.HostInfo{}, nil
+}
+
+func (c *FakeClient) ListRepoHooks(project, slug string) ([]backend.RepoHook, error) {
+	if c.ListRepoHooksFn != nil {
+		return c.ListRepoHooksFn(project, slug)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListRepoHooks; set ListRepoHooksFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetRepoHook(project, slug, hookKey string) (backend.RepoHook, error) {
+	if c.GetRepoHookFn != nil {
+		return c.GetRepoHookFn(project, slug, hookKey)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetRepoHook; set GetRepoHookFn in your test")
+	}
+	return backend.RepoHook{}, nil
+}
+
+func (c *FakeClient) EnableRepoHook(project, slug, hookKey string) error {
+	if c.EnableRepoHookFn != nil {
+		return c.EnableRepoHookFn(project, slug, hookKey)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.EnableRepoHook; set EnableRepoHookFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) DisableRepoHook(project, slug, hookKey string) error {
+	if c.DisableRepoHookFn != nil {
+		return c.DisableRepoHookFn(project, slug, hookKey)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DisableRepoHook; set DisableRepoHookFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) GetRepoHookSettings(project, slug, hookKey string) (json.RawMessage, error) {
+	if c.GetRepoHookSettingsFn != nil {
+		return c.GetRepoHookSettingsFn(project, slug, hookKey)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetRepoHookSettings; set GetRepoHookSettingsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) SetRepoHookSettings(project, slug, hookKey string, cfg json.RawMessage) error {
+	if c.SetRepoHookSettingsFn != nil {
+		return c.SetRepoHookSettingsFn(project, slug, hookKey, cfg)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetRepoHookSettings; set SetRepoHookSettingsFn in your test")
+	}
+	return nil
 }

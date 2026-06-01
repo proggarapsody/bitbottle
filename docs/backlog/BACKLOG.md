@@ -531,7 +531,7 @@ Current state of every command area against gh feature parity:
 | SNIPPET-COMMENTS | **Cloud Snippet Comments** | `snippet comment list SNIPPET_ID [WORKSPACE] [--limit N] [--json]`, `snippet comment add SNIPPET_ID --body TEXT [WORKSPACE]`, `snippet comment delete SNIPPET_ID COMMENT_ID [WORKSPACE] [--confirm]` — comment thread on a Cloud snippet (parity with `pr comment` ✅ and `issue comment` ✅). Cloud: `GET/POST /snippets/{workspace}/{snippet_id}/comments` (paginated), `DELETE /snippets/{workspace}/{snippet_id}/comments/{comment_id}`. Cloud only. Extends shipped `SnippetClient` with `ListSnippetComments`, `AddSnippetComment`, `DeleteSnippetComment`. Domain type `SnippetComment{ID, Body, User, CreatedOn, WebURL}`. MCP triplet. — scope **SNIPPET-COMMENTS** | Cloud | 2 | ✅ |
 | PR-MERGE-PREVIEW | **PR Merge Preview / Dry-Run** | `pr merge PR_ID --dry-run [--strategy ff\|squash\|merge-commit] [PROJECT/REPO] [--json]` — preview a PR merge without committing: returns would-be merge metadata and `conflicts` array of file paths. Cloud: `POST /repositories/{ws}/{slug}/pullrequests/{id}/merge?dry_run=true`. Server: `POST /rest/api/1.0/projects/{k}/repos/{s}/pull-requests/{id}/merge/dry-run` (Server 7.0+). Both backends. Extends `PRMerger` interface with `DryRunMergePR(in DryRunMergePRInput) (MergeDryRunResult, error)`. Domain type `MergeDryRunResult{CanMerge, MessagePreview, ConflictedPaths, Vetoes []MergeVeto}`. MCP tool `dry_run_merge_pr`. — scope **PR-MERGE-PREVIEW** | Both | 2 | ✅ |
 | PIPE-OIDC | **Pipeline OIDC Configuration** | `pipeline oidc config get [PROJECT/REPO] [--json]`, `pipeline oidc keys [PROJECT/REPO] [--json]` — read the OIDC configuration Cloud Pipelines emits as a workload-identity provider. Cloud: `GET /workspaces/{ws}/pipelines-config/identity/oidc/.well-known/openid-configuration`, `GET /workspaces/{ws}/pipelines-config/identity/oidc/keys.json`. Cloud only. New optional interface `PipelineOIDCClient` with `GetPipelineOIDCConfig(ws string)` and `GetPipelineOIDCKeys(ws string)`. MCP pair `get_pipeline_oidc_config`, `get_pipeline_oidc_keys`. Closes the workload-identity gap for agents bootstrapping cloud-provider federation. — scope **PIPE-OIDC** | Cloud | 2 | ✅ |
-| REPO-HOOK-SCRIPTS | **Server/DC Repo Hook Settings** | `repo hook list [PROJECT/REPO] [--json]`, `repo hook view [PROJECT/REPO] HOOK_KEY [--json]`, `repo hook enable [PROJECT/REPO] HOOK_KEY`, `repo hook disable [PROJECT/REPO] HOOK_KEY`, `repo hook settings get/set [PROJECT/REPO] HOOK_KEY [--config-file FILE]` — manage per-repository hook plugins (distinct from `webhook` ✅). Server: `GET /rest/api/1.0/projects/{k}/repos/{s}/settings/hooks`, `GET/PUT/DELETE .../hooks/{hookKey}/enabled`, `GET/PUT .../hooks/{hookKey}/settings`. Cloud → typed `host.unsupported`. New optional interface `RepoHookClient`. MCP quintet. — scope **REPO-HOOK-SCRIPTS** | Server/DC | 3 | 🔲 |
+| REPO-HOOK-SCRIPTS | **Server/DC Repo Hook Settings** | `repo hook list [PROJECT/REPO] [--json]`, `repo hook view [PROJECT/REPO] HOOK_KEY [--json]`, `repo hook enable [PROJECT/REPO] HOOK_KEY`, `repo hook disable [PROJECT/REPO] HOOK_KEY`, `repo hook settings get/set [PROJECT/REPO] HOOK_KEY [--config-file FILE]` — manage per-repository hook plugins (distinct from `webhook` ✅). Server: `GET /rest/api/1.0/projects/{k}/repos/{s}/settings/hooks`, `GET/PUT/DELETE .../hooks/{hookKey}/enabled`, `GET/PUT .../hooks/{hookKey}/settings`. Cloud → typed `host.unsupported`. New optional interface `RepoHookClient`. MCP quintet. — scope **REPO-HOOK-SCRIPTS** | Server/DC | 3 | ✅ |
 | CLOUD-CODE-INSIGHTS | **Cloud Code Insights Reports & Annotations** | `code-insights report list/view/put/delete HASH [KEY] [PROJECT/REPO]`, `code-insights annotation list/put HASH REPORT_KEY [PROJECT/REPO]` — Cloud counterpart to the Server/DC Code Insights surface (✅ scope CI). Cloud: `GET/PUT/DELETE /repositories/{ws}/{slug}/commit/{commit}/reports/{reportId}`, annotation sub-resource same. Server/DC → reuses existing CI commands. New optional interface `CloudCodeInsightsClient`. MCP sextet. Closes Cloud parity gap with shipped Server CI scope. — scope **CLOUD-CODE-INSIGHTS** | Cloud | 3 | 🔲 |
 | ISSUE-ACTIVITY | **Cloud Issue Activity Log** | `bitbottle issue activity ISSUE_ID [PROJECT/REPO] [--limit N] [--json]` — view the full change history of a Cloud issue (state/priority/assignee/component/milestone/title transitions + comment events). Cloud: `GET /repositories/{ws}/{slug}/issues/{id}/changes` (paginated; each item has `kind`, `old_val`, `new_val`, `created_on`, `user`). Cloud only — Server/DC returns typed `host.unsupported`. New optional interface `IssueActivityClient` with `ListIssueActivity(ns, slug string, issueID int, limit int) ([]IssueChange, error)` (via `paging.Collect[T]`). Domain type `IssueChange{ID, Kind, OldVal, NewVal, CreatedOn, User}`. MCP tools `list_issue_activity`. Completes the issue audit trail alongside `issue view` ✅ and issue comments ✅. — scope **ISSUE-ACTIVITY** | Cloud | 1 | ✅ |
 | WORKSPACES-SEARCH | **Workspace Search with Filters** | `bitbottle workspace search [--query Q] [--role owner\|collaborator\|member] [--limit N] [--json]` — paginated workspace search with role and slug/name query filters (current `workspace list` returns all workspaces without filters). Cloud: `GET /2.0/workspaces?q=...&role=...` (paginated). Cloud only — Server/DC returns typed `host.unsupported` (Server uses projects, not workspaces). Extends existing `WorkspaceClient` with a `SearchWorkspaces(opts WorkspaceSearchOpts) ([]Workspace, error)` method (via `paging.Collect[T]`). Pattern: list via `paging.Collect[T]`. MCP tool `search_workspaces`. Fills the filter gap on the existing workspace surface. — scope **WORKSPACES-SEARCH** | Cloud | 1 | ✅ |
@@ -3058,32 +3058,6 @@ Bitbucket Cloud Pipelines acts as an OIDC identity provider so pipeline steps ca
 - [ ] `test/testhelpers/client.go` — FakeClient updated
 - [ ] `test/script/testdata/pipeline_oidc.txtar`
 - [ ] `skills/SKILL.md` + `skills/references/pipeline.md` updated
-- [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
-### REPO-HOOK-SCRIPTS — Server/DC Repo Hook Settings
-
-**Status:** 🔲
-
-Bitbucket Server/DC plugin model exposes "hook scripts" — Java plugins that fire on `git push` events (pre-receive / post-receive), distinct from outbound webhooks (✅). Common plugins: Yet Another Commit Checker, ScriptRunner, branch-name enforcers, corporate-policy hooks. The settings payload is opaque JSON (plugin-defined schema), so `set` takes `--config-file FILE`; `get` round-trips it for `jq` edit workflows.
-
-**Interface:** New optional interface `RepoHookClient` with `ListRepoHooks(project, slug string) ([]RepoHook, error)`, `GetRepoHook(project, slug, hookKey string) (RepoHook, error)`, `EnableRepoHook(project, slug, hookKey string) error`, `DisableRepoHook(project, slug, hookKey string) error`, `GetRepoHookSettings(project, slug, hookKey string) (json.RawMessage, error)`, `SetRepoHookSettings(project, slug, hookKey string, cfg json.RawMessage) error`. Domain type `RepoHook{Key, Name, Version string, Enabled bool, Configured bool}`.
-
-**Commands:** `repo hook list [PROJECT/REPO] [--json]`, `view [PROJECT/REPO] HOOK_KEY [--json]`, `enable/disable [PROJECT/REPO] HOOK_KEY`, `settings get/set [PROJECT/REPO] HOOK_KEY [--config-file FILE]`
-
-**Backends:** Server/DC only (`/rest/api/1.0/projects/{k}/repos/{s}/settings/hooks`). Cloud → typed `host.unsupported`.
-
-**MCP tools:** `list_repo_hooks`, `view_repo_hook`, `enable_repo_hook`, `disable_repo_hook`, `get_repo_hook_settings`, `set_repo_hook_settings`
-
-**Definition of Done:**
-- [ ] `api/backend/client_repo_hook.go` — interface + feature const + `AsRepoHookClient`
-- [ ] `api/server/repo_hook.go` — impl
-- [ ] `pkg/cmd/repo/hook/` — list/view/enable/disable/settings subcommands
-- [ ] `pkg/cmd/mcp/` sextet
-- [ ] `test/testhelpers/client.go` — FakeClient updated
-- [ ] `test/script/testdata/repo_hook.txtar`
-- [ ] `skills/SKILL.md` + `skills/references/repo.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
 
 ---

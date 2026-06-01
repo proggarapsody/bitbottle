@@ -11,6 +11,7 @@ import (
 	cmdEdit "github.com/proggarapsody/bitbottle/pkg/cmd/repo/edit"
 	cmdFile "github.com/proggarapsody/bitbottle/pkg/cmd/repo/file"
 	cmdFork "github.com/proggarapsody/bitbottle/pkg/cmd/repo/fork"
+	cmdHook "github.com/proggarapsody/bitbottle/pkg/cmd/repo/hook"
 	cmdLabel "github.com/proggarapsody/bitbottle/pkg/cmd/repo/label"
 	cmdList "github.com/proggarapsody/bitbottle/pkg/cmd/repo/list"
 	cmdPRSettings "github.com/proggarapsody/bitbottle/pkg/cmd/repo/pr-settings"
@@ -58,5 +59,6 @@ disambiguate when multiple Bitbucket hosts are configured.`,
 	cmd.AddCommand(cmdSetDefaultBranch.NewCmdSetDefaultBranch(f))
 	cmd.AddCommand(cmdPRSettings.NewCmdPRSettings(f))
 	cmd.AddCommand(cmdDownload.NewCmdDownload(f))
+	cmd.AddCommand(cmdHook.NewCmdHook(f))
 	return cmd
 }

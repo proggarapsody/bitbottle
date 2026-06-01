@@ -128,6 +128,33 @@ return a typed `host.unsupported` error on Cloud hosts.
 
 MCP tools: `get_repo_pr_settings(project, repo)`, `set_repo_pr_settings(project, repo, [required_approvers, required_all_approvers, required_all_tasks_complete, required_successful_builds, merge_strategy, allowed_strategies])`.
 
+## Plugin hook scripts (Server/DC only)
+
+Manage per-repository plugin hook scripts (Java plugins that fire on `git push`
+events — pre-receive / post-receive hooks like YACC, ScriptRunner, branch-name
+enforcers). Distinct from outbound webhooks (`repo webhook`).
+
+```bash
+bitbottle repo hook list   [PROJECT/REPO] [--json]
+bitbottle repo hook view   [PROJECT/REPO] HOOK_KEY [--json]
+bitbottle repo hook enable [PROJECT/REPO] HOOK_KEY
+bitbottle repo hook disable [PROJECT/REPO] HOOK_KEY
+
+bitbottle repo hook settings get [PROJECT/REPO] HOOK_KEY
+bitbottle repo hook settings set [PROJECT/REPO] HOOK_KEY --config-file FILE
+bitbottle repo hook settings set [PROJECT/REPO] HOOK_KEY --config-file -   # stdin
+```
+
+`hook list` columns: KEY, NAME, ENABLED, CONFIGURED. Supports `--json`, `--jq`, `--hostname`.
+`hook view` shows all fields including VERSION. Settings payload is opaque plugin-defined JSON.
+`settings set` validates that `--config-file` contains valid JSON before sending.
+Pass `--config-file -` to read from stdin (useful for `jq` edit pipelines).
+
+**Server/DC only.** Cloud returns a typed `host.unsupported` error.
+
+MCP tools: `list_repo_hooks`, `view_repo_hook`, `enable_repo_hook`, `disable_repo_hook`,
+`get_repo_hook_settings`, `set_repo_hook_settings(project, slug, hook_key, config)`.
+
 ## Branches
 
 ```bash
