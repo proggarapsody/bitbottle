@@ -26,7 +26,7 @@ disagrees with this doc; the binary wins.
 | Commits (view/files/status/comment/comment-react) | `references/commit.md` |
 | Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list, SSH key pair, known hosts, OIDC config/keys (Cloud only) | `references/pipeline.md` |
 | Pipeline runners — list / create / delete (Cloud only) | `references/runner.md` |
-| Code Insights reports/annotations/merge-check (Server/DC only) | `references/code-insights.md` |
+| Code Insights reports/annotations (Cloud + Server/DC); merge-check (Server/DC only) | `references/code-insights.md` |
 | Issues, comments, attachments (list/delete), vote/unvote, watch/unwatch, activity/change log (Cloud only) | `references/issues.md` |
 | Issue milestones list/view (Cloud only) | `references/milestone.md` |
 | Issue versions list/view/create/delete (Cloud only) | `references/version.md` |

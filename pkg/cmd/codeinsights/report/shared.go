@@ -47,16 +47,17 @@ func reportFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[b
 type ciAdapter struct {
 	server backend.CodeInsightsClient
 	cloud  backend.CloudCodeInsightsClient
+	host   string
 }
 
 // resolveCIAdapter tries Server first, then Cloud. Returns (nil, err) only if
 // both backends reject the host.
 func resolveCIAdapter(c backend.Client, host string) (*ciAdapter, error) {
 	if s, err := backend.AsCodeInsightsClient(c, host); err == nil {
-		return &ciAdapter{server: s}, nil
+		return &ciAdapter{server: s, host: host}, nil
 	}
 	if cl, err := backend.AsCloudCodeInsightsClient(c, host); err == nil {
-		return &ciAdapter{cloud: cl}, nil
+		return &ciAdapter{cloud: cl, host: host}, nil
 	}
 	// Return Server's error — it carries the correct feature label for
 	// non-Cloud hosts; Cloud error would be misleading for Server users.
@@ -114,7 +115,7 @@ func (a *ciAdapter) DeleteAnnotations(project, slug, hash, key string) error {
 	return &backend.DomainError{
 		Kind:    backend.ErrUnsupportedOnHost,
 		Code:    backend.CodeHostUnsupported,
-		Host:    "bitbucket.org",
+		Host:    a.host,
 		Feature: string(backend.FeatureCloudCodeInsights),
 		Message: "annotation delete is not supported on Bitbucket Cloud",
 	}
