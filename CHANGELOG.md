@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.132.0](https://github.com/proggarapsody/bitbottle/compare/v1.131.0...v1.132.0) (2026-06-01)
+
+
+### Features
+
+* **variable:** REPO-PIPELINE-VAR-VIEW — variable view KEY command ([4fb66e8](https://github.com/proggarapsody/bitbottle/commit/4fb66e8b6c7abfa8eba6869541b067e5535ccc1e))
+
+
+### Bug Fixes
+
+* **variable:** DJ findings — variable.md doc, handler refactor, typed errors ([f7b2ba6](https://github.com/proggarapsody/bitbottle/commit/f7b2ba6c12f840b22b7aa973a88a1c6b23f975df))
+
 ## [1.131.0](https://github.com/proggarapsody/bitbottle/compare/v1.130.0...v1.131.0) (2026-06-01)
 
 
