@@ -95,3 +95,53 @@ func TestBranchCreate_APIError_PropagatesError(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "branch already exists")
 }
+
+func TestBranchCreate_StartAtPositional(t *testing.T) {
+	t.Parallel()
+	var gotStartAt string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		CreateBranchFn: func(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error) {
+			gotStartAt = in.StartAt
+			return backend.Branch{Name: in.Name}, nil
+		},
+	}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
+	cmd := branch.NewCmdBranchCreate(f)
+	// PROJECT/REPO NAME START_AT — all three positionals
+	cmd.SetArgs([]string{"myworkspace/my-service", "feat/x", "abc1234"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, "abc1234", gotStartAt)
+}
+
+func TestBranchCreate_MissingStartAt_ReturnsError(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{T: t}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
+	cmd := branch.NewCmdBranchCreate(f)
+	cmd.SetArgs([]string{"myworkspace/my-service", "feat/x"}) // no start-at anywhere
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "start-at")
+}
+
+func TestBranchCreate_FlagOverridesPositional(t *testing.T) {
+	t.Parallel()
+	var gotStartAt string
+	fake := &testhelpers.FakeClient{
+		T: t,
+		CreateBranchFn: func(ns, slug string, in backend.CreateBranchInput) (backend.Branch, error) {
+			gotStartAt = in.StartAt
+			return backend.Branch{Name: in.Name}, nil
+		},
+	}
+	f, _, _ := factorytest.New(t, factorytest.Opts{InitialConfig: branchConfig})
+	factorytest.UseBackend(f, fake)
+	cmd := branch.NewCmdBranchCreate(f)
+	// --start-at flag with REPO + NAME (flag takes the value, no positional start-at)
+	cmd.SetArgs([]string{"myworkspace/my-service", "feat/x", "--start-at", "develop"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, "develop", gotStartAt)
+}

@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| **REF-UX** | `branch create`/`tag create` `--start-at` ergonomics — promote to 3rd positional or default to HEAD (BB-15, BB-16). | Both | 0.5 | ✅ P2 |
 | **BACKLOG-MIGRATION** | Sweep remaining shipped scope detail sections (every `### XYZ` whose `Status:` reads `✅` and whose feat commit is on `main`) from this file into [`SHIPPED.md`](SHIPPED.md). Each move happens in a `chore(backlog):` commit, one scope per commit, so history is bisectable. After this scope finishes, every `### ` heading in this file maps to **unshipped** work only. | DX | 0.5 | ✅ P2 |
 
 ## Philosophy
@@ -3741,30 +3740,6 @@ The shipped CI scope covers Bitbucket Server/DC Code Insights only (`/rest/insig
 - [ ] `test/script/testdata/cloud_code_insights.txtar`
 - [ ] `skills/SKILL.md` + `skills/references/code-insights.md` updated
 - [ ] BACKLOG.md row flipped 🔲 → ✅ in the same `feat:` commit
-
----
-
-### REF-UX — `branch create`/`tag create` `--start-at` ergonomics (BB-15, BB-16)
-
-**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
-
-**Why P2:** Both `branch create` and `tag create` show `USAGE: PROJECT/REPO NAME [flags]` in `--help`, implying NAME is sufficient. In practice both require `--start-at` (the flag itself says `(required)` but the signature line doesn't reflect that). Users mimicking `git branch NAME [START_POINT]` ergonomics get rejected with "required flag(s) \"start-at\" not set." Low severity (CLI works once the flag is supplied) but high friction for new users.
-
-**Shape:**
-
-Pick one:
-
-- **Option A (recommended):** Promote `--start-at` to a 3rd positional. Signature becomes `PROJECT/REPO NAME START_AT [flags]`. Matches `git branch` ergonomics. Keep `--start-at` as an alias for back-compat for one minor release.
-- **Option B:** Default `--start-at` to the repo's HEAD when omitted. `branch create proj/repo mybranch` creates a branch off current `main`/`master`/default-branch. Lower discoverability but lower friction.
-
-**Definition of Done:**
-
-- [ ] Decision recorded in an ADR (`docs/adr/`).
-- [ ] `pkg/cmd/branch/create/create.go` — new signature.
-- [ ] `pkg/cmd/tag/create/create.go` — same treatment.
-- [ ] `.txtar` script proving 3-positional usage works.
-- [ ] README + `skills/SKILL.md` updated with new usage examples.
-- [ ] Migration note in CHANGELOG.
 
 ---
 
