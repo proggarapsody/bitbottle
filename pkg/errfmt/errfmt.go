@@ -76,6 +76,10 @@ var catalogue = map[backend.ErrorCode]entry{
 		title: "Auto-merge is not enabled for this workspace on {{.Host}}.",
 		hints: []string{"Ask your workspace admin to enable auto-merge in workspace settings."},
 	},
+	backend.CodePRTerminalState: {
+		title: "Pull request cannot be modified in its current state.",
+		hints: []string{"The pull request is already DECLINED, MERGED, or SUPERSEDED on {{.Host}}. No further mutations are accepted."},
+	},
 	backend.CodeBranchProtected: {
 		title: "Branch is protected on {{.Host}}.",
 		hints: []string{"Ask an admin, or run `bitbottle branch protect list` to inspect the rules."},

@@ -67,6 +67,9 @@ const (
 	// auto-merge beta endpoint is unavailable because the workspace has not
 	// opted into the feature.
 	CodePRAutoMergeBetaDisabled ErrorCode = "pr.automerge.beta_disabled"
+	// CodePRTerminalState is returned when a mutation is attempted on a pull
+	// request that is already in a terminal state (DECLINED, MERGED, SUPERSEDED).
+	CodePRTerminalState ErrorCode = "pr.terminal_state"
 
 	// branch cluster — branch-protection / write-side failures
 	CodeBranchProtected ErrorCode = "branch.protected"
@@ -108,6 +111,7 @@ var AllCodes = []ErrorCode{
 	CodePRCreateDuplicateBranch,
 	CodePRReviewerUnknown,
 	CodePRAutoMergeBetaDisabled,
+	CodePRTerminalState,
 	CodeBranchProtected,
 	CodeHostUnsupported,
 	CodeHostUnknown,

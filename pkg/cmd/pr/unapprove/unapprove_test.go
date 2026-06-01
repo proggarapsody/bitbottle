@@ -70,6 +70,6 @@ func TestPRUnapprove_DeclinedPR_GuardBlocksMutation(t *testing.T) {
 	cmd.SetArgs([]string{"42"})
 	err := cmd.Execute()
 	require.Error(t, err)
-	require.True(t, errors.Is(err, backend.ErrConflict), "want ErrConflict, got %v", err)
+	require.True(t, errors.Is(err, backend.ErrInvalidRequest), "want ErrInvalidRequest, got %v", err)
 	assert.False(t, called, "UnapprovePR must not be called for a MERGED PR")
 }

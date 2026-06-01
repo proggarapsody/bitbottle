@@ -17,11 +17,11 @@ func TestValidateMutablePRState_RejectsTerminal(t *testing.T) {
 	for _, st := range []string{"DECLINED", "MERGED", "SUPERSEDED", "declined", " merged "} {
 		err := ValidateMutablePRState(PullRequest{ID: 7, State: st})
 		if err == nil {
-			t.Errorf("state %q: got nil, want conflict error", st)
+			t.Errorf("state %q: got nil, want invalid-request error", st)
 			continue
 		}
-		if !errors.Is(err, ErrConflict) {
-			t.Errorf("state %q: error Kind = %v, want ErrConflict", st, err)
+		if !errors.Is(err, ErrInvalidRequest) {
+			t.Errorf("state %q: error Kind = %v, want ErrInvalidRequest", st, err)
 		}
 		var de *DomainError
 		if !errors.As(err, &de) {
