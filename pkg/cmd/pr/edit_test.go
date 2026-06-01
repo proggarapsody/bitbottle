@@ -12,6 +12,10 @@ import (
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
 
+func guardOpenPRFn(_, _ string, id int) (backend.PullRequest, error) {
+	return backend.PullRequest{ID: id, State: "OPEN"}, nil
+}
+
 func TestPREdit_RequiresTitleOrBodyOrRemoveReviewer(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{T: t}
@@ -26,7 +30,8 @@ func TestPREdit_RequiresTitleOrBodyOrRemoveReviewer(t *testing.T) {
 func TestPREdit_PrintsConfirmation(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: guardOpenPRFn,
 		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
 			return backend.PullRequest{ID: id, Title: in.Title, WebURL: "https://bb.example.com/pr/42"}, nil
 		},
@@ -43,7 +48,8 @@ func TestPREdit_PassesTitleToAPI(t *testing.T) {
 	t.Parallel()
 	var gotIn backend.UpdatePRInput
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: guardOpenPRFn,
 		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
 			gotIn = in
 			return backend.PullRequest{ID: id, Title: in.Title}, nil
@@ -60,7 +66,8 @@ func TestPREdit_PassesBodyToAPI(t *testing.T) {
 	t.Parallel()
 	var gotIn backend.UpdatePRInput
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: guardOpenPRFn,
 		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
 			gotIn = in
 			return backend.PullRequest{ID: id}, nil
@@ -77,7 +84,8 @@ func TestPREdit_RemoveReviewer_CallsRemoveReviewers(t *testing.T) {
 	t.Parallel()
 	var gotUsers []string
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: guardOpenPRFn,
 		RemoveReviewersFn: func(ns, slug string, id int, users []string) error {
 			gotUsers = users
 			return nil
@@ -96,7 +104,8 @@ func TestPREdit_RemoveReviewerAndTitle_DoesBoth(t *testing.T) {
 	var updatedTitle string
 	var removedUsers []string
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: guardOpenPRFn,
 		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
 			updatedTitle = in.Title
 			return backend.PullRequest{ID: id, Title: in.Title}, nil
@@ -119,7 +128,8 @@ func TestPREdit_RemoveReviewerAndTitle_DoesBoth(t *testing.T) {
 func TestPREdit_APIError_PropagatesError(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: guardOpenPRFn,
 		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
 			return backend.PullRequest{}, errors.New("403 forbidden")
 		},
@@ -130,4 +140,26 @@ func TestPREdit_APIError_PropagatesError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "403")
+}
+
+func TestPREdit_DeclinedPR_GuardBlocksMutation(t *testing.T) {
+	t.Parallel()
+	updated := false
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(_, _ string, id int) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: id, State: "SUPERSEDED"}, nil
+		},
+		UpdatePRFn: func(ns, slug string, id int, in backend.UpdatePRInput) (backend.PullRequest, error) {
+			updated = true
+			return backend.PullRequest{ID: id}, nil
+		},
+	}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPREdit(f)
+	cmd.SetArgs([]string{"42", "--title", "title"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	require.True(t, errors.Is(err, backend.ErrInvalidRequest), "want ErrInvalidRequest, got %v", err)
+	assert.False(t, updated, "UpdatePR must not be called for a SUPERSEDED PR")
 }

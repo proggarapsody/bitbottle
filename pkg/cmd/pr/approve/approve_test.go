@@ -7,11 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/cmdtest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/pr/approve"
 	"github.com/proggarapsody/bitbottle/test/testhelpers"
 )
+
+func openPRFn(id int) func(ns, slug string, id int) (backend.PullRequest, error) {
+	return func(_, _ string, _ int) (backend.PullRequest, error) {
+		return backend.PullRequest{ID: id, State: "OPEN"}, nil
+	}
+}
 
 func TestNewCmdApprove_RequiresArg(t *testing.T) {
 	t.Parallel()
@@ -29,7 +36,8 @@ func TestPRApprove_CallsAPI(t *testing.T) {
 	var calledID int
 	var calledNS, calledSlug string
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: openPRFn(42),
 		ApprovePRFn: func(ns, slug string, id int) error {
 			calledNS = ns
 			calledSlug = slug
@@ -53,7 +61,8 @@ func TestPRApprove_APIError_PropagatesError(t *testing.T) {
 
 	apiErr := errors.New("403 forbidden")
 	fake := &testhelpers.FakeClient{
-		T: t,
+		T:       t,
+		GetPRFn: openPRFn(42),
 		ApprovePRFn: func(ns, slug string, id int) error {
 			return apiErr
 		},
@@ -64,4 +73,27 @@ func TestPRApprove_APIError_PropagatesError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "403")
+}
+
+func TestPRApprove_DeclinedPR_GuardBlocksMutation(t *testing.T) {
+	t.Parallel()
+
+	approveCalled := false
+	fake := &testhelpers.FakeClient{
+		T: t,
+		GetPRFn: func(_, _ string, _ int) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: 42, State: "DECLINED"}, nil
+		},
+		ApprovePRFn: func(_, _ string, _ int) error {
+			approveCalled = true
+			return nil
+		},
+	}
+	f, _, _ := cmdtest.NewPRFactory(t, fake, cmdtest.NewPRRunner())
+	cmd := approve.NewCmdApprove(f)
+	cmd.SetArgs([]string{"42"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	require.True(t, errors.Is(err, backend.ErrInvalidRequest), "want ErrInvalidRequest, got %v", err)
+	assert.False(t, approveCalled, "ApprovePR must not be called for a DECLINED PR")
 }

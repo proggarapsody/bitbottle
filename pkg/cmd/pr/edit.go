@@ -27,6 +27,14 @@ func NewCmdPREdit(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			pr, err := client.GetPR(ref.Project, ref.Slug, prID)
+			if err != nil {
+				return err
+			}
+			if err := backend.ValidateMutablePRState(pr); err != nil {
+				return err
+			}
+
 			if title != "" || body != "" {
 				p, err := client.UpdatePR(ref.Project, ref.Slug, prID, backend.UpdatePRInput{
 					Title:       title,

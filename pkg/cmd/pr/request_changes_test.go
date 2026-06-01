@@ -35,7 +35,7 @@ var _ backend.PRChangesRequester = (*fakeChangesClient)(nil)
 func TestPRRequestChanges_PrintsConfirmation(t *testing.T) {
 	t.Parallel()
 	fake := &fakeChangesClient{
-		FakeClient: &testhelpers.FakeClient{T: t},
+		FakeClient: &testhelpers.FakeClient{T: t, GetPRFn: guardOpenPRFn},
 		RequestChangesPRFn: func(ns, slug string, id int) error {
 			return nil
 		},
@@ -62,7 +62,7 @@ func TestPRRequestChanges_UnsupportedOnServer(t *testing.T) {
 func TestPRRequestChanges_APIError_PropagatesError(t *testing.T) {
 	t.Parallel()
 	fake := &fakeChangesClient{
-		FakeClient: &testhelpers.FakeClient{T: t},
+		FakeClient: &testhelpers.FakeClient{T: t, GetPRFn: guardOpenPRFn},
 		RequestChangesPRFn: func(ns, slug string, id int) error {
 			return errors.New("403 forbidden")
 		},
@@ -73,4 +73,25 @@ func TestPRRequestChanges_APIError_PropagatesError(t *testing.T) {
 	err := cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "403")
+}
+
+func TestPRRequestChanges_DeclinedPR_GuardBlocksMutation(t *testing.T) {
+	t.Parallel()
+	called := false
+	fake := &fakeChangesClient{
+		FakeClient: &testhelpers.FakeClient{T: t, GetPRFn: func(_, _ string, id int) (backend.PullRequest, error) {
+			return backend.PullRequest{ID: id, State: "DECLINED"}, nil
+		}},
+		RequestChangesPRFn: func(ns, slug string, id int) error {
+			called = true
+			return nil
+		},
+	}
+	f, _, _ := newPRFactory(t, fake, newPRRunner())
+	cmd := pr.NewCmdPRRequestChanges(f)
+	cmd.SetArgs([]string{"42"})
+	err := cmd.Execute()
+	require.Error(t, err)
+	require.True(t, errors.Is(err, backend.ErrInvalidRequest), "want ErrInvalidRequest, got %v", err)
+	assert.False(t, called, "RequestChangesPR must not be called for a DECLINED PR")
 }

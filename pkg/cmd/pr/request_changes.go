@@ -27,6 +27,14 @@ func NewCmdPRRequestChanges(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("request-changes is not supported on Bitbucket Server/DC")
 			}
 
+			pr, err := client.GetPR(ref.Project, ref.Slug, prID)
+			if err != nil {
+				return err
+			}
+			if err := backend.ValidateMutablePRState(pr); err != nil {
+				return err
+			}
+
 			if err := changer.RequestChangesPR(ref.Project, ref.Slug, prID); err != nil {
 				return err
 			}
