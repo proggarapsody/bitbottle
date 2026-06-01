@@ -1,0 +1,8 @@
+# Approving a DECLINED pull request is blocked client-side by the
+# mutable-state guard: exit code 1, with a typed conflict error explaining
+# the PR cannot be modified. No approve POST is issued.
+bb-fake server
+
+! bitbottle pr approve 9 -R $BB_HOST/PROJ/alpha-repo -k
+stderr 'cannot be modified'
+! stdout 'Approved'

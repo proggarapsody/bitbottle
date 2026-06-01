@@ -210,6 +210,14 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusOK,
 			Body:       serverPR(1, "Fix the bug", "OPEN"),
 		},
+		// PR view #9 — DECLINED, used by pr_approve_on_declined to exercise the
+		// client-side mutable-state guard.
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/pull-requests/9",
+			Status:     http.StatusOK,
+			Body:       serverPR(9, "Old work", "DECLINED"),
+		},
 		// 404 — for errfmt_not_found
 		{
 			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/missing-repo/pull-requests",
