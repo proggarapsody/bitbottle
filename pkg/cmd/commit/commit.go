@@ -18,6 +18,7 @@ directory.`,
 	}
 	factory.EnableRepoOverride(cmd, f)
 	cmd.AddCommand(NewCmdCommitLog(f))
+	cmd.AddCommand(NewCmdCommitSearch(f))
 	cmd.AddCommand(NewCmdCommitView(f))
 	cmd.AddCommand(NewCmdCommitStatus(f))
 	cmd.AddCommand(NewCmdCommitComment(f))

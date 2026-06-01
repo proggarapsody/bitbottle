@@ -1,0 +1,14 @@
+# commit search returns matching commits.
+bb-fake cloud
+
+bitbottle commit search testworkspace/cloud-repo-a -k
+stdout 'abc1234d'
+stdout 'feat: add search capability'
+stdout 'Alice'
+
+bitbottle commit search testworkspace/cloud-repo-a --query search -k
+stdout 'abc1234d'
+
+bitbottle commit search testworkspace/cloud-repo-a --json -k
+stdout '"hash"'
+stdout '"message"'

@@ -1,5 +1,37 @@
 # bitbottle commit — commit commands
 
+## commit search
+
+Search commits in a repository by message keyword, author, or date range. Both
+Bitbucket Cloud and Server / Data Center are supported.
+
+```bash
+bitbottle commit search [PROJECT/REPO] [--query Q] [--author USER] [--since DATE] [--until DATE] [--limit N] [--json [fields]] [--jq expr]
+```
+
+All flags are optional. PROJECT/REPO may be omitted when a default repo is
+configured or a git remote is present.
+
+```bash
+bitbottle commit search MYPROJ/my-service --query "fix null"
+bitbottle commit search MYPROJ/my-service --author alice
+bitbottle commit search MYPROJ/my-service --since 2026-01-01 --until 2026-06-01
+bitbottle commit search MYPROJ/my-service --query "feat" --limit 5 --json
+```
+
+TTY output columns: `HASH` (8 chars), `AUTHOR`, `DATE`, `MESSAGE` (truncated
+to 60 chars on TTY).
+
+Cloud: message and date filters are sent as `q` filter expressions. Author is
+filtered client-side (Cloud `q` author requires account_id, not slug).
+Server/DC: `author`, `since`, and `until` are sent as query params. Message
+filtering is done client-side (no full-text search endpoint on Server).
+
+MCP tool: `search_commits(project, slug, query?, author?, since?, until?, limit?)`
+— returns JSON array of `{hash, message, author, timestamp, webURL}`.
+
+---
+
 ## commit files
 
 List files added, modified, or deleted in a specific commit. Both Bitbucket

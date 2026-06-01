@@ -120,6 +120,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "CommitSearcher",
+		HumanLabel:    "commit search",
+		Check:         func(c Client) bool { _, ok := c.(CommitSearcher); return ok },
+		Feature:       FeatureCommitSearch,
+		CloudSupport:  true,
+		ServerSupport: true,
+	},
+	{
 		Name:          "DefaultReviewerClient",
 		HumanLabel:    "default reviewer management",
 		Check:         func(c Client) bool { _, ok := c.(DefaultReviewerClient); return ok },
