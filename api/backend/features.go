@@ -408,6 +408,15 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "RepoHookClient",
+		HumanLabel:    "repo hook scripts",
+		Plural:        true,
+		Check:         func(c Client) bool { _, ok := c.(RepoHookClient); return ok },
+		Feature:       FeatureRepoHooks,
+		CloudSupport:  false,
+		ServerSupport: true,
+	},
+	{
 		Name:          "RepoLabelClient",
 		HumanLabel:    "repository labels",
 		Plural:        true,

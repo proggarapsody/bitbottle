@@ -11,6 +11,14 @@
 
 ---
 
+## 2026-06-02 — REPO-HOOK-SCRIPTS — Server/DC Repo Hook Settings
+
+`repo hook list/view/enable/disable/settings get/set` — manage plugin hook
+scripts on Bitbucket Server/DC repositories. Cloud returns `host.unsupported`.
+Closes #626.
+
+---
+
 ## 2026-06-02 — BACKLOG-MIGRATION — swept shipped scope details
 
 Batch migration of shipped scope detail sections from BACKLOG.md to SHIPPED.md.

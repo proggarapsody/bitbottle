@@ -506,6 +506,30 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusOK,
 			Body:       map[string]any{"displayId": "v2.0.0", "id": "refs/tags/v2.0.0", "latestCommit": "deadbeef"},
 		},
+		// GET repo hook list — used by repo hook list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/settings/hooks",
+			Status:     http.StatusOK,
+			Body: testhelpers.PagedResponse([]any{
+				map[string]any{
+					"details":    map[string]any{"key": "com.example:hook-a", "name": "Hook A", "version": "1.0"},
+					"enabled":    true,
+					"configured": true,
+				},
+				map[string]any{
+					"details":    map[string]any{"key": "com.example:hook-b", "name": "Hook B", "version": "2.0"},
+					"enabled":    false,
+					"configured": false,
+				},
+			}),
+		},
+		// PUT repo hook enable — used by repo hook enable
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/settings/hooks/com.example:hook-b/enabled",
+			Status:     http.StatusOK,
+		},
 		// GET mirror servers list — used by mirror list
 		{
 			Method:     http.MethodGet,
