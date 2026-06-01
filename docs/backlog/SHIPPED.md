@@ -2,6 +2,13 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-02 — DEPLOY-KEY-PERMISSION — --permission flag for deploy-key add
+
+`deploy-key add --permission read|read-write` — exposes Cloud deploy key write
+access. Server silently ignores (Server keys are always read-only). Closes #634.
+
+---
+
 ## 2026-06-02 — CLOUD-CODE-INSIGHTS — Cloud Code Insights reports/annotations
 
 Cloud parity for `code-insights report list/view/set/delete` and

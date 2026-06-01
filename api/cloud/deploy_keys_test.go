@@ -69,6 +69,26 @@ func TestCloudClient_AddDeployKey(t *testing.T) {
 	assert.Equal(t, "My Key", gotBody["label"])
 }
 
+func TestCloudClient_AddDeployKey_WithPermission(t *testing.T) {
+	t.Parallel()
+	var gotBody map[string]any
+	client := newCloudDeployKeyServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":4,"label":"Write Key","key":"ssh-rsa AAAA4","read_only":false}`))
+	})
+	dk, err := client.AddDeployKey("myws", "my-repo", backend.DeployKeyInput{
+		Key:        "ssh-rsa AAAA4",
+		Label:      "Write Key",
+		Permission: "read_write",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 4, dk.ID)
+	assert.Equal(t, "read_write", gotBody["permission"])
+}
+
 func TestCloudClient_DeleteDeployKey(t *testing.T) {
 	t.Parallel()
 	var gotMethod, gotPath string

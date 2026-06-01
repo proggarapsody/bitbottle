@@ -39,6 +39,9 @@ func registerDeployKeyTools(s *mcpserver.MCPServer, h *handlers) {
 			mcplib.WithString("label",
 				mcplib.Description("Label for the deploy key"),
 			),
+			mcplib.WithString("permission",
+				mcplib.Description("Key permission: read or read-write (Cloud only; omit for read-only default)"),
+			),
 		),
 		h.addDeployKey,
 	)

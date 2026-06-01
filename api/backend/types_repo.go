@@ -140,8 +140,9 @@ type DeployKey struct {
 
 // DeployKeyInput carries the parameters for adding a deploy key.
 type DeployKeyInput struct {
-	Label string
-	Key   string
+	Label      string
+	Key        string
+	Permission string // "read" | "read_write"; empty → omit from wire (default: read). Cloud only.
 }
 
 // DiffStat is the domain representation of a repository diff summary.

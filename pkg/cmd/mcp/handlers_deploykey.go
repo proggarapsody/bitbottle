@@ -49,11 +49,20 @@ func (h *handlers) addDeployKey(_ context.Context, req mcplib.CallToolRequest) (
 		return errResultErr(err), nil
 	}
 	label := req.GetString("label", "")
+	rawPermission := req.GetString("permission", "")
+	// Map MCP-facing "read-write" → API wire value "read_write"; "read" passes through.
+	var wirePermission string
+	switch rawPermission {
+	case "read-write":
+		wirePermission = "read_write"
+	default:
+		wirePermission = rawPermission // "read" or "" both pass through unchanged
+	}
 	dk, ns, slug, err := h.resolveDeployKeyClient(req)
 	if err != nil {
 		return errResultErr(err), nil
 	}
-	added, err := dk.AddDeployKey(ns, slug, backend.DeployKeyInput{Key: key, Label: label})
+	added, err := dk.AddDeployKey(ns, slug, backend.DeployKeyInput{Key: key, Label: label, Permission: wirePermission})
 	if err != nil {
 		return errResultErr(err), nil
 	}

@@ -14,6 +14,7 @@ bitbottle deploy-key list WORKSPACE/REPO          # Cloud
 # Add a deploy key
 bitbottle deploy-key add PROJECT/REPO --key "ssh-rsa AAAA..." --label "CI server"
 bitbottle deploy-key add PROJECT/REPO --key "ssh-rsa AAAA..."   # label optional
+bitbottle deploy-key add WORKSPACE/REPO --key "ssh-rsa AAAA..." --permission read-write  # Cloud: grant write access
 
 # Delete a deploy key by numeric ID
 bitbottle deploy-key delete PROJECT/REPO 42
@@ -28,6 +29,7 @@ bitbottle deploy-key delete PROJECT/REPO 42
 | all | `--hostname HOST` | Override the Bitbucket host |
 | `add` | `--key STRING` | SSH public key (required) |
 | `add` | `--label STRING` | Human-readable label (optional) |
+| `add` | `--permission read\|read-write` | Key permission (Cloud only; default: `read`) |
 
 ## JSON output
 
@@ -47,7 +49,7 @@ Cloud only — always false on Server/DC).
 | Tool | Description |
 |---|---|
 | `list_deploy_keys` | List deploy keys. Params: `repo` (required), `hostname` |
-| `add_deploy_key` | Add a deploy key. Params: `repo`, `key` (required), `label`, `hostname` |
+| `add_deploy_key` | Add a deploy key. Params: `repo`, `key` (required), `label`, `permission` (`read`\|`read-write`), `hostname` |
 | `delete_deploy_key` | Delete a deploy key. Params: `repo`, `id` (required int), `hostname` |
 
 ## Backend details
