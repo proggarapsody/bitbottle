@@ -1140,6 +1140,52 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 				},
 			},
 		},
+		// Cloud Code Insights reports — used by code-insights report list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/commit/deadbeef/reports",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"external_id": "scan-1", "title": "Security Scan", "result": "PASSED", "report_type": "SECURITY"},
+				map[string]any{"external_id": "test-1", "title": "Unit Tests", "result": "FAILED", "report_type": "TESTING"},
+			}),
+		},
+		// Cloud Code Insights report view — used by code-insights report view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/commit/deadbeef/reports/scan-1",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"external_id": "scan-1", "title": "Security Scan", "result": "PASSED", "report_type": "SECURITY", "reporter": "snyk"},
+		},
+		// Cloud Code Insights report put — used by code-insights report set
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/commit/deadbeef/reports/scan-1",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"external_id": "scan-1", "title": "Security Scan", "result": "PASSED", "report_type": "SECURITY"},
+		},
+		// Cloud Code Insights report delete — used by code-insights report delete
+		{
+			Method:     http.MethodDelete,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/commit/deadbeef/reports/scan-1",
+			Status:     http.StatusNoContent,
+		},
+		// Cloud Code Insights annotations list — used by code-insights annotation list
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/commit/deadbeef/reports/scan-1/annotations",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"path": "main.go", "line": 42, "summary": "null ptr", "severity": "HIGH", "type": "BUG", "external_id": "ann-1"},
+			}),
+		},
+		// Cloud Code Insights annotations put — used by code-insights annotation add
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/commit/deadbeef/reports/scan-1/annotations",
+			Status:     http.StatusOK,
+			Body:       map[string]any{},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

@@ -84,7 +84,7 @@ func listRun(f *factory.Factory, opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	ci, err := backend.AsCodeInsightsClient(client, ref.Host)
+	ci, err := resolveCIAdapter(client, ref.Host)
 	if err != nil {
 		return err
 	}

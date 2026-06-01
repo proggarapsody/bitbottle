@@ -61,6 +61,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: false,
 	},
 	{
+		Name:          "CloudCodeInsightsClient",
+		HumanLabel:    "cloud code insights",
+		Check:         func(c Client) bool { _, ok := c.(CloudCodeInsightsClient); return ok },
+		Feature:       FeatureCloudCodeInsights,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "CodeInsightsClient",
 		HumanLabel:    "code insights",
 		Check:         func(c Client) bool { _, ok := c.(CodeInsightsClient); return ok },

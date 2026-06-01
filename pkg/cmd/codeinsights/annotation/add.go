@@ -78,7 +78,7 @@ func addRun(f *factory.Factory, opts *AddOptions) error {
 	if err != nil {
 		return err
 	}
-	ci, err := backend.AsCodeInsightsClient(client, ref.Host)
+	ci, err := resolveCIAdapter(client, ref.Host)
 	if err != nil {
 		return err
 	}

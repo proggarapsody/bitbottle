@@ -2,6 +2,19 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-02 — CLOUD-CODE-INSIGHTS — Cloud Code Insights reports/annotations
+
+Cloud parity for `code-insights report list/view/set/delete` and
+`code-insights annotation list/add`. Cloud: `/repositories/{ws}/{slug}/commit/{hash}/reports/...`.
+New optional interface `CloudCodeInsightsClient`. MCP sextet (`list_cloud_ci_reports`,
+`get_cloud_ci_report`, `put_cloud_ci_report`, `delete_cloud_ci_report`,
+`list_cloud_ci_annotations`, `put_cloud_ci_annotations`). `ciAdapter` shim in
+`pkg/cmd/codeinsights/report` and `annotation` packages transparently routes
+Server calls to `CodeInsightsClient` and Cloud calls to `CloudCodeInsightsClient`.
+Closes #630.
+
+---
+
 **Layout:** newest scopes first. Each entry carries the ship date, the feat commit, and (if assigned by then) the release-please version. Detail subsections are preserved verbatim from BACKLOG.md so search history stays intact.
 
 **Why a separate file:**
