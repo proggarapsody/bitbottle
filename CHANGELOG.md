@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.127.6](https://github.com/proggarapsody/bitbottle/compare/v1.127.5...v1.127.6) (2026-06-01)
+
+
+### Bug Fixes
+
+* **cloud:** CLOUD-WIRE — /permissions-config/ path, /commit/ singular, pipeline trigger struct ([27fac27](https://github.com/proggarapsody/bitbottle/commit/27fac27b35253d68e7eaf4cd23d19902071842b0))
+* **cloud:** url.PathEscape ns/slug in commit comment URL paths ([c9e4395](https://github.com/proggarapsody/bitbottle/commit/c9e43955100b1ed7bfe0e4d0804d74718bd79945))
+* **pr:** correct ErrKind and errfmt catalogue for pr.terminal_state ([f851419](https://github.com/proggarapsody/bitbottle/commit/f851419741bc4547a41228c245e6512995ea6051))
+* **pr:** PR-GUARDS — state-machine guard + --state enum validation ([0fa6884](https://github.com/proggarapsody/bitbottle/commit/0fa6884535e13cff643d3a4c62ee5505f349633b))
+
 ## [1.127.5](https://github.com/proggarapsody/bitbottle/compare/v1.127.4...v1.127.5) (2026-05-31)
 
 
