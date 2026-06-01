@@ -22,25 +22,25 @@ type cloudProjectPermGroup struct {
 	Name string `json:"name"`
 }
 
-// cloudProjectUserPermEntry is one item from GET /permissions/users.
+// cloudProjectUserPermEntry is one item from GET /permissions-config/users.
 type cloudProjectUserPermEntry struct {
 	Permission string               `json:"permission"`
 	User       cloudProjectPermUser `json:"user"`
 }
 
-// cloudProjectGroupPermEntry is one item from GET /permissions/groups.
+// cloudProjectGroupPermEntry is one item from GET /permissions-config/groups.
 type cloudProjectGroupPermEntry struct {
 	Permission string                `json:"permission"`
 	Group      cloudProjectPermGroup `json:"group"`
 }
 
 // ListWorkspaceProjectPerms returns both user and group permissions for a Cloud
-// workspace project.  It calls GET /permissions/users and GET /permissions/groups,
+// workspace project.  It calls GET /permissions-config/users and GET /permissions-config/groups,
 // collects each via paging.Collect, and merges the results into one slice.
 func (c *Client) ListWorkspaceProjectPerms(workspace, projectKey string, limit int) ([]backend.WorkspaceProjectPerm, error) {
-	usersPath := fmt.Sprintf("/workspaces/%s/projects/%s/permissions/users",
+	usersPath := fmt.Sprintf("/workspaces/%s/projects/%s/permissions-config/users",
 		url.PathEscape(workspace), url.PathEscape(projectKey))
-	groupsPath := fmt.Sprintf("/workspaces/%s/projects/%s/permissions/groups",
+	groupsPath := fmt.Sprintf("/workspaces/%s/projects/%s/permissions-config/groups",
 		url.PathEscape(workspace), url.PathEscape(projectKey))
 
 	userPerms, err := paging.Collect(c.http, usersPath, func(body []byte) ([]backend.WorkspaceProjectPerm, error) {
@@ -92,15 +92,15 @@ func (c *Client) ListWorkspaceProjectPerms(workspace, projectKey string, limit i
 // GrantWorkspaceProjectPerm grants a permission to a user or group on a Cloud
 // workspace project.
 //
-// For user: PUT /workspaces/{ws}/projects/{key}/permissions/users/{user_slug}
-// For group: PUT /workspaces/{ws}/projects/{key}/permissions/groups/{group_slug}
+// For user: PUT /workspaces/{ws}/projects/{key}/permissions-config/users/{user_slug}
+// For group: PUT /workspaces/{ws}/projects/{key}/permissions-config/groups/{group_slug}
 func (c *Client) GrantWorkspaceProjectPerm(workspace, projectKey string, in backend.WorkspaceProjectPermInput) error {
 	var path string
 	if in.UserSlug != "" {
-		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions/users/%s",
+		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions-config/users/%s",
 			url.PathEscape(workspace), url.PathEscape(projectKey), url.PathEscape(in.UserSlug))
 	} else {
-		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions/groups/%s",
+		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions-config/groups/%s",
 			url.PathEscape(workspace), url.PathEscape(projectKey), url.PathEscape(in.GroupSlug))
 	}
 	body := map[string]string{"permission": in.Permission}
@@ -110,15 +110,15 @@ func (c *Client) GrantWorkspaceProjectPerm(workspace, projectKey string, in back
 // RevokeWorkspaceProjectPerm removes a user or group permission from a Cloud
 // workspace project.
 //
-// For user: DELETE /workspaces/{ws}/projects/{key}/permissions/users/{subject_slug}
-// For group: DELETE /workspaces/{ws}/projects/{key}/permissions/groups/{subject_slug}
+// For user: DELETE /workspaces/{ws}/projects/{key}/permissions-config/users/{subject_slug}
+// For group: DELETE /workspaces/{ws}/projects/{key}/permissions-config/groups/{subject_slug}
 func (c *Client) RevokeWorkspaceProjectPerm(workspace, projectKey, subjectSlug string, isGroup bool) error {
 	var path string
 	if isGroup {
-		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions/groups/%s",
+		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions-config/groups/%s",
 			url.PathEscape(workspace), url.PathEscape(projectKey), url.PathEscape(subjectSlug))
 	} else {
-		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions/users/%s",
+		path = fmt.Sprintf("/workspaces/%s/projects/%s/permissions-config/users/%s",
 			url.PathEscape(workspace), url.PathEscape(projectKey), url.PathEscape(subjectSlug))
 	}
 	return c.http.DeleteJSON(path, nil)

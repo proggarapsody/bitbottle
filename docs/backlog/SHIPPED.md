@@ -11,6 +11,36 @@
 
 ---
 
+## 2026-05-31 — CLOUD-WIRE
+
+### CLOUD-WIRE — Cloud API path + response-struct drift (BB-08, BB-09, BB-10)
+
+- **Fix commit:** `fix(cloud): CLOUD-WIRE — /permissions-config/ path, /commit/ singular, pipeline trigger response struct` (2026-05-31)
+- **Backends:** Cloud only
+- **Estimate (planned):** 1.5 days
+
+**Status:** ✅ — sourced from the 2026-05-27 CLI-comparison audit.
+
+**Why P1:** Three Cloud-only wire-level defects. (1) `workspace project perms list` calls `/permissions/users` but the correct path is `/permissions-config/users` — 404. (2) `commit comment {list,add,edit,delete}` all hardcode `/commits/{hash}/comments` (plural) but Bitbucket Cloud uses `/commit/{hash}/comments` (singular) — 404 on all four operations. (3) `pipeline trigger`'s response struct types `CloudTriggerResponseLinks.links.self` as `[]CloudTriggerResponseSelfLink` (slice) but the API returns a single object — JSON unmarshal failure, no useful output (and exit 0, see BB-12).
+
+**Shape:**
+
+1. **Endpoint fixes** — `api/cloud/workspace_project_perms.go`: change `/permissions/users` → `/permissions-config/users`. `api/cloud/commit_comment.go` lines 32, 52, 65, 74: change `/commits/{hash}/comments` → `/commit/{hash}/comments`. Both are ~4 lines + regression tests against captured fixtures.
+2. **Pipeline trigger struct** — fix the generator (or hand-correct the type) so `links.self` is `*CloudTriggerResponseSelfLink` (single, nullable). Add a unit test loading a captured pipeline-trigger response fixture and asserting unmarshal success.
+3. **Add live-wire (tier 6) tests** for each of the three fixed endpoints to prevent silent re-drift if Atlassian moves the paths again.
+
+**Definition of Done:**
+
+- [x] `api/cloud/workspace_project_perms.go` — path corrected to `/permissions-config/`.
+- [x] `api/cloud/commit_comment.go` — all four operations use `/commit/` (singular).
+- [x] `api/cloud/gen/openapi.yaml` + `types.go` regenerated — `links.self` typed as `*CloudTriggerResponseSelfLink` + unmarshal regression test green.
+- [x] `test/script/script_test.go` — bb-fake Cloud stubs updated to `/permissions-config/` paths.
+- [ ] `test/testdata/fixtures/pipeline_trigger_response.json` — captured live response (deferred: requires live Cloud sandbox).
+- [ ] `.txtar` scripts: `commit_comment_lifecycle.txtar`, `pipeline_trigger.txtar` (deferred: no bb-fake stubs for these endpoints yet).
+- [ ] Nightly `BITBOTTLE_E2E=1` runs against real Cloud sandbox (deferred: infra not yet wired).
+
+---
+
 ## 2026-05-31 — PR-GUARDS
 
 ### PR-GUARDS — PR state-machine + `--state` enum validation (BB-07, BB-11, BB-20, BB-21)

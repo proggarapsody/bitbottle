@@ -814,13 +814,9 @@ components:
 
     CloudTriggerResponseLinks:
       type: object
-      required:
-        - self
       properties:
         self:
-          type: array
-          items:
-            $ref: "#/components/schemas/CloudTriggerResponseSelfLink"
+          $ref: "#/components/schemas/CloudTriggerResponseSelfLink"
 
     CloudTriggerResponseState:
       type: object

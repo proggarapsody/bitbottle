@@ -796,7 +796,7 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 		// workspace project perms list (users) — used by workspace project perms list
 		{
 			Method:     http.MethodGet,
-			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/users",
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions-config/users",
 			Status:     http.StatusOK,
 			Body: testhelpers.CloudPagedResponse([]any{
 				map[string]any{
@@ -808,28 +808,28 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 		// workspace project perms list (groups) — used by workspace project perms list
 		{
 			Method:     http.MethodGet,
-			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/groups",
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions-config/groups",
 			Status:     http.StatusOK,
 			Body:       testhelpers.CloudPagedResponse([]any{}),
 		},
 		// workspace project perms grant user — used by workspace project perms grant --user
 		{
 			Method:     http.MethodPut,
-			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/users/alice",
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions-config/users/alice",
 			Status:     http.StatusOK,
 			Body:       map[string]any{"permission": "write"},
 		},
 		// workspace project perms grant group — used by workspace project perms grant --group
 		{
 			Method:     http.MethodPut,
-			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/groups/devs",
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions-config/groups/devs",
 			Status:     http.StatusOK,
 			Body:       map[string]any{"permission": "read"},
 		},
 		// workspace project perms revoke user — used by workspace project perms revoke
 		{
 			Method:     http.MethodDelete,
-			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions/users/alice",
+			PathSuffix: "/workspaces/testworkspace/projects/PROJ/permissions-config/users/alice",
 			Status:     http.StatusNoContent,
 		},
 		// workspace project default-reviewer list — used by workspace project default-reviewer list
