@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.129.0](https://github.com/proggarapsody/bitbottle/compare/v1.128.0...v1.129.0) (2026-06-01)
+
+
+### Features
+
+* **repo:** REPO-HOOK-SCRIPTS — repo hook list/view/enable/disable/settings (Server/DC) ([6a8319d](https://github.com/proggarapsody/bitbottle/commit/6a8319dd230b28b1fab20611d5f02e2e69c2d4e6))
+
+
+### Bug Fixes
+
+* **mcp:** add handlers_repohook_test.go — MCP handler test triplet ([0a3b2e9](https://github.com/proggarapsody/bitbottle/commit/0a3b2e96e54ec08478b700bcf3d33cee367c2cb4))
+
 ## [1.128.0](https://github.com/proggarapsody/bitbottle/compare/v1.127.6...v1.128.0) (2026-06-01)
 
 
