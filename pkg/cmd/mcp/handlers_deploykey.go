@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -49,14 +50,18 @@ func (h *handlers) addDeployKey(_ context.Context, req mcplib.CallToolRequest) (
 		return errResultErr(err), nil
 	}
 	label := req.GetString("label", "")
-	rawPermission := req.GetString("permission", "")
+	rawPermission := req.GetString("permission", "read")
+	// Validate: only "read" and "read-write" are accepted.
+	if rawPermission != "read" && rawPermission != "read-write" {
+		return errResultErr(fmt.Errorf("invalid permission %q: must be read or read-write", rawPermission)), nil
+	}
 	// Map MCP-facing "read-write" → API wire value "read_write"; "read" passes through.
 	var wirePermission string
 	switch rawPermission {
 	case "read-write":
 		wirePermission = "read_write"
 	default:
-		wirePermission = rawPermission // "read" or "" both pass through unchanged
+		wirePermission = rawPermission // "read" passes through unchanged
 	}
 	dk, ns, slug, err := h.resolveDeployKeyClient(req)
 	if err != nil {
