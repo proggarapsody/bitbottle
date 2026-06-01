@@ -98,6 +98,45 @@ func TestDeleteDeployKey_MissingID(t *testing.T) {
 	assertErrorResult(t, result, "id")
 }
 
+func TestAddDeployKey_DefaultPermissionIsRead(t *testing.T) {
+	t.Parallel()
+	var gotInput backend.DeployKeyInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AddDeployKeyFn: func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error) {
+			gotInput = input
+			return backend.DeployKey{ID: 7, Label: input.Label, Key: input.Key}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleCloudConfig, fake)
+	result, err := h.addDeployKey(context.Background(), makeReq(map[string]any{
+		"repo": "myws/my-repo",
+		"key":  "ssh-rsa BBBB",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "7", "")
+	assert.Equal(t, "read", gotInput.Permission)
+}
+
+func TestAddDeployKey_InvalidPermission(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AddDeployKeyFn: func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error) {
+			t.Fatal("AddDeployKey should not be called on invalid permission")
+			return backend.DeployKey{}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleCloudConfig, fake)
+	result, err := h.addDeployKey(context.Background(), makeReq(map[string]any{
+		"repo":       "myws/my-repo",
+		"key":        "ssh-rsa CCCC",
+		"permission": "write",
+	}))
+	require.NoError(t, err)
+	assertErrorResult(t, result, "permission")
+}
+
 func TestAddDeployKey_WithPermission(t *testing.T) {
 	t.Parallel()
 	var gotInput backend.DeployKeyInput
