@@ -12,6 +12,7 @@ import (
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/license"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/logging"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/mail"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/ratelimit"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/secrets"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/admin/user"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
@@ -39,5 +40,6 @@ include it; these commands must be performed by a system administrator.`,
 	cmd.AddCommand(cluster.NewCmdCluster(f, nil))
 	cmd.AddCommand(mail.NewCmdMail(f))
 	cmd.AddCommand(banner.NewCmdBanner(f))
+	cmd.AddCommand(ratelimit.NewCmdRateLimit(f))
 	return cmd
 }

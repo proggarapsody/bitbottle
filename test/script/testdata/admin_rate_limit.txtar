@@ -1,0 +1,16 @@
+# admin rate-limit get shows config in text and JSON formats.
+# admin rate-limit set updates the config.
+bb-fake server
+
+bitbottle admin rate-limit get -k --hostname $BB_HOST
+stdout 'Enabled: true'
+stdout 'RequestsPerHour: 3600'
+stdout 'ThrottleWaitMS: 500'
+
+bitbottle admin rate-limit get -k --hostname $BB_HOST --json
+stdout '"enabled":true'
+stdout '"requests_per_hour":3600'
+stdout '"throttle_wait_ms":500'
+
+bitbottle admin rate-limit set -k --hostname $BB_HOST --requests-per-hour 7200
+stdout 'updated'

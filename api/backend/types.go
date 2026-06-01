@@ -125,6 +125,13 @@ type LoggingConfig struct {
 // LoggingConfig; the alias exists so the interface signature stays explicit.
 type LoggingConfigInput = LoggingConfig
 
+// RateLimitConfig holds Bitbucket Server/DC REST API rate-limit settings.
+type RateLimitConfig struct {
+	Enabled         bool `json:"enabled"`
+	RequestsPerHour int  `json:"requests_per_hour"`
+	ThrottleWaitMS  int  `json:"throttle_wait_ms"`
+}
+
 // PipelineConfig is the domain representation of a repository's Bitbucket Cloud
 // pipeline configuration.
 type PipelineConfig struct {

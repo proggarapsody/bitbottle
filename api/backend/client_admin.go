@@ -78,6 +78,10 @@ type AdminClient interface {
 	GetBanner() (BannerConfig, error)
 	SetBanner(in BannerConfig) error
 	ClearBanner() error
+
+	// Rate-limit config (Server/DC only)
+	GetRateLimitConfig() (RateLimitConfig, error)
+	SetRateLimitConfig(in RateLimitConfig) error
 }
 
 // FeatureAdmin names the admin capability.
