@@ -1,0 +1,25 @@
+# Cloud Code Insights — report list/view/set/delete and annotation list/add.
+bb-fake cloud
+
+bitbottle code-insights report list testworkspace/cloud-repo-a deadbeef -k
+stdout 'scan-1'
+stdout 'Security Scan'
+stdout 'PASSED'
+
+bitbottle code-insights report view testworkspace/cloud-repo-a deadbeef scan-1 -k
+stdout 'scan-1'
+stdout 'snyk'
+
+bitbottle code-insights report set testworkspace/cloud-repo-a deadbeef scan-1 --title 'Security Scan' --result PASSED -k
+stdout 'scan-1'
+stdout 'PASSED'
+
+bitbottle code-insights report delete testworkspace/cloud-repo-a deadbeef scan-1 -k
+stdout 'Deleted report'
+
+bitbottle code-insights annotation list testworkspace/cloud-repo-a deadbeef scan-1 -k
+stdout 'main.go'
+stdout 'HIGH'
+
+bitbottle code-insights annotation add testworkspace/cloud-repo-a deadbeef scan-1 --path main.go --line 42 --message 'null ptr' --severity HIGH -k
+stdout 'Added 1 annotation'

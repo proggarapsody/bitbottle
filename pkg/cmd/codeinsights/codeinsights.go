@@ -1,7 +1,7 @@
 // Package codeinsights is the root of the `code-insights` command group.
-// Code Insights is a Bitbucket Server / Data Center feature only —
-// invocations against Cloud surface a typed ErrUnsupportedOnHost via the
-// backend.AsCodeInsightsClient accessor.
+// Code Insights is supported on both Bitbucket Server / Data Center and
+// Bitbucket Cloud. Server/DC uses the CodeInsightsClient; Cloud uses the
+// CloudCodeInsightsClient. Commands resolve the correct adapter automatically.
 package codeinsights
 
 import (
@@ -17,13 +17,12 @@ import (
 func NewCmdCodeInsights(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "code-insights",
-		Short: "Manage Code Insights reports and annotations (Bitbucket Server / DC only)",
-		Long: `Manage Code Insights reports, annotations, and merge checks on
-Bitbucket Server / Data Center. Code Insights enables CI tools, scanners,
-and quality gates to attach structured results to commits.
+		Short: "Manage Code Insights reports, annotations, and merge checks",
+		Long: `Manage Code Insights reports and annotations on Bitbucket Server / Data
+Center and Bitbucket Cloud. Code Insights enables CI tools, scanners, and
+quality gates to attach structured results to commits.
 
-Bitbucket Cloud does not support this API — calling these subcommands
-against Cloud returns a typed "unsupported on host" error.`,
+Merge checks (experimental) are Bitbucket Server / DC only.`,
 		Annotations: map[string]string{
 			"help:arguments": `A repository can be supplied as PROJECT/REPO. When omitted, the
 repository is inferred from the "origin" git remote in the current

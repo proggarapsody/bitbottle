@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/proggarapsody/bitbottle/api/backend"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
@@ -48,7 +47,7 @@ func deleteRun(f *factory.Factory, opts *DeleteOptions) error {
 	if err != nil {
 		return err
 	}
-	ci, err := backend.AsCodeInsightsClient(client, ref.Host)
+	ci, err := resolveCIAdapter(client, ref.Host)
 	if err != nil {
 		return err
 	}

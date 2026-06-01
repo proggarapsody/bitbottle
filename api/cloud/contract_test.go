@@ -18,3 +18,6 @@ var _ backend.PRCommentResolver = (*cloud.Client)(nil)
 
 // Compile-time assertion: cloud.Client satisfies backend.WorkspaceProjectDefaultReviewerClient.
 var _ backend.WorkspaceProjectDefaultReviewerClient = (*cloud.Client)(nil)
+
+// Compile-time assertion: cloud.Client satisfies backend.CloudCodeInsightsClient.
+var _ backend.CloudCodeInsightsClient = (*cloud.Client)(nil)

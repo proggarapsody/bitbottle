@@ -232,6 +232,14 @@ type FakeClient struct {
 	GetMergeCheckFn     func(project, slug, key string) (backend.MergeCheck, error)
 	DeleteMergeCheckFn  func(project, slug, key string) error
 
+	// Cloud Code Insights (Cloud-only; satisfies backend.CloudCodeInsightsClient when set)
+	ListCodeInsightsReportsFn     func(project, slug, hash string) ([]backend.CodeInsightsReport, error)
+	GetCodeInsightsReportFn       func(project, slug, hash, key string) (backend.CodeInsightsReport, error)
+	PutCodeInsightsReportFn       func(project, slug, hash, key string, in backend.CodeInsightsReportInput) (backend.CodeInsightsReport, error)
+	DeleteCodeInsightsReportFn    func(project, slug, hash, key string) error
+	ListCodeInsightsAnnotationsFn func(project, slug, hash, key string) ([]backend.CodeInsightsAnnotation, error)
+	PutCodeInsightsAnnotationsFn  func(project, slug, hash, key string, in []backend.CodeInsightsAnnotationInput) error
+
 	// Branch model methods (Cloud-only; satisfies backend.BranchModelClient when set)
 	GetBranchModelFn            func(ws, slug string) (backend.BranchModel, error)
 	GetBranchModelSettingsFn    func(ws, slug string) (backend.BranchModelSettings, error)
@@ -459,6 +467,7 @@ var (
 	_ backend.BranchModelClient                     = (*FakeClient)(nil)
 	_ backend.BranchProtector                       = (*FakeClient)(nil)
 	_ backend.BranchRuleClient                      = (*FakeClient)(nil)
+	_ backend.CloudCodeInsightsClient               = (*FakeClient)(nil)
 	_ backend.CodeInsightsClient                    = (*FakeClient)(nil)
 	_ backend.CodeSearcher                          = (*FakeClient)(nil)
 	_ backend.CommitFileClient                      = (*FakeClient)(nil)
@@ -1491,6 +1500,68 @@ func (c *FakeClient) DeleteMergeCheck(project, slug, key string) error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.DeleteMergeCheck; set DeleteMergeCheckFn in your test")
+	}
+	return nil
+}
+
+// ── CloudCodeInsightsClient ──────────────────────────────────────────────────
+
+func (c *FakeClient) ListCodeInsightsReports(project, slug, hash string) ([]backend.CodeInsightsReport, error) {
+	if c.ListCodeInsightsReportsFn != nil {
+		return c.ListCodeInsightsReportsFn(project, slug, hash)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListCodeInsightsReports; set ListCodeInsightsReportsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) GetCodeInsightsReport(project, slug, hash, key string) (backend.CodeInsightsReport, error) {
+	if c.GetCodeInsightsReportFn != nil {
+		return c.GetCodeInsightsReportFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetCodeInsightsReport; set GetCodeInsightsReportFn in your test")
+	}
+	return backend.CodeInsightsReport{}, nil
+}
+
+func (c *FakeClient) PutCodeInsightsReport(project, slug, hash, key string, in backend.CodeInsightsReportInput) (backend.CodeInsightsReport, error) {
+	if c.PutCodeInsightsReportFn != nil {
+		return c.PutCodeInsightsReportFn(project, slug, hash, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.PutCodeInsightsReport; set PutCodeInsightsReportFn in your test")
+	}
+	return backend.CodeInsightsReport{}, nil
+}
+
+func (c *FakeClient) DeleteCodeInsightsReport(project, slug, hash, key string) error {
+	if c.DeleteCodeInsightsReportFn != nil {
+		return c.DeleteCodeInsightsReportFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.DeleteCodeInsightsReport; set DeleteCodeInsightsReportFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) ListCodeInsightsAnnotations(project, slug, hash, key string) ([]backend.CodeInsightsAnnotation, error) {
+	if c.ListCodeInsightsAnnotationsFn != nil {
+		return c.ListCodeInsightsAnnotationsFn(project, slug, hash, key)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.ListCodeInsightsAnnotations; set ListCodeInsightsAnnotationsFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) PutCodeInsightsAnnotations(project, slug, hash, key string, in []backend.CodeInsightsAnnotationInput) error {
+	if c.PutCodeInsightsAnnotationsFn != nil {
+		return c.PutCodeInsightsAnnotationsFn(project, slug, hash, key, in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.PutCodeInsightsAnnotations; set PutCodeInsightsAnnotationsFn in your test")
 	}
 	return nil
 }
