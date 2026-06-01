@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.134.0](https://github.com/proggarapsody/bitbottle/compare/v1.133.0...v1.134.0) (2026-06-01)
+
+
+### Features
+
+* **admin:** ADMIN-RATE-LIMIT — admin rate-limit get/set for Server/DC ([7a92e26](https://github.com/proggarapsody/bitbottle/commit/7a92e261be3d419ea3a14c3ae06b9387431c8df5))
+
+
+### Bug Fixes
+
+* **admin:** rate-limit set allows 0 values via flag.Changed() detection ([b3ca126](https://github.com/proggarapsody/bitbottle/commit/b3ca1268f4ab81c71c95cd7cccf233bb9acdac11))
+
 ## [1.133.0](https://github.com/proggarapsody/bitbottle/compare/v1.132.0...v1.133.0) (2026-06-01)
 
 
