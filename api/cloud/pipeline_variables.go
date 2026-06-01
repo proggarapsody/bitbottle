@@ -86,6 +86,24 @@ func (c *Client) DeletePipelineVariable(ns, slug, key string) error {
 	return c.http.DeleteJSON(path, nil)
 }
 
+// GetPipelineVariable returns the variable matching key, or a typed ErrNotFound
+// DomainError when no variable with that key exists in the repository.
+func (c *Client) GetPipelineVariable(ns, slug, key string) (backend.PipelineVariable, error) {
+	v, err := c.findPipelineVariable(ns, slug, key)
+	if err != nil {
+		return backend.PipelineVariable{}, err
+	}
+	if v == nil {
+		return backend.PipelineVariable{}, &backend.DomainError{
+			Kind:     backend.ErrNotFound,
+			Resource: "pipeline-variable",
+			ID:       key,
+			Message:  fmt.Sprintf("pipeline variable %q not found", key),
+		}
+	}
+	return *v, nil
+}
+
 // findPipelineVariable returns the variable matching key, or nil if none.
 func (c *Client) findPipelineVariable(ns, slug, key string) (*backend.PipelineVariable, error) {
 	vars, err := c.ListPipelineVariables(ns, slug)

@@ -71,6 +71,74 @@ func TestVariableList_UnknownScope(t *testing.T) {
 	assert.True(t, result.IsError)
 }
 
+func TestVariableView_Repository_Found(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPipelineVariablesFn: func(ns, slug string) ([]backend.PipelineVariable, error) {
+			assert.Equal(t, "myws", ns)
+			assert.Equal(t, "my-repo", slug)
+			return []backend.PipelineVariable{
+				{UUID: "v1", Key: "API_KEY", Value: "secret"},
+				{UUID: "v2", Key: "OTHER", Value: "val"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleCloudConfig, fake)
+	result, err := h.variableView(context.Background(), makeReq(map[string]any{
+		"repo": "myws/my-repo",
+		"key":  "API_KEY",
+	}))
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	assertJSONContains(t, result, "API_KEY", "")
+}
+
+func TestVariableView_Repository_NotFound(t *testing.T) {
+	t.Parallel()
+	fake := &testhelpers.FakeClient{
+		T: t,
+		ListPipelineVariablesFn: func(ns, slug string) ([]backend.PipelineVariable, error) {
+			return []backend.PipelineVariable{
+				{UUID: "v1", Key: "OTHER", Value: "val"},
+			}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleCloudConfig, fake)
+	result, err := h.variableView(context.Background(), makeReq(map[string]any{
+		"repo": "myws/my-repo",
+		"key":  "MISSING",
+	}))
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+	assertErrorResult(t, result, "not found")
+}
+
+func TestVariableView_DeploymentMissingEnv(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleCloudConfig, &testhelpers.FakeClient{T: t})
+	result, err := h.variableView(context.Background(), makeReq(map[string]any{
+		"repo":  "myws/my-repo",
+		"key":   "MY_KEY",
+		"scope": "deployment",
+	}))
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+	assertErrorResult(t, result, "env_uuid is required")
+}
+
+func TestVariableView_UnknownScope(t *testing.T) {
+	t.Parallel()
+	h := newHandlersWithFake(t, singleCloudConfig, &testhelpers.FakeClient{T: t})
+	result, err := h.variableView(context.Background(), makeReq(map[string]any{
+		"repo":  "myws/my-repo",
+		"key":   "MY_KEY",
+		"scope": "bogus",
+	}))
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
 func TestVariableSet_Repository(t *testing.T) {
 	t.Parallel()
 	fake := &testhelpers.FakeClient{

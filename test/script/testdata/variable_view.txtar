@@ -1,0 +1,16 @@
+# variable view PROJECT/REPO KEY — view a single repository pipeline variable.
+bb-fake cloud
+
+bitbottle variable view testworkspace/cloud-repo-a DEPLOY_ENV -k
+stdout 'DEPLOY_ENV'
+stdout 'prod'
+
+bitbottle variable view testworkspace/cloud-repo-a SECRET_TOKEN -k
+stdout 'SECRET_TOKEN'
+stdout '<secured>'
+
+bitbottle variable view testworkspace/cloud-repo-a DEPLOY_ENV -k --json
+stdout '"key"'
+stdout 'DEPLOY_ENV'
+stdout '"value"'
+stdout 'prod'

@@ -640,6 +640,16 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusUnauthorized,
 			Body:       map[string]any{"type": "error", "error": map[string]any{"message": "Unauthorized"}},
 		},
+		// repo pipeline-variable list/view — used by variable list and variable view
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/pipelines_config/variables/",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{"uuid": "{rpv-uuid-1}", "key": "DEPLOY_ENV", "value": "prod", "secured": false},
+				map[string]any{"uuid": "{rpv-uuid-2}", "key": "SECRET_TOKEN", "value": "", "secured": true},
+			}),
+		},
 		// pipelines_config GET — used by pipeline config get
 		{
 			Method:     http.MethodGet,

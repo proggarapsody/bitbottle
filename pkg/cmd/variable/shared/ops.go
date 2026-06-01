@@ -21,6 +21,9 @@ type VariableItem struct {
 type VariableOps interface {
 	// ListVariables returns all variables in the bound scope.
 	ListVariables() ([]VariableItem, error)
+	// GetVariableByKey returns the single variable matching key. Returns a
+	// typed ErrNotFound DomainError when no variable with that key exists.
+	GetVariableByKey(key string) (VariableItem, error)
 	// SetVariable upserts the variable by key and returns the resulting item.
 	SetVariable(key, value string, secured bool) (VariableItem, error)
 	// DeleteVariableByKey removes the variable identified by key. For scopes
@@ -85,6 +88,24 @@ func (o *repoOps) ListVariables() ([]VariableItem, error) {
 	return out, nil
 }
 
+func (o *repoOps) GetVariableByKey(key string) (VariableItem, error) {
+	items, err := o.ListVariables()
+	if err != nil {
+		return VariableItem{}, err
+	}
+	for _, v := range items {
+		if v.Key == key {
+			return v, nil
+		}
+	}
+	return VariableItem{}, &backend.DomainError{
+		Kind:     backend.ErrNotFound,
+		Resource: "pipeline-variable",
+		ID:       key,
+		Message:  fmt.Sprintf("pipeline variable %q not found", key),
+	}
+}
+
 func (o *repoOps) SetVariable(key, value string, secured bool) (VariableItem, error) {
 	v, err := o.pc.SetPipelineVariable(o.ns, o.slug, backend.PipelineVariableInput{
 		Key:     key,
@@ -120,6 +141,24 @@ func (o *workspaceOps) ListVariables() ([]VariableItem, error) {
 	return out, nil
 }
 
+func (o *workspaceOps) GetVariableByKey(key string) (VariableItem, error) {
+	items, err := o.ListVariables()
+	if err != nil {
+		return VariableItem{}, err
+	}
+	for _, v := range items {
+		if v.Key == key {
+			return v, nil
+		}
+	}
+	return VariableItem{}, &backend.DomainError{
+		Kind:     backend.ErrNotFound,
+		Resource: "pipeline-variable",
+		ID:       key,
+		Message:  fmt.Sprintf("pipeline variable %q not found", key),
+	}
+}
+
 func (o *workspaceOps) SetVariable(key, value string, secured bool) (VariableItem, error) {
 	v, err := o.wc.SetWorkspaceVariable(o.ns, backend.PipelineVariableInput{
 		Key:     key,
@@ -153,6 +192,24 @@ func (o *deploymentOps) ListVariables() ([]VariableItem, error) {
 		out = append(out, VariableItem{UUID: v.UUID, Key: v.Key, Value: v.Value, Secured: v.Secured})
 	}
 	return out, nil
+}
+
+func (o *deploymentOps) GetVariableByKey(key string) (VariableItem, error) {
+	items, err := o.ListVariables()
+	if err != nil {
+		return VariableItem{}, err
+	}
+	for _, v := range items {
+		if v.Key == key {
+			return v, nil
+		}
+	}
+	return VariableItem{}, &backend.DomainError{
+		Kind:     backend.ErrNotFound,
+		Resource: "pipeline-variable",
+		ID:       key,
+		Message:  fmt.Sprintf("pipeline variable %q not found in environment %s", key, o.envUUID),
+	}
 }
 
 func (o *deploymentOps) SetVariable(key, value string, secured bool) (VariableItem, error) {
