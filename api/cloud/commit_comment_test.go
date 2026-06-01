@@ -31,7 +31,7 @@ func TestCloudClient_ListCommitComments_Single(t *testing.T) {
 	cmts, err := client.ListCommitComments("myws", "my-repo", "abc123", 0)
 	require.NoError(t, err)
 
-	assert.Equal(t, "/repositories/myws/my-repo/commits/abc123/comments", gotPath)
+	assert.Equal(t, "/repositories/myws/my-repo/commit/abc123/comments", gotPath)
 	require.Len(t, cmts, 1)
 	assert.Equal(t, 1, cmts[0].ID)
 	assert.Equal(t, "Looks good", cmts[0].Body)
@@ -51,7 +51,7 @@ func TestCloudClient_ListCommitComments_Pagination(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if callCount == 1 {
 			// Return page1 with a next pointer to the same server
-			p1 := `{"values":[{"id":1,"content":{"raw":"first"},"user":{"nickname":"alice"},"created_on":"2024-01-01T10:00:00Z"}],"next":"` + srv.URL + `/repositories/myws/my-repo/commits/abc123/comments?page=2"}`
+			p1 := `{"values":[{"id":1,"content":{"raw":"first"},"user":{"nickname":"alice"},"created_on":"2024-01-01T10:00:00Z"}],"next":"` + srv.URL + `/repositories/myws/my-repo/commit/abc123/comments?page=2"}`
 			_, _ = w.Write([]byte(p1))
 		} else {
 			_, _ = w.Write([]byte(page2))
@@ -105,7 +105,7 @@ func TestCloudClient_AddCommitComment(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, http.MethodPost, gotMethod)
-	assert.Equal(t, "/repositories/myws/my-repo/commits/abc123/comments", gotPath)
+	assert.Equal(t, "/repositories/myws/my-repo/commit/abc123/comments", gotPath)
 	content, _ := gotBody["content"].(map[string]any)
 	assert.Equal(t, "hello", content["raw"])
 	assert.Equal(t, 99, got.ID)
@@ -134,7 +134,7 @@ func TestCloudClient_EditCommitComment(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, http.MethodPut, gotMethod)
-	assert.Equal(t, "/repositories/myws/my-repo/commits/abc123/comments/99", gotPath)
+	assert.Equal(t, "/repositories/myws/my-repo/commit/abc123/comments/99", gotPath)
 	content, _ := gotBody["content"].(map[string]any)
 	assert.Equal(t, "updated", content["raw"])
 	assert.Equal(t, 99, got.ID)
@@ -157,5 +157,5 @@ func TestCloudClient_DeleteCommitComment(t *testing.T) {
 	require.NoError(t, client.DeleteCommitComment("myws", "my-repo", "abc123", 99))
 
 	assert.Equal(t, http.MethodDelete, gotMethod)
-	assert.Equal(t, "/repositories/myws/my-repo/commits/abc123/comments/99", gotPath)
+	assert.Equal(t, "/repositories/myws/my-repo/commit/abc123/comments/99", gotPath)
 }

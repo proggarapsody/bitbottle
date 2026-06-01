@@ -29,7 +29,7 @@ func toCommitCommentDomain(w cloudgen.CloudCommitComment) backend.CommitComment 
 // ListCommitComments lists all comments on a commit. Cloud supports
 // pagination via the standard paged response envelope.
 func (c *Client) ListCommitComments(ns, slug, hash string, limit int) ([]backend.CommitComment, error) {
-	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments?pagelen=100", ns, slug, hash)
+	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/comments?pagelen=100", ns, slug, hash)
 	return paging.Collect(c.http, path, func(body []byte) ([]backend.CommitComment, error) {
 		var page cloudPagedResponse[cloudgen.CloudCommitComment]
 		if err := json.Unmarshal(body, &page); err != nil {
@@ -49,7 +49,7 @@ func (c *Client) AddCommitComment(ns, slug, hash string, in backend.AddCommitCom
 		Content: cloudgen.CloudCommitCommentContent{Raw: in.Body},
 	}
 	var w cloudgen.CloudCommitComment
-	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments", ns, slug, hash)
+	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/comments", ns, slug, hash)
 	if err := c.postJSON(path, body, &w); err != nil {
 		return backend.CommitComment{}, err
 	}
@@ -62,7 +62,7 @@ func (c *Client) EditCommitComment(ns, slug, hash string, commentID int, body st
 		Content: cloudgen.CloudCommitCommentContent{Raw: body},
 	}
 	var w cloudgen.CloudCommitComment
-	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments/%d", ns, slug, hash, commentID)
+	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/comments/%d", ns, slug, hash, commentID)
 	if err := c.putJSON(path, req, &w); err != nil {
 		return backend.CommitComment{}, err
 	}
@@ -71,6 +71,6 @@ func (c *Client) EditCommitComment(ns, slug, hash string, commentID int, body st
 
 // DeleteCommitComment removes a commit comment. Cloud returns 204 on success.
 func (c *Client) DeleteCommitComment(ns, slug, hash string, commentID int) error {
-	path := fmt.Sprintf("/repositories/%s/%s/commits/%s/comments/%d", ns, slug, hash, commentID)
+	path := fmt.Sprintf("/repositories/%s/%s/commit/%s/comments/%d", ns, slug, hash, commentID)
 	return c.delete(path)
 }
