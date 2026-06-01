@@ -124,7 +124,7 @@ func TestVariableView_DeploymentMissingEnv(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	assert.True(t, result.IsError)
-	assertErrorResult(t, result, "env_uuid is required")
+	assertErrorResult(t, result, "--env")
 }
 
 func TestVariableView_UnknownScope(t *testing.T) {

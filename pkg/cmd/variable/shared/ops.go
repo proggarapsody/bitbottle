@@ -56,7 +56,10 @@ func ResolveVariableOps(scope string, client backend.Client, host, project, slug
 
 	case "deployment":
 		if envUUID == "" {
-			return nil, fmt.Errorf("--env ENV-UUID is required for --scope deployment")
+			return nil, &backend.DomainError{
+				Kind:    backend.ErrInvalidRequest,
+				Message: "--env ENV-UUID is required for --scope deployment",
+			}
 		}
 		dc, err := backend.AsDeploymentClient(client, host)
 		if err != nil {
@@ -65,7 +68,10 @@ func ResolveVariableOps(scope string, client backend.Client, host, project, slug
 		return &deploymentOps{dc: dc, ns: project, slug: slug, envUUID: envUUID}, nil
 
 	default:
-		return nil, fmt.Errorf("unknown scope %q; valid: repository, workspace, deployment", scope)
+		return nil, &backend.DomainError{
+			Kind:    backend.ErrInvalidRequest,
+			Message: fmt.Sprintf("unknown scope %q; valid: repository, workspace, deployment", scope),
+		}
 	}
 }
 
@@ -237,7 +243,12 @@ func (o *deploymentOps) DeleteVariableByKey(key string) error {
 		}
 	}
 	if varUUID == "" {
-		return fmt.Errorf("variable %q not found in environment %s", key, o.envUUID)
+		return &backend.DomainError{
+			Kind:     backend.ErrNotFound,
+			Resource: "pipeline-variable",
+			ID:       key,
+			Message:  fmt.Sprintf("variable %q not found in environment %s", key, o.envUUID),
+		}
 	}
 	return o.dc.DeleteEnvVariable(o.ns, o.slug, o.envUUID, varUUID)
 }

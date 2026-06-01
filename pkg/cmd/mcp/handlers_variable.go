@@ -7,6 +7,7 @@ import (
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/variable/shared"
 )
 
 // variableList handles the variable_list MCP tool.
@@ -108,70 +109,18 @@ func (h *handlers) variableView(_ context.Context, req mcplib.CallToolRequest) (
 		return errResultErr(err), nil
 	}
 
-	switch scope {
-	case "repository":
-		pc, err := backend.AsPipelineClient(client, hostname)
-		if err != nil {
-			return errResultErr(err), nil
-		}
-		vars, err := pc.ListPipelineVariables(ns, slug)
-		if err != nil {
-			return errResultErr(err), nil
-		}
-		for _, v := range vars {
-			if v.Key == key {
-				if v.Secured {
-					v.Value = ""
-				}
-				return jsonResult(v)
-			}
-		}
-		return errResult(fmt.Sprintf("pipeline variable %q not found", key)), nil
-
-	case "workspace":
-		wc, err := backend.AsWorkspaceVariableClient(client, hostname)
-		if err != nil {
-			return errResultErr(err), nil
-		}
-		vars, err := wc.ListWorkspaceVariables(ns)
-		if err != nil {
-			return errResultErr(err), nil
-		}
-		for _, v := range vars {
-			if v.Key == key {
-				if v.Secured {
-					v.Value = ""
-				}
-				return jsonResult(v)
-			}
-		}
-		return errResult(fmt.Sprintf("pipeline variable %q not found", key)), nil
-
-	case "deployment":
-		if envUUID == "" {
-			return errResult("env_uuid is required for scope=deployment"), nil
-		}
-		dc, err := backend.AsDeploymentClient(client, hostname)
-		if err != nil {
-			return errResultErr(err), nil
-		}
-		vars, err := dc.ListEnvVariables(ns, slug, envUUID)
-		if err != nil {
-			return errResultErr(err), nil
-		}
-		for _, v := range vars {
-			if v.Key == key {
-				if v.Secured {
-					v.Value = ""
-				}
-				return jsonResult(v)
-			}
-		}
-		return errResult(fmt.Sprintf("variable %q not found in environment %s", key, envUUID)), nil
-
-	default:
-		return errResult(fmt.Sprintf("unknown scope %q; valid: repository, workspace, deployment", scope)), nil
+	ops, err := shared.ResolveVariableOps(scope, client, hostname, ns, slug, envUUID)
+	if err != nil {
+		return errResultErr(err), nil
 	}
+	v, err := ops.GetVariableByKey(key)
+	if err != nil {
+		return errResultErr(err), nil
+	}
+	if v.Secured {
+		v.Value = ""
+	}
+	return jsonResult(v)
 }
 
 // variableSet handles the variable_set MCP tool.
