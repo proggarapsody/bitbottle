@@ -1,0 +1,9 @@
+# deploy-key add --permission read-write sends permission to Cloud API.
+bb-fake cloud
+
+bitbottle deploy-key add testworkspace/cloud-repo-a --key 'ssh-rsa AAAA5' --permission read-write -k --json
+stdout '"id"'
+
+# read is the default; flag must reject invalid values.
+! bitbottle deploy-key add testworkspace/cloud-repo-a --key 'ssh-rsa AAAA5' --permission write -k
+stderr 'invalid'

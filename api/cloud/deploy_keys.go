@@ -41,8 +41,9 @@ func (c *Client) ListDeployKeys(ns, slug string) ([]backend.DeployKey, error) {
 
 // addDeployKeyBody is the request body for creating a deploy key.
 type addDeployKeyBody struct {
-	Key   string `json:"key"`
-	Label string `json:"label"`
+	Key        string `json:"key"`
+	Label      string `json:"label,omitempty"`
+	Permission string `json:"permission,omitempty"`
 }
 
 // AddDeployKey adds a deploy key to a repository.
@@ -54,7 +55,7 @@ func (c *Client) AddDeployKey(ns, slug string, input backend.DeployKeyInput) (ba
 	if input.Key == "" {
 		return backend.DeployKey{}, fmt.Errorf("key required")
 	}
-	body := addDeployKeyBody{Key: input.Key, Label: input.Label}
+	body := addDeployKeyBody{Key: input.Key, Label: input.Label, Permission: input.Permission}
 	var w cloudgen.CloudDeployKey
 	path := fmt.Sprintf("/repositories/%s/%s/deploy-keys", url.PathEscape(ns), url.PathEscape(slug))
 	if err := c.postJSON(path, body, &w); err != nil {

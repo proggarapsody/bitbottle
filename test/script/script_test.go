@@ -1186,6 +1186,13 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusOK,
 			Body:       map[string]any{},
 		},
+		// POST deploy-key add — used by deploy-key add (and deploy_key_permission.txtar)
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/deploy-keys",
+			Status:     http.StatusCreated,
+			Body:       map[string]any{"id": 10, "label": "CI key", "key": "ssh-rsa AAAA5", "read_only": false},
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

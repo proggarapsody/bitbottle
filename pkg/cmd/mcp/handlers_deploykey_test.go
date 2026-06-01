@@ -97,3 +97,24 @@ func TestDeleteDeployKey_MissingID(t *testing.T) {
 	require.NoError(t, err)
 	assertErrorResult(t, result, "id")
 }
+
+func TestAddDeployKey_WithPermission(t *testing.T) {
+	t.Parallel()
+	var gotInput backend.DeployKeyInput
+	fake := &testhelpers.FakeClient{
+		T: t,
+		AddDeployKeyFn: func(ns, slug string, input backend.DeployKeyInput) (backend.DeployKey, error) {
+			gotInput = input
+			return backend.DeployKey{ID: 9, Label: input.Label, Key: input.Key}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleCloudConfig, fake)
+	result, err := h.addDeployKey(context.Background(), makeReq(map[string]any{
+		"repo":       "myws/my-repo",
+		"key":        "ssh-rsa ZZZZ",
+		"permission": "read-write",
+	}))
+	require.NoError(t, err)
+	assertJSONContains(t, result, "9", "")
+	assert.Equal(t, "read_write", gotInput.Permission)
+}
