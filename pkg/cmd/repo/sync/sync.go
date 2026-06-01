@@ -3,12 +3,12 @@
 package sync
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
 
@@ -43,8 +43,12 @@ func NewCmdSync(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if isJSONRequested(cmd) {
-				return json.NewEncoder(f.IOStreams.Out).Encode(result)
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				p := syncResultFields(f, cfg)
+				p.SetSingleItem()
+				p.AddItem(result)
+				return p.Render()
 			}
 
 			if result.CommitsMerged == 0 {
@@ -57,18 +61,21 @@ func NewCmdSync(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&branch, "branch", "", "Branch to sync (default: repo's default branch)")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
+	format.RegisterOutputFlags(cmd)
 	return cmd
 }
 
-// isJSONRequested returns true when the --json flag is present on the command
-// or any of its ancestors (persistent flag).
-func isJSONRequested(cmd *cobra.Command) bool {
-	f := cmd.Flags().Lookup("json")
-	if f == nil {
-		f = cmd.InheritedFlags().Lookup("json")
-	}
-	if f == nil {
-		return false
-	}
-	return f.Changed
+func syncResultFields(f *factory.Factory, cfg format.OutputConfig) *format.Printer[backend.SyncResult] {
+	p := format.New[backend.SyncResult](f.IOStreams.Out, f.IOStreams.IsStdoutTTY(), cfg)
+	p.AddField(format.Field[backend.SyncResult]{
+		Name:    "behind",
+		Header:  "BEHIND",
+		Extract: func(r backend.SyncResult) any { return r.Behind },
+	})
+	p.AddField(format.Field[backend.SyncResult]{
+		Name:    "commits_merged",
+		Header:  "COMMITS_MERGED",
+		Extract: func(r backend.SyncResult) any { return r.CommitsMerged },
+	})
+	return p
 }
