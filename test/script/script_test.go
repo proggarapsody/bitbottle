@@ -492,6 +492,20 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 				},
 			},
 		},
+		// POST branch create — used by branch create positional tests
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/branches",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"displayId": "feat/new-branch", "id": "refs/heads/feat/new-branch", "latestCommit": "deadbeef"},
+		},
+		// POST tag create — used by tag create positional tests
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/rest/api/1.0/projects/PROJ/repos/alpha-repo/tags",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"displayId": "v2.0.0", "id": "refs/tags/v2.0.0", "latestCommit": "deadbeef"},
+		},
 		// GET mirror servers list — used by mirror list
 		{
 			Method:     http.MethodGet,

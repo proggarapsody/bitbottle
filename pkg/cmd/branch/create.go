@@ -15,9 +15,9 @@ func NewCmdBranchCreate(f *factory.Factory) *cobra.Command {
 	var hostname string
 
 	cmd := &cobra.Command{
-		Use:   "create [PROJECT/REPO] NAME",
+		Use:   "create [PROJECT/REPO] NAME [START_AT]",
 		Short: "Create a new branch",
-		Args:  cobra.RangeArgs(1, 2),
+		Args:  cobra.RangeArgs(1, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			repoArgs, rest := repoarg.SplitLeadingRepo(args, 1)
 			ref, err := factory.ResolveTarget(f, repoArgs, hostname)
@@ -25,6 +25,14 @@ func NewCmdBranchCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			name := rest[0]
+
+			// positional START_AT wins only when --start-at flag was not set
+			if startAt == "" && len(rest) > 1 {
+				startAt = rest[1]
+			}
+			if startAt == "" {
+				return fmt.Errorf("start-at is required (pass it as the third positional or --start-at flag)")
+			}
 
 			client, err := f.Backend(ref.Host)
 			if err != nil {
@@ -43,8 +51,7 @@ func NewCmdBranchCreate(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&startAt, "start-at", "", "Branch name or commit hash to start from (required)")
-	_ = cmd.MarkFlagRequired("start-at")
+	cmd.Flags().StringVar(&startAt, "start-at", "", "Branch name or commit hash to start from")
 	cmd.Flags().StringVar(&hostname, "hostname", "", "Bitbucket hostname (overrides auto-detection)")
 	return cmd
 }

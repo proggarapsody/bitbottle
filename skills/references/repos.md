@@ -132,23 +132,27 @@ MCP tools: `get_repo_pr_settings(project, repo)`, `set_repo_pr_settings(project,
 
 ```bash
 bitbottle branch list   PROJ/repo [--limit N]
-bitbottle branch create PROJ/repo BRANCH --start-at main|HASH
+bitbottle branch create PROJ/repo BRANCH START_AT           # positional (recommended)
+bitbottle branch create PROJ/repo BRANCH --start-at main|HASH  # flag form
 bitbottle branch checkout BRANCH                # fetches origin then `git checkout`
 bitbottle branch delete PROJ/repo BRANCH        # destructive — confirm first
 ```
 
-`--start-at` accepts a branch name OR a commit hash. There is no
-default; the flag is required.
+`--start-at` accepts a branch name OR a commit hash. Pass it as the
+third positional (`[PROJECT/REPO] NAME START_AT`) or via `--start-at`;
+both forms are equivalent. start-at is required — there is no default.
 
 ## Tags
 
 ```bash
 bitbottle tag list   PROJ/repo [--limit N]
-bitbottle tag create PROJ/repo TAG --start-at main|HASH [--message "x"]
+bitbottle tag create PROJ/repo TAG START_AT [--message "x"]      # positional (recommended)
+bitbottle tag create PROJ/repo TAG --start-at main|HASH [--message "x"]  # flag form
 bitbottle tag delete PROJ/repo TAG              # destructive
 ```
 
 `--message` makes the tag annotated. Without it, it's lightweight.
+`--start-at` is required — there is no default.
 
 ## Commits
 

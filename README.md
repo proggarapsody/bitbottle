@@ -192,7 +192,8 @@ bitbottle repo create my-service --project MYPROJ
 bitbottle repo clone MYPROJ/my-service
 
 bitbottle branch list
-bitbottle branch create MYPROJ/my-service feature/x --start-at main
+bitbottle branch create MYPROJ/my-service feature/x main     # positional START_AT
+bitbottle branch create MYPROJ/my-service feature/x --start-at main  # flag form
 bitbottle branch delete MYPROJ/my-service feature/x
 ```
 

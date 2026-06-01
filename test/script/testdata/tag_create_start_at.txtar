@@ -1,0 +1,14 @@
+# tag create accepts START_AT as a 3rd positional and errors when omitted.
+bb-fake server
+
+# positional usage: PROJECT/REPO NAME START_AT
+bitbottle tag create PROJ/alpha-repo v2.0.0 deadbeef -k
+stdout 'v2.0.0'
+
+# flag usage still works
+bitbottle tag create PROJ/alpha-repo v2.0.0 --start-at deadbeef -k
+stdout 'v2.0.0'
+
+# missing start-at produces a helpful error
+! bitbottle tag create PROJ/alpha-repo v2.0.0 -k
+stderr 'start-at'

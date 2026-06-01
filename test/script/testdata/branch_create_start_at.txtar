@@ -1,0 +1,14 @@
+# branch create accepts START_AT as a 3rd positional and errors when omitted.
+bb-fake server
+
+# positional usage: PROJECT/REPO NAME START_AT
+bitbottle branch create PROJ/alpha-repo feat/new-branch deadbeef -k
+stdout 'feat/new-branch'
+
+# flag usage still works
+bitbottle branch create PROJ/alpha-repo feat/new-branch --start-at deadbeef -k
+stdout 'feat/new-branch'
+
+# missing start-at produces a helpful error
+! bitbottle branch create PROJ/alpha-repo feat/new-branch -k
+stderr 'start-at'

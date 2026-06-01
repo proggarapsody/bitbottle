@@ -11,6 +11,14 @@
 
 ---
 
+## 2026-06-02 — REF-UX — branch/tag create --start-at positional (Option A)
+
+`branch create` and `tag create` now accept START_AT as a 3rd positional argument
+(`[PROJECT/REPO] NAME [START_AT]`). The `--start-at` flag remains for backward
+compatibility. Closes #621.
+
+---
+
 ## 2026-05-31 — CLOUD-WIRE
 
 ### CLOUD-WIRE — Cloud API path + response-struct drift (BB-08, BB-09, BB-10)
