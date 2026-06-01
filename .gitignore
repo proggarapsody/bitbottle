@@ -18,6 +18,9 @@
 
 # Agent tooling — runtime state and per-user config are local-only
 .claude/auto-iter/
+auto-iter/cycles.jsonl
+auto-iter/metrics.jsonl
+auto-iter/.lock
 .claude/skills/
 .claude/worktrees/
 .claude/settings.json
