@@ -5,8 +5,9 @@ Top-level command group for managing Bitbucket Cloud pipeline variables across t
 ## Syntax
 
 ```
-bitbottle variable list PROJECT/REPO [--scope repository|workspace|deployment] [--env ENV-UUID] [--json FIELDS] [--jq EXPR] [--hostname HOST]
-bitbottle variable set  PROJECT/REPO KEY [VALUE] [--body VALUE_OR_DASH] [--secured] [--scope ...] [--env ENV-UUID] [--hostname HOST]
+bitbottle variable list   PROJECT/REPO [--scope repository|workspace|deployment] [--env ENV-UUID] [--json FIELDS] [--jq EXPR] [--hostname HOST]
+bitbottle variable view   PROJECT/REPO KEY [--scope repository|workspace|deployment] [--env ENV-UUID] [--json] [--hostname HOST]
+bitbottle variable set    PROJECT/REPO KEY [VALUE] [--body VALUE_OR_DASH] [--secured] [--scope ...] [--env ENV-UUID] [--hostname HOST]
 bitbottle variable delete PROJECT/REPO KEY [--scope ...] [--env ENV-UUID] [--confirm] [--hostname HOST]
 ```
 
@@ -14,7 +15,7 @@ bitbottle variable delete PROJECT/REPO KEY [--scope ...] [--env ENV-UUID] [--con
 
 | Scope | Description | Backend API |
 |-------|-------------|-------------|
-| `repository` (default) | Repository-level pipeline variables | `PipelineClient.ListPipelineVariables / SetPipelineVariable / DeletePipelineVariable` |
+| `repository` (default) | Repository-level pipeline variables | `PipelineClient.ListPipelineVariables / GetPipelineVariable / SetPipelineVariable / DeletePipelineVariable` |
 | `workspace` | Workspace-level pipeline variables | `WorkspaceVariableClient.ListWorkspaceVariables / SetWorkspaceVariable / DeleteWorkspaceVariable` |
 | `deployment` | Deployment environment variables | `DeploymentClient.ListEnvVariables / SetEnvVariable / DeleteEnvVariable` |
 
@@ -22,6 +23,7 @@ All scopes are Bitbucket Cloud only. The command returns `host.unsupported` on S
 
 ## Notes
 
+- **`view` fetches one variable by key**: resolves via a list-then-filter internally (the Bitbucket API has no single-key GET for these scopes). Returns a `host.not_found` error when the key is absent.
 - **Secured variables**: use `--secured` on `set` to mark a variable as secured. The API never returns the value of secured variables; bitbottle renders `<secured>` in their place.
 - **Deployment scope requires `--env ENV-UUID`**: the environment UUID must be supplied for all three subcommands when using `--scope deployment`.
 - **`set` upserts**: if a variable with the same key already exists it is updated (PUT); otherwise it is created (POST). This applies to all three scopes.
@@ -39,6 +41,15 @@ bitbottle variable list myworkspace/myrepo --scope workspace
 
 # List deployment environment variables
 bitbottle variable list myworkspace/myrepo --scope deployment --env aaaabbbb-cccc-dddd-eeee-ffffgggghhhh
+
+# View a single repository variable by key
+bitbottle variable view myworkspace/myrepo DEPLOY_ENV
+
+# View a workspace variable
+bitbottle variable view myworkspace/myrepo GLOBAL_FLAG --scope workspace
+
+# View a deployment environment variable
+bitbottle variable view myworkspace/myrepo DB_URL --scope deployment --env <env-uuid>
 
 # Set a repository variable
 bitbottle variable set myworkspace/myrepo DEPLOY_ENV production
