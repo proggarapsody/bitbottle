@@ -2,6 +2,16 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-02 — COMMIT-SEARCH — commit search by message/author/date
+
+`commit search [PROJECT/REPO] [--query Q] [--author USER] [--since DATE] [--until DATE] [--limit N] [--json]` —
+searches commits in a repository. New optional interface `CommitSearcher` (Both
+backends). Cloud: uses `q` filter syntax for message/date; author filtered client-side.
+Server: fetches with optional `author`/`since`/`until` query params; message filtered
+client-side. MCP tool `search_commits`.
+
+---
+
 ## 2026-06-02 — ADMIN-RATE-LIMIT — admin rate-limit get/set for Server/DC
 
 `admin rate-limit get [--hostname H] [--json]` and `admin rate-limit set [--hostname H]

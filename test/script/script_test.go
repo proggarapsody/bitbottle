@@ -1216,6 +1216,21 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusCreated,
 			Body:       map[string]any{"id": 10, "label": "CI key", "key": "ssh-rsa AAAA5", "read_only": false},
 		},
+		// commit search — used by commit search (Cloud)
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/commits",
+			Status:     http.StatusOK,
+			Body: testhelpers.CloudPagedResponse([]any{
+				map[string]any{
+					"hash":    "abc1234def456abc1234def456abc1234def456ab",
+					"message": "feat: add search capability\n",
+					"author":  map[string]any{"raw": "Alice <alice@example.com>", "user": map[string]any{"display_name": "Alice", "account_id": "123"}},
+					"date":    "2026-04-24T10:00:00Z",
+					"links":   map[string]any{"html": map[string]any{"href": "https://bitbucket.org/testworkspace/cloud-repo-a/commits/abc1234def456abc1234def456abc1234def456ab"}},
+				},
+			}),
+		},
 		// POST merge-upstream — used by repo sync
 		// Returns 3 commits merged on first call, already-up-to-date on second.
 		{

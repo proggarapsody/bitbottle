@@ -152,6 +152,9 @@ type FakeClient struct {
 	// Code search (Cloud-only; satisfies backend.CodeSearcher when set)
 	SearchCodeFn func(workspace, query string, limit int) ([]backend.CodeSearchHit, error)
 
+	// Commit search (both backends; satisfies backend.CommitSearcher when set)
+	SearchCommitsFn func(ns, slug string, opts backend.CommitSearchOpts) ([]backend.Commit, error)
+
 	// Source primitives (both backends; satisfies backend.SourceReader when set)
 	GetFileContentFn func(ns, slug, ref, path string) ([]byte, error)
 	ListTreeFn       func(ns, slug, ref, path string) ([]backend.TreeEntry, error)
@@ -542,6 +545,7 @@ var (
 	_ backend.PipelineOIDCClient                    = (*FakeClient)(nil)
 	_ backend.HostInfoClient                        = (*FakeClient)(nil)
 	_ backend.RepoHookClient                        = (*FakeClient)(nil)
+	_ backend.CommitSearcher                        = (*FakeClient)(nil)
 )
 
 func (c *FakeClient) ListRepos(ns string, limit int) ([]backend.Repository, error) {
@@ -1386,6 +1390,16 @@ func (c *FakeClient) SearchCode(workspace, query string, limit int) ([]backend.C
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.SearchCode; set SearchCodeFn in your test")
+	}
+	return nil, nil
+}
+
+func (c *FakeClient) SearchCommits(ns, slug string, opts backend.CommitSearchOpts) ([]backend.Commit, error) {
+	if c.SearchCommitsFn != nil {
+		return c.SearchCommitsFn(ns, slug, opts)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SearchCommits; set SearchCommitsFn in your test")
 	}
 	return nil, nil
 }
