@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.133.0](https://github.com/proggarapsody/bitbottle/compare/v1.132.0...v1.133.0) (2026-06-01)
+
+
+### Features
+
+* **repo:** REPO-SYNC — repo sync command for Cloud fork sync ([d839aeb](https://github.com/proggarapsody/bitbottle/commit/d839aeb87d9fa342f09e1f4fd7af29a8228b5959))
+
+
+### Bug Fixes
+
+* **repo:** DJ BLOCKERs for repo sync — format pattern + integration test ([e01a4c3](https://github.com/proggarapsody/bitbottle/commit/e01a4c3da9202647ae901098497bf354bf6cf4b8))
+
 ## [1.132.0](https://github.com/proggarapsody/bitbottle/compare/v1.131.0...v1.132.0) (2026-06-01)
 
 
