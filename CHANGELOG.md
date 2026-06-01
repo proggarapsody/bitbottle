@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.131.0](https://github.com/proggarapsody/bitbottle/compare/v1.130.0...v1.131.0) (2026-06-01)
+
+
+### Features
+
+* **deploykey:** DEPLOY-KEY-PERMISSION — --permission flag for deploy-key add ([2bebaf1](https://github.com/proggarapsody/bitbottle/commit/2bebaf1d606863555ac7e17c9af8fbedfb85dd90))
+
+
+### Bug Fixes
+
+* **deploykey:** MCP add_deploy_key permission default matches CLI ([a1c6116](https://github.com/proggarapsody/bitbottle/commit/a1c6116bd91f1f394ad1c5ca389016803df01c59))
+
 ## [1.130.0](https://github.com/proggarapsody/bitbottle/compare/v1.129.0...v1.130.0) (2026-06-01)
 
 
