@@ -236,6 +236,41 @@ func (c *Client) ClearBanner() error {
 	return c.http.DeleteJSON("/admin/banner", nil)
 }
 
+// ── Rate-limit config ─────────────────────────────────────────────────────────
+
+// wireRateLimitConfig is the on-wire representation of the rate-limit config
+// as returned/accepted by Bitbucket Server/DC.
+type wireRateLimitConfig struct {
+	Enabled         bool `json:"enabled"`
+	RequestsPerHour int  `json:"requestsPerHour"`
+	ThrottleWaitMS  int  `json:"throttleWaitMs"`
+}
+
+// GetRateLimitConfig returns the current rate-limiting configuration.
+// GET /rest/api/1.0/admin/rate-limiting
+func (c *Client) GetRateLimitConfig() (backend.RateLimitConfig, error) {
+	var wire wireRateLimitConfig
+	if err := c.http.GetJSON("/admin/rate-limiting", &wire); err != nil {
+		return backend.RateLimitConfig{}, err
+	}
+	return backend.RateLimitConfig{
+		Enabled:         wire.Enabled,
+		RequestsPerHour: wire.RequestsPerHour,
+		ThrottleWaitMS:  wire.ThrottleWaitMS,
+	}, nil
+}
+
+// SetRateLimitConfig writes a new rate-limiting configuration.
+// PUT /rest/api/1.0/admin/rate-limiting — 204 No Content on success.
+func (c *Client) SetRateLimitConfig(in backend.RateLimitConfig) error {
+	wire := wireRateLimitConfig{
+		Enabled:         in.Enabled,
+		RequestsPerHour: in.RequestsPerHour,
+		ThrottleWaitMS:  in.ThrottleWaitMS,
+	}
+	return c.http.PutJSON("/admin/rate-limiting", wire, nil)
+}
+
 // GetClusterNodes returns the nodes in the Bitbucket Server/DC cluster.
 // GET /rest/api/1.0/admin/cluster
 func (c *Client) GetClusterNodes() ([]backend.ClusterNode, error) {

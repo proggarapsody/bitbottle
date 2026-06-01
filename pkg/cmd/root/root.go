@@ -3,6 +3,7 @@ package root
 import (
 	"github.com/spf13/cobra"
 
+	_ "github.com/proggarapsody/bitbottle/pkg/cmd/admin" // self-registers via init()
 	"github.com/proggarapsody/bitbottle/pkg/cmd/alias"
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/api"          // self-registers via init()
 	_ "github.com/proggarapsody/bitbottle/pkg/cmd/auth"         // self-registers via init()

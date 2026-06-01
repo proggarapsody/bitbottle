@@ -555,6 +555,19 @@ func buildServerStubs(ts *testscript.TestScript) *httptest.Server {
 				map[string]any{"slug": "test-repo", "mirrorId": "mirror-1", "status": "AVAILABLE", "lastSync": int64(1705296000000)},
 			}),
 		},
+		// GET admin rate-limiting — used by admin rate-limit get/set
+		{
+			Method:     http.MethodGet,
+			PathSuffix: "/rest/api/1.0/admin/rate-limiting",
+			Status:     http.StatusOK,
+			Body:       map[string]any{"enabled": true, "requestsPerHour": 3600, "throttleWaitMs": 500},
+		},
+		// PUT admin rate-limiting — used by admin rate-limit set
+		{
+			Method:     http.MethodPut,
+			PathSuffix: "/rest/api/1.0/admin/rate-limiting",
+			Status:     http.StatusNoContent,
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

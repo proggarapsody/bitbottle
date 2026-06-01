@@ -2,6 +2,17 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-02 — ADMIN-RATE-LIMIT — admin rate-limit get/set for Server/DC
+
+`admin rate-limit get [--hostname H] [--json]` and `admin rate-limit set [--hostname H]
+--enabled --requests-per-hour N --throttle-wait-ms N` — read/write Bitbucket Server/DC
+REST API rate-limiting configuration. Server: `GET/PUT /rest/api/1.0/admin/rate-limiting`.
+Cloud → typed `host.unsupported`. Extends `AdminClient` with `GetRateLimitConfig` /
+`SetRateLimitConfig`. `set` fetches current config and merges partial updates.
+MCP pair `get_rate_limit_config`, `set_rate_limit_config`.
+
+---
+
 ## 2026-06-02 — REPO-SYNC — repo sync command for Cloud fork sync
 
 `repo sync [PROJECT/REPO] [--branch BRANCH] [--json]` — synchronises a Cloud

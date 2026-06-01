@@ -209,6 +209,10 @@ type FakeClient struct {
 	SetBannerFn   func(in backend.BannerConfig) error
 	ClearBannerFn func() error
 
+	// Admin rate-limit methods (Server-only)
+	GetRateLimitConfigFn func() (backend.RateLimitConfig, error)
+	SetRateLimitConfigFn func(in backend.RateLimitConfig) error
+
 	// Source write methods (both backends; satisfies backend.SourceWriter when set)
 	PutFileFn func(ns, slug, path string, in backend.PutFileInput) error
 
@@ -2708,6 +2712,26 @@ func (c *FakeClient) ClearBanner() error {
 	}
 	if c.T != nil {
 		c.T.Fatalf("unexpected call to FakeClient.ClearBanner; set ClearBannerFn in your test")
+	}
+	return nil
+}
+
+func (c *FakeClient) GetRateLimitConfig() (backend.RateLimitConfig, error) {
+	if c.GetRateLimitConfigFn != nil {
+		return c.GetRateLimitConfigFn()
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.GetRateLimitConfig; set GetRateLimitConfigFn in your test")
+	}
+	return backend.RateLimitConfig{}, nil
+}
+
+func (c *FakeClient) SetRateLimitConfig(in backend.RateLimitConfig) error {
+	if c.SetRateLimitConfigFn != nil {
+		return c.SetRateLimitConfigFn(in)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SetRateLimitConfig; set SetRateLimitConfigFn in your test")
 	}
 	return nil
 }
