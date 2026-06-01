@@ -2,6 +2,15 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-02 — REPO-SYNC — repo sync command for Cloud fork sync
+
+`repo sync [PROJECT/REPO] [--branch BRANCH] [--json]` — synchronises a Cloud
+fork branch with its upstream via `POST /repositories/{ws}/{slug}/merge-upstream`.
+New optional interface `RepoSyncer` (Cloud only; Server → `host.unsupported`).
+MCP tool `sync_repo`. TTY: "Synced N commit(s)" or "Already up to date".
+
+---
+
 ## 2026-06-02 — REPO-PIPELINE-VAR-VIEW — variable view KEY command
 
 `variable view [PROJECT/REPO] KEY [--scope repository|workspace|deployment] [--json]` — adds the

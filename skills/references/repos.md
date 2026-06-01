@@ -28,6 +28,7 @@ bitbottle repo edit PROJ/repo --language Go                           # update l
 bitbottle repo edit PROJ/repo --fork-policy allow_forks               # set fork policy (Cloud only)
 bitbottle repo edit PROJ/repo --enable-issues                         # enable issue tracker (Cloud only)
 bitbottle repo edit PROJ/repo --disable-wiki                          # disable wiki (Cloud only)
+bitbottle repo sync  [WORKSPACE/REPO] [--branch BRANCH] [--json]      # sync fork with upstream (Cloud only)
 ```
 
 `repo rename`, `repo fork`, and `repo transfer` accept `--json` and
@@ -42,6 +43,13 @@ private. `--private=true` is the explicit form.
 `repo fork` is Cloud-only — Bitbucket Server / Data Center has no fork
 primitive in its REST API and the command returns a typed
 unsupported-capability error on Server hosts.
+
+`repo sync [WORKSPACE/REPO] [--branch BRANCH]` synchronises a Cloud fork with its
+upstream repository. Calls `POST /repositories/{ws}/{slug}/merge-upstream`.
+TTY output: "Synced N commit(s) from upstream" or "Already up to date" (when
+already current). Use `--json` for `{"behind": N, "commits_merged": N}`.
+**Cloud only** — Server returns `host.unsupported`. MCP tool: `sync_repo(ns, slug[, branch])`.
+On diverged history the API returns 409 → typed `ErrConflict`.
 
 `repo transfer` works on both backends. On Server it moves the repo to
 a different project (identified by project key). On Cloud it moves the repo
