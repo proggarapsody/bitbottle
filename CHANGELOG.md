@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.135.0](https://github.com/proggarapsody/bitbottle/compare/v1.134.0...v1.135.0) (2026-06-01)
+
+
+### Features
+
+* **commit:** COMMIT-SEARCH — commit search by message/author/date ([336d4a4](https://github.com/proggarapsody/bitbottle/commit/336d4a4955857fd3c68092a275ae2e55492036c8))
+
+
+### Bug Fixes
+
+* **commit:** add search_integration_test.go (DJ BLOCKER) ([7bfe6b6](https://github.com/proggarapsody/bitbottle/commit/7bfe6b66bd65f4185b2bae9a55155e44e62b7c24))
+
 ## [1.134.0](https://github.com/proggarapsody/bitbottle/compare/v1.133.0...v1.134.0) (2026-06-01)
 
 
