@@ -99,6 +99,44 @@ func TestRateLimitSet_PermissionError_PrintsHint(t *testing.T) {
 	assert.Contains(t, errOut.String(), "SYS_ADMIN")
 }
 
+func TestRateLimitSet_RequestsPerHour_Zero_Succeeds(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.RateLimitConfig
+	fake := &testhelpers.FakeClient{
+		T:                    t,
+		GetRateLimitConfigFn: stubCurrent(backend.RateLimitConfig{Enabled: true, RequestsPerHour: 500, ThrottleWaitMS: 200}),
+		SetRateLimitConfigFn: func(in backend.RateLimitConfig) error {
+			gotIn = in
+			return nil
+		},
+	}
+	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := set.NewCmdSet(f, nil)
+	cmd.SetArgs([]string{"--requests-per-hour", "0"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, 0, gotIn.RequestsPerHour)
+	assert.Equal(t, 200, gotIn.ThrottleWaitMS) // unchanged
+}
+
+func TestRateLimitSet_ThrottleWaitMS_Zero_Succeeds(t *testing.T) {
+	t.Parallel()
+	var gotIn backend.RateLimitConfig
+	fake := &testhelpers.FakeClient{
+		T:                    t,
+		GetRateLimitConfigFn: stubCurrent(backend.RateLimitConfig{Enabled: true, RequestsPerHour: 3600, ThrottleWaitMS: 100}),
+		SetRateLimitConfigFn: func(in backend.RateLimitConfig) error {
+			gotIn = in
+			return nil
+		},
+	}
+	f, _, _ := cmdtest.NewFactory(t, fake, cmdtest.NewRunner())
+	cmd := set.NewCmdSet(f, nil)
+	cmd.SetArgs([]string{"--throttle-wait-ms", "0"})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, 0, gotIn.ThrottleWaitMS)
+	assert.Equal(t, 3600, gotIn.RequestsPerHour) // unchanged
+}
+
 func TestRateLimitSet_UnsupportedOnCloud(t *testing.T) {
 	t.Parallel()
 	type noAdminClient struct{ backend.Client }

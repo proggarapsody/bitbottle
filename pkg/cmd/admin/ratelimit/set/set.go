@@ -15,11 +15,13 @@ const sysAdminHint = "This requires SYS_ADMIN permission. Standard admin tokens 
 
 // Options holds parsed flags for `admin rate-limit set`.
 type Options struct {
-	Hostname        string
-	Enabled         bool
-	EnabledSet      bool // true when --enabled was explicitly provided
-	RequestsPerHour int
-	ThrottleWaitMS  int
+	Hostname           string
+	Enabled            bool
+	EnabledSet         bool // true when --enabled was explicitly provided
+	RequestsPerHour    int
+	RequestsPerHourSet bool // true when --requests-per-hour was explicitly provided
+	ThrottleWaitMS     int
+	ThrottleWaitMSSet  bool // true when --throttle-wait-ms was explicitly provided
 }
 
 // NewCmdSet builds the `admin rate-limit set` cobra command.
@@ -30,6 +32,8 @@ func NewCmdSet(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 		Short: "Update rate-limit configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.EnabledSet = cmd.Flags().Changed("enabled")
+			opts.RequestsPerHourSet = cmd.Flags().Changed("requests-per-hour")
+			opts.ThrottleWaitMSSet = cmd.Flags().Changed("throttle-wait-ms")
 			if runF != nil {
 				return runF(opts)
 			}
@@ -44,7 +48,7 @@ func NewCmdSet(f *factory.Factory, runF func(*Options) error) *cobra.Command {
 }
 
 func setRun(f *factory.Factory, opts *Options) error {
-	if !opts.EnabledSet && opts.RequestsPerHour == 0 && opts.ThrottleWaitMS == 0 {
+	if !opts.EnabledSet && !opts.RequestsPerHourSet && !opts.ThrottleWaitMSSet {
 		return fmt.Errorf("at least one of --enabled, --requests-per-hour, or --throttle-wait-ms must be provided")
 	}
 
@@ -71,10 +75,10 @@ func setRun(f *factory.Factory, opts *Options) error {
 	if opts.EnabledSet {
 		in.Enabled = opts.Enabled
 	}
-	if opts.RequestsPerHour != 0 {
+	if opts.RequestsPerHourSet {
 		in.RequestsPerHour = opts.RequestsPerHour
 	}
-	if opts.ThrottleWaitMS != 0 {
+	if opts.ThrottleWaitMSSet {
 		in.ThrottleWaitMS = opts.ThrottleWaitMS
 	}
 
