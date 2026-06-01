@@ -1,0 +1,9 @@
+# repo sync against Bitbucket Cloud syncs a fork branch and reports commits merged.
+bb-fake cloud
+
+bitbottle repo sync testworkspace/cloud-repo-a --branch main -k
+stdout 'Synced 3 commit'
+
+# repo sync when already up to date prints "Already up to date"
+bitbottle repo sync testworkspace/cloud-repo-a --branch main -k
+stdout 'Already up to date'

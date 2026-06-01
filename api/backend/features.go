@@ -425,6 +425,14 @@ var AllFeatureSpecs = []FeatureSpec{
 		ServerSupport: true,
 	},
 	{
+		Name:          "RepoSyncer",
+		HumanLabel:    "repository sync",
+		Check:         func(c Client) bool { _, ok := c.(RepoSyncer); return ok },
+		Feature:       FeatureRepoSync,
+		CloudSupport:  true,
+		ServerSupport: false,
+	},
+	{
 		Name:          "RepoLabelClient",
 		HumanLabel:    "repository labels",
 		Plural:        true,

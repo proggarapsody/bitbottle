@@ -321,6 +321,9 @@ type FakeClient struct {
 	// Repo forks methods (both backends; satisfies backend.RepoForksLister when set)
 	ListRepoForksFn func(ns, slug string, limit int) ([]backend.Repository, error)
 
+	// Repo sync methods (Cloud-only; satisfies backend.RepoSyncer when set)
+	SyncRepoFn func(ns, slug, branch string) (backend.SyncResult, error)
+
 	// Repo edit methods (both backends; satisfies backend.RepoEditor when set)
 	EditRepoFn func(ns, slug string, in backend.EditRepoInput) (backend.Repository, error)
 
@@ -492,6 +495,7 @@ var (
 	_ backend.RepoPRSettingsClient                  = (*FakeClient)(nil)
 	_ backend.RepoForker                            = (*FakeClient)(nil)
 	_ backend.RepoForksLister                       = (*FakeClient)(nil)
+	_ backend.RepoSyncer                            = (*FakeClient)(nil)
 	_ backend.RepoTransferClient                    = (*FakeClient)(nil)
 	_ backend.RepoWatcherClient                     = (*FakeClient)(nil)
 	_ backend.ReviewerGroupClient                   = (*FakeClient)(nil)
@@ -2218,6 +2222,16 @@ func (c *FakeClient) ListRepoForks(ns, slug string, limit int) ([]backend.Reposi
 		c.T.Fatalf("unexpected call to FakeClient.ListRepoForks; set ListRepoForksFn in your test")
 	}
 	return nil, nil
+}
+
+func (c *FakeClient) SyncRepo(ns, slug, branch string) (backend.SyncResult, error) {
+	if c.SyncRepoFn != nil {
+		return c.SyncRepoFn(ns, slug, branch)
+	}
+	if c.T != nil {
+		c.T.Fatalf("unexpected call to FakeClient.SyncRepo; set SyncRepoFn in your test")
+	}
+	return backend.SyncResult{}, nil
 }
 
 // ── ReviewerGroupClient ───────────────────────────────────────────────────────

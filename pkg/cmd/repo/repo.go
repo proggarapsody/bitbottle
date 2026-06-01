@@ -18,6 +18,7 @@ import (
 	cmdRename "github.com/proggarapsody/bitbottle/pkg/cmd/repo/rename"
 	cmdSetDefault "github.com/proggarapsody/bitbottle/pkg/cmd/repo/set-default"
 	cmdSetDefaultBranch "github.com/proggarapsody/bitbottle/pkg/cmd/repo/set-default-branch"
+	cmdSync "github.com/proggarapsody/bitbottle/pkg/cmd/repo/sync"
 	cmdTransfer "github.com/proggarapsody/bitbottle/pkg/cmd/repo/transfer"
 	cmdTree "github.com/proggarapsody/bitbottle/pkg/cmd/repo/tree"
 	cmdView "github.com/proggarapsody/bitbottle/pkg/cmd/repo/view"
@@ -60,5 +61,6 @@ disambiguate when multiple Bitbucket hosts are configured.`,
 	cmd.AddCommand(cmdPRSettings.NewCmdPRSettings(f))
 	cmd.AddCommand(cmdDownload.NewCmdDownload(f))
 	cmd.AddCommand(cmdHook.NewCmdHook(f))
+	cmd.AddCommand(cmdSync.NewCmdSync(f))
 	return cmd
 }

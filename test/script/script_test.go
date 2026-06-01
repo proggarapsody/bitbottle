@@ -1203,6 +1203,24 @@ func buildCloudStubs(ts *testscript.TestScript) *httptest.Server {
 			Status:     http.StatusCreated,
 			Body:       map[string]any{"id": 10, "label": "CI key", "key": "ssh-rsa AAAA5", "read_only": false},
 		},
+		// POST merge-upstream — used by repo sync
+		// Returns 3 commits merged on first call, already-up-to-date on second.
+		{
+			Method:     http.MethodPost,
+			PathSuffix: "/repositories/testworkspace/cloud-repo-a/merge-upstream",
+			Handler: func() http.HandlerFunc {
+				var calls int
+				return func(w http.ResponseWriter, r *http.Request) {
+					calls++
+					w.Header().Set("Content-Type", "application/json")
+					if calls == 1 {
+						_, _ = w.Write([]byte(`{"behind":3,"commits_merged":3}`))
+					} else {
+						_, _ = w.Write([]byte(`{"behind":0,"commits_merged":0}`))
+					}
+				}
+			}(),
+		},
 	}
 	return newTLSServer(ts, stubs...)
 }

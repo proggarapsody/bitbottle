@@ -22,7 +22,7 @@ disagrees with this doc; the binary wins.
 |---|---|
 | Auth, hosts.yml, env vars, multi-host, `auth migrate`, `auth doctor` | `references/auth.md` |
 | PR lifecycle (list/view/create/merge/merge-preview/approve/comment/activity/review/commits/files/participants/ready/unready/task/suggestion/comment-react/default-reviewer/reviewer-group/…) | `references/pr.md` |
-| Repos, branches, tags, file/tree, visibility, edit, transfer, watcher, repo label list/create/update/delete, repo pr-settings get, repo pr-settings set, repo download list/upload/get/delete, repo clone (MCP: `clone_repo`), repo hook list/view/enable/disable/settings get/set (Server/DC only) | `references/repos.md` |
+| Repos, branches, tags, file/tree, visibility, edit, transfer, watcher, repo label list/create/update/delete, repo pr-settings get, repo pr-settings set, repo download list/upload/get/delete, repo clone (MCP: `clone_repo`), repo hook list/view/enable/disable/settings get/set (Server/DC only), repo sync Cloud fork sync (MCP: `sync_repo`) | `references/repos.md` |
 | Commits (view/files/status/comment/comment-react) | `references/commit.md` |
 | Pipelines, pipeline config get/enable/disable, schedules, caches, watch, trigger, test-report view, test-case list, SSH key pair, known hosts, OIDC config/keys (Cloud only) | `references/pipeline.md` |
 | Pipeline runners — list / create / delete (Cloud only) | `references/runner.md` |
