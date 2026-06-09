@@ -49,7 +49,7 @@ Default to the **code-generation model**. Escalate to the **judgment-heavy model
 | §0 open-PR overlap (decision halt) | mechanical | Routes to out-of-band notification for judgment; agent itself just frames the question |
 | §1 mode pick + scope pick | mechanical | Algorithm-driven; BACKLOG-driven scope-pick is deterministic |
 | §1 bundle-check | mechanical | Algorithm-driven |
-| §2 PRD drafting | code-generation | Mechanical fill from BACKLOG scope-detail |
+| §2 PRD drafting | code-generation (clone) · **judgment** (new-API/write) | Mechanical fill for pattern-clones against already-exercised endpoints. New-API or write/mutation scopes require the `## Assumptions & Evidence` gate (README §2) — a judgment phase, because an unexamined assumption here is reproduced by the fake, the test, and design-judge alike (#655). |
 | §2 worktree creation | mechanical | Shell command |
 | §2 TDD implementation | **code-generation** (subagent) | Code generation. Dispatch via `Task` tool with `isolation: "worktree"` — keeps orchestrator context light. Judgment-heavy model only if scope is genuinely complex (rare). |
 | §2 doc sync | mechanical | Mechanical doc updates per §5 doc-sync table |
@@ -307,6 +307,8 @@ jq -s 'map(select(.step | startswith("step2_halt")) | .duration_ms / 1000)' \
 - ❌ `git checkout -b feat/<slug> origin/main` inside the **main checkout**. Every iteration runs in its own worktree — use `git worktree add -b feat/<slug> ../bitbottle-worktrees/<slug> origin/main`. The main checkout stays clean. See [README.md §3](README.md#section-3--implement-tdd) HARD STOP block. PRD #372 surfaced this as a process bug riding alongside four auth bugs.
 - ❌ Emitting metrics via raw `echo >> metrics.jsonl` or inline `jq -nc`. **Always use [`auto-iter/scripts/metric.sh`](../../../auto-iter/scripts/metric.sh).** Prose checklists for emission discipline get skimmed past after context compaction — across cycles 81–86 in the May-17 stream, per-step metrics emission collapsed from 10 lines/cycle (cycles 77–79) to 0–1 lines/cycle. A shell invocation can't be skimmed.
 - ❌ Forcing `/compact` inside `/auto-iter` — trust Claude's automatic compaction.
+- ❌ Drafting a write/new-API PRD as mechanical fill, with no `## Assumptions & Evidence` section (README §2). An unverified assumption about backend behavior is reproduced identically by the hand-written fake, the test, and design-judge — all three agree, all three are wrong. This is the spec-time root of #655. New-API/write PRDs are a judgment phase; every backend-behavior claim is CITED, LEDGER (`docs/backend-quirks.md`), or a blocking `ASSUMED — UNVERIFIED` that a reality probe must settle before TDD.
+- ❌ A write-op whose only test assertion is `stdout '…'`. Assert on the captured request body — the fake can't catch a dropped field it was written (by the same author, with the same assumption) to ignore. Pre-merge-check §6a blocks this.
 - ❌ Splitting an `*-AUDIT` scope into "audit cycle" + "fix cycle" when the audit produced exactly one finding that fits in ≤1 PR. See § AUDIT_CONTINUE below. Cycles 95 (UX-FLAG-AUDIT) and 96 (DEBUG-TRANSPORT-FLAG) shipped what should have been one cycle, costing an extra release and ~22 min wall time.
 
 ---

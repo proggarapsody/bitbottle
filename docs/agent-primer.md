@@ -98,6 +98,13 @@
 - Cloud `pagelen` ≤ 100; the Cloud API rejects larger.
 - Server reopen / merge / put endpoints carry `version` for optimistic
   concurrency.
+- **Before any write/mutation op, consult [`docs/backend-quirks.md`](backend-quirks.md)**
+  and honor every applicable `BQ-N` row. It is the append-only ledger of
+  real Server/Cloud behaviors (full-object PUT, `version` preconditions,
+  Content-Type, pagination) that fakes and linters cannot infer. The rules
+  above live there too, with their failure modes and a worked example —
+  #655 shipped because they were known here as prose but never consulted as
+  a per-write checklist.
 
 ## What the primer does NOT cover
 
