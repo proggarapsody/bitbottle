@@ -4,7 +4,6 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
-| OPENAPI-VALIDATE | **kin-openapi request/response validation** — `getkin/kin-openapi` validates tested requests/responses against the already-vendored `api/{server,cloud}/gen/openapi.yaml`; catches schema drift on all paths. PRD #662. Independent of VCR. — scope **OPENAPI-VALIDATE** | Both | 2 | P1 |
 | ACCEPTANCE-LIVE-WIRE | **Real-backend testscript suite (Tier 6)** — gh-style `acceptance/` suite (cli/cli#9745 pattern): non-scrubbing setup, `BITBOTTLE_E2E` gating, defer cleanup, wrong-repo guard, `stdout2env`; seed with the #655 write path; wire `nightly-e2e.yml` to actually run it. PRD #663. Needs throwaway repos + write-scoped secrets. — scope **ACCEPTANCE-LIVE-WIRE** | Both | 3 | P1 |
 | E2E-QUEUE-FEEDBACK | **Bug/nightly-e2e issues jump the queue** — `pick-scope.sh` consults open `bug`/`nightly-e2e` issues before BACKLOG, so real-backend failures (and human reports like #655) are picked next. PRD #664. Depends on ACCEPTANCE-LIVE-WIRE. — scope **E2E-QUEUE-FEEDBACK** | n/a | 1 | P1 |
 | SMOKE-METRIC | **Track shipped-AND-survived-real-backend** — `log-cycle.sh --smoke` field + version-join reducer mapping nightly results to shipped cycles + honest jq queries; recompute the brainstorm-autonomy stat. PRD #665. Depends on ACCEPTANCE-LIVE-WIRE. — scope **SMOKE-METRIC** | n/a | 1 | P1 |
