@@ -108,3 +108,24 @@ A row needs: backend it applies to · the rule · the symptom when violated
   per-adapter implementations); canonical collector at `api/internal/paging`.
 - **How to honor:** route every `List*` through `paging.Collect` with the
   adapter's `Paginator`. Never hand-roll page-walking.
+
+---
+
+## Planned hardening (tracked)
+
+The tooling that turns this ledger from advisory into enforced — so a
+violated `BQ-N` fails a test instead of shipping. Off-the-shelf, not
+hand-rolled (a bespoke fake would just re-encode our assumptions):
+
+- **#661 VCR-CASSETTES** — `go-vcr` record/replay; cassettes capture real
+  Server/Cloud behavior (real `version`-required 400, real full-object
+  replace) so BQ-1/BQ-2 regressions fail on replay.
+- **#662 OPENAPI-VALIDATE** — `kin-openapi` validates requests/responses
+  against the vendored specs; catches schema drift the ledger doesn't cover.
+- **#663 ACCEPTANCE-LIVE-WIRE** — gh-style real-backend testscript suite
+  (Tier 6); the live run is the reality probe that discovers new BQ rows.
+- **#664 E2E-QUEUE-FEEDBACK** / **#665 SMOKE-METRIC** — route real-backend
+  failures into the loop queue and track "shipped AND survived a real
+  backend" instead of bare "shipped".
+
+Initiative detail in `docs/backlog/BACKLOG.md`; gates already landed in #658.

@@ -4,6 +4,36 @@
 
 | Scope | Description | Backend | Est | Pri |
 |---|---|---|---|---|
+| VCR-CASSETTES | **Record/replay real HTTP via go-vcr** — wire `dnaeon/go-vcr` into `httpx.Transport` as the underlying RoundTripper; record/replay env switch, body-aware matcher, token/host redaction, `make record-cassettes`; migrate write-op fakes to replayed cassettes. Initial cassettes recorded by maintainer (the one manual step). PRD #661. **Do first.** — scope **VCR-CASSETTES** | Both | 3 | P1 |
+| OPENAPI-VALIDATE | **kin-openapi request/response validation** — `getkin/kin-openapi` validates tested requests/responses against the already-vendored `api/{server,cloud}/gen/openapi.yaml`; catches schema drift on all paths. PRD #662. Independent of VCR. — scope **OPENAPI-VALIDATE** | Both | 2 | P1 |
+| ACCEPTANCE-LIVE-WIRE | **Real-backend testscript suite (Tier 6)** — gh-style `acceptance/` suite (cli/cli#9745 pattern): non-scrubbing setup, `BITBOTTLE_E2E` gating, defer cleanup, wrong-repo guard, `stdout2env`; seed with the #655 write path; wire `nightly-e2e.yml` to actually run it. PRD #663. Needs throwaway repos + write-scoped secrets. — scope **ACCEPTANCE-LIVE-WIRE** | Both | 3 | P1 |
+| E2E-QUEUE-FEEDBACK | **Bug/nightly-e2e issues jump the queue** — `pick-scope.sh` consults open `bug`/`nightly-e2e` issues before BACKLOG, so real-backend failures (and human reports like #655) are picked next. PRD #664. Depends on ACCEPTANCE-LIVE-WIRE. — scope **E2E-QUEUE-FEEDBACK** | n/a | 1 | P1 |
+| SMOKE-METRIC | **Track shipped-AND-survived-real-backend** — `log-cycle.sh --smoke` field + version-join reducer mapping nightly results to shipped cycles + honest jq queries; recompute the brainstorm-autonomy stat. PRD #665. Depends on ACCEPTANCE-LIVE-WIRE. — scope **SMOKE-METRIC** | n/a | 1 | P1 |
+
+### VERIFICATION-LOOP-HARDENING — initiative
+
+The implementation of the #658 follow-ups: close the self-referential
+verification gap that shipped #655 (fakes/tests/code all encoded one wrong
+assumption). Tooling chosen off-the-shelf, not hand-rolled — `go-vcr`
+(record/replay), `kin-openapi` (schema validation), gh's testscript
+acceptance pattern (cli/cli#9745). Each scope carries a full PRD with an
+`## Assumptions & Evidence` section (dogfooding the gate added in #658).
+
+**Order & dependencies:** VCR-CASSETTES (#661) and OPENAPI-VALIDATE (#662)
+are independent foundations — either first. ACCEPTANCE-LIVE-WIRE (#663)
+makes the documented-but-unwired Tier 6 real and is the prerequisite for
+E2E-QUEUE-FEEDBACK (#664) and SMOKE-METRIC (#665), which consume its
+pass/fail signal.
+
+**Irreducible manual step:** the initial cassette recording (#661) and the
+live nightly (#663) require real credentials + a designated throwaway repo
+on each backend — they cannot be faked without recreating the bug. The loop
+builds everything else; the maintainer runs `make record-cassettes` once and
+provisions the test repos/secrets.
+
+See [`docs/backend-quirks.md`](../backend-quirks.md) for the BQ rows these
+scopes must capture, and PR #658 for the spec/TDD/design-judge gates already
+landed.
 
 ## Philosophy
 
