@@ -1,0 +1,54 @@
+# This script is expected to fail until the pr-edit reviewer bug is fixed (BQ-1/BQ-2).
+#
+# BQ-1: Bitbucket Server PUT /pull-requests/{id} is a full-object replace — any field
+#       omitted is cleared. pr edit --title must do GET-modify-PUT to preserve reviewers.
+# BQ-2: Every Server PR-mutating write must carry the current `version` field.
+#
+# Prerequisites (set via env):
+#   BITBOTTLE_BIN    — path to the built binary
+#   BB_HOST          — Bitbucket Server hostname (with -k for self-signed TLS)
+#   BB_TOKEN         — API token with repo write access
+#   BB_E2E_REPO      — PROJECT/REPO slug (e.g. TEST/acceptance-sandbox)
+#   BB_E2E_BRANCH    — source branch that already exists in the repo
+#   BB_REVIEWER      — username to add as reviewer; if unset, reviewer steps are skipped
+#   BB_ACCEPTANCE_SKIP_DEFER — set to "1" to skip PR cleanup (useful for debugging)
+#
+# Run locally:
+#   BITBOTTLE_E2E=1 \
+#   BB_E2E_REPO=TEST/acceptance-sandbox \
+#   BB_E2E_BRANCH=acceptance/test-branch \
+#   BB_TOKEN=... BB_HOST=bb.example.com \
+#   BITBOTTLE_BIN=/path/to/bitbottle \
+#   go test ./acceptance/... -v -run TestAcceptance/pr-edit-reviewer-safety
+
+# Create a PR from the pre-existing source branch ($BB_E2E_BRANCH) to the
+# default branch.
+exec $BITBOTTLE_BIN pr create -R $BB_E2E_REPO --hostname $BB_HOST -k \
+    --title "Acceptance: reviewer-safety seed PR" \
+    --body "Created by acceptance/testdata/pr/pr-edit-reviewer-safety.txtar" \
+    --head $BB_E2E_BRANCH \
+    --no-interactive
+
+# Capture the PR number from the last line of stdout (e.g. "Created PR #42").
+stdout2env PR_NUMBER
+
+# Add a reviewer so we can assert they survive the subsequent pr edit.
+# BB_REVIEWER must be set to a valid user slug; skip if absent.
+exec $BITBOTTLE_BIN pr request-review $PR_NUMBER -R $BB_E2E_REPO --hostname $BB_HOST -k $BB_REVIEWER
+
+# Edit the PR title — this exercises BQ-1 (full-object PUT) and BQ-2 (version).
+# On a correct implementation the PUT body carries the full object + current version.
+exec $BITBOTTLE_BIN pr edit $PR_NUMBER -R $BB_E2E_REPO --hostname $BB_HOST -k \
+    --title "Acceptance: reviewer-safety seed PR (edited)"
+
+# Fetch the PR as JSON and assert the reviewer field is still present.
+exec $BITBOTTLE_BIN pr view $PR_NUMBER -R $BB_E2E_REPO --hostname $BB_HOST -k --json
+stdout $BB_REVIEWER
+
+# Re-add reviewer via pr request-review (exercises BQ-2 a second time: version
+# must be fetched fresh after the pr edit above).
+exec $BITBOTTLE_BIN pr request-review $PR_NUMBER -R $BB_E2E_REPO --hostname $BB_HOST -k $BB_REVIEWER
+
+# Cleanup: decline the PR to leave the repo clean.
+# Set BB_ACCEPTANCE_SKIP_DEFER=1 to skip cleanup for manual inspection.
+exec $BITBOTTLE_BIN pr decline $PR_NUMBER -R $BB_E2E_REPO --hostname $BB_HOST -k

@@ -31,6 +31,18 @@ jobs:
           BB_E2E_PROJECT: ${{ secrets.BB_SERVER_PROJECT }}
           BB_E2E_REPO: ${{ secrets.BB_SERVER_REPO }}
         run: go test ./test/script/... -v -timeout 20m -run TestScript
+      - name: Run acceptance tests
+        env:
+          BITBOTTLE_E2E: "1"
+          BITBOTTLE_BIN: ${{ github.workspace }}/bitbottle
+          BB_TOKEN: ${{ matrix.backend == 'cloud' && secrets.BB_CLOUD_TOKEN || secrets.BB_SERVER_TOKEN }}
+          BB_HOST: ${{ matrix.backend == 'cloud' && 'bitbucket.org' || secrets.BB_SERVER_HOST }}
+          BB_E2E_WORKSPACE: ${{ secrets.BB_CLOUD_WORKSPACE }}
+          BB_E2E_PROJECT: ${{ secrets.BB_SERVER_PROJECT }}
+          BB_E2E_REPO: ${{ secrets.BB_E2E_REPO }}
+          BB_E2E_BRANCH: ${{ secrets.BB_E2E_BRANCH }}
+          BB_REVIEWER: ${{ secrets.BB_E2E_REVIEWER }}
+        run: go test ./acceptance/... -v -timeout 20m -run TestAcceptance
       - name: Report failure
         if: failure()
         uses: actions/github-script@v7

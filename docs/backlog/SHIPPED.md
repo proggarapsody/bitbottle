@@ -2,6 +2,23 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-19 — ACCEPTANCE-LIVE-WIRE — real-backend acceptance suite skeleton
+
+`acceptance/` package: real-backend testscript suite (Tier 6) gated by
+`BITBOTTLE_E2E=1`. Non-scrubbing setup passes all `BB_*` / `BITBOTTLE_*`
+env vars through to testscript engine (contrast with `test/script/`'s
+hermetic scrub). Three `t.Skip` safety guards: no-E2E-flag, missing
+`BB_E2E_REPO`, and `"prod"` in repo name. Custom `stdout2env KEY` testscript
+command captures the last stdout line as a named env var (used to capture PR
+numbers from `pr create` output). Seed script
+`acceptance/testdata/pr/pr-edit-reviewer-safety.txtar` exercises the BQ-1
+(full-object PUT) and BQ-2 (version precondition) code paths via `pr create`
+→ `pr request-review` → `pr edit --title` → assert reviewers survive → cleanup
+`pr decline`. Wired into `nightly-e2e.yml` as a second run step after the
+existing testscript run. Workflow doc at `docs/workflows/acceptance.md`. PRD #663.
+
+---
+
 ## 2026-06-19 — OPENAPI-VALIDATE (test/openapi-validate)
 
 Schema-level OpenAPI validation helper (`test/testhelpers/openapi.go`). Validates Go values (JSON-marshaled) against component schemas in the vendored `api/{server,cloud}/gen/openapi.yaml` specs using `getkin/kin-openapi`. Exposes `ValidateAgainstSchema(t, schemaName, value, backend)`. Narrowed from full path-level to schema-level: both vendored specs have `paths: {}`, so `openapi3filter.ValidateRequest/Response` path-matching does not apply; full contract validation is a follow-up requiring a full spec export from a real instance.
