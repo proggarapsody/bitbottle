@@ -865,6 +865,25 @@ bitbottle extension list                           # list installed
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Run `go test ./...` before sending a PR.
 
+### Recording cassettes
+
+Integration tests use [go-vcr](https://github.com/dnaeon/go-vcr) to record and replay real
+Bitbucket HTTP interactions so CI runs without network access. Cassette YAML files live in
+`test/script/testdata/cassettes/`.
+
+To re-record cassettes against the real Bitbucket backend, set credentials and run:
+
+```bash
+export BITBOTTLE_TOKEN=<your-token>
+export BITBOTTLE_HOST=<your-bitbucket-host>
+export BITBOTTLE_PROJECT=<project-key>
+export BITBOTTLE_REPO=<repo-slug>
+make record-cassettes
+```
+
+Commit the resulting YAML files. Auth tokens and internal hostnames are stripped by the
+built-in `Redact` helper before cassettes are written, so the files are safe to commit.
+
 ## License
 
 [MIT](LICENSE)

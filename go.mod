@@ -14,6 +14,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/term v0.43.0
+	gopkg.in/dnaeon/go-vcr.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
