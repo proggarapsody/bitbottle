@@ -2,6 +2,25 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-19 — E2E-QUEUE-FEEDBACK — bug/nightly-e2e issues jump the queue
+
+`pick-scope.sh` now queries open GitHub issues labelled `bug` or `nightly-e2e`
+before reading the BACKLOG table. When open issues exist, the newest one
+(by issue number) is emitted as the next scope with `source:"gh_issue"`.
+Falls back gracefully to BACKLOG when `gh` is unavailable or offline. PRD #664.
+
+---
+
+## 2026-06-19 — SMOKE-METRIC — track shipped-AND-survived-real-backend
+
+`log-cycle.sh` gains a `--smoke=passed|failed|skipped|pending` flag (default
+`pending`) emitted into `cycles.jsonl`. New `auto-iter/scripts/smoke-reducer.sh`
+accepts `--version=v1.X.Y --result=passed|failed` and atomically rewrites
+matching rows in `cycles.jsonl`. Quickref schema updated with the `smoke` field
+enum, health jq queries (shipped-and-verified, shipped-but-unverified). PRD #665.
+
+---
+
 ## 2026-06-19 — ACCEPTANCE-LIVE-WIRE — real-backend acceptance suite skeleton
 
 `acceptance/` package: real-backend testscript suite (Tier 6) gated by

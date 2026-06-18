@@ -1,12 +1,5 @@
 # bitbottle Backlog
 
-## Up Next
-
-| Scope | Description | Backend | Est | Pri |
-|---|---|---|---|---|
-| E2E-QUEUE-FEEDBACK | **Bug/nightly-e2e issues jump the queue** — `pick-scope.sh` consults open `bug`/`nightly-e2e` issues before BACKLOG, so real-backend failures (and human reports like #655) are picked next. PRD #664. Depends on ACCEPTANCE-LIVE-WIRE. — scope **E2E-QUEUE-FEEDBACK** | n/a | 1 | P1 |
-| SMOKE-METRIC | **Track shipped-AND-survived-real-backend** — `log-cycle.sh --smoke` field + version-join reducer mapping nightly results to shipped cycles + honest jq queries; recompute the brainstorm-autonomy stat. PRD #665. Depends on ACCEPTANCE-LIVE-WIRE. — scope **SMOKE-METRIC** | n/a | 1 | P1 |
-
 ## Philosophy
 
 Follow [GitHub CLI](https://github.com/cli/cli) conventions throughout:
