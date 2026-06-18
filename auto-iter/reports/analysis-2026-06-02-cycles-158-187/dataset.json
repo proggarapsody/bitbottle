@@ -1,0 +1,1092 @@
+{
+ "cycle_range": [
+  153,
+  187
+ ],
+ "count": 30,
+ "cycles": [
+  {
+   "ts": "2026-05-25T11:33:54Z",
+   "cycle": 153,
+   "outcome": "shipped",
+   "version": "pending-release",
+   "tokens": 0,
+   "duration_active_min": 25,
+   "metrics_steps_count": 9,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "PIPE-RERUN"
+   ],
+   "prs": [
+    524
+   ],
+   "notes": "feat(pipeline): add pipeline rerun command (Cloud); fixed ops_test.go fakePipelineClient missing RerunPipeline stub",
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-25T11:49:27Z",
+   "cycle": 154,
+   "outcome": "shipped",
+   "version": "pending-release",
+   "tokens": 0,
+   "duration_active_min": 30,
+   "metrics_steps_count": 12,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "CHERRY-PICK"
+   ],
+   "prs": [
+    526
+   ],
+   "notes": "feat(commit): commit cherry-pick HASH BRANCH [PROJECT/REPO]; Server/DC only via branch-utils plugin; CherryPickInput+CommitCherryPicker interface; FeatureCherryPick spec (count 54\u219255); alt-transport cherryPickHTTP; MCP tool cherry_pick_commit; design-judge SHIP(WARN): fixed refs/heads double-prefix + SKILL.md update",
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-25T17:12:27Z",
+   "cycle": 155,
+   "mode": "brainstorm",
+   "outcome": "brainstorm_added_10",
+   "duration_min": 7,
+   "tokens": 0,
+   "duration_active_min": 3,
+   "metrics_steps_count": 4,
+   "pipeline_version": "2026.05.20",
+   "duration_wall_min": 7,
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T17:07:58Z",
+     "cycle": 155,
+     "step": "step0a_lock",
+     "duration_ms": 5000
+    },
+    {
+     "ts": "2026-05-25T17:07:58Z",
+     "cycle": 155,
+     "step": "step0_preflight",
+     "duration_ms": 12000,
+     "inventory_findings_count": 1
+    },
+    {
+     "ts": "2026-05-25T17:07:58Z",
+     "cycle": 155,
+     "step": "step1_mode_pick",
+     "duration_ms": 3000,
+     "mode": "brainstorm"
+    },
+    {
+     "ts": "2026-05-25T17:12:27Z",
+     "cycle": 155,
+     "step": "step2_brainstorm",
+     "duration_ms": 158691,
+     "rows_added": 10,
+     "rows_dropped_by_overlap": 5,
+     "rows_dropped_by_feasibility": 3
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-25T17:52:36Z",
+   "cycle": 156,
+   "mode": "iteration",
+   "scope": "PIPE-CONFIG+SSH-KEY-SERVER",
+   "outcome": "shipped",
+   "pr": 533,
+   "release_pr": 534,
+   "prd_issue": 532,
+   "duration_wall_min": 34,
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T17:18:17Z",
+     "cycle": 156,
+     "step": "step0a_lock",
+     "duration_ms": 2000
+    },
+    {
+     "ts": "2026-05-25T17:18:17Z",
+     "cycle": 156,
+     "step": "step0_preflight",
+     "duration_ms": 5000,
+     "inventory_findings_count": 0
+    },
+    {
+     "ts": "2026-05-25T17:18:17Z",
+     "cycle": 156,
+     "step": "step1_mode_pick",
+     "duration_ms": 3000,
+     "mode": "iteration",
+     "scope": "PIPE-CONFIG+SSH-KEY-SERVER"
+    },
+    {
+     "ts": "2026-05-25T17:22:24Z",
+     "cycle": 156,
+     "step": "step2_prd_file",
+     "duration_ms": 8000,
+     "issue": 532
+    },
+    {
+     "ts": "2026-05-25T17:38:00Z",
+     "cycle": 156,
+     "step": "step3_tdd",
+     "duration_ms": 820565,
+     "subagent_tokens": 35625,
+     "commits": 3
+    },
+    {
+     "ts": "2026-05-25T17:48:49Z",
+     "cycle": 156,
+     "step": "step3_blockers_fixed",
+     "duration_ms": 240000,
+     "findings_fixed": 4
+    },
+    {
+     "ts": "2026-05-25T17:51:45Z",
+     "cycle": 156,
+     "step": "step4_ci_wait",
+     "duration_ms": 150000,
+     "pr": 533,
+     "outcome": "green"
+    },
+    {
+     "ts": "2026-05-25T17:51:56Z",
+     "cycle": 156,
+     "step": "step5_release_pr",
+     "duration_ms": 5000,
+     "release_pr": 534
+    },
+    {
+     "ts": "2026-05-25T17:52:36Z",
+     "cycle": 156,
+     "step": "step6_release_merge",
+     "duration_ms": 5000,
+     "release_pr": 534
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-25T18:24:05Z",
+   "cycle": 157,
+   "outcome": "shipped",
+   "release_pr": 537,
+   "prd_issue": 535,
+   "duration_wall_min": 29662224,
+   "tokens": 105380,
+   "duration_active_min": 24.7,
+   "metrics_steps_count": 10,
+   "pipeline_version": "2026.05.20",
+   "prs": [
+    536
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T17:53:00Z",
+     "cycle": 157,
+     "step": "step0a_lock",
+     "duration_ms": 2000
+    },
+    {
+     "ts": "2026-05-25T17:53:00Z",
+     "cycle": 157,
+     "step": "step0_preflight",
+     "duration_ms": 8000,
+     "inventory_findings_count": 0
+    },
+    {
+     "ts": "2026-05-25T17:53:22Z",
+     "cycle": 157,
+     "step": "step1_mode_pick",
+     "duration_ms": 3000,
+     "mode": "iteration",
+     "scope": "PIPE-TEST-REPORTS+BRANCH-COMPARE"
+    },
+    {
+     "ts": "2026-05-25T17:56:08Z",
+     "cycle": 157,
+     "step": "step2_prd_file",
+     "duration_ms": 8000,
+     "prd_issue": 535
+    },
+    {
+     "ts": "2026-05-25T17:56:38Z",
+     "cycle": 157,
+     "step": "step3_tdd_start",
+     "duration_ms": 100
+    },
+    {
+     "ts": "2026-05-25T18:18:06Z",
+     "cycle": 157,
+     "step": "step3_design_judge",
+     "duration_ms": 219137,
+     "findings_count": 3,
+     "blockers": 0
+    },
+    {
+     "ts": "2026-05-25T18:18:09Z",
+     "cycle": 157,
+     "step": "step3_tdd",
+     "duration_ms": 940483,
+     "subagent_tokens": 105380
+    },
+    {
+     "ts": "2026-05-25T18:24:05Z",
+     "cycle": 157,
+     "step": "step4_ci_wait",
+     "duration_ms": 180000,
+     "outcome": "green"
+    },
+    {
+     "ts": "2026-05-25T18:24:05Z",
+     "cycle": 157,
+     "step": "step5_release_pr",
+     "duration_ms": 60000,
+     "release_pr": 537
+    },
+    {
+     "ts": "2026-05-25T18:24:05Z",
+     "cycle": 157,
+     "step": "step6_release_merge",
+     "duration_ms": 60000
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-25T18:53:11Z",
+   "cycle": 158,
+   "outcome": "shipped",
+   "release_pr": 540,
+   "prd_issue": 538,
+   "duration_wall_min": 30,
+   "tokens": 31189,
+   "duration_active_min": 24.5,
+   "metrics_steps_count": 10,
+   "pipeline_version": "2026.05.20",
+   "prs": [
+    539
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T18:24:24Z",
+     "cycle": 158,
+     "step": "step0a_lock",
+     "duration_ms": 100
+    },
+    {
+     "ts": "2026-05-25T18:24:39Z",
+     "cycle": 158,
+     "step": "step0_preflight",
+     "duration_ms": 500
+    },
+    {
+     "ts": "2026-05-25T18:24:39Z",
+     "cycle": 158,
+     "step": "step1_mode_pick",
+     "duration_ms": 1000,
+     "mode": "iteration",
+     "scope": "REPO-DOWNLOAD+MILESTONES"
+    },
+    {
+     "ts": "2026-05-25T18:25:18Z",
+     "cycle": 158,
+     "step": "step2_prd_file",
+     "duration_ms": 5000,
+     "prd_issue": 538
+    },
+    {
+     "ts": "2026-05-25T18:25:41Z",
+     "cycle": 158,
+     "step": "step3_tdd_start",
+     "duration_ms": 100
+    },
+    {
+     "ts": "2026-05-25T18:46:37Z",
+     "cycle": 158,
+     "step": "step3_tdd",
+     "duration_ms": 925888,
+     "subagent_tokens": 31189
+    },
+    {
+     "ts": "2026-05-25T18:46:37Z",
+     "cycle": 158,
+     "step": "step3_design_judge",
+     "duration_ms": 145909,
+     "findings_count": 2,
+     "blockers": 0
+    },
+    {
+     "ts": "2026-05-25T18:53:11Z",
+     "cycle": 158,
+     "step": "step4_ci_wait",
+     "duration_ms": 300000,
+     "outcome": "green"
+    },
+    {
+     "ts": "2026-05-25T18:53:11Z",
+     "cycle": 158,
+     "step": "step5_release_pr",
+     "duration_ms": 60000,
+     "release_pr": 540
+    },
+    {
+     "ts": "2026-05-25T18:53:11Z",
+     "cycle": 158,
+     "step": "step6_release_merge",
+     "duration_ms": 30000
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-25T19:20:01Z",
+   "cycle": 159,
+   "outcome": "shipped",
+   "release_pr": 543,
+   "prd_issue": 541,
+   "duration_wall_min": 27,
+   "tokens": 32570,
+   "duration_active_min": 24.1,
+   "metrics_steps_count": 10,
+   "pipeline_version": "2026.05.20",
+   "prs": [
+    542
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T18:53:23Z",
+     "cycle": 159,
+     "step": "step0a_lock",
+     "duration_ms": 100
+    },
+    {
+     "ts": "2026-05-25T18:53:23Z",
+     "cycle": 159,
+     "step": "step0_preflight",
+     "duration_ms": 500
+    },
+    {
+     "ts": "2026-05-25T18:53:23Z",
+     "cycle": 159,
+     "step": "step1_mode_pick",
+     "duration_ms": 1000,
+     "mode": "iteration",
+     "scope": "ISSUE-VERSIONS+WORKSPACE-PROJECT-CRUD"
+    },
+    {
+     "ts": "2026-05-25T18:55:06Z",
+     "cycle": 159,
+     "step": "step2_prd_file",
+     "duration_ms": 5000,
+     "prd_issue": 541
+    },
+    {
+     "ts": "2026-05-25T18:55:09Z",
+     "cycle": 159,
+     "step": "step3_tdd_start",
+     "duration_ms": 100
+    },
+    {
+     "ts": "2026-05-25T19:19:05Z",
+     "cycle": 159,
+     "step": "step3_tdd",
+     "duration_ms": 1022537,
+     "subagent_tokens": 32570
+    },
+    {
+     "ts": "2026-05-25T19:19:05Z",
+     "cycle": 159,
+     "step": "step3_design_judge",
+     "duration_ms": 305055,
+     "findings_count": 2,
+     "blockers": 0
+    },
+    {
+     "ts": "2026-05-25T19:20:01Z",
+     "cycle": 159,
+     "step": "step4_ci_wait",
+     "duration_ms": 60000,
+     "outcome": "green"
+    },
+    {
+     "ts": "2026-05-25T19:20:01Z",
+     "cycle": 159,
+     "step": "step5_release_pr",
+     "duration_ms": 30000,
+     "release_pr": 543
+    },
+    {
+     "ts": "2026-05-25T19:20:01Z",
+     "cycle": 159,
+     "step": "step6_release_merge",
+     "duration_ms": 20000
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-25T19:47:34Z",
+   "cycle": 160,
+   "outcome": "shipped",
+   "prd": 544,
+   "tokens": 62547,
+   "duration_active_min": 22.6,
+   "metrics_steps_count": 8,
+   "pipeline_version": "2026.05.20",
+   "prs": [
+    545
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T19:20:11Z",
+     "cycle": 160,
+     "step": "step0a_lock",
+     "duration_ms": 100
+    },
+    {
+     "ts": "2026-05-25T19:20:11Z",
+     "cycle": 160,
+     "step": "step0_preflight",
+     "duration_ms": 500
+    },
+    {
+     "ts": "2026-05-25T19:20:11Z",
+     "cycle": 160,
+     "step": "step1_mode_pick",
+     "duration_ms": 1000,
+     "mode": "iteration",
+     "scope": "REPO-MIRROR+WORKSPACE-PERMS"
+    },
+    {
+     "ts": "2026-05-25T19:21:37Z",
+     "cycle": 160,
+     "step": "step2_prd_file",
+     "duration_ms": 5000,
+     "prd_issue": 544
+    },
+    {
+     "ts": "2026-05-25T19:21:40Z",
+     "cycle": 160,
+     "step": "step3_tdd_start",
+     "duration_ms": 100
+    },
+    {
+     "ts": "2026-05-25T19:41:54Z",
+     "cycle": 160,
+     "step": "step3_tdd",
+     "duration_ms": 1111843,
+     "subagent_tokens": 62547
+    },
+    {
+     "ts": "2026-05-25T19:47:32Z",
+     "cycle": 160,
+     "step": "step5_merge",
+     "duration_ms": 180000,
+     "subagent_tokens": null
+    },
+    {
+     "ts": "2026-05-25T19:47:32Z",
+     "cycle": 160,
+     "step": "step6_release",
+     "duration_ms": 60000,
+     "subagent_tokens": null
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-25T19:55:22Z",
+   "cycle": 161,
+   "mode": "brainstorm",
+   "outcome": "brainstorm_added_8",
+   "tokens": 31917,
+   "duration_active_min": 0.5,
+   "metrics_steps_count": 1,
+   "pipeline_version": "2026.05.20",
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T19:55:16Z",
+     "cycle": 161,
+     "step": "step2_brainstorm",
+     "duration_ms": 32493,
+     "subagent_tokens": 31917,
+     "extra": "{\"rows_added\":8,\"rows_dropped_by_overlap\":2,\"rows_dropped_by_feasibility\":0}"
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-25T21:26:28Z",
+   "cycle": 164,
+   "outcome": "shipped",
+   "release_pr": 557,
+   "tokens": 172481,
+   "duration_active_min": 41.1,
+   "metrics_steps_count": 8,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "REPO-CLONE"
+   ],
+   "prs": [
+    556
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-05-25T20:57:55Z",
+     "cycle": 164,
+     "step": "step0_preflight",
+     "duration_ms": 0
+    },
+    {
+     "ts": "2026-05-25T21:00:14Z",
+     "cycle": 164,
+     "step": "step1_scope",
+     "duration_ms": 0,
+     "scope": "REPO-CLONE"
+    },
+    {
+     "ts": "2026-05-25T21:23:30Z",
+     "cycle": 164,
+     "step": "step3_tdd",
+     "duration_ms": 1093000,
+     "subagent_tokens": 133236
+    },
+    {
+     "ts": "2026-05-25T21:23:42Z",
+     "cycle": 164,
+     "step": "step3_6_pr_open",
+     "duration_ms": 45000
+    },
+    {
+     "ts": "2026-05-25T21:23:53Z",
+     "cycle": 164,
+     "step": "step3_6_design_judge",
+     "duration_ms": 15704,
+     "subagent_tokens": 39245,
+     "findings_count": 3
+    },
+    {
+     "ts": "2026-05-25T21:26:00Z",
+     "cycle": 164,
+     "step": "step4_ci_wait",
+     "duration_ms": 1243000
+    },
+    {
+     "ts": "2026-05-25T21:26:00Z",
+     "cycle": 164,
+     "step": "step5_merge",
+     "duration_ms": 10000
+    },
+    {
+     "ts": "2026-05-25T21:26:28Z",
+     "cycle": 164,
+     "step": "step6_release_please",
+     "duration_ms": 60000
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-29T06:16:22Z",
+   "cycle": 168,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "release": "v1.126.0",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 1,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "HOST-INFO"
+   ],
+   "prs": [
+    591
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-05-26T05:30:05Z",
+     "cycle": 168,
+     "step": "step_ship",
+     "duration_ms": 0,
+     "subagent_tokens": null
+    }
+   ]
+  },
+  {
+   "ts": "2026-05-29T06:28:43Z",
+   "cycle": 169,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "release": "v1.126.1",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "API-PARITY"
+   ],
+   "prs": [
+    593
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-29T07:11:39Z",
+   "cycle": 170,
+   "mode": "iteration",
+   "scopes": [
+    "OCC-AUDIT"
+   ],
+   "prs": [
+    595
+   ],
+   "release": "v1.126.2",
+   "outcome": "shipped",
+   "bundled": false,
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-31T02:41:34Z",
+   "cycle": 171,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "release": "v1.127.1",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "CLOUD-DISCOVERY"
+   ],
+   "prs": [
+    597
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-31T03:08:40Z",
+   "cycle": 172,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "SCRIPT-TRUST"
+   ],
+   "prs": [
+    602
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-31T03:29:30Z",
+   "cycle": 173,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "FMT-CONTRACT"
+   ],
+   "prs": [
+    605
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-31T03:49:03Z",
+   "cycle": 174,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "MCP-INPUT-VALIDATION"
+   ],
+   "prs": [
+    608
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-05-31T05:16:32Z",
+   "cycle": 175,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "MCP-TAXONOMY"
+   ],
+   "prs": [
+    611
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-06-01T01:08:46Z",
+   "cycle": 176,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "PR-GUARDS"
+   ],
+   "prs": [
+    614
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-06-01T01:08:46Z",
+   "cycle": 177,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "CLOUD-WIRE"
+   ],
+   "prs": [
+    618
+   ],
+   "_metric_steps": []
+  },
+  {
+   "ts": "2026-06-01T16:57:23Z",
+   "cycle": 178,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "release": "v1.128.0",
+   "tokens": 162816,
+   "duration_active_min": 9,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "REF-UX"
+   ],
+   "prs": [
+    622
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T16:51:50Z",
+     "cycle": 178,
+     "step": "step2_tdd",
+     "duration_ms": 457911,
+     "subagent_tokens": 81155
+    },
+    {
+     "ts": "2026-06-01T16:52:58Z",
+     "cycle": 178,
+     "step": "step2_design_judge",
+     "duration_ms": 83923,
+     "subagent_tokens": 81661,
+     "findings_count": 0,
+     "blocker_count": 0
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T17:05:29Z",
+   "cycle": 179,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "release": null,
+   "tokens": 55860,
+   "duration_active_min": 1.9,
+   "metrics_steps_count": 1,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "BACKLOG-MIGRATION"
+   ],
+   "prs": [
+    625
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T17:02:13Z",
+     "cycle": 179,
+     "step": "step2_tdd",
+     "duration_ms": 112636,
+     "subagent_tokens": 55860
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T17:27:57Z",
+   "cycle": 180,
+   "mode": "iteration",
+   "outcome": "shipped_with_fix",
+   "release": "v1.129.0",
+   "tokens": 218592,
+   "duration_active_min": 11.6,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "REPO-HOOK-SCRIPTS"
+   ],
+   "prs": [
+    627
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T17:20:09Z",
+     "cycle": 180,
+     "step": "step2_tdd",
+     "duration_ms": 575025,
+     "subagent_tokens": 135477
+    },
+    {
+     "ts": "2026-06-01T17:22:09Z",
+     "cycle": 180,
+     "step": "step2_design_judge",
+     "duration_ms": 121506,
+     "subagent_tokens": 83115,
+     "findings_count": 4,
+     "blocker_count": 1
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T17:53:21Z",
+   "cycle": 181,
+   "mode": "iteration",
+   "outcome": "shipped",
+   "release": "v1.130.0",
+   "tokens": 220483,
+   "duration_active_min": 13.9,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "CLOUD-CODE-INSIGHTS"
+   ],
+   "prs": [
+    631
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T17:47:01Z",
+     "cycle": 181,
+     "step": "step2_tdd",
+     "duration_ms": 765210,
+     "subagent_tokens": 148711
+    },
+    {
+     "ts": "2026-06-01T17:48:13Z",
+     "cycle": 181,
+     "step": "step2_design_judge",
+     "duration_ms": 70885,
+     "subagent_tokens": 71772,
+     "findings_count": 3,
+     "blocker_count": 1
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T18:01:24Z",
+   "cycle": 182,
+   "mode": "brainstorm",
+   "outcome": "brainstorm_added_8",
+   "release": null,
+   "tokens": 0,
+   "duration_active_min": 0,
+   "metrics_steps_count": 0,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "brainstorm"
+   ],
+   "prs": [
+    0
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T18:01:28Z",
+     "cycle": 182,
+     "step": "step2_brainstorm",
+     "duration_ms": 118381,
+     "subagent_tokens": 100526
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T18:19:55Z",
+   "cycle": 183,
+   "mode": "iteration",
+   "outcome": "shipped_with_fix",
+   "release": "v1.131.0",
+   "tokens": 150322,
+   "duration_active_min": 6.4,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "DEPLOY-KEY-PERMISSION"
+   ],
+   "prs": [
+    635
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T18:11:43Z",
+     "cycle": 183,
+     "step": "step2_tdd",
+     "duration_ms": 309347,
+     "subagent_tokens": 76986
+    },
+    {
+     "ts": "2026-06-01T18:13:04Z",
+     "cycle": 183,
+     "step": "step2_design_judge",
+     "duration_ms": 74992,
+     "subagent_tokens": 73336,
+     "findings_count": 3,
+     "blocker_count": 1
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T18:37:09Z",
+   "cycle": 184,
+   "mode": "iteration",
+   "outcome": "shipped_with_fix",
+   "release": "v1.132.0",
+   "tokens": 161336,
+   "duration_active_min": 7.2,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "REPO-PIPELINE-VAR-VIEW"
+   ],
+   "prs": [
+    639
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T18:31:40Z",
+     "cycle": 184,
+     "step": "step2_tdd",
+     "duration_ms": 368481,
+     "subagent_tokens": 90281
+    },
+    {
+     "ts": "2026-06-01T18:32:46Z",
+     "cycle": 184,
+     "step": "step2_design_judge",
+     "duration_ms": 65230,
+     "subagent_tokens": 71055,
+     "findings_count": 6,
+     "blocker_count": 1
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T18:59:20Z",
+   "cycle": 185,
+   "mode": "iteration",
+   "outcome": "shipped_with_fix",
+   "release": "v1.133.0",
+   "tokens": 190742,
+   "duration_active_min": 9.4,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "REPO-SYNC"
+   ],
+   "prs": [
+    643
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T18:53:56Z",
+     "cycle": 185,
+     "step": "step2_tdd",
+     "duration_ms": 478221,
+     "subagent_tokens": 123009
+    },
+    {
+     "ts": "2026-06-01T18:55:20Z",
+     "cycle": 185,
+     "step": "step2_design_judge",
+     "duration_ms": 83412,
+     "subagent_tokens": 67733,
+     "findings_count": 4,
+     "blocker_count": 2
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T19:21:57Z",
+   "cycle": 186,
+   "mode": "iteration",
+   "outcome": "shipped_with_fix",
+   "release": "v1.134.0",
+   "tokens": 235426,
+   "duration_active_min": 9.9,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "ADMIN-RATE-LIMIT"
+   ],
+   "prs": [
+    647
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T19:17:42Z",
+     "cycle": 186,
+     "step": "step2_tdd",
+     "duration_ms": 506107,
+     "subagent_tokens": 157029
+    },
+    {
+     "ts": "2026-06-01T19:19:13Z",
+     "cycle": 186,
+     "step": "step2_design_judge",
+     "duration_ms": 90646,
+     "subagent_tokens": 78397,
+     "findings_count": 2,
+     "blocker_count": 1
+    }
+   ]
+  },
+  {
+   "ts": "2026-06-01T19:43:00Z",
+   "cycle": 187,
+   "mode": "iteration",
+   "outcome": "shipped_with_fix",
+   "release": "v1.135.0",
+   "tokens": 185542,
+   "duration_active_min": 8.7,
+   "metrics_steps_count": 2,
+   "pipeline_version": "2026.05.20",
+   "scopes": [
+    "COMMIT-SEARCH"
+   ],
+   "prs": [
+    651
+   ],
+   "_metric_steps": [
+    {
+     "ts": "2026-06-01T19:38:07Z",
+     "cycle": 187,
+     "step": "step2_tdd",
+     "duration_ms": 437152,
+     "subagent_tokens": 112967
+    },
+    {
+     "ts": "2026-06-01T19:39:31Z",
+     "cycle": 187,
+     "step": "step2_design_judge",
+     "duration_ms": 83150,
+     "subagent_tokens": 72575,
+     "findings_count": 3,
+     "blocker_count": 1
+    }
+   ]
+  }
+ ]
+}

@@ -189,16 +189,40 @@ scope and only that scope.
    91-file PR without a stated rolling-refactor rationale is a BLOCKER
    at §5. The intent is to force the bundle-vs-split decision into the
    PRD where reviewers can see it, not bury it in the diff.
-4. File it as a GitHub issue: `gh issue create --title "<scope>" --body
+4. **Assumptions & Evidence — required for write/mutation and new-API
+   scopes.** Any scope that mutates state, or talks to an endpoint not
+   already exercised in the codebase, MUST include an
+   `## Assumptions & Evidence` section. List every claim the design rests
+   on about endpoint paths, request/response shape, and field semantics,
+   and tag each with one of:
+   - **CITED** — a captured real response, or an official Bitbucket REST
+     docs link.
+   - **LEDGER** — the `BQ-N` row(s) in [`docs/backend-quirks.md`](../../backend-quirks.md)
+     this scope must honor (full-object Server PUT, `version`
+     preconditions, Content-Type policy, pagination envelope, …).
+   - **ASSUMED — UNVERIFIED** — a guess. **Blocking:** settle it with a
+     reality probe (one real read-only call against the live backend, or
+     the official docs) *before* §3 TDD, or park the scope.
+
+   For these scopes, PRD drafting is a **judgment** phase, not mechanical
+   fill: an unexamined assumption laundered into a "requirement" here is
+   reproduced faithfully by the fake, the test, and design-judge alike —
+   all agree, all wrong. That is exactly how #655 shipped (`pr edit` wiped
+   reviewers; the "full-object Server PUT" rule was known three functions
+   away but never written where the spec would consult it). Pattern-clone
+   scopes against already-exercised endpoints stay mechanical.
+5. File it as a GitHub issue: `gh issue create --title "<scope>" --body
    "<prd>" --label prd`.
-5. **Capture the issue number** — every later phase references it
+6. **Capture the issue number** — every later phase references it
    (`refs #NNN`, `Closes #NNN`).
-6. Sanity-check the PRD against `docs/backlog/BACKLOG.md` → "Architecture Contract
+7. Sanity-check the PRD against `docs/backlog/BACKLOG.md` → "Architecture Contract
    (per scope)" and "Definition of Done". Those rows are non-negotiable
    and must appear in the PRD's checklist.
 
 **Exit**: GitHub issue created, issue number captured, DoD checklist +
-expected-files list embedded in the PRD.
+expected-files list embedded in the PRD, and — for write/new-API scopes —
+an `## Assumptions & Evidence` section with no unresolved
+`ASSUMED — UNVERIFIED` claims.
 
 ## Section 3 — Implement (TDD)
 
@@ -265,6 +289,13 @@ worktree.
   versus a typical 100–120k.
 - Include the layer order below as a one-line ordering hint; do not
   re-list architecture. Point at `docs/agent-primer.md` instead.
+- **For any write/mutation op, consult [`docs/backend-quirks.md`](../../backend-quirks.md)**
+  for the target backend(s) and honor every applicable `BQ-N` row
+  (full-object Server PUT, `version` preconditions, Content-Type policy).
+  The test MUST assert on the **captured request** — which fields the CLI
+  actually sent — not merely on stdout. A test that only checks
+  `stdout 'Updated…'` cannot catch a dropped or wrong field (it is how
+  #655 passed CI) and is a design-judge BLOCKER at §5 (pre-merge-check §6a).
 
 **Layer order** (per `docs/backlog/BACKLOG.md` Architecture Contract)
 1. `api/backend/client.go` — new interface(s), or extend the composite

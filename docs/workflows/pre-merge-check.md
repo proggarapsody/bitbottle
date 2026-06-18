@@ -173,6 +173,16 @@ description explicitly justifies the exception.
   against `wc -l` of added lines. If comment lines exceed ~5% of added
   Go lines and the file is not a new exported package, flag — CLAUDE.md
   prefers minimal comments and the trend across recent PRs is upward.
+- **Self-referential write-op test, or unhonored backend quirk.** For a PR
+  that adds or changes a write/mutation op: (a) if its test asserts only on
+  stdout (e.g. `stdout 'Updated…'`) without asserting the **captured
+  request body**, BLOCKER — that test cannot catch a dropped or wrong field,
+  because the hand-written fake shares the code's assumptions; (b) if the op
+  contradicts an applicable row in [`docs/backend-quirks.md`](../backend-quirks.md)
+  (full-object Server PUT, `version` precondition, Content-Type policy),
+  BLOCKER. #655 (`pr edit` wiped all reviewers; `pr request-review` 400'd)
+  passed every gate precisely because the fake and the stdout-only test
+  both encoded the same wrong assumption the code did.
 
 Skip when the diff touches only docs, CI config, dependencies, or
 `docs/backlog/BACKLOG.md` / `docs/backlog/SHIPPED.md`.
