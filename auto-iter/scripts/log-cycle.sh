@@ -11,6 +11,9 @@
 #
 # Required: --cycle (or --stream=started|completed), --outcome (for cycle entries).
 # Optional: --duration_min=N (wall-clock, becomes both duration_min and duration_wall_min).
+# Optional: --smoke=passed|failed|skipped|pending (default: "pending" when omitted on
+#           cycle rows). Absent on stream rows. Records whether the release was
+#           validated against the real backend after shipping.
 # Adds: ts=<now>, pipeline_version, tokens, duration_active_min (from cycle-summary.sh),
 #       metrics_steps_count.
 #
@@ -41,10 +44,11 @@ fi
 ensure_auto_iter_dir
 
 # Re-parse args: convert bare --scope=X and --pr=X to --arr scope=X / --arr pr=X.
-# All other args pass through. Also extract cycle_value and duration_min.
+# All other args pass through. Also extract cycle_value, duration_min, and smoke.
 translated_args=()
 cycle_value=""
 duration_min_value=""
+smoke_value=""
 for arg in "$@"; do
   case "$arg" in
     --scope=*)
@@ -60,6 +64,11 @@ for arg in "$@"; do
     --duration_min=*)
       duration_min_value="${arg#--duration_min=}"
       translated_args+=("$arg")
+      ;;
+    --smoke=*)
+      smoke_value="${arg#--smoke=}"
+      # Do not pass through — we emit it via extra_args below so the
+      # default ("pending") can be injected for cycle rows even when omitted.
       ;;
     *)
       translated_args+=("$arg")
@@ -88,6 +97,10 @@ if [[ $seen_cycle -eq 1 && -n "$cycle_value" ]]; then
   if [[ -n "$duration_min_value" ]]; then
     extra_args+=(--raw "duration_wall_min=$duration_min_value")
   fi
+
+  # smoke: default "pending" for cycle rows when not supplied.
+  smoke_emit="${smoke_value:-pending}"
+  extra_args+=(--smoke="$smoke_emit")
 fi
 
 LINE="$(emit_json --ts="$(now_iso)" "${translated_args[@]}" ${extra_args[@]+"${extra_args[@]}"})"

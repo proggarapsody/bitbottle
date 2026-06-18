@@ -138,6 +138,46 @@ else
   fail "cycle row missing new fields: $OUT"
 fi
 
+# Case 13: cycle row without --smoke gets smoke="pending" by default
+OUT="$(bash "$SCRIPT" --cycle=90 --mode=iteration --scope=SMOKE-DEFAULT --outcome=shipped)"
+if echo "$OUT" | jq -e '.smoke=="pending"' >/dev/null; then
+  ok "cycle row omitting --smoke defaults to smoke=pending"
+else
+  fail "expected smoke=pending by default, got: $OUT"
+fi
+
+# Case 14: --smoke=passed is emitted
+OUT="$(bash "$SCRIPT" --cycle=91 --mode=iteration --scope=SMOKE-PASS --outcome=shipped --smoke=passed)"
+if echo "$OUT" | jq -e '.smoke=="passed"' >/dev/null; then
+  ok "--smoke=passed emitted correctly"
+else
+  fail "expected smoke=passed, got: $OUT"
+fi
+
+# Case 15: --smoke=failed is emitted
+OUT="$(bash "$SCRIPT" --cycle=92 --mode=iteration --scope=SMOKE-FAIL --outcome=shipped --smoke=failed)"
+if echo "$OUT" | jq -e '.smoke=="failed"' >/dev/null; then
+  ok "--smoke=failed emitted correctly"
+else
+  fail "expected smoke=failed, got: $OUT"
+fi
+
+# Case 16: --smoke=skipped is emitted
+OUT="$(bash "$SCRIPT" --cycle=93 --mode=iteration --scope=SMOKE-SKIP --outcome=shipped --smoke=skipped)"
+if echo "$OUT" | jq -e '.smoke=="skipped"' >/dev/null; then
+  ok "--smoke=skipped emitted correctly"
+else
+  fail "expected smoke=skipped, got: $OUT"
+fi
+
+# Case 17: stream rows do NOT carry smoke field
+OUT="$(bash "$SCRIPT" --stream=completed --max=5 --ran=5)"
+if echo "$OUT" | jq -e 'has("smoke") | not' >/dev/null; then
+  ok "stream rows omit smoke field"
+else
+  fail "stream row should not have smoke field, got: $OUT"
+fi
+
 echo ""
 if [[ $FAIL -eq 0 ]]; then
   echo "PASS: log-cycle.sh tests OK"

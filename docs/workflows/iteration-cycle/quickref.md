@@ -160,10 +160,40 @@ auto-iter/scripts/log-cycle.sh --cycle=55 --mode=iteration \
 Output line shape:
 
 ```jsonl
-{"ts":"<ISO>","cycle":<N>,"mode":"iteration|architecture|brainstorm|stop","scopes":[<slugs>],"prs":[<numbers>],"release":"<v1.X.Y or null>","duration_min":<int>,"tokens":<int or null>,"outcome":"<see below>","bundled":<bool>,"notes":[<strings>]}
+{"ts":"<ISO>","cycle":<N>,"mode":"iteration|architecture|brainstorm|stop","scopes":[<slugs>],"prs":[<numbers>],"release":"<v1.X.Y or null>","duration_min":<int>,"tokens":<int or null>,"outcome":"<see below>","bundled":<bool>,"notes":[<strings>],"smoke":"pending|passed|failed|skipped"}
 ```
 
 `cycle` is **global, monotonic** — read max from log, increment by 1.
+
+### `smoke` field
+
+Tracks whether the shipped release survived real-backend validation (e.g. the nightly E2E suite). Populated by `log-cycle.sh` at log time (default `"pending"`) and updated later by `auto-iter/scripts/smoke-reducer.sh` when nightly results arrive.
+
+| Value | Meaning |
+|---|---|
+| `pending` | Release shipped; nightly result not yet recorded (default) |
+| `passed` | Nightly E2E suite passed against this release |
+| `failed` | Nightly E2E suite failed against this release |
+| `skipped` | E2E run was explicitly skipped for this version |
+
+**To stamp a result** after the nightly run completes:
+
+```bash
+auto-iter/scripts/smoke-reducer.sh --version=v1.135.0 --result=passed
+# Emits: {"updated":2,"version":"v1.135.0","result":"passed"}
+```
+
+**Health queries**:
+
+```bash
+# shipped-and-verified: rows where outcome starts with "shipped" AND smoke=passed
+jq -s 'map(select((.outcome | startswith("shipped")) and .smoke=="passed"))' \
+  .claude/auto-iter/cycles.jsonl
+
+# shipped-but-unverified: rows shipped but smoke still pending
+jq -s 'map(select((.outcome | startswith("shipped")) and .smoke=="pending"))' \
+  .claude/auto-iter/cycles.jsonl
+```
 
 ### Outcome enum
 

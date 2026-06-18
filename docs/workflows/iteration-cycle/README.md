@@ -85,6 +85,8 @@ inventory + smell scan acknowledged.
 
 **Goal**: produce a single, named scope to ship this iteration.
 
+> **Priority rule**: `auto-iter/scripts/pick-scope.sh` queries open GitHub issues labelled `bug` or `nightly-e2e` before reading the BACKLOG table — real-backend failures always jump the queue.
+
 **Decision flow**
 1. **Open backlog?** Look at `docs/backlog/BACKLOG.md` → `## Backlog` table. Anything
    with `Status` ≠ ✅ is open. If there are open scopes, list them with
