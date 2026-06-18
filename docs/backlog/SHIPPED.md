@@ -2,6 +2,17 @@
 
 > **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
 
+## 2026-06-19 — VCR-CASSETTES — record/replay HTTP fixtures via go-vcr
+
+Wired `github.com/dnaeon/go-vcr/v2` as an optional test transport layer
+(`test/testhelpers/vcr.go`). Body-aware matcher detects BQ-1/BQ-2
+regressions (version-field drop, partial PUT body). Redactor strips auth
+tokens and internal hostnames before cassettes are committed. Missing
+cassette → `t.Skip` so CI stays green until maintainer runs
+`make record-cassettes`. PRD #661.
+
+---
+
 ## 2026-06-02 — COMMIT-SEARCH — commit search by message/author/date
 
 `commit search [PROJECT/REPO] [--query Q] [--author USER] [--since DATE] [--until DATE] [--limit N] [--json]` —

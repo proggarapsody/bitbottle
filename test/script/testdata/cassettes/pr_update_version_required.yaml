@@ -1,0 +1,18 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"version":5,"title":"fix: my PR","description":""}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: http://example-server.invalid/rest/api/1.0/projects/PROJ/repos/myrepo/pull-requests/42
+    method: PUT
+  response:
+    body: '{"id":42,"version":5,"title":"fix: my PR"}'
+    headers:
+      Content-Type:
+      - application/json
+    status: 200 OK
+    code: 200

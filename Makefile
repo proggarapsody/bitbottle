@@ -1,4 +1,4 @@
-.PHONY: build test test-scripts lint clean setup gen
+.PHONY: build test test-scripts lint clean setup gen record-cassettes
 
 BIN := bitbottle
 GO  := go
@@ -28,6 +28,12 @@ setup:
 	git config core.hooksPath .githooks
 	chmod +x .githooks/pre-commit .githooks/pre-push
 	@echo "Git hooks active. pre-commit: gofmt. pre-push: golangci-lint."
+
+# record-cassettes: Re-record VCR cassettes against the real Bitbucket backend.
+# Requires: BITBOTTLE_TOKEN, BITBOTTLE_HOST, BITBOTTLE_PROJECT, BITBOTTLE_REPO env vars.
+# Run once with real credentials; commit the resulting YAML files.
+record-cassettes:
+	BITBOTTLE_RECORD=1 $(GO) test ./... -run Integration -count=1 -v
 
 # gen regenerates spec-derived Go types from the OpenAPI specs.
 # Requires oapi-codegen $(OAPI_CODEGEN_VERSION) on PATH.
