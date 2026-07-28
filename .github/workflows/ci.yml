@@ -14,13 +14,13 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v6
         if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
@@ -32,7 +32,7 @@ jobs:
 
       - name: Upload coverage
         if: github.head_ref != 'release-please--branches--main'
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
@@ -46,13 +46,13 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v6
         if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
@@ -60,7 +60,7 @@ jobs:
 
       - name: Cache golangci-lint
         if: github.head_ref != 'release-please--branches--main'
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/golangci-lint
@@ -70,7 +70,7 @@ jobs:
 
       - name: golangci-lint
         if: github.head_ref != 'release-please--branches--main'
-        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9
         with:
           version: v2.11.4
           args: --timeout=5m
@@ -86,13 +86,13 @@ jobs:
     # already covered by feature-PR build). The actual pre-tag gate that catches
     # GoReleaser-specific failures is the `release-config-check` job below.
     steps:
-      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v6
         if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
@@ -114,25 +114,25 @@ jobs:
     # `go build` misses. Only runs on release PRs; cheap to add (~45s).
     if: github.head_ref == 'release-please--branches--main'
     steps:
-      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v6
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Validate goreleaser config
-        uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 # v7
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           version: "~> v2"
           args: check
 
       - name: Snapshot build (current platform)
-        uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 # v7
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           version: "~> v2"
           args: build --snapshot --single-target --clean
@@ -141,11 +141,11 @@ jobs:
     name: Smell scan
     runs-on: ubuntu-latest
     steps:
-      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           fetch-depth: 50
 
@@ -156,11 +156,11 @@ jobs:
     name: Script tests
     runs-on: ubuntu-latest
     steps:
-      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Run auto-iter script tests
         run: make test-scripts
