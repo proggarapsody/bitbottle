@@ -182,3 +182,15 @@ for all wire shapes.
 ## Important: do not commit build artifacts
 
 `/dist/` is gitignored — never commit binaries or GoReleaser output. CI will reject tracked files in `dist/` or files larger than 1 MB.
+
+## Agent skills and project knowledge
+
+Development skills are installed in [`.agents/skills/`](.agents/skills/), pinned
+to an upstream commit with provenance in `sources.json`. The root `skills/`
+directory remains the Bitbottle consumer skill. See
+[the knowledge map](docs/agents/README.md) for current docs and setup status. For planning and shipment, follow [work tracking](docs/workflows/work-tracking.md); keep GitHub Issues authoritative and the local scope index compact.
+
+The custom autonomous iteration loop is retired. Its original procedures,
+reports, and early specifications are indexed in [project history](docs/history/README.md).
+Completed local sessions and runtime snapshots remain ignored; do not commit
+private state. Keep `make test-scripts` and the validation tools covered by CI.

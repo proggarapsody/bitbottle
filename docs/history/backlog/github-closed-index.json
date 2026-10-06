@@ -1,0 +1,1307 @@
+[
+  {
+    "number": 665,
+    "title": "chore(auto-iter): SMOKE-METRIC — track shipped-AND-survived-real-backend",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/665",
+    "closedAt": "2026-06-18T16:56:16Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 664,
+    "title": "chore(auto-iter): E2E-QUEUE-FEEDBACK — bug/nightly-e2e issues jump the scope queue",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/664",
+    "closedAt": "2026-06-18T16:56:16Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 663,
+    "title": "ci(e2e): ACCEPTANCE-LIVE-WIRE — gh-style real-backend testscript suite (tier-6)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/663",
+    "closedAt": "2026-06-18T16:40:00Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 662,
+    "title": "test(harness): OPENAPI-VALIDATE — kin-openapi request/response validation",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/662",
+    "closedAt": "2026-06-18T16:22:27Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 661,
+    "title": "test(harness): VCR-CASSETTES — record/replay real HTTP via go-vcr",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/661",
+    "closedAt": "2026-06-18T16:05:37Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 655,
+    "title": "Server/DC: `pr edit --title` removes all reviewers; `pr request-review` fails with HTTP 400 \"version must be supplied\"",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/655",
+    "closedAt": "2026-06-18T15:41:34Z",
+    "labels": [
+      "bug"
+    ]
+  },
+  {
+    "number": 650,
+    "title": "feat(commit): COMMIT-SEARCH — commit search by message/author/date",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/650",
+    "closedAt": "2026-06-01T19:41:22Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 646,
+    "title": "feat(admin): ADMIN-RATE-LIMIT — admin rate-limit get/set commands",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/646",
+    "closedAt": "2026-06-01T19:20:16Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 642,
+    "title": "feat(repo): REPO-SYNC — repo sync command for Cloud fork sync",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/642",
+    "closedAt": "2026-06-01T18:56:59Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 638,
+    "title": "feat(variable): REPO-PIPELINE-VAR-VIEW — variable view KEY command",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/638",
+    "closedAt": "2026-06-01T18:34:56Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 634,
+    "title": "feat(deploykey): DEPLOY-KEY-PERMISSION — --permission flag for deploy-key add",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/634",
+    "closedAt": "2026-06-01T18:14:48Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 630,
+    "title": "feat(codeinsights): CLOUD-CODE-INSIGHTS — Cloud code-insights reports/annotations parity",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/630",
+    "closedAt": "2026-06-01T17:52:41Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 626,
+    "title": "feat(repo): REPO-HOOK-SCRIPTS — repo hook list/view/enable/disable/settings get/set",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/626",
+    "closedAt": "2026-06-01T17:22:51Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 624,
+    "title": "chore(backlog): BACKLOG-MIGRATION — sweep shipped scope detail sections to SHIPPED.md",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/624",
+    "closedAt": "2026-06-01T17:05:14Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 621,
+    "title": "feat(branch,tag): REF-UX — promote --start-at to 3rd positional (Option A)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/621",
+    "closedAt": "2026-06-01T16:54:36Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 617,
+    "title": "fix(cloud): CLOUD-WIRE — API path + response-struct drift (BB-08, BB-09, BB-10)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/617",
+    "closedAt": "2026-06-01T01:00:50Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 613,
+    "title": "fix(pr): PR-GUARDS — state-machine guard + --state enum validation",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/613",
+    "closedAt": "2026-06-01T00:30:29Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 610,
+    "title": "fix(mcp): MCP-TAXONOMY — unify repo-arg shape, reject unknown host, backend meta",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/610",
+    "closedAt": "2026-05-31T05:16:26Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 607,
+    "title": "fix(mcp): MCP-INPUT-VALIDATION — typed arg validators (MCP-06…14)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/607",
+    "closedAt": "2026-05-31T03:48:58Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 604,
+    "title": "fix(fmt): FMT-CONTRACT — --jq/--template/hint consistency + user-view fields",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/604",
+    "closedAt": "2026-05-31T03:29:03Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 601,
+    "title": "fix(cli): SCRIPT-TRUST — exit codes + -R unification + ref parser",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/601",
+    "closedAt": "2026-05-31T03:08:16Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 586,
+    "title": "feat(host): add host info command (Cloud + Server)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/586",
+    "closedAt": "2026-05-29T06:06:09Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 583,
+    "title": "feat(pipeline): add pipeline oidc config and keys commands (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/583",
+    "closedAt": "2026-05-26T09:44:29Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 580,
+    "title": "feat(pr): add pr merge-preview dry-run command (Cloud + Server)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/580",
+    "closedAt": "2026-05-26T09:10:22Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 578,
+    "title": "feat(snippet): add snippet comment list/add/delete commands (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/578",
+    "closedAt": "2026-05-26T07:44:54Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 573,
+    "title": "feat(workspace): add workspace project default reviewers commands (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/573",
+    "closedAt": "2026-05-26T06:41:43Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 571,
+    "title": "feat(branch-rule): add branch-rule update command (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/571",
+    "closedAt": "2026-05-26T05:59:31Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 567,
+    "title": "feat(workspace): add workspace project perms commands and MCP tools (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/567",
+    "closedAt": "2026-05-26T05:28:57Z",
+    "labels": []
+  },
+  {
+    "number": 564,
+    "title": "feat(workspace): add workspace search command with query/role filters (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/564",
+    "closedAt": "2026-05-25T22:39:28Z",
+    "labels": []
+  },
+  {
+    "number": 561,
+    "title": "feat(issue): add issue activity log command and MCP tool (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/561",
+    "closedAt": "2026-05-25T22:27:01Z",
+    "labels": []
+  },
+  {
+    "number": 558,
+    "title": "feat(pr): pr participant update command — set reviewer approval state (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/558",
+    "closedAt": "2026-05-25T22:05:40Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 555,
+    "title": "feat(repo): repo clone command — resolve URL + git clone + auto-configure (Both)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/555",
+    "closedAt": "2026-05-25T21:25:19Z",
+    "labels": []
+  },
+  {
+    "number": 552,
+    "title": "feat(workspace): workspace pipeline-variable list/get/set/delete (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/552",
+    "closedAt": "2026-05-25T20:55:00Z",
+    "labels": []
+  },
+  {
+    "number": 547,
+    "title": "feat: pipeline SSH key pair + known hosts management (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/547",
+    "closedAt": "2026-05-25T20:12:36Z",
+    "labels": []
+  },
+  {
+    "number": 544,
+    "title": "feat: mirror server read (Server/DC) + workspace permissions (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/544",
+    "closedAt": "2026-05-25T19:44:31Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 541,
+    "title": "feat: issue versions CRUD (Cloud) + workspace project CRUD (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/541",
+    "closedAt": "2026-05-25T19:16:15Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 538,
+    "title": "feat: repo downloads (Cloud) + issue milestones read (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/538",
+    "closedAt": "2026-05-25T18:50:21Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 535,
+    "title": "feat: pipeline test-reports view/list + branch compare (Cloud+Server)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/535",
+    "closedAt": "2026-05-25T18:21:26Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 532,
+    "title": "feat(pipeline/sshkey): pipeline config enable/disable (Cloud) + SSH keys for Server/DC",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/532",
+    "closedAt": "2026-05-25T17:51:27Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 530,
+    "title": "API command parity: audit factory cross-cutting flags across api vs pr/* commands",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/530",
+    "closedAt": "2026-05-29T06:28:05Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 529,
+    "title": "OCC-audit: harden Server mutations against optimistic-concurrency drift",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/529",
+    "closedAt": "2026-05-29T07:10:44Z",
+    "labels": []
+  },
+  {
+    "number": 527,
+    "title": "PRD: fix pr edit on Server (HTTP 400 version) + expose pr version + bitbottle api host auto-detect (#522)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/527",
+    "closedAt": "2026-05-25T12:55:37Z",
+    "labels": [
+      "bug"
+    ]
+  },
+  {
+    "number": 522,
+    "title": "pr edit fails on Bitbucket Server/DC — HTTP 400 \"version must be supplied\"",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/522",
+    "closedAt": "2026-05-25T12:55:37Z",
+    "labels": []
+  },
+  {
+    "number": 518,
+    "title": "PRD: WORKSPACE-IPALLOWLIST — workspace IP allowlist management (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/518",
+    "closedAt": "2026-05-25T10:46:17Z",
+    "labels": []
+  },
+  {
+    "number": 515,
+    "title": "PRD: WORKSPACE-AUDIT — workspace audit log listing (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/515",
+    "closedAt": "2026-05-25T10:27:41Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 512,
+    "title": "feat(runner): add pipeline runner management commands (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/512",
+    "closedAt": "2026-05-25T10:08:46Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 509,
+    "title": "feat(admin): add admin banner commands (Server/DC)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/509",
+    "closedAt": "2026-05-25T09:44:48Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 508,
+    "title": "feat(admin): add admin group management commands (Server/DC)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/508",
+    "closedAt": "2026-05-25T09:30:21Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 504,
+    "title": "PRD: SOURCE-WRITE + ADMIN-MAIL — repo file put and admin mail server config",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/504",
+    "closedAt": "2026-05-25T09:17:13Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 501,
+    "title": "PRD: ADMIN-USER + ADMIN-SYSTEM — admin user management and system info",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/501",
+    "closedAt": "2026-05-25T08:42:52Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 498,
+    "title": "feat(issue,repo): issue attachments/vote/watch + repo labels (ISSUE-ATTACH-VOTE-WATCH + REPO-LABELS)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/498",
+    "closedAt": "2026-05-25T08:00:21Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 494,
+    "title": "feat(auth): personal access token management (auth pat list/create/revoke)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/494",
+    "closedAt": "2026-05-24T18:01:13Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 490,
+    "title": "feat(project): SERVER/DC project CRUD (create/view/edit/delete/list)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/490",
+    "closedAt": "2026-05-24T17:34:08Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 486,
+    "title": "PRD: CI-BADGE — fix CI badge and README badge accuracy",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/486",
+    "closedAt": "2026-05-24T17:00:32Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 483,
+    "title": "PRD: NIGHTLY-E2E — nightly live-wire E2E GitHub Actions workflow",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/483",
+    "closedAt": "2026-05-24T16:50:20Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 479,
+    "title": "PRD: EXT-SCAFFOLD — extension scaffold command",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/479",
+    "closedAt": "2026-05-24T16:34:49Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 476,
+    "title": "PRD: GROUP-MGMT — Server/DC group management commands",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/476",
+    "closedAt": "2026-05-24T16:23:42Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 473,
+    "title": "feat: PR-SETTINGS — per-repo PR gate settings",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/473",
+    "closedAt": "2026-05-24T15:58:17Z",
+    "labels": []
+  },
+  {
+    "number": 469,
+    "title": "fix(wire-migrate): migrate repo_edit wire input structs to gen types",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/469",
+    "closedAt": "2026-05-24T15:12:03Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 464,
+    "title": "docs(workflow-docs): restructure auto-iter / iteration-cycle documentation",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/464",
+    "closedAt": "2026-05-23T12:02:55Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 461,
+    "title": "feat(pipe-artifacts): pipeline artifact list/download commands",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/461",
+    "closedAt": "2026-05-21T16:47:51Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 458,
+    "title": "feat(branch-model): Cloud branching model read/write",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/458",
+    "closedAt": "2026-05-21T16:18:15Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 454,
+    "title": "feat(snippet): add snippet list/view/create/delete commands for Cloud snippets",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/454",
+    "closedAt": "2026-05-23T10:07:28Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 451,
+    "title": "feat(pipeline): add `pipeline stop` command to stop running pipelines",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/451",
+    "closedAt": "2026-05-23T10:07:28Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 448,
+    "title": "PRD: REPO-EDIT — Repository metadata edit",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/448",
+    "closedAt": "2026-05-23T10:07:28Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 444,
+    "title": "test(cloud): add unit tests to 8 untested Cloud adapter files (CLOUD-ADAPTER-TEST-COVERAGE)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/444",
+    "closedAt": "2026-05-21T04:48:49Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 442,
+    "title": "refactor(cmd/repo): migrate pkg/cmd/repo/ to per-verb subpackages (CMD-SUBPKG-REPO)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/442",
+    "closedAt": "2026-05-21T04:22:33Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 439,
+    "title": "feat(tests): JSON-GOLDEN-COVERAGE — add --json golden-file tests to 7 command groups",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/439",
+    "closedAt": "2026-05-20T08:03:35Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 423,
+    "title": "PRD: PIPELINE-OBSERVABILITY — cycle accounting, schema integrity, gate sharpening",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/423",
+    "closedAt": "2026-05-20T07:11:00Z",
+    "labels": [
+      "enhancement",
+      "prd"
+    ]
+  },
+  {
+    "number": 422,
+    "title": "PRD: REPO-DEFAULT-BRANCH — Set repository default branch",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/422",
+    "closedAt": "2026-05-19T14:07:37Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 419,
+    "title": "PRD: CMD-SUBPKG-PR-LIFECYCLE — Migrate PR lifecycle commands to subpackages",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/419",
+    "closedAt": "2026-05-19T12:21:42Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 409,
+    "title": "PRD: RELEASE-DRY-RUN — PR-gated release pipeline dry-run",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/409",
+    "closedAt": "2026-05-19T04:52:33Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 399,
+    "title": "PRD: TESTSCRIPT — script-based end-to-end CLI tests with rogpeppe/go-internal/testscript",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/399",
+    "closedAt": "2026-05-19T03:52:46Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 383,
+    "title": "feat: pr edit --remove-reviewer (PR-EDIT-REVIEWER-RM)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/383",
+    "closedAt": "2026-05-18T11:57:50Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 380,
+    "title": "PRD: PR-UNREADY — pr unready command",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/380",
+    "closedAt": "2026-05-18T11:20:50Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 377,
+    "title": "PRD: SCORECARD-PUSH — OpenSSF Scorecard score push",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/377",
+    "closedAt": "2026-05-18T11:04:31Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 372,
+    "title": "PRD: AUTH-KEYRING-AND-HOSTNAME — fix post-migrate 401, scheme normalization, keyring key, --hostname hint",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/372",
+    "closedAt": "2026-05-18T09:50:25Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 355,
+    "title": "chore: mark FAKECLIENT-SAFETY shipped in BACKLOG",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/355",
+    "closedAt": "2026-05-17T16:00:56Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 353,
+    "title": "refactor(types): split api/backend/types.go into per-feature files",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/353",
+    "closedAt": "2026-05-17T15:54:49Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 351,
+    "title": "chore: mark DEPGUARD-CI + WIRE-MIGRATE-REST shipped in BACKLOG",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/351",
+    "closedAt": "2026-05-17T15:45:07Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 345,
+    "title": "refactor(wire-migrate-rest): complete wireXxx → gen migration for all adapter files",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/345",
+    "closedAt": "2026-05-17T14:09:50Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 331,
+    "title": "PRD: OPENAPI-TYPES — spec-derived wire types for Cloud + Server, fixes auto-merge 405",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/331",
+    "closedAt": "2026-05-15T10:46:27Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 327,
+    "title": "fix(pr-merge): EnableAutoMerge uses PUT instead of POST on Bitbucket Server",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/327",
+    "closedAt": "2026-05-15T08:03:44Z",
+    "labels": [
+      "duplicate"
+    ]
+  },
+  {
+    "number": 321,
+    "title": "feat(pipeline-cache): pipeline cache list/delete (Cloud only)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/321",
+    "closedAt": "2026-05-17T22:18:10Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 318,
+    "title": "PRD: WORKSPACE-HOOKS — workspace-level webhooks (Cloud only)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/318",
+    "closedAt": "2026-05-15T05:38:17Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 315,
+    "title": "PRD: REPO-VISIBILITY — repository visibility get/set (both backends)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/315",
+    "closedAt": "2026-05-15T05:23:20Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 309,
+    "title": "PRD: USER-VIEW — user view command (current user, both backends)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/309",
+    "closedAt": "2026-05-15T01:15:32Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 306,
+    "title": "PRD: WORKSPACE-MEMBERS — workspace member list command",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/306",
+    "closedAt": "2026-05-15T00:54:33Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 290,
+    "title": "PRD: PR-PARTICIPANTS — list PR participants with roles",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/290",
+    "closedAt": "2026-05-13T20:34:20Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 286,
+    "title": "PRD: COMMIT-STATUS-REPORT — report a build status against a commit",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/286",
+    "closedAt": "2026-05-13T20:22:07Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 282,
+    "title": "PRD: REPO-WATCHER — list repository watchers",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/282",
+    "closedAt": "2026-05-13T20:09:01Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 278,
+    "title": "PRD: PR-FILES — List Files Changed in a Pull Request",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/278",
+    "closedAt": "2026-05-13T19:58:36Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 271,
+    "title": "PRD: PR-COMMITS — List Commits in a Pull Request",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/271",
+    "closedAt": "2026-05-13T19:38:47Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 267,
+    "title": "PRD: COMMIT-FILE — List Files Changed in a Commit",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/267",
+    "closedAt": "2026-05-13T19:23:09Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 263,
+    "title": "PRD: PIPELINE-SCHEDULE — Cloud Pipeline Schedule Management",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/263",
+    "closedAt": "2026-05-13T19:07:29Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 259,
+    "title": "PRD: BRANCH-RULE — Cloud Branch Restriction Rules",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/259",
+    "closedAt": "2026-05-13T18:55:23Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 255,
+    "title": "PRD: REPO-TRANSFER — Repository Transfer to Another Project/Workspace",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/255",
+    "closedAt": "2026-05-13T18:41:22Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 251,
+    "title": "PRD: SSH-KEYS — User SSH Key Management",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/251",
+    "closedAt": "2026-05-13T18:31:00Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 247,
+    "title": "PRD: DEFAULT-REVIEWERS — PR Default Reviewer Management",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/247",
+    "closedAt": "2026-05-13T18:14:37Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 240,
+    "title": "PRD: DIFF — Compare two refs (branches/tags/commits)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/240",
+    "closedAt": "2026-05-13T17:46:54Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 236,
+    "title": "PRD: PIPE-TRIGGER — Manually trigger a Bitbucket Cloud pipeline",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/236",
+    "closedAt": "2026-05-13T17:32:49Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 233,
+    "title": "PRD: DEPLOY-KEY — Deploy Key Management (list/add/delete)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/233",
+    "closedAt": "2026-05-13T17:18:51Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 228,
+    "title": "PRD: SRVVER — Server Version Detection Helper",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/228",
+    "closedAt": "2026-05-13T16:48:16Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 223,
+    "title": "PRD: EXT-RUNTIME — Extension Exec",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/223",
+    "closedAt": "2026-05-13T16:32:18Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 217,
+    "title": "PRD: EXT-MGMT — Extension Upgrade + Remove",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/217",
+    "closedAt": "2026-05-13T16:11:55Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 214,
+    "title": "PRD: EXT-CORE — Extension Install + List",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/214",
+    "closedAt": "2026-05-13T15:59:46Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 211,
+    "title": "PRD: NIX — Nix Flake Packaging",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/211",
+    "closedAt": "2026-05-13T15:27:18Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 209,
+    "title": "PRD: REACT-COMMIT — Commit Comment Reactions (Server/DC)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/209",
+    "closedAt": "2026-05-13T14:34:53Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 204,
+    "title": "PRD: REACT-PR — pr comment react/unreact + reactions column (Server/DC)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/204",
+    "closedAt": "2026-05-13T10:06:33Z",
+    "labels": []
+  },
+  {
+    "number": 201,
+    "title": "PRD: TASK — pr task list/create/resolve/reopen (Server/DC)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/201",
+    "closedAt": "2026-05-13T09:33:38Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 198,
+    "title": "PRD: ADMIN — admin secrets rotate / logging get / set (Server/DC)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/198",
+    "closedAt": "2026-05-13T06:36:31Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 195,
+    "title": "PRD: PERMS — Permissions Management",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/195",
+    "closedAt": "2026-05-13T06:10:55Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 180,
+    "title": "PRD: VAROPS — Variable scope-ops refactor",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/180",
+    "closedAt": "2026-05-12T11:13:58Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 179,
+    "title": "PRD: CIS — CI Supply Chain Hardening",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/179",
+    "closedAt": "2026-05-12T11:03:08Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 176,
+    "title": "PRD: OUT2 — Extended Output Formats",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/176",
+    "closedAt": "2026-05-12T10:28:39Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 173,
+    "title": "PRD: HTTPH — HTTP Client Hardening",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/173",
+    "closedAt": "2026-05-12T09:51:21Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 170,
+    "title": "PRD: SEC — Secret Store & Config Security",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/170",
+    "closedAt": "2026-05-12T09:27:02Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 161,
+    "title": "PRD: AUTOMERGE — PR Auto-Merge (pr merge --auto, both backends)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/161",
+    "closedAt": "2026-05-12T07:01:01Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 158,
+    "title": "PRD: DEP — Deployments & Environments (Cloud)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/158",
+    "closedAt": "2026-05-12T06:41:59Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 154,
+    "title": "feat(ghp): gh-parity gaps — pr checks / pr update-branch / pr status / status / browse / pipeline watch",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/154",
+    "closedAt": "2026-05-11T14:00:29Z",
+    "labels": []
+  },
+  {
+    "number": 151,
+    "title": "feat(rv6): commit comment list/add/edit/delete",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/151",
+    "closedAt": "2026-05-11T12:27:28Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 148,
+    "title": "feat(rv5): pr activity event stream",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/148",
+    "closedAt": "2026-05-11T11:20:42Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 145,
+    "title": "feat(rv4): pr review compound command (approve/request-changes/comment + inline)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/145",
+    "closedAt": "2026-05-11T05:31:03Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 135,
+    "title": "CI — code-insights for Bitbucket Server/DC (reports, annotations, merge-check)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/135",
+    "closedAt": "2026-05-08T23:14:57Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 134,
+    "title": "OF — issues finish (edit/reopen/assign + comments)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/134",
+    "closedAt": "2026-05-08T23:10:12Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 131,
+    "title": "RV3 — Inline PR comment write path (add inline / edit / delete / reply / resolve)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/131",
+    "closedAt": "2026-05-09T04:18:14Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 129,
+    "title": "RV2: Inline PR comments — read path",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/129",
+    "closedAt": "2026-05-08T08:10:43Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 126,
+    "title": "RV — Code-Review Primitives (one-PRD epic)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/126",
+    "closedAt": "2026-05-08T04:10:52Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 124,
+    "title": "DOCCUT — revert doc-graph + slim manual-tests + slim doc-sync table",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/124",
+    "closedAt": "2026-05-08T03:02:47Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 122,
+    "title": "doc-graph: tighten stale-section-ref regex to skip heading lines",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/122",
+    "closedAt": "2026-05-08T03:02:48Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 121,
+    "title": "Tighten Section 11 trigger phrase in iteration-cycle skill (parallel-mode false fire)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/121",
+    "closedAt": "2026-05-08T02:50:56Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 117,
+    "title": "REGISTRY-SPLIT — per-package self-registration for subcommands and MCP tools",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/117",
+    "closedAt": "2026-05-08T02:38:32Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 116,
+    "title": "DOCSYNC-AUTO — make doc-graph target + pre-commit detection",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/116",
+    "closedAt": "2026-05-08T02:34:19Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 115,
+    "title": "DOCSYNC-WIRE — connect docs cross-reference graph",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/115",
+    "closedAt": "2026-05-08T02:36:38Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 109,
+    "title": "GHP/pr-reopen — bitbottle pr reopen PR_ID",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/109",
+    "closedAt": "2026-05-08T01:39:47Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 108,
+    "title": "SR — bitbottle search code (Cloud only)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/108",
+    "closedAt": "2026-05-08T01:32:24Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 107,
+    "title": "CTX — bitbottle context (one-call orientation primitive)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/107",
+    "closedAt": "2026-05-08T01:37:10Z",
+    "labels": [
+      "prd"
+    ]
+  },
+  {
+    "number": 102,
+    "title": "PRD: scopes T/N/O — pager opt-in coverage + BACKLOG correction",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/102",
+    "closedAt": "2026-05-07T10:55:39Z",
+    "labels": []
+  },
+  {
+    "number": 99,
+    "title": "PRD: EX2-EX6 — error UX clusters (repo, pr, branch, network, MCP)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/99",
+    "closedAt": "2026-05-07T10:40:35Z",
+    "labels": []
+  },
+  {
+    "number": 94,
+    "title": "PRD: EX1 follow-up — error UX polish + terminal escape sanitiser",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/94",
+    "closedAt": "2026-05-07T10:18:06Z",
+    "labels": []
+  },
+  {
+    "number": 79,
+    "title": "PRD: Scopes H (Pipeline Depth) + I (Webhooks) — gh-style command layout",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/79",
+    "closedAt": "2026-05-07T09:49:46Z",
+    "labels": []
+  },
+  {
+    "number": 65,
+    "title": "Unify host resolution + slim down test factory (audit follow-ups)",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/65",
+    "closedAt": "2026-05-05T02:33:32Z",
+    "labels": []
+  },
+  {
+    "number": 47,
+    "title": "Seamless audit: erase the four bug classes that broke first-session UX on Server/DC",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/47",
+    "closedAt": "2026-04-30T12:57:59Z",
+    "labels": []
+  },
+  {
+    "number": 40,
+    "title": "Cloud: `api` command uses wrong host and auth scheme for Bitbucket Cloud",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/40",
+    "closedAt": "2026-04-29T14:07:38Z",
+    "labels": []
+  },
+  {
+    "number": 39,
+    "title": "Cloud: `pr decline` error message leaks raw API key as prefix",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/39",
+    "closedAt": "2026-04-29T14:07:32Z",
+    "labels": []
+  },
+  {
+    "number": 38,
+    "title": "Cloud: `pipeline view` with plain UUID returns HTTP 400 instead of descriptive error",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/38",
+    "closedAt": "2026-04-29T14:07:24Z",
+    "labels": []
+  },
+  {
+    "number": 37,
+    "title": "Cloud: empty 404 error body gives unhelpful error message",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/37",
+    "closedAt": "2026-04-29T13:34:27Z",
+    "labels": []
+  },
+  {
+    "number": 35,
+    "title": "Refactor: Generic HTTP Transport with injected ContentTypePolicy and Paginator",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/35",
+    "closedAt": "2026-04-29T11:40:59Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 34,
+    "title": "Manual Testing: Cloud Bug Report — proggarapsody_main workspace",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/34",
+    "closedAt": "2026-05-17T14:53:21Z",
+    "labels": [
+      "bug"
+    ]
+  },
+  {
+    "number": 21,
+    "title": "Adopt gh CLI UX patterns: BaseRepo factory, -R/--repo flag, ARGUMENTS help section",
+    "url": "https://github.com/proggarapsody/bitbottle/issues/21",
+    "closedAt": "2026-04-27T08:16:57Z",
+    "labels": []
+  }
+]

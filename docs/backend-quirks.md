@@ -4,27 +4,20 @@ Real Bitbucket Server/DC and Cloud API behaviors that **no linter, no
 unit test against a hand-written fake, and no diff review can infer.**
 They are only knowable by hitting the real API — or by reading this file.
 
-This ledger exists because the iteration loop's verification chain (TDD
-fakes, design-judge, CI) all validate the implementer's *assumptions*
-against each other, never against the real backend. A wrong assumption
-about how Server behaves is reproduced identically in the code, the fake,
-and the test — so all three agree and ship the bug. See issue #655: `pr edit`
-wiped reviewers and `pr request-review` 400'd, and the "full Server PUT"
-rule was *already* known and correctly applied three functions away in the
-same file — just not written down anywhere a new write op would consult it.
+Tests built from an incorrect API assumption can agree with the implementation
+and still ship a bug. Issue #655 recorded reviewer loss from `pr edit` and a
+400 response from `pr request-review`: the full Server PUT rule was known
+elsewhere in the code, but absent from the guidance a new write operation read.
 
-## How this ledger is used in the loop
+## How this ledger is used
 
-- **PRD time** (`docs/workflows/iteration-cycle/README.md` §2) — every
-  write/mutation or new-API scope lists, in its `## Assumptions & Evidence`
-  section, which `BQ-*` rows apply and how the design honors them. A
-  suspected new quirk with no row here is `ASSUMED — UNVERIFIED` and must
-  be settled by a reality probe before TDD.
-- **TDD time** (§3) — the subagent honors every applicable row and asserts
-  on the **captured request** (which fields were sent), not just stdout.
-- **Design-judge** (`docs/workflows/pre-merge-check.md` §6a) — a write-op
-  PR that violates an applicable row, or whose test only asserts stdout, is
-  a BLOCKER.
+- Before designing a write/mutation or new API operation, identify applicable
+  `BQ-*` rows and record how the design honors them. Mark suspected new behavior
+  `ASSUMED — UNVERIFIED`; settle it with a reality probe before implementation.
+- During implementation, honor applicable rows and assert the captured request
+  fields in tests, as well as the resulting behavior.
+- During [design review](workflows/pre-merge-check.md#6a-architecture-smells),
+  violation of an applicable row or stdout-only write tests blocks merging.
 
 ## How to add an entry
 
@@ -128,4 +121,4 @@ hand-rolled (a bespoke fake would just re-encode our assumptions):
   failures into the loop queue and track "shipped AND survived a real
   backend" instead of bare "shipped".
 
-Initiative detail in `docs/backlog/BACKLOG.md`; gates already landed in #658.
+Historical initiative detail is preserved in `docs/history/backlog/2026-10-06-BACKLOG.md`; gates already landed in #658.

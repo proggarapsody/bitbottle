@@ -1,6 +1,6 @@
 # bitbottle — Shipped Scopes
 
-> **Append-only record of shipped backlog scopes.** When a scope's `feat:` commit lands on `main`, its row is **moved** from [`BACKLOG.md`](BACKLOG.md) into this file (not flipped in place). See [`docs/workflows/iteration-cycle/quickref.md`](../workflows/iteration-cycle/quickref.md) §"Definition of Done" for the convention and [`docs/workflows/iteration-cycle/README.md`](../workflows/iteration-cycle/README.md) §4 for the iteration-cycle step.
+> **Record of completed scopes.** GitHub Issues tracks active work; [BACKLOG](BACKLOG.md) is the small legacy-scope index. Add dated shipped intent with issue/PR links when implementation lands. See [work tracking](../workflows/work-tracking.md).
 
 ## 2026-06-19 — E2E-QUEUE-FEEDBACK — bug/nightly-e2e issues jump the queue
 
@@ -115,7 +115,7 @@ Closes #630.
 
 ---
 
-**Layout:** newest scopes first. Each entry carries the ship date, the feat commit, and (if assigned by then) the release-please version. Detail subsections are preserved verbatim from BACKLOG.md so search history stays intact.
+**Layout:** newest scopes first. Each entry carries the ship date, implementation commit, and available release/issue/PR links. Preserve existing detailed entries; new entries can link to their issue/spec history rather than duplicate large scope notes.
 
 **Why a separate file:**
 - BACKLOG.md is for **upcoming work** — keeping shipped scopes inline made it grow past 4000 lines and buried the queue under archaeology.

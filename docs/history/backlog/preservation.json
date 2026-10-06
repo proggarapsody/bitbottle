@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-06",
+  "baselineCommit": "ed43fbff217dead898b1d3423fe74c0c8b8b6110",
+  "files": [
+    {
+      "source": "docs/backlog/BACKLOG.md",
+      "destination": "docs/history/backlog/2026-10-06-BACKLOG.md",
+      "bytes": 234325,
+      "linecount": 3146,
+      "sha256": "cae6c0e84e35bb8e4db09d31a596050cac398bb2f889eafa7af8403f98c3f8dd"
+    },
+    {
+      "source": "docs/backlog/SHIPPED.md",
+      "destination": "docs/history/backlog/2026-10-06-SHIPPED.md",
+      "bytes": 64774,
+      "linecount": 1113,
+      "sha256": "72cd93e6e8663cad9fc7cda5a77db5798b107bb2f44fcb524e150ccce45b1909"
+    }
+  ],
+  "issue654BodySha256": "295155660e34be5a095c1675055ba185d33b5701cdeea75ddb5ced8deb663cb5"
+}

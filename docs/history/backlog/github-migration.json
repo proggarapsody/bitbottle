@@ -1,0 +1,98 @@
+{
+  "date": "2026-10-06",
+  "repo": "proggarapsody/bitbottle",
+  "baseline": "ed43fbff217dead898b1d3423fe74c0c8b8b6110",
+  "labels_created": [
+    "needs-triage",
+    "needs-info",
+    "ready-for-agent",
+    "ready-for-human"
+  ],
+  "imported": [
+    {
+      "id": "OSSF-BADGE",
+      "number": 676,
+      "url": "https://github.com/proggarapsody/bitbottle/issues/676",
+      "title": "OSSF-BADGE \u2014 OpenSSF Best Practices (CII) badge",
+      "labels": [
+        "enhancement",
+        "prd",
+        "ready-for-human"
+      ],
+      "source_line": 469,
+      "body_sha256": "2cd7daee75950fd9b3126ceba0b7a54eff6dc23e717a4f6a2142db02be0bedb8"
+    },
+    {
+      "id": "PR-LOCK",
+      "number": 677,
+      "url": "https://github.com/proggarapsody/bitbottle/issues/677",
+      "title": "PR-LOCK \u2014 Lock / Unlock PR Conversation",
+      "labels": [
+        "enhancement",
+        "needs-triage",
+        "prd"
+      ],
+      "source_line": 541,
+      "body_sha256": "7e9d8eacef5059925ba89f2d5c8b4c7fd56ec092739fcb168d5508b74cd6b1df"
+    },
+    {
+      "id": "ADMIN-PUSH-RULES",
+      "number": 678,
+      "url": "https://github.com/proggarapsody/bitbottle/issues/678",
+      "title": "ADMIN-PUSH-RULES \u2014 Server/DC Push Rules",
+      "labels": [
+        "enhancement",
+        "needs-triage",
+        "prd"
+      ],
+      "source_line": 542,
+      "body_sha256": "d287df46bd33505ebe8dd6850e1d627fc325ea81ba8985cfaa8a144e5dcd2587"
+    },
+    {
+      "id": "TESTSCRIPT-BACKFILL-2",
+      "number": 679,
+      "url": "https://github.com/proggarapsody/bitbottle/issues/679",
+      "title": "TESTSCRIPT-BACKFILL-2 \u2014 Txtar backfill for post-TESTSCRIPT-BACKFILL scopes",
+      "labels": [
+        "enhancement",
+        "needs-triage",
+        "prd"
+      ],
+      "source_line": 543,
+      "body_sha256": "0059b6fed4fe9a949dcf79754f16e40f97351b773f137a946993f989d589c43d"
+    }
+  ],
+  "updated": [
+    {
+      "number": 654,
+      "url": "https://github.com/proggarapsody/bitbottle/issues/654",
+      "original_body_sha256": "295155660e34be5a095c1675055ba185d33b5701cdeea75ddb5ced8deb663cb5",
+      "new_body_sha256": "bf1925a5b1cac25431ace5ffd12ab828b95773285ae4a5fb980ceea43211136f",
+      "labels": [
+        "enhancement",
+        "needs-triage",
+        "prd"
+      ]
+    }
+  ],
+  "counts": {
+    "imported": 4,
+    "updated": 1,
+    "labels_created": 4
+  },
+  "verification": "passed",
+  "duplicate_corrections": [
+    {
+      "canonical": 679,
+      "duplicate": 680,
+      "state": "CLOSED",
+      "original_body_sha256": "0059b6fed4fe9a949dcf79754f16e40f97351b773f137a946993f989d589c43d",
+      "corrected_body_sha256": "b4d6dcb82f4c4752f49c5dec5eeaaecbce119645119e99e6d34185d4fd500401",
+      "measuredCreatedAt": {
+        "canonical": "2026-10-06T09:45:29Z",
+        "duplicate": "2026-10-06T09:45:48Z"
+      },
+      "evidence": "Bodies and migration markers were identical; duplicate creation cause not established."
+    }
+  ]
+}

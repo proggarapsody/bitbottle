@@ -34,3 +34,7 @@ auto-iter/.lock
 # Reference repos (local only, not tracked)
 reference/
 __pycache__/
+
+# Project-local historical evidence and setup drafts
+.agents/history/
+.agents/setup-draft/

@@ -1,233 +1,111 @@
 # Pre-merge check
 
-Run before merging any branch into `main`. Stop at the first **BLOCKER**.
-For **WARN**, list it but continue. End with a punch list and a verdict.
-
-Don't fix issues automatically — surface them; the author decides.
-
-This doc is the single source of truth for pre-merge gates. Tooling
-wrappers (Claude skill at `.claude/skills/pre-merge-check/`, GitHub
-checks, etc.) defer to it.
-
-> **Cross-document reference convention.** References from this doc to
-> other docs use anchor names ("the pre-merge gate", "the doc-sync
-> table", "the parallel-mode section") rather than section numbers.
-> Internal references within the same doc may use section numbers.
-> This prevents a renumbering in one doc from silently breaking links
-> in another.
-
----
+Run the applicable checks before a branch lands on `main`. Report blockers with
+file/line or CI evidence; warnings do not block. In review mode, report findings
+without changing the implementation. This gate applies to human and agent work;
+it does not start an iteration loop or authorize a merge.
 
 ## 0. Scope first
 
-```bash
-git rev-parse --abbrev-ref HEAD          # current branch
-git fetch origin main --quiet
-git diff --name-only origin/main...HEAD  # files changed
-git log --format='%s' origin/main..HEAD  # commit subjects
-```
+Inspect the branch, fetch `origin/main`, and inspect changed files and commit
+subjects with `git diff --name-only origin/main...HEAD` and
+`git log --format='%s' origin/main..HEAD`. For uncommitted review, include the
+working-tree diff. Scale review and tests to the actual change.
 
-Cache the diff file list — later checks key off it. Don't re-run.
+## 1. Branch and tree hygiene
 
-## 1. Branch & tree hygiene — BLOCKER
+Use `feature/`, `fix/`, `docs/`, or `chore/`; never push directly to `main`.
+Before merge, the tree must be clean and the PR must target `main`.
+A draft PR is a warning. Being behind `origin/main` alone is not a blocker;
+conflicts or required failing checks are blockers.
 
-- Branch name matches `^(feature|fix|docs|chore)/`. `main` itself is a
-  BLOCKER (never merge from main into main).
-- `git status --porcelain` is empty.
-- If a PR exists (`gh pr view --json baseRefName,number,title,isDraft`):
-  - `baseRefName` is `main`. Other base is BLOCKER.
-  - `isDraft` is false (WARN if draft).
+## 2. Conventional commits and PR title
 
-> **Note**: a PR being behind `origin/main` is **no longer a BLOCKER**.
-> Branch protection has `required_status_checks.strict = false`, so
-> GitHub permits merging without an up-to-date branch. Semantic-conflict
-> risk is bounded for this repo (solo dev, sequential `/auto-iter`,
-> squash merges); when it ever bites, main CI catches it within one
-> push and a `git revert` PR is the fix. The previous "rebase or
-> `gh pr update-branch <N>`" dance burned a full CI cycle per merge
-> (~5.5 min) at near-zero benefit.
+Use Conventional Commits. If the change contains `feat:` or `fix:`, use a matching
+release-triggering squash PR title. GitHub uses that title as the squash subject.
+Docs/chore/refactor/test changes may use their corresponding non-release prefix.
+Confirm an intended major bump with the author before a breaking release.
 
-## 2. Conventional Commits + PR title — BLOCKER
+## 3. Build artifacts and repository cleanliness
 
-Every commit subject must match
-`^(feat|fix|docs|chore|refactor|test|perf|build|ci|style|revert)(\(.+\))?!?: `.
+No tracked `dist/`, root binary, files over 1 MB, `.DS_Store`, logs, or
+`coverage.out`. Do not commit ignored local history, runtime state, personal
+configuration, credentials, or private backend details.
 
-**Squash-merge gotcha (critical).** GitHub's squash uses the **PR title**
-as the commit subject. Release-please only bumps on `feat:` / `fix:` /
-`feat!:`. Therefore:
+## 4. Lint and tests
 
-- If any commit on the branch is `feat:` or `fix:`, the PR title must
-  also start with `feat:` / `fix:` / `feat!:`. Otherwise the release
-  won't fire and a follow-up empty `feat:` commit is needed (history:
-  PRs #48 → #49 → #50). BLOCKER.
-- If only `docs:` / `chore:` / `refactor:` / `test:` commits, a PR title
-  with the same prefix is fine — no release expected.
-- `feat!:` or `BREAKING CHANGE` footer → confirm with the author this
-  is intentional (major bump).
+For a pushed PR, inspect `gh pr view --json statusCheckRollup` and require every
+required CI check to succeed. For failed or pending checks, report the exact
+name and log URL; read the failure before fixing it. Do not repeat green checks
+without a new change or unresolved concern.
 
-## 3. Build artifacts & repo cleanliness — BLOCKER
+Without a PR, run `make lint` and `make test` for code changes. `make test` enables
+the race detector. Run `make test-scripts` when shell tooling or its paths change.
+For documentation-only changes, verify links, path references, and preservation
+of any moved records; code design review is skipped. Report exact failures.
 
-- No tracked files under `dist/`: `git ls-files dist/` empty.
-- No tracked files > 1 MB:
-  `git ls-files | xargs -I{} du -k "{}" 2>/dev/null | awk '$1>1024'` empty.
-- The compiled `bitbottle` binary at repo root is gitignored but easy to
-  accidentally `git add`. Check `git ls-files | grep -E '^bitbottle$'`
-  is empty.
-- No `.DS_Store`, `*.log`, `coverage.out` tracked in this branch's diff.
+## 5. Documentation and progress sync
 
-## 4. Lint & tests — BLOCKER
+- New commands self-register, implement each supported adapter, and add an MCP
+  tool when they map to a Bitbucket operation. Preserve typed unsupported-host
+  behavior for host-specific capabilities. Update the consumer `skills/SKILL.md`.
+- Changed flags update curated consumer references; exhaustive details stay in
+  command help. Verify the consumer skill router after changing its references.
+- UX/output/new subcommands update README. A manual smoke guide for a new
+  user-visible flow is recommended.
+- Branch, commit, release, setup, or workflow changes update CONTRIBUTING and
+  AGENTS together. Record new invariants and patterns in the appropriate source.
+- Auth/config/token changes update the consumer auth reference.
+- Backend client, types, or errors changes keep the agent primer accurate.
+- When completing an imported backlog scope, remove its index row and add a
+  dated SHIPPED entry in the same implementation change, retaining issue/PR
+  links. Detailed specs remain in linked issue/history records. Preserve earlier progress.
 
-If a PR exists and has been pushed, **trust the CI run** — don't re-run
-locally:
+## 6. Design-judge
 
-```bash
-gh pr view --json statusCheckRollup \
-  -q '[.statusCheckRollup[]|{name,conclusion}]'
-```
+New commands, interfaces, packages, transports, MCP tools, and error sites must
+comply with [TASTE](../TASTE.md) and [ARCHITECTURE](../ARCHITECTURE.md). Cite a
+compliant exemplar or a violation with its file/line and applicable principle.
+Skip this review for documentation, CI, dependencies, or progress-record-only
+diffs. Architecture violations block merging unless an allowed exception is
+explicitly justified in the PR description.
 
-Every check must be `SUCCESS`. If any is `FAILURE` / `IN_PROGRESS`,
-surface the failing check name and log URL; don't try to fix locally
-without first reading the CI failure.
+## 6a. Architecture smells
 
-Re-running `make lint && make test -race` against a SHA whose CI is
-already green is the third run for the same code (TDD → CI → here) and
-adds ~5 minutes for no signal.
+Run `scripts/smell-scan.sh` as appropriate; retain the CI smell gate. Review for:
 
-**Local fallback** — only when there is no PR yet (e.g. running the gate
-before `git push`):
+- A repeated three-way capability switch in at least three files (nine or more
+  conversion hits): introduce a shared resolver instead of another clone.
+- Structurally identical per-command test-helper packages: share the helper.
+- New commands overlapping an open backlog surface: unify the form or deprecate
+  the older surface in the same PR.
+- A third or fourth conversion-function pair for a backend type: prefer typed
+  enum marshaling methods.
+- Added Go comment density above roughly 5%, except new exported-package docs:
+  review whether comments explain intent or narrate code.
+- Write tests that assert only stdout: also assert captured request fields.
+  Honor applicable rows in [the backend quirks ledger](../backend-quirks.md).
 
-```bash
-make lint    # golangci-lint
-make test    # go test ./... -race
-```
+These findings block merging unless explicitly justified in the PR description.
 
-Both must exit 0. Surface offending file:line for lint, exact test name
-for failures — don't paraphrase. `go vet ./...` is part of `make test`;
-no separate run needed.
+## 7. Release Please boundaries
 
-## 5. Doc sync (conditional) — BLOCKER on required docs
+Do not hand-edit CHANGELOG, the release manifest, or Release Please version
+markers. The exception is an actual `release-please--*` release branch. Follow
+[the release process](../release-process.md).
 
-Match against the changed-file list from §0. Multiple rules can fire.
+## 8. Secret leak scan
 
-| If diff touches… | Verify also updated | Severity |
-|---|---|---|
-| `pkg/cmd/<group>/<new-file>.go` (new command) | `pkg/cmd/<group>/<group>.go` registers it (or self-registers via `pkg/cmdregistry`); **both** `api/cloud/` and `api/server/` have the operation; `pkg/cmd/mcp/` has a matching tool if it's a Bitbucket op | BLOCKER |
-| New command in `pkg/cmd/<group>/` | `skills/SKILL.md` extended with the new command | BLOCKER |
-| New / changed flag in `pkg/cmd/**` | `skills/references/{auth,pr,repos,api}.md` reflects it (the curated overview — exhaustive flag detail stays in `bitbottle <cmd> --help`) | BLOCKER |
-| User-visible flow change not covered by an existing manual smoke | `docs/manual-tests/` — extend the relevant smoke (`cloud/pr-happy-path.md`, `server/pr-happy-path.md`, `shared/multi-host.md`) or add a fresh scenario file | WARN |
-| User-visible UX change (output format, new subcommand) | `README.md` | BLOCKER |
-| Branch strategy / commit / release / setup change | `CONTRIBUTING.md`, `AGENTS.md` | BLOCKER |
-| New invariant or pattern (transport policy, paging helper, etc.) | `AGENTS.md` "Key rules for AI agents" | WARN |
-| Backlog item is now done | **Move**, don't flip: cut the row + scope-detail section from `docs/backlog/BACKLOG.md` and prepend a dated entry to `docs/backlog/SHIPPED.md`. Both edits in the same `feat:` commit as the code. The pre-merge mechanical check's §4 blocks commits touching ONLY one of those files. | BLOCKER |
-| Auth, hosts.yml, or token handling | `skills/references/auth.md` | BLOCKER |
-| `api/backend/{client,types,errors}.go` changed | `docs/agent-primer.md` still accurate (architecture vocabulary, invariants, exemplar-file table) | BLOCKER |
-| `docs/workflows/iteration-cycle/` changed | `AGENTS.md` still references correct file paths; agent command files (e.g. `.claude/commands/auto-iter.md`) still point at correct sections | WARN |
-
-If `skills/references/*.md` was edited, also check `skills/SKILL.md`'s
-router table still points at the right file.
-
-## 6. Design-judge — BLOCKER on principle violations
-
-For PRs that introduce new commands, interfaces, packages, transports, MCP
-tools, or error sites, sanity-check against the two principle docs:
-
-- [`docs/TASTE.md`](../TASTE.md) — UX (gh philosophy, standard flags,
-  TTY-aware output, error format), agentic skill experience, MCP tool shape.
-- [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md) — SOLID, layered structure,
-  composite + optional interfaces, deep modules, design decisions, gh
-  references.
-
-For each new surface, either cite an exemplar file from the codebase
-demonstrating the principle is followed, or cite a violation with file:line
-and the principle violated. No vague "feels off" — every finding must point
-at code.
-
-### 6a. Architecture smells (BLOCKER) — recurring patterns this loop has shipped
-
-The bullet list below is a hard checklist, added after a post-mortem of
-releases v1.29.0 / v1.30.0 / v1.31.0 surfaced structural debt that the
-per-PR judge had missed. Every item that fires is a BLOCKER unless the PR
-description explicitly justifies the exception.
-
-- **Repeated N-way capability switch.** If `pkg/cmd/<group>/` adds the
-  same `As<X>Client → As<Y>Client → As<Z>Client` switch in three or more
-  files (e.g. list/set/delete), refactor to a single
-  `resolveOps(scope) <iface>` helper and call it once per command. Adding
-  a fourth scope must not require editing three switches (OCP). Grep:
-  `git diff origin/main...HEAD -- 'pkg/cmd/**/*.go' | grep -E 'As[A-Z][a-zA-Z]+Client\(\)' | wc -l` — ≥9 hits across ≥3 files in one PR is the trigger.
-- **Per-command-tree `cmdtest` clones.** If the PR adds
-  `pkg/cmd/<new>/internal/cmdtest/cmdtest.go` whose body is structurally
-  identical to an existing `pkg/cmd/<other>/internal/cmdtest/cmdtest.go`,
-  promote to a shared package instead of cloning.
-- **Two surfaces for one job.** If the PR adds a command that overlaps
-  with an open backlog item (`environment variable …` shipped before
-  `variable --scope deployment`), either ship the unified form first or
-  mark the older form deprecated in the same PR. Don't leave both wired
-  in `pkg/cmd/root/root.go`.
-- **Translation-table sprawl.** If the PR adds the third or fourth
-  `ToCloud<X>` / `<X>ToCLI` pair side-by-side in `api/backend/types.go`,
-  collapse them onto a typed enum with `MarshalCloud/MarshalServer/
-  UnmarshalCloud/UnmarshalServer` methods.
-- **Comment density above the codebase baseline.** Run
-  `git diff origin/main...HEAD -- '*.go' | grep -E '^\+\s*//' | wc -l`
-  against `wc -l` of added lines. If comment lines exceed ~5% of added
-  Go lines and the file is not a new exported package, flag — CLAUDE.md
-  prefers minimal comments and the trend across recent PRs is upward.
-- **Self-referential write-op test, or unhonored backend quirk.** For a PR
-  that adds or changes a write/mutation op: (a) if its test asserts only on
-  stdout (e.g. `stdout 'Updated…'`) without asserting the **captured
-  request body**, BLOCKER — that test cannot catch a dropped or wrong field,
-  because the hand-written fake shares the code's assumptions; (b) if the op
-  contradicts an applicable row in [`docs/backend-quirks.md`](../backend-quirks.md)
-  (full-object Server PUT, `version` precondition, Content-Type policy),
-  BLOCKER. #655 (`pr edit` wiped all reviewers; `pr request-review` 400'd)
-  passed every gate precisely because the fake and the stdout-only test
-  both encoded the same wrong assumption the code did.
-
-Skip when the diff touches only docs, CI config, dependencies, or
-`docs/backlog/BACKLOG.md` / `docs/backlog/SHIPPED.md`.
-
-## 7. Release-please boundaries — BLOCKER
-
-Release-please owns these. **Never hand-edit on a feature branch:**
-
-- `CHANGELOG.md`
-- `.release-please-manifest.json`
-- Any line tagged `<!-- x-release-please-version -->` (currently in
-  `skills/SKILL.md` lines 8 and 56).
-
-If the diff touches any of these, BLOCKER unless the branch *is* a
-release-please branch (named `release-please--*`).
-
-## 8. Secret leak scan — BLOCKER on any hit
-
-```bash
-git diff origin/main...HEAD -- . ':(exclude)reference/' \
-  | grep -nEi '(BBPAT|BBToken|app[_-]?password|x-token-auth|ATATT|BB_TOKEN=|hosts\.yml)' \
-  || echo "clean"
-```
-
-Reject any literal corporate hostnames, internal logins, or personal
-emails that belong only in local config — they must never land in
-commits. (For this repo: the maintainer's Bitbucket Server host /
-username should not appear in any tracked file.)
+Inspect the diff for tokens, app passwords, credentials, private corporate
+hostnames, internal usernames, and personal emails that belong in local config.
+Use the repository secret-scanning CI check; investigate hits before merging.
+The maintainer's private Server host and username must never be tracked.
 
 ## 9. Final report
 
-```
-## Pre-merge check: <branch> → main
+Give a READY or NOT READY verdict with blockers, warnings, relevant evidence,
+changed-file scope, commit count, PR title, release impact, and checks performed.
+Do not claim merge readiness while required checks remain unverified.
 
-BLOCKERS (N):
-  - <one-line, file:line where applicable>
-
-WARNINGS (M):
-  - <one-line>
-
-CHANGED: <count> files, <±lines>
-COMMITS: <count>; PR title: "<title>" — release impact: <none|patch|minor|major>
-
-Verdict: <READY TO MERGE | NOT READY — fix BLOCKERS>
-```
-
-Don't summarize what the branch *does* — that's the PR description's
-job. This report is purely about merge readiness.
+The [original checklist](../history/legacy-workflow/pre-merge-check.md) is retained
+for historical reference. Current instructions are in this file.
