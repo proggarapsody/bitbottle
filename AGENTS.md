@@ -1,5 +1,12 @@
 # AGENTS.md
 
+## Context and delegation — highest priority
+
+- Keep the main chat and its context lean. Delegate large file reads and data retrieval to dedicated subagents using smaller models; return concise findings with source paths and line numbers, never full content dumps.
+- NEVER use the same agent to retrieve large content and make decisions, evaluations, judgments, or edits. Retrieval agents gather evidence only; the caller decides from their concise results.
+- Assign actions to separate small subagents with explicit instructions, a bounded scope, and a clear completion check. They return the result, changed paths, and verification evidence.
+- Pass each subagent only the context needed for its task. Reuse concise findings instead of reloading large sources into the main chat or action agents.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full workflow, code style, and testing conventions.
 
 ## Reference implementations
@@ -13,22 +20,37 @@ Read before designing any new command, interface, package, transport, MCP tool, 
 - [`docs/TASTE.md`](docs/TASTE.md) — UX (gh philosophy, standard flags, TTY-aware output, error format), agentic skill experience, MCP tool shape.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — SOLID, layered structure, composite + optional interfaces, deep modules, design decisions, gh references.
 
-## Automation
+## Workflow and project knowledge
 
-The autonomous iteration loop is documented in `docs/workflows/iteration-cycle/`.
-Agent-specific wrappers (e.g. `.claude/commands/auto-iter.md`) inherit one-way from
-these canonical docs — they add delivery details (model names, tool invocation syntax)
-without duplicating procedural content.
+- For planning or completing work, follow [`docs/workflows/work-tracking.md`](docs/workflows/work-tracking.md); GitHub Issues is the active tracker.
 
-## Workflow
+Choose the project-local Matt Pocock skills in [`.agents/skills/`](.agents/skills/)
+for the requested task. The custom automatic iteration loop is retired; its
+procedures and command adapters are retained as historical evidence.
 
-End-to-end procedures live in [`docs/workflows/`](docs/workflows/) and are tool-neutral — humans, Codex, Cursor, Aider, and Claude all follow them.
-
+- [`docs/agents/README.md`](docs/agents/README.md) — current knowledge map, skill setup status, and where new knowledge belongs.
 - [`docs/agent-primer.md`](docs/agent-primer.md) — required architectural reading for any subagent implementing a new scope.
-- [`docs/workflows/iteration-cycle/`](docs/workflows/iteration-cycle/) — the iteration loop: [`README.md`](docs/workflows/iteration-cycle/README.md) (canonical procedure), [`quickref.md`](docs/workflows/iteration-cycle/quickref.md) (halt routing, outcome enum, cadence), [`scripts.md`](docs/workflows/iteration-cycle/scripts.md) (script catalog), [`autonomous.md`](docs/workflows/iteration-cycle/autonomous.md) (autonomous-mode deltas), [`parallel-mode.md`](docs/workflows/iteration-cycle/parallel-mode.md) (multi-scope iteration).
-- [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — the merge gate (sections 0–9). Must pass before any branch lands on `main`.
+- [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — required merge gate.
+- [`docs/history/README.md`](docs/history/README.md) — past designs, iteration reports, and ignored local records.
 
-Agent-specific wrappers (e.g., `.claude/commands/`) are tracked in git and inherit one-way from these docs — see `.claude/commands/` for Claude-specific delivery details.
+Read relevant current docs before implementing. Read historical records only
+when the task needs their evidence. Do not treat archived instructions as active.
+Keep useful validation tools: `make test-scripts` still covers `auto-iter/scripts/`.
+Tracker, triage-label, and domain conventions are configured in `docs/agents/`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs use GitHub Issues in `proggarapsody/bitbottle`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage roles. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` (created lazily) and existing `docs/adr/`. See `docs/agents/domain.md`.
 
 ## Communication style
 
@@ -41,7 +63,7 @@ Agent-specific wrappers (e.g., `.claude/commands/`) are tracked in git and inher
 ## Key rules for AI agents
 
 - **Branch + commits:** `feature/*` / `fix/*` / `docs/*` branch → PR to `main`. Never push directly to `main`. Use Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`).
-- **Lint:** `make setup` once per clone, then `make lint` before pushing. Hook runs automatically on commit.
+- **Lint:** `make setup` once per clone, then `make lint` before pushing. The pre-push hook runs lint; the pre-commit hook checks gofmt.
 - **HTTP:** use `http.NewRequestWithContext` + `client.Do` — never `client.Get/Head/Post` (`noctx` linter).
 - **Output:** always via `f.IOStreams`, never `os.Stdout`/`fmt.Println`.
 - **Tests:** use `factory.NewTestFactory` — no real filesystem, keyring, or network.
@@ -65,7 +87,9 @@ pkg/cmd/            — Cobra commands (one package per noun)
 pkg/cmd/mcp/        — MCP stdio server (tools + handlers)
 skills/SKILL.md     — Claude skill file for bitbottle (all commands in one file)
 docs/manual-tests/  — manual test guides
-docs/workflows/     — contributor + agent workflow checklists (pre-merge-check, iteration-cycle/)
+docs/workflows/     — current merge and acceptance checks
+docs/history/       — archived designs, reports, and custom workflow
+.agents/skills/     — project-local development skills (separate from skills/SKILL.md)
 packages/mcp-npm/   — npm wrapper (downloads Go binary on postinstall, bundles README)
 ```
 

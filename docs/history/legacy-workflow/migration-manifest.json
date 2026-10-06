@@ -1,0 +1,186 @@
+{
+  "date": "2026-10-06",
+  "files": [
+    {
+      "from": "docs/workflows/iteration-cycle/README.md",
+      "to": "docs/history/legacy-workflow/iteration-cycle/README.md",
+      "sha256": "3046c10121b635c4895ac7ae5233dc5c36b7ee288e538f5c5d6b53917048cc03",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/workflows/iteration-cycle/autonomous.md",
+      "to": "docs/history/legacy-workflow/iteration-cycle/autonomous.md",
+      "sha256": "9fedf0adb29105a4a88f980fd2559099c1be376f5b69500e6ea37ab3b663bcc8",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/workflows/iteration-cycle/parallel-mode.md",
+      "to": "docs/history/legacy-workflow/iteration-cycle/parallel-mode.md",
+      "sha256": "6ce914597549f4135f91f6c4f4456ca7f199a652e2ff4f947252a91736366a73",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/workflows/iteration-cycle/quickref.md",
+      "to": "docs/history/legacy-workflow/iteration-cycle/quickref.md",
+      "sha256": "dd1542d312b940f639f2846eb0cad4bf8cc9fe84c84139a36f8e555f85871a7b",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/workflows/iteration-cycle/scripts.md",
+      "to": "docs/history/legacy-workflow/iteration-cycle/scripts.md",
+      "sha256": "7c39e99f6e3bd5fdc187abefdcb025b9de94d4c70d93654a3ee61bc1add96656",
+      "visibility": "tracked"
+    },
+    {
+      "from": ".claude/commands/auto-iter.md",
+      "to": "docs/history/legacy-workflow/claude-commands/auto-iter.md",
+      "sha256": "01e2220c7ef0d779172af12c2ef4ecdee7d885750bf0084706ed44c6b2e3eee4",
+      "visibility": "tracked"
+    },
+    {
+      "from": ".claude/commands/auto-iter-stream.md",
+      "to": "docs/history/legacy-workflow/claude-commands/auto-iter-stream.md",
+      "sha256": "e95de38fd0002b52830c4a3e2b92190fbb1ee0b6ce57d18aa5d0f3b5c9686dff",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/workflows/pre-merge-check.md",
+      "to": "docs/history/legacy-workflow/pre-merge-check.md",
+      "sha256": "6d647a9411e6b7b8167ee8c22c6b65934b32274ddf22c93488d466a2a7db0330",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/README.md",
+      "to": "docs/history/iterations/README.md",
+      "sha256": "415bfcad79ef673f9b54f46058f1f51a59cc12bc08a84ce7d0a7a25bafa3a080",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/00-FINAL-REPORT.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/00-FINAL-REPORT.md",
+      "sha256": "a84eaa29c8f5ccc29f484b95ffe0e41d6f875590aa3707c1eb03ca2a45d5ab9c",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/README.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/README.md",
+      "sha256": "f3e99b0c8b84e65b1b86e4ecff189321cdc274e60644a4eae35f4dfcc39ebf7d",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/agents/01-metrics.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/agents/01-metrics.md",
+      "sha256": "7544bb425125609d06f08f702aafa442136d075723a308a1bb728f1b4a6b1961",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/agents/02-reports.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/agents/02-reports.md",
+      "sha256": "eb71ae4af29fe41b06f0df66f7e94266da7d7fb2e5d1065da037c48664e7c33b",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/agents/03-consistency.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/agents/03-consistency.md",
+      "sha256": "9aa2dfa57da0cb0908dcc0e5c9a400bb3006ce67bb6237d904d67fc405c2381c",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/agents/04-code-quality.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/agents/04-code-quality.md",
+      "sha256": "9c785e438bd62190da1f5dd6e516585db828f6d5a9b262bf34aa5bbbd6968371",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/agents/05-guidelines.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/agents/05-guidelines.md",
+      "sha256": "4c2b061cddde8cfe00424a5596eb2f5f1b07400ba92ca91c26947dc388aae392",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/agents/06-tokenomics-speed.md",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/agents/06-tokenomics-speed.md",
+      "sha256": "e8c2f853ceab571e3a565bae635f2e06dde14b37510e739fdd311aab8a1ee836",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/analysis-2026-06-02-cycles-158-187/dataset.json",
+      "to": "docs/history/iterations/analysis-2026-06-02-cycles-158-187/dataset.json",
+      "sha256": "479ce5c14825ffde752b31c17ee68d0146ab071a6c9f698d06f1aa8a8126de76",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/stream-2026-05-24-cycles-135-144.md",
+      "to": "docs/history/iterations/stream-2026-05-24-cycles-135-144.md",
+      "sha256": "64d406c7533dd7c2357e292295e5358b0f4d6b22d85a63be8748ff4fdaff6fa7",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/stream-2026-05-25-cycles-145-154.md",
+      "to": "docs/history/iterations/stream-2026-05-25-cycles-145-154.md",
+      "sha256": "af7b2720f24ec01cd454f844d5203574d961e807b4d891c2b154659854c17ea7",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/stream-2026-05-29-cycles-168-177.md",
+      "to": "docs/history/iterations/stream-2026-05-29-cycles-168-177.md",
+      "sha256": "2b331a942660d226bb2a83ee549f5e5f323ed275b986af4fd15101f3cda94089",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/stream-2026-06-01-cycles-178-187.md",
+      "to": "docs/history/iterations/stream-2026-06-01-cycles-178-187.md",
+      "sha256": "71aa12ba5b182dc37bcfd518754400f5abea8edd8fde5b28cccc35924a69b65a",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/superpowers/specs/2026-04-24-bitbucket-cloud-support-design.md",
+      "to": "docs/history/designs/specs/2026-04-24-bitbucket-cloud-support-design.md",
+      "sha256": "e1ab80331a9c8f7e5e334dbbc72f384d107478f1247f03bc96c09628e341e202",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/superpowers/specs/2026-04-25-json-output-design.md",
+      "to": "docs/history/designs/specs/2026-04-25-json-output-design.md",
+      "sha256": "0da0e00a39a92e7fd9d4b7f22cbfecde4f532cdd8c81e065e0ebae834b27620a",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/superpowers/specs/2026-04-25-mcp-server-design.md",
+      "to": "docs/history/designs/specs/2026-04-25-mcp-server-design.md",
+      "sha256": "12151a19ba4dad0f12edcc3952ffeb675812bec3e3199e99aae1f6a69047e466",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/superpowers/specs/2026-04-26-parallel-l-e-g-design.md",
+      "to": "docs/history/designs/specs/2026-04-26-parallel-l-e-g-design.md",
+      "sha256": "5e4da66c5f814915dab110f974dd1341632bcc23635773d11eae5d2529877a14",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/superpowers/specs/2026-04-26-scope-f-commits-design.md",
+      "to": "docs/history/designs/specs/2026-04-26-scope-f-commits-design.md",
+      "sha256": "8053f564aec204515b3cf962b2ffb152de2b01f7b702be71155c8ef92f554c27",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/superpowers/specs/2026-04-26-scope-m-p-design.md",
+      "to": "docs/history/designs/specs/2026-04-26-scope-m-p-design.md",
+      "sha256": "4631ce46b73232a5d42fadfd912bcbe707d3148e71f150358814043b8c8e6169",
+      "visibility": "tracked"
+    },
+    {
+      "from": "docs/superpowers/specs/2026-04-27-adopt-gh-cli-ux-patterns.md",
+      "to": "docs/history/designs/specs/2026-04-27-adopt-gh-cli-ux-patterns.md",
+      "sha256": "63f36973e0efd468793683322b5f08c46f86c37746f1a68eaf18101d0e870dd9",
+      "visibility": "tracked"
+    },
+    {
+      "from": "auto-iter/reports/stream-2026-06-18-cycles-188-192.md",
+      "to": "docs/history/iterations/stream-2026-06-18-cycles-188-192.md",
+      "sha256": "0bc5619949c21b95a31b915d2a3138260f89e8e57efc737403fa64120d956eed",
+      "visibility": "tracked",
+      "original_visibility": "untracked"
+    }
+  ]
+}
