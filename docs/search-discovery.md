@@ -6,7 +6,7 @@ Baseline recorded 2026-10-09. This plan improves accurate discovery of the Go Bi
 
 - The intended site is the GitHub Pages project URL: <https://proggarapsody.github.io/bitbottle/>.
 - The GitHub repository description is “Go CLI for Bitbucket Cloud and Self-hosted Bitbucket Server”; its homepage field was empty. Topics were `bitbucket`, `bitbucket-cli`, `bitbucket-server`, `cli`, `devtools`, `mcp`, and `self-hosted`. GitHub Pages was not enabled at baseline.
-- A web search for `bitbottle` surfaced the npm package, Go package, and skills sites, while an archived Rust project with the same name dominated the results observed. This is a search-tool observation only: it does not establish Google ranking, complete indexing, or what other people see by location or time.
+- A web search for `bitbottle` surfaced the npm package, Go package, and skills sites, while an unrelated Rust archive-format project with the same name dominated the results observed. This is a search-tool observation only: it does not establish Google ranking, complete indexing, or what other people see by location or time.
 - This repository's README already distinguishes Cloud-only and Server/DC-only commands. Discovery copy must preserve those distinctions and must not imply feature parity for every command.
 
 ## Exact query basket
@@ -26,8 +26,8 @@ Do not collapse these into one “rank.” Report observed positions and URLs pe
 
 ## Changes in this rollout
 
-- The README title and opening sentence identify this as an independent, gh-style CLI for Cloud and self-hosted Server/Data Center. The opening links to the canonical project site and this guide.
-- The README FAQ explains that the tool is standalone, points out host-specific capabilities, and distinguishes this Go project from the archived same-name Rust project.
+- The README title and opening sentence identify this as an independent, gh-style CLI for Cloud and self-hosted Server/Data Center. A reader-facing link near the top points to the project site; the maintainer search and discovery guide is linked under Contributing.
+- The README FAQ explains that the tool is standalone, points out host-specific capabilities, and distinguishes this Go project from the unrelated Rust archive-format project.
 - The npm package homepage points to the project site; keywords describe Bitbucket Cloud, Data Center, pull requests, CLI, and MCP without repeating variants.
 - The README Cloud login example uses an Atlassian account email and an API token supplied through standard input. It links to Atlassian's token instructions. The README says host settings live in `hosts.yml` and tokens are stored in the OS keyring.
 
