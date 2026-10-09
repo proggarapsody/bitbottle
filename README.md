@@ -1,6 +1,8 @@
-# bitbottle
+# bitbottle — Bitbucket CLI for Cloud and Data Center
 
-> Bitbucket CLI for Cloud and Server / Data Center — built with the same philosophy as [GitHub CLI](https://github.com/cli/cli).
+> An independent, gh-style CLI for Bitbucket Cloud and self-hosted Bitbucket Server / Data Center.
+
+[Documentation](https://proggarapsody.github.io/bitbottle/)
 
 [![CI](https://github.com/proggarapsody/bitbottle/actions/workflows/ci.yml/badge.svg)](https://github.com/proggarapsody/bitbottle/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@proggarapsody/bitbottle)](https://www.npmjs.com/package/@proggarapsody/bitbottle)
@@ -17,6 +19,16 @@ $ bitbottle pr list
 $ bitbottle pr create --title "fix: handle empty diff" --base main
 ✓ Created PR #48 — https://bitbucket.example.com/projects/PROJ/repos/api/pull-requests/48
 ```
+
+---
+
+## FAQ
+
+**Is bitbottle part of GitHub CLI (`gh`)?** No. It is a standalone Bitbucket CLI with a similar command-line philosophy; it does not require `gh`.
+
+**Which Bitbucket products does it support?** Bitbucket Cloud and self-hosted Server / Data Center use the same CLI. Some features are host-specific and are marked in the command list below.
+
+**Is this the Rust archive-format project with the same name?** No. That project is unrelated; this repository contains the Go Bitbucket CLI distributed as `@proggarapsody/bitbottle` on npm.
 
 ---
 
@@ -53,8 +65,12 @@ go install github.com/proggarapsody/bitbottle/cmd/bitbottle@latest
 ## Authentication
 
 ```bash
-# Bitbucket Cloud
-echo "YOUR_APP_PASSWORD" | bitbottle auth login --hostname bitbucket.org --with-token
+# Bitbucket Cloud (Atlassian account email + API token)
+printf '%s\n' "$BITBUCKET_API_TOKEN" | bitbottle auth login \
+  --hostname bitbucket.org \
+  --email you@example.com \
+  --with-token
+# Create a Bitbucket API token: https://support.atlassian.com/bitbucket-cloud/docs/create-an-api-token/
 
 # Bitbucket Server / Data Center (PAT, self-signed cert)
 echo "BBDC-YOUR-PAT" | bitbottle auth login \
@@ -70,7 +86,7 @@ bitbottle auth status
 bitbottle auth doctor [--hostname git.example.com]
 ```
 
-Credentials are stored in `~/.config/bitbottle/hosts.yml`. Inside a git repo with a Bitbucket remote the host and project/repo are detected automatically. Outside a repo, use `-R HOST/PROJECT/REPO`.
+Host settings are stored in `~/.config/bitbottle/hosts.yml`; tokens are stored in the OS keyring. Inside a git repo with a Bitbucket remote the host and project/repo are detected automatically. Outside a repo, use `-R HOST/PROJECT/REPO`.
 
 Tokens are intentionally stripped from `hosts.yml` on every save. If you have an existing `oauth_token` in `hosts.yml` (from an older version), run `bitbottle auth migrate` to move it to the OS keyring.
 
@@ -864,6 +880,8 @@ bitbottle extension list                           # list installed
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Run `go test ./...` before sending a PR.
+
+Maintainer search and discovery plan: [docs/search-discovery.md](docs/search-discovery.md) (issue [#682](https://github.com/proggarapsody/bitbottle/issues/682)).
 
 ### Recording cassettes
 

@@ -2,6 +2,14 @@
 
 > **Record of completed scopes.** GitHub Issues tracks active work; [BACKLOG](BACKLOG.md) is the small legacy-scope index. Add dated shipped intent with issue/PR links when implementation lands. See [work tracking](../workflows/work-tracking.md).
 
+## 2026-10-09 — SEARCH-DISCOVERY — clarify Bitbucket CLI discovery and measurement
+
+Issue [#682](https://github.com/proggarapsody/bitbottle/issues/682). README and npm metadata now identify the standalone Cloud and Server/Data Center CLI, point readers to the project site, and distinguish the unrelated Rust archive-format project. The Cloud authentication example uses an Atlassian account email and API token, with token storage accurately described. Added a dated search-discovery plan with an exact query basket, site indexing checks, and day-7/day-28 measurement guidance.
+
+**Implementation delivered:** documentation, npm homepage/keywords, and verification guidance. **Search outcome:** not measured by this implementation; improved ranking, indexing, or AI-answer citations must not be claimed until the documented checkpoints provide evidence.
+
+---
+
 ## 2026-06-19 — E2E-QUEUE-FEEDBACK — bug/nightly-e2e issues jump the queue
 
 `pick-scope.sh` now queries open GitHub issues labelled `bug` or `nightly-e2e`
