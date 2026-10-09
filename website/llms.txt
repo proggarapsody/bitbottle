@@ -1,0 +1,13 @@
+# bitbottle
+
+bitbottle is an independent MIT-licensed Go CLI for Bitbucket Cloud and Bitbucket Server/Data Center.
+
+- Home: https://proggarapsody.github.io/bitbottle/
+- Installation: https://proggarapsody.github.io/bitbottle/install/
+- Pull request workflows: https://proggarapsody.github.io/bitbottle/pull-requests/
+- AI and MCP: https://proggarapsody.github.io/bitbottle/ai-mcp/
+- Source: https://github.com/proggarapsody/bitbottle
+- npm: https://www.npmjs.com/package/@proggarapsody/bitbottle
+- Go package: https://pkg.go.dev/github.com/proggarapsody/bitbottle
+
+Some commands are available on only one backend. Consult the command support matrix in the repository README.

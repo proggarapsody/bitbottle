@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bitbucket Pull Request Workflows with bitbottle</title>
+    <meta
+      name="description"
+      content="Use bitbottle to list, inspect, create, review, compare, and merge Bitbucket pull requests from your terminal."
+    />
+    <link
+      rel="canonical"
+      href="https://proggarapsody.github.io/bitbottle/pull-requests/"
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Bitbucket Pull Request Workflows with bitbottle"
+    />
+    <meta
+      property="og:description"
+      content="Use bitbottle to list, inspect, create, review, compare, and merge Bitbucket pull requests from your terminal."
+    />
+    <meta
+      property="og:url"
+      content="https://proggarapsody.github.io/bitbottle/pull-requests/"
+    />
+    <meta property="og:site_name" content="bitbottle" />
+    <link rel="stylesheet" href="/bitbottle/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <nav class="wrap nav" aria-label="Main navigation">
+        <a class="brand" href="/bitbottle/">bitbottle</a>
+        <div class="navlinks">
+          <a href="/bitbottle/">Overview</a
+          ><a href="/bitbottle/install/">Install</a
+          ><a aria-current="page" href="/bitbottle/pull-requests/"
+            >Pull requests</a
+          ><a href="/bitbottle/ai-mcp/">AI and MCP</a
+          ><a href="https://github.com/proggarapsody/bitbottle">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main id="main">
+      <div class="wrap content">
+        <p class="eyebrow">Pull request workflow</p>
+        <h1>Review and move pull requests from the terminal.</h1>
+        <p class="lead">
+          Bitbottle brings common Bitbucket pull request operations to a
+          consistent CLI across Cloud and Server or Data Center, with
+          host-specific capabilities called out.
+        </p>
+        <h2>Find and inspect work</h2>
+        <pre
+          class="code"
+        ><code>bitbottle pr list<br>bitbottle pr view 42<br>bitbottle pr diff 42<br>bitbottle pr checkout 42</code></pre>
+        <p>
+          Inside a repository with a Bitbucket remote, bitbottle can resolve
+          repository context. Use <code>-R HOST/PROJECT/REPO</code> to select
+          one explicitly.
+        </p>
+        <h2>Create and review</h2>
+        <pre
+          class="code"
+        ><code>bitbottle pr create --title "feat: add retry logic" --base main<br>bitbottle pr request-review 42 --reviewer alice<br>bitbottle pr approve 42</code></pre>
+        <h2>Merge with intent</h2>
+        <pre
+          class="code"
+        ><code>bitbottle pr merge 42 --squash --delete-branch</code></pre>
+        <p>
+          Merge options depend on host and repository configuration. Bitbottle
+          returns typed errors for conditions such as a conflicting or behind
+          pull request.
+        </p>
+        <div class="notice">
+          <strong>Check host support.</strong> Reopening a pull request is
+          Server/Data Center only. Check the
+          <a href="https://github.com/proggarapsody/bitbottle#commands"
+            >support matrix</a
+          >
+          for other host-specific commands.
+        </div>
+        <h2>Use structured output</h2>
+        <pre
+          class="code"
+        ><code>bitbottle pr list --json number,title,state<br>bitbottle pr list --json number,title,state --jq '.[] | select(.state == "OPEN")'</code></pre>
+        <p>
+          See <a href="/bitbottle/install/">installation options</a> or browse
+          the
+          <a href="https://github.com/proggarapsody/bitbottle"
+            >source and command reference</a
+          >.
+        </p>
+      </div>
+    </main>
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <span>bitbottle · Independent open-source project</span
+        ><span
+          ><a
+            href="https://github.com/proggarapsody/bitbottle/blob/main/LICENSE"
+            >MIT License</a
+          >
+          ·
+          <a href="https://github.com/proggarapsody/bitbottle"
+            >Source on GitHub</a
+          ></span
+        >
+      </div>
+    </footer>
+  </body>
+</html>

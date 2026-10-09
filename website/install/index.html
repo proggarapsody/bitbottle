@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Install bitbottle, the Bitbucket CLI</title>
+    <meta
+      name="description"
+      content="Install the bitbottle Bitbucket CLI with npm or Go, then check its available commands and release packages."
+    />
+    <link
+      rel="canonical"
+      href="https://proggarapsody.github.io/bitbottle/install/"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Install bitbottle, the Bitbucket CLI" />
+    <meta
+      property="og:description"
+      content="Install the bitbottle Bitbucket CLI with npm or Go, then check its available commands and release packages."
+    />
+    <meta
+      property="og:url"
+      content="https://proggarapsody.github.io/bitbottle/install/"
+    />
+    <meta property="og:site_name" content="bitbottle" />
+    <link rel="stylesheet" href="/bitbottle/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <nav class="wrap nav" aria-label="Main navigation">
+        <a class="brand" href="/bitbottle/">bitbottle</a>
+        <div class="navlinks">
+          <a href="/bitbottle/">Overview</a
+          ><a aria-current="page" href="/bitbottle/install/">Install</a
+          ><a href="/bitbottle/pull-requests/">Pull requests</a
+          ><a href="/bitbottle/ai-mcp/">AI and MCP</a
+          ><a href="https://github.com/proggarapsody/bitbottle">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main id="main">
+      <div class="wrap content">
+        <p class="eyebrow">Installation</p>
+        <h1>Get bitbottle on your machine.</h1>
+        <p class="lead">
+          Choose npm for the packaged CLI, or install the Go command directly.
+        </p>
+        <h2>Install with npm</h2>
+        <p>
+          Requires Node.js and npm. The package installs the command and can
+          register its bundled agent skill with detected runtimes.
+        </p>
+        <pre
+          class="code"
+        ><code>npm install -g @proggarapsody/bitbottle</code></pre>
+        <p>
+          Skip skill registration with
+          <code>BITBOTTLE_SKIP_SKILL_INSTALL=1</code>.
+        </p>
+        <h2>Install with Go</h2>
+        <pre
+          class="code"
+        ><code>go install github.com/proggarapsody/bitbottle/cmd/bitbottle@latest</code></pre>
+        <h2>Other packages</h2>
+        <p>
+          Homebrew, binary, Debian, RPM, and Docker packages are listed on the
+          <a href="https://github.com/proggarapsody/bitbottle/releases/latest"
+            >latest release</a
+          >.
+        </p>
+        <h2>Find a command</h2>
+        <pre
+          class="code"
+        ><code>bitbottle --help<br>bitbottle pr --help</code></pre>
+        <div class="notice">
+          <strong>Backend capabilities vary.</strong> Some operations are
+          available only on Cloud or only on Server/Data Center. Check the
+          <a href="https://github.com/proggarapsody/bitbottle#commands"
+            >command support matrix</a
+          >.
+        </div>
+        <h2>Frequently asked questions</h2>
+        <h3>Is bitbottle an official Atlassian product?</h3>
+        <p>
+          No. It is an independent open-source project and is not affiliated
+          with or endorsed by Atlassian.
+        </p>
+        <h3>Is it the Rust Bitbucket CLI?</h3>
+        <p>
+          This is the Go CLI published as <code>@proggarapsody/bitbottle</code>.
+          A separate Rust project uses a similar name; this site documents
+          <a href="https://github.com/proggarapsody/bitbottle"
+            >github.com/proggarapsody/bitbottle</a
+          >.
+        </p>
+      </div>
+    </main>
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <span>bitbottle · Independent open-source project</span
+        ><span
+          ><a
+            href="https://github.com/proggarapsody/bitbottle/blob/main/LICENSE"
+            >MIT License</a
+          >
+          ·
+          <a href="https://github.com/proggarapsody/bitbottle"
+            >Source on GitHub</a
+          ></span
+        >
+      </div>
+    </footer>
+  </body>
+</html>

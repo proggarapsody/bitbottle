@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Use bitbottle with AI Assistants and MCP</title>
+    <meta
+      name="description"
+      content="Connect compatible AI clients to Bitbucket through bitbottle’s local Model Context Protocol server and bundled agent skill."
+    />
+    <link
+      rel="canonical"
+      href="https://proggarapsody.github.io/bitbottle/ai-mcp/"
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Use bitbottle with AI Assistants and MCP"
+    />
+    <meta
+      property="og:description"
+      content="Connect compatible AI clients to Bitbucket through bitbottle’s local Model Context Protocol server and bundled agent skill."
+    />
+    <meta
+      property="og:url"
+      content="https://proggarapsody.github.io/bitbottle/ai-mcp/"
+    />
+    <meta property="og:site_name" content="bitbottle" />
+    <link rel="stylesheet" href="/bitbottle/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <nav class="wrap nav" aria-label="Main navigation">
+        <a class="brand" href="/bitbottle/">bitbottle</a>
+        <div class="navlinks">
+          <a href="/bitbottle/">Overview</a
+          ><a href="/bitbottle/install/">Install</a
+          ><a href="/bitbottle/pull-requests/">Pull requests</a
+          ><a aria-current="page" href="/bitbottle/ai-mcp/">AI and MCP</a
+          ><a href="https://github.com/proggarapsody/bitbottle">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main id="main">
+      <div class="wrap content">
+        <p class="eyebrow">AI clients and MCP</p>
+        <h1>Give compatible AI tools a path to Bitbucket.</h1>
+        <p class="lead">
+          Bitbottle includes a local Model Context Protocol server and a bundled
+          agent skill that describes how to use its CLI.
+        </p>
+        <h2>Run the MCP server</h2>
+        <p>
+          Start the stdio MCP server from an environment where bitbottle is
+          installed:
+        </p>
+        <pre class="code"><code>bitbottle mcp serve</code></pre>
+        <p>
+          Configure a compatible MCP client to launch that command as a local
+          stdio server. Available operations depend on the selected host.
+        </p>
+        <h2>Install the bundled skill</h2>
+        <pre
+          class="code"
+        ><code>npm install -g @proggarapsody/bitbottle</code></pre>
+        <p>
+          Skip automatic registration with
+          <code>BITBOTTLE_SKIP_SKILL_INSTALL=1</code>. Other installation
+          methods can use:
+        </p>
+        <pre
+          class="code"
+        ><code>bitbottle skill install<br>bitbottle skill path<br>bitbottle skill remove</code></pre>
+        <h2>Keep the agent in scope</h2>
+        <p>
+          The skill gives an agent command context. Host configuration provides
+          access. Review write operations before relying on an automated
+          workflow. Cloud and Server/Data Center expose different feature sets.
+        </p>
+        <p>
+          See
+          <a href="https://github.com/proggarapsody/bitbottle/tree/main/skills"
+            >the source skill documentation</a
+          >
+          and
+          <a href="/bitbottle/pull-requests/">sample pull request workflows</a>.
+        </p>
+        <div class="notice">
+          Bitbottle is an independent open-source project, not an official
+          Atlassian integration or product.
+        </div>
+      </div>
+    </main>
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <span>bitbottle · Independent open-source project</span
+        ><span
+          ><a
+            href="https://github.com/proggarapsody/bitbottle/blob/main/LICENSE"
+            >MIT License</a
+          >
+          ·
+          <a href="https://github.com/proggarapsody/bitbottle"
+            >Source on GitHub</a
+          ></span
+        >
+      </div>
+    </footer>
+  </body>
+</html>

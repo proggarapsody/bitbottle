@@ -2,8 +2,8 @@
   "name": "@proggarapsody/bitbottle",
   "version": "1.0.0",
   "description": "Bitbucket CLI for Server/Data Center and Cloud — npm wrapper for bitbottle",
-  "keywords": ["mcp", "bitbucket", "claude", "ai", "cli"],
-  "homepage": "https://github.com/proggarapsody/bitbottle",
+  "keywords": ["bitbucket", "bitbucket-cli", "bitbucket-cloud", "bitbucket-data-center", "pull-requests", "mcp", "cli"],
+  "homepage": "https://proggarapsody.github.io/bitbottle/",
   "repository": {
     "type": "git",
     "url": "https://github.com/proggarapsody/bitbottle"
