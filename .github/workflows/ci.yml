@@ -21,26 +21,19 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
-        if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Run tests
-        if: github.head_ref != 'release-please--branches--main'
-        run: go test -coverprofile=coverage.out -race -shuffle=on ./...
+        run: make coverage
 
       - name: Upload coverage
-        if: github.head_ref != 'release-please--branches--main'
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
           fail_ci_if_error: false
-
-      - name: Skip notice (release-please PR)
-        if: github.head_ref == 'release-please--branches--main'
-        run: echo "Skipping tests on release-please PR — diff is CHANGELOG/manifest only, feature CI already vetted main."
 
   lint:
     name: Lint
@@ -53,13 +46,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
-        if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Cache golangci-lint
-        if: github.head_ref != 'release-please--branches--main'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
@@ -69,22 +60,14 @@ jobs:
             golangci-lint-${{ runner.os }}-
 
       - name: golangci-lint
-        if: github.head_ref != 'release-please--branches--main'
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9
         with:
           version: v2.11.4
           args: --timeout=5m
 
-      - name: Skip notice (release-please PR)
-        if: github.head_ref == 'release-please--branches--main'
-        run: echo "Skipping lint on release-please PR — diff is CHANGELOG/manifest only, feature CI already vetted main."
-
   build:
     name: Build
     runs-on: ubuntu-latest
-    # Plain `go build` is skipped on release PRs (diff is CHANGELOG/manifest only,
-    # already covered by feature-PR build). The actual pre-tag gate that catches
-    # GoReleaser-specific failures is the `release-config-check` job below.
     steps:
       - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
         with:
@@ -93,18 +76,12 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
-        if: github.head_ref != 'release-please--branches--main'
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Build
-        if: github.head_ref != 'release-please--branches--main'
         run: go build ./cmd/bitbottle
-
-      - name: Skip notice (release-please PR)
-        if: github.head_ref == 'release-please--branches--main'
-        run: echo "Skipping plain build on release-please PR — release-config-check runs goreleaser snapshot as the pre-tag gate."
 
   release-config-check:
     name: Release config
@@ -164,3 +141,6 @@ jobs:
 
       - name: Run auto-iter script tests
         run: make test-scripts
+
+      - name: Test live acceptance runner guards
+        run: bash scripts/run-acceptance_test.sh

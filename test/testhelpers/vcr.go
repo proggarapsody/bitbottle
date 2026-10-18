@@ -26,7 +26,7 @@ import (
 // *http.Client satisfies httpx.Doer (both expose Do(*http.Request)).
 //
 // Behaviour:
-//   - Cassette absent + BITBOTTLE_RECORD != "1" → t.Skip (never fails CI).
+//   - Cassette absent + BITBOTTLE_RECORD != "1" → t.Fatalf with a recording hint.
 //   - BITBOTTLE_RECORD=1 → record mode; cassette is written on stop().
 //   - Cassette present → replay mode.
 //
@@ -51,8 +51,7 @@ func NewVCRDoer(t *testing.T, cassettePath, internalHost string) (*http.Client, 
 
 	if !record {
 		if _, err := os.Stat(cassettePath); os.IsNotExist(err) {
-			t.Skip("cassette not recorded; run make record-cassettes")
-			return nil, func() {}
+			t.Fatalf("vcr: missing cassette %q; run make record-cassettes", cassettePath)
 		}
 	}
 

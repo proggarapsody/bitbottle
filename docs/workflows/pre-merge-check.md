@@ -40,7 +40,12 @@ name and log URL; read the failure before fixing it. Do not repeat green checks
 without a new change or unresolved concern.
 
 Without a PR, run `make lint` and `make test` for code changes. `make test` enables
-the race detector. Run `make test-scripts` when shell tooling or its paths change.
+the race detector, shuffles tests, and disables the Go test cache. CI uses the
+same options and also writes `coverage.out` through `make coverage`; use
+`make coverage-report` to inspect an existing profile. Set
+`GO_COVERPROFILE=path/to/profile.out` to choose another profile path. Coverage
+is diagnostic data, not a merge threshold. Run `make test-scripts` when shell
+tooling or its paths change.
 For documentation-only changes, verify links, path references, and preservation
 of any moved records; code design review is skipped. Report exact failures.
 

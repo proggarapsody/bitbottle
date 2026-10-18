@@ -1,65 +1,251 @@
-name: Nightly E2E
+name: Nightly acceptance
+
 on:
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
+    inputs:
+      backend:
+        description: Live backend to run (Server/DC requires its own configured credentials)
+        type: choice
+        options:
+          - cloud
+          - server
+          - both
+        default: cloud
+        required: true
+
+permissions:
+  contents: read
 
 jobs:
-  e2e:
-    name: E2E (${{ matrix.backend }})
+  trust-check:
+    name: Validate trusted workflow ref
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    strategy:
-      fail-fast: false
-      matrix:
-        backend: [cloud, server]
+    outputs:
+      trusted: ${{ steps.check.outputs.trusted }}
+    steps:
+      - id: check
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" != "refs/heads/main" ]]; then
+            echo "Only refs/heads/main may run live acceptance; this workflow ref is untrusted." >&2
+            exit 1
+          fi
+          echo "trusted=true" >> "$GITHUB_OUTPUT"
+
+  cloud:
+    name: Cloud acceptance
+    needs: trust-check
+    if: >-
+      needs.trust-check.outputs.trusted == 'true' &&
+      ((github.event_name == 'schedule' && vars.CLOUD_ACCEPTANCE_ENABLED == 'true') ||
+       (github.event_name == 'workflow_dispatch' && (inputs.backend == 'cloud' || inputs.backend == 'both')))
+    runs-on: ubuntu-latest
+    environment: cloud-acceptance
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Build binary
+      - name: Build tested SHA binary
         run: go build -o bitbottle ./cmd/bitbottle
-      - name: Run E2E testscripts
+      - name: Run hermetic testscript suite
+        run: make test-script
+      - name: Prepare per-run acceptance reports
+        run: mkdir -p "$RUNNER_TEMP/acceptance-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-cloud"
+      - name: Run guarded Cloud acceptance
+        id: live
         env:
           BITBOTTLE_E2E: "1"
+          BB_E2E_BACKEND: cloud
           BITBOTTLE_BIN: ${{ github.workspace }}/bitbottle
-          BB_TOKEN: ${{ matrix.backend == 'cloud' && secrets.BB_CLOUD_TOKEN || secrets.BB_SERVER_TOKEN }}
-          BB_HOST: ${{ matrix.backend == 'cloud' && 'bitbucket.org' || secrets.BB_SERVER_HOST }}
-          BB_E2E_WORKSPACE: ${{ secrets.BB_CLOUD_WORKSPACE }}
-          BB_E2E_PROJECT: ${{ secrets.BB_SERVER_PROJECT }}
-          BB_E2E_REPO: ${{ secrets.BB_SERVER_REPO }}
-        run: go test ./test/script/... -v -timeout 20m -run TestScript
-      - name: Run acceptance tests
+          BB_TOKEN: ${{ secrets.BB_CLOUD_TOKEN }}
+          BB_CLOUD_BOOTSTRAP_TOKEN: ${{ secrets.BB_CLOUD_BOOTSTRAP_TOKEN }}
+          BB_CLOUD_EMAIL: ${{ secrets.BB_CLOUD_EMAIL }}
+          BB_CLOUD_WORKSPACE: bitbottle-qa-lab
+          BB_CLOUD_PROJECT: BBQA
+          BB_ACCEPTANCE_SHA: ${{ github.sha }}
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/acceptance-${{ github.run_id }}-${{ github.run_attempt }}-cloud
+        run: bash scripts/run-acceptance.sh
+      - name: Always clean Cloud fixtures
+        id: cleanup
+        if: always() && steps.live.outcome != 'skipped'
         env:
-          BITBOTTLE_E2E: "1"
-          BITBOTTLE_BIN: ${{ github.workspace }}/bitbottle
-          BB_TOKEN: ${{ matrix.backend == 'cloud' && secrets.BB_CLOUD_TOKEN || secrets.BB_SERVER_TOKEN }}
-          BB_HOST: ${{ matrix.backend == 'cloud' && 'bitbucket.org' || secrets.BB_SERVER_HOST }}
-          BB_E2E_WORKSPACE: ${{ secrets.BB_CLOUD_WORKSPACE }}
-          BB_E2E_PROJECT: ${{ secrets.BB_SERVER_PROJECT }}
-          BB_E2E_REPO: ${{ secrets.BB_E2E_REPO }}
-          BB_E2E_BRANCH: ${{ secrets.BB_E2E_BRANCH }}
-          BB_REVIEWER: ${{ secrets.BB_E2E_REVIEWER }}
-        run: go test ./acceptance/... -v -timeout 20m -run TestAcceptance
-      - name: Report failure
-        if: failure()
-        uses: actions/github-script@v7
+          BB_CLOUD_BOOTSTRAP_TOKEN: ${{ secrets.BB_CLOUD_BOOTSTRAP_TOKEN }}
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/acceptance-${{ github.run_id }}-${{ github.run_attempt }}-cloud
+        run: |
+          manifest="$BB_ACCEPTANCE_REPORT_DIR/manifest.json"
+          report="$BB_ACCEPTANCE_REPORT_DIR/report.json"
+          echo "state=unavailable" >> "$GITHUB_OUTPUT"
+          if [[ -s "$manifest" ]]; then
+            if go run ./cmd/qa-cloud-cleanup --manifest "$manifest" --report "$report"; then
+              echo "state=passed" >> "$GITHUB_OUTPUT"
+            else
+              echo "state=failed" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          elif [[ -s "$report" ]] && python3 - "$report" <<'PY'
+          import json
+          import sys
+          try:
+              with open(sys.argv[1], encoding="utf-8") as stream:
+                  report = json.load(stream)
+          except (OSError, json.JSONDecodeError):
+              raise SystemExit(1)
+          raise SystemExit(0 if report.get("status") == "infrastructure_failure" else 1)
+          PY
+          then
+            echo "Cloud cleanup not required: infrastructure preflight failed before a manifest was created."
+            echo "state=not_required" >> "$GITHUB_OUTPUT"
+          else
+            echo "Cloud cleanup unavailable: no manifest proves which resources this run owns." >&2
+            exit 1
+          fi
+      - name: Check Cloud evidence files
+        id: evidence
+        if: always()
+        env:
+          LIVE_OUTCOME: ${{ steps.live.outcome }}
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/acceptance-${{ github.run_id }}-${{ github.run_attempt }}-cloud
+        run: |
+          report="$BB_ACCEPTANCE_REPORT_DIR/report.json"
+          manifest="$BB_ACCEPTANCE_REPORT_DIR/manifest.json"
+          if [[ -s "$report" && -s "$manifest" ]]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$LIVE_OUTCOME" == "success" ]]; then
+            echo "A passing Cloud run must produce both report.json and manifest.json." >&2
+            exit 1
+          else
+            echo "No complete Cloud evidence bundle is available after the failed or skipped run; artifact upload skipped."
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload sanitized Cloud evidence
+        if: always() && steps.evidence.outputs.upload == 'true'
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const date = new Date().toISOString().slice(0, 10);
-            const title = `nightly-e2e: ${date}`;
-            const body = `**Backend:** ${{ matrix.backend }}\n**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              labels: 'nightly-e2e',
-            });
-            const existing = issues.data.find(i => i.title === title);
-            if (existing) {
-              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body });
-            } else {
-              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['nightly-e2e'] });
-            }
+          name: cloud-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/acceptance-${{ github.run_id }}-${{ github.run_attempt }}-cloud/report.json
+            ${{ runner.temp }}/acceptance-${{ github.run_id }}-${{ github.run_attempt }}-cloud/manifest.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Write Cloud and Data Center status summary
+        if: always()
+        env:
+          LIVE_OUTCOME: ${{ steps.live.outcome }}
+          CLEANUP_STATE: ${{ steps.cleanup.outputs.state }}
+          EVIDENCE_UPLOAD: ${{ steps.evidence.outputs.upload }}
+          REPORT_PATH: ${{ runner.temp }}/acceptance-${{ github.run_id }}-${{ github.run_attempt }}-cloud/report.json
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+
+          path = os.environ["REPORT_PATH"]
+          cleanup = os.environ.get("CLEANUP_STATE", "not_run")
+          live = os.environ.get("LIVE_OUTCOME", "unknown")
+          try:
+              with open(path, encoding="utf-8") as stream:
+                  report = json.load(stream)
+          except (OSError, json.JSONDecodeError):
+              report = {}
+
+          status = report.get("status")
+          if cleanup in {"failed", "unavailable"}:
+              status = "cleanup_failure"
+          if status not in {"pass", "product_failure", "infrastructure_failure", "cleanup_failure"}:
+              status = "infrastructure_failure" if live != "success" else "unavailable"
+
+          def safe(value, pattern, fallback="unknown"):
+              if isinstance(value, str) and re.fullmatch(pattern, value):
+                  return value
+              return fallback
+
+          sha = safe(report.get("commit_sha"), r"[0-9a-f]{40,64}")
+          version = safe(report.get("backend_version"), r"[A-Za-z0-9._+/-]{1,80}")
+          ids = report.get("scenario_ids", [])
+          if not isinstance(ids, list):
+              ids = []
+          ids = [safe(item, r"[A-Za-z0-9_.-]{1,100}") for item in ids[:100]]
+          counters = []
+          for key in ("run_count", "pass_count", "fail_count", "skip_count"):
+              value = report.get(key)
+              counters.append(f"{key.removesuffix('_count')}={value if isinstance(value, int) and value >= 0 else 'unknown'}")
+          duration = report.get("duration")
+          duration = duration if isinstance(duration, str) and len(duration) <= 80 and re.fullmatch(r"(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:ns|us|µs|μs|ms|s|m|h)(?:(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:ns|us|µs|μs|ms|s|m|h))*", duration) else "unknown"
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Live acceptance status\n")
+              summary.write(f"- Cloud: `{status}`; commit `{sha}`; backend version `{version}`\n")
+              summary.write(f"- Scenarios: {', '.join(ids) if ids else 'unavailable'}\n")
+              summary.write(f"- Counts: {', '.join(counters)}; duration `{duration}`\n")
+              summary.write("- Bootstrap and actor account identity separation: unverified\n")
+              summary.write(f"- Cleanup: `{cleanup}`; evidence upload: `{os.environ.get('EVIDENCE_UPLOAD', 'unknown')}`\n")
+              summary.write("- Data Center: DC не проверен live (no licensed live lane configured)\n")
+          PY
+
+  server:
+    name: Server/DC acceptance
+    needs: trust-check
+    if: >-
+      needs.trust-check.outputs.trusted == 'true' &&
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.backend == 'server' || inputs.backend == 'both')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build tested SHA binary
+        run: go build -o bitbottle ./cmd/bitbottle
+      - name: Run hermetic testscript suite
+        run: make test-script
+      - name: Run guarded Server/DC acceptance
+        id: live
+        env:
+          BITBOTTLE_E2E: "1"
+          BB_E2E_BACKEND: server
+          BITBOTTLE_BIN: ${{ github.workspace }}/bitbottle
+          BB_TOKEN: ${{ secrets.BB_SERVER_TOKEN }}
+          BB_HOST: ${{ secrets.BB_SERVER_HOST }}
+          BB_E2E_REPO: ${{ secrets.BB_SERVER_E2E_REPO }}
+          BB_E2E_BRANCH: ${{ secrets.BB_SERVER_E2E_BRANCH }}
+          BB_REVIEWER: ${{ secrets.BB_SERVER_E2E_REVIEWER }}
+        run: bash scripts/run-acceptance.sh
+      - name: Write Server/DC status summary
+        if: always()
+        env:
+          LIVE_OUTCOME: ${{ steps.live.outcome }}
+        run: |
+          {
+            echo "## Live acceptance status"
+            echo "- Server/DC: $LIVE_OUTCOME"
+            echo "- Data Center licensing and backend version were not independently attested by the workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  schedule-status:
+    name: Scheduled lane status
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report configured lanes
+        env:
+          CLOUD_ENABLED: ${{ vars.CLOUD_ACCEPTANCE_ENABLED }}
+        run: |
+          {
+            echo "## Scheduled acceptance status"
+            if [[ "$CLOUD_ENABLED" == "true" ]]; then
+              echo "- Cloud: scheduled live lane enabled (see Cloud acceptance job)."
+            else
+              echo "- Cloud: unavailable; scheduled lane is not enabled or configured."
+            fi
+            echo "- Data Center: DC не проверен live."
+          } >> "$GITHUB_STEP_SUMMARY"

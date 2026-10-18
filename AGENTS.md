@@ -31,6 +31,7 @@ procedures and command adapters are retained as historical evidence.
 - [`docs/agents/README.md`](docs/agents/README.md) — current knowledge map, skill setup status, and where new knowledge belongs.
 - [`docs/agent-primer.md`](docs/agent-primer.md) — required architectural reading for any subagent implementing a new scope.
 - [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — required merge gate.
+- [`docs/workflows/acceptance.md`](docs/workflows/acceptance.md) — live acceptance setup and safety rules.
 - [`docs/history/README.md`](docs/history/README.md) — past designs, iteration reports, and ignored local records.
 
 Read relevant current docs before implementing. Read historical records only
@@ -62,7 +63,8 @@ Single-context: root `GLOSSARY.md` (created lazily) and existing `docs/adr/`. Se
 
 ## Key rules for AI agents
 
-- **Branch + commits:** `feature/*` / `fix/*` / `docs/*` branch → PR to `main`. Never push directly to `main`. Use Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`).
+- **Branch + commits:** Start `feature/*` / `fix/*` / `docs/*` / `chore/*` branches from `main`, then open a PR to `main`. Never push directly to `main`. Use Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`).
+- **Cloud acceptance:** Keep credentials only in the `cloud-acceptance` GitHub Environment restricted to `main`; use separate bootstrap and actor credentials. Clean up only resources owned by the run manifest and verify cleanup independently. Skips never count as a live pass, and the actor account cannot serve as an independent reviewer.
 - **Lint:** `make setup` once per clone, then `make lint` before pushing. The pre-push hook runs lint; the pre-commit hook checks gofmt.
 - **HTTP:** use `http.NewRequestWithContext` + `client.Do` — never `client.Get/Head/Post` (`noctx` linter).
 - **Output:** always via `f.IOStreams`, never `os.Stdout`/`fmt.Println`.

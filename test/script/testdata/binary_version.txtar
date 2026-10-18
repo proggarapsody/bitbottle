@@ -1,0 +1,7 @@
+# The binary version flag reports linker defaults and appears in root help.
+bitbottle --version
+stdout '^bitbottle version dev \(unknown\) built unknown$'
+
+bitbottle --help
+stdout '--version'
+stdout 'version for bitbottle'
