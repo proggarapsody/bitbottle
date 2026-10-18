@@ -19,6 +19,7 @@ import (
 	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 	"github.com/proggarapsody/bitbottle/internal/bbrepo"
 	"github.com/proggarapsody/bitbottle/internal/config"
+	"github.com/proggarapsody/bitbottle/internal/envvars"
 	"github.com/proggarapsody/bitbottle/internal/keyring"
 	"github.com/proggarapsody/bitbottle/internal/profiles"
 	"github.com/proggarapsody/bitbottle/internal/run"
@@ -266,17 +267,18 @@ func (d *debugRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 	return resp, nil
 }
 
-// ResolveToken returns the token to use for the given host. When the
-// config-file token is non-empty it wins (preserving the pre-migrate
-// shape and the in-memory --with-token override). Otherwise — the
-// canonical post-`auth migrate` shape — fall back to the keyring under
-// the user-slug key. An empty User slug means we can't form the
-// keyring key, so we return empty cleanly (the caller surfaces a
-// normal "not authenticated" error). Errors from the keyring (timeout,
-// not-found) are deliberately swallowed so a stuck keyring daemon
-// can't brick every command — the empty-token path produces the same
-// 401 the user would see without keyring at all. See PRD #372 Bug B.
+// ResolveToken returns the token to use for the given host. BB_TOKEN
+// takes precedence for CI and other per-invocation overrides. Otherwise,
+// a non-empty config-file token is used, then the keyring under the
+// configured user slug. An empty User slug means we can't form the
+// keyring key, so we return empty cleanly (the caller surfaces a normal
+// "not authenticated" error). Keyring errors are deliberately swallowed
+// so a stuck keyring daemon can't brick every command. Explicit tokens
+// passed through BackendWithOptions take precedence over this resolver.
 func ResolveToken(hostCfg config.HostConfig, kr keyring.Keyring) string {
+	if tok := os.Getenv(envvars.Token); tok != "" {
+		return tok
+	}
 	if hostCfg.OAuthToken != "" {
 		return hostCfg.OAuthToken
 	}

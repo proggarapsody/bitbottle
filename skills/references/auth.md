@@ -49,11 +49,16 @@ to `hosts.yml`.
 
 ```bash
 bitbottle auth status
-bitbottle auth token   [--hostname HOST]   # print stored token to stdout
+bitbottle auth token   [--hostname HOST]   # print effective token to stdout
 bitbottle auth refresh [--hostname HOST]   # re-validate, refresh user slug
 bitbottle auth logout  --hostname HOST
 bitbottle auth migrate [--hostname HOST]   # move config-file token into the OS keyring
 ```
+
+Token resolution for API requests and `auth token` is `BB_TOKEN`, then the
+legacy `oauth_token` in `hosts.yml`, then the OS keyring. `auth login
+--with-token` validates the token supplied on stdin ahead of an inherited
+`BB_TOKEN` value.
 
 ## Migrating tokens from hosts.yml to the keyring
 
@@ -99,7 +104,7 @@ API). For ordinary `bitbucket.org` and standard Server/DC, omit it
 
 | Var | Effect |
 |---|---|
-| `BB_TOKEN` | Token override for API calls (CI use). Backend interpretation depends on the resolved host. |
+| `BB_TOKEN` | Highest-priority token override for API calls and `auth token` (CI use). Backend interpretation depends on the resolved host. |
 | `BB_HOST` | Default `--hostname`. |
 | `BB_REPO` | Default `-R [HOST/]PROJECT/REPO`. |
 | `BB_EDITOR` | Editor for interactive prompts (`pr edit`). Falls back to config → `$EDITOR` → `vi`. |
