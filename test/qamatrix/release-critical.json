@@ -1,0 +1,1146 @@
+{
+  "operations": {
+    "cli:bitbottle alias delete": {
+      "important_flags": [],
+      "important_parameters": [
+        "name"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        },
+        "local": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        }
+      }
+    },
+    "cli:bitbottle alias list": {
+      "important_flags": [],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        },
+        "local": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        }
+      }
+    },
+    "cli:bitbottle alias set": {
+      "important_flags": [],
+      "important_parameters": [
+        "name",
+        "expansion"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        },
+        "local": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        }
+      }
+    },
+    "cli:bitbottle branch create": {
+      "important_flags": [
+        "--json",
+        "--start-at"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle branch delete": {
+      "important_flags": [],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle branch list": {
+      "important_flags": [
+        "--json",
+        "--limit"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle commit files": {
+      "important_flags": [
+        "--json"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle completion": {
+      "important_flags": [
+        "--shell",
+        "-s"
+      ],
+      "important_parameters": [
+        "bash|zsh|fish|powershell"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        },
+        "local": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        }
+      }
+    },
+    "cli:bitbottle config get": {
+      "important_flags": [
+        "--host"
+      ],
+      "important_parameters": [
+        "key"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        },
+        "local": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        }
+      }
+    },
+    "cli:bitbottle config list": {
+      "important_flags": [],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        },
+        "local": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        }
+      }
+    },
+    "cli:bitbottle config set": {
+      "important_flags": [
+        "--host"
+      ],
+      "important_parameters": [
+        "key",
+        "value"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        },
+        "local": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "not_applicable"
+        }
+      }
+    },
+    "cli:bitbottle pr create": {
+      "important_flags": [
+        "--repo",
+        "--json",
+        "--title",
+        "--body",
+        "--base",
+        "--head",
+        "--draft",
+        "--reviewer",
+        "--no-default-reviewers"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle pr edit": {
+      "important_flags": [
+        "--repo",
+        "--title",
+        "--body",
+        "--remove-reviewer"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle pr list": {
+      "important_flags": [
+        "--repo",
+        "--json",
+        "--jq",
+        "--limit",
+        "--state"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle pr merge": {
+      "important_flags": [
+        "--repo",
+        "--squash",
+        "--merge",
+        "--rebase",
+        "--delete-branch",
+        "--auto",
+        "--auto-off"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {
+            "--auto": "Cloud auto-merge contract is unconfirmed; manual merge remains covered.",
+            "--auto-off": "Cloud auto-merge cancellation contract is unconfirmed; manual merge remains covered.",
+            "--rebase": "Cloud rebase strategy contract is unconfirmed; other merge strategies remain covered."
+          },
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {
+            "--rebase": "Server rebase wire strategy is unconfirmed; other merge strategies remain covered."
+          },
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle pr task create": {
+      "important_flags": [
+        "--repo",
+        "--body",
+        "--parent"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle pr view": {
+      "important_flags": [
+        "--repo",
+        "--json"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle repo list": {
+      "important_flags": [
+        "--json",
+        "--limit"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "cli:bitbottle repo view": {
+      "important_flags": [
+        "--json"
+      ],
+      "important_parameters": [],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:add_pr_comment": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "body",
+        "inline_path",
+        "inline_line",
+        "inline_side",
+        "inline_start_line",
+        "parent_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:approve_pr": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:close_issue": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        }
+      }
+    },
+    "mcp:create_branch": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "name",
+        "start_at"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:create_branch_protection": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "type",
+        "branch",
+        "pattern",
+        "users",
+        "groups"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:create_issue": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "title",
+        "body",
+        "kind",
+        "priority"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        }
+      }
+    },
+    "mcp:create_pr": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "title",
+        "body",
+        "from_branch",
+        "to_branch",
+        "draft"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:create_pr_task": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "body",
+        "parent_comment_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:create_tag": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "name",
+        "start_at",
+        "message"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:decline_pr": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:delete_branch": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "branch"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:delete_branch_protection": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:delete_pr_comment": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "comment_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:delete_tag": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "name"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:edit_pr_comment": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "comment_id",
+        "body"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:get_commit": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "hash"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:get_issue": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        }
+      }
+    },
+    "mcp:get_pr": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:get_repo": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_branches": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "limit"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_commit_files": {
+      "important_flags": [],
+      "important_parameters": [
+        "repo",
+        "hash"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_commit_statuses": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "hash"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_commits": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "branch",
+        "limit"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_pr_comments": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "inline_only",
+        "include_reactions"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_pr_commits": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_pr_tasks": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "state"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_prs": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "state",
+        "limit"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_repos": {
+      "important_flags": [],
+      "important_parameters": [
+        "namespace",
+        "limit"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:list_tags": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "limit"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:merge_pr": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "strategy",
+        "auto",
+        "auto_strategy"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:pipeline_watch": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo",
+        "uuid",
+        "interval"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        }
+      }
+    },
+    "mcp:pr_checks": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo",
+        "pr_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:pr_status": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:pr_update_branch": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo",
+        "pr_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:reopen_pr_task": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "task_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:request_review": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "reviewers"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:resolve_pr_task": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "task_id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "unsupported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:status": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:unapprove_pr": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    },
+    "mcp:update_pr": {
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "title",
+        "body"
+      ],
+      "providers": {
+        "cloud": {
+          "deferred_inputs": {},
+          "status": "supported"
+        },
+        "server": {
+          "deferred_inputs": {},
+          "status": "supported"
+        }
+      }
+    }
+  },
+  "required_tests": [
+    "github.com/proggarapsody/bitbottle/pkg/cmd/auth/TestAuthToken_PrintsToken",
+    "github.com/proggarapsody/bitbottle/pkg/cmd/auth/TestAuthToken_BBTokenOverridesStoredToken",
+    "github.com/proggarapsody/bitbottle/pkg/cmd/auth/TestAuthToken_NoToken_ReturnsError",
+    "github.com/proggarapsody/bitbottle/test/script/TestScript/errfmt_auth",
+    "github.com/proggarapsody/bitbottle/pkg/cmd/mcp/TestMCPStdioContract",
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicMatrixCommitFiles",
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalBranchListStopsAtTotalLimit",
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalForbiddenBranchDeletePreservesBranch",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestRun_RejectsMissingCredentialAndWritesSanitizedReport",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestCleanup_RefusesRepositoryWithoutOwnershipMarker",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestRun_SeedFailureCleansManifestOwnedRepository",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestCleanup_RefusesRepositoryWithMismatchedUUID",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestCleanup_PaginatesOpenPRsAndRefusesExternalNextLink",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestAPIClient_RefusesRedirects",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestFilteredEnv_DropsInheritedCloudAndPrivilegedValues",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestMCPTransport_SpawnedChildReceivesOnlyAllowlistedEnvironment",
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalCommitFilesFromCurrentRepo"
+  ],
+  "schema": 1
+}

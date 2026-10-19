@@ -6,7 +6,6 @@
 > **Tools under test:**
 > - **bitbottle** v1.121.0 (Go, npm-distributed; Bitbucket Server/DC + Cloud)
 > - **bb** v0.18.0 (gildas/bitbucket-cli; Cloud-only)
-> - **bkt** v0.26.6 (avivsinai/bitbucket-cli; Cloud + DC)
 
 ---
 
@@ -17,7 +16,7 @@ This report has **two evidence tiers**:
 - **Tier A (verified 2026-05-27, fresh):** bug repros run in the current session against the live test repo. Every claim has an exact command and observed output.
 - **Tier B (carried forward from prior agent sweep 2026-05-26):** broader capability claims (75 use cases) made by background agents in a prior session. The raw `.meta` files were on `/tmp/` and have since been wiped by macOS. **Corroborated** by side-effects still visible on the test repo (11 PRs whose titles match what agents claimed they created), so the prior testing did happen — but individual claims cannot be replayed without the raw outputs.
 
-The verdict is built **only on Tier A**. Tier B is summarized in the appendix as supporting context.
+The verdict is built **only on Tier A**. Tier B is summarized in the appendix as supporting context. This retained report covers only the observations named here; it does not claim to reproduce the complete earlier sweep.
 
 What's **deliberately excluded** from this report (was in earlier drafts, was synthetic):
 - Round-number "5× parallel speedup" benchmarks — never witnessed with `time`
@@ -139,20 +138,15 @@ Corroborated by side effects (PR titles, branch names match agent claims), but i
 - Gaps: no `branch create`/`branch delete` (silently no-op, exits 0), no webhook commands, no commit list/view, `tag create` sends malformed JSON payload, `pullrequest update` constructs bare relative URL
 - Verdict positioning: fastest but Cloud-only and incomplete on writes
 
-**bkt (avivsinai):**
-- Strengths: named contexts (host+workspace+repo as one selector), `auth doctor` diagnostics, DC/Cloud parity labels in help, OSSF Scorecard + SBOM (supply-chain hygiene)
-- Gaps: BUG-1 — unknown subcommands silently print parent help and exit 0 (e.g. `pr request-changes`, `pipeline stop`, `commit view`); BUG-2 YAML uses Go struct field names; BUG-3 `--template` broken for nested fields
-- Verdict positioning: cleanest UX, but BUG-1 is a correctness hazard for scripts
-
 ---
 
 ## 4. Verdict
 
 ### bitbottle's competitive position
 
-**Strongest of the three when you need:**
-- Bitbucket Server/DC support (bb is Cloud-only; bkt does both but bitbottle's DC paths are more battle-tested per repo history)
-- AI/MCP integration (only tool with an MCP server)
+**bitbottle capabilities relevant to this comparison:**
+- Bitbucket Server/DC support (bb is Cloud-only)
+- AI/MCP integration
 - A typed error catalogue for programmatic consumption
 
 **Behind when you need:**
@@ -173,7 +167,7 @@ All six are local, scoped fixes. None require architectural changes. Total estim
 
 ### What the comparison says about bitbottle's market positioning
 
-bitbottle's differentiation is **DC + MCP**, not raw feature count. bb beats it on output formatting and cold-start; bkt beats it on context ergonomics. Where bitbottle uniquely wins — Bitbucket Server users and AI-driven workflows — those audiences don't care about a 6 ms cold-start delta but **do** care about exit-code reliability and complete commit-comment support. **Fixing BB-12 + BB-09 alone closes the most visible quality gap with bkt** while preserving bitbottle's structural advantages.
+bitbottle's differentiation in the retained comparison is **DC + MCP**, not raw feature count. bb leads on output formatting and cold-start. For Bitbucket Server users and AI-driven workflows, exit-code reliability and complete commit-comment support remain the material gaps. **BB-12 + BB-09** address those gaps while preserving bitbottle's existing capabilities.
 
 ---
 
@@ -181,12 +175,12 @@ bitbottle's differentiation is **DC + MCP**, not raw feature count. bb beats it 
 
 These persist in `bitbucket.org/proggarapsody_main/cli-comparison-test` and were **not** cleaned up by the prior sweep despite a "completed" task:
 
-- PRs #3, #4 — DECLINED (titled `cli-test-bkt:` / `cli-test-bitbottle: EDITED PR title`)
+- PRs #3, #4 — DECLINED
 - PRs #5, #6 — DECLINED (`cli-test-bb:` ...)
 - PRs #7, #8, #9, #10, #11 — MERGED (test merge/delete-branch flows)
 - PR #1 (`feat: add greet function`), PR #2 (`fix: correct typo`) — OPEN, predate the sweep
 
-Test branches that may still exist: `cli-test-bitbottle-write`, `cli-test-bitbottle-write-2`, `cli-test-bb-write`, `cli-test-bkt-write`, `cli-test-bb-pr-branch`, `cli-test-bitbottle-pr-branch`, `cli-test-bkt-pr-branch`, `feature/add-greeting`, `fix/typo-in-readme`, `docs/add-contributing`.
+Test branches that may still exist: `cli-test-bitbottle-write`, `cli-test-bitbottle-write-2`, `cli-test-bb-write`, `cli-test-bb-pr-branch`, `cli-test-bitbottle-pr-branch`, `feature/add-greeting`, `fix/typo-in-readme`, `docs/add-contributing`.
 
 Cleanup is a separate task — not done by this report.
 
@@ -325,7 +319,7 @@ To be honest about what's good, not just bad:
 2. **Unicode body in `pr comment add`** works perfectly. Comment #801530234 created with `🎉 émoji тест 中文`.
 3. **Long comment body (5000 chars)** works. Comment #801530235 created.
 4. **Empty `--body ""` is caught client-side** with a clear "--body is required" error. ✅
-5. **JSON and YAML field names match** (both use camelCase like `fromBranch`, `toBranch`, `webURL`). Better than bkt's BUG-2 where YAML used Go struct names.
+5. **JSON and YAML field names match** (both use camelCase like `fromBranch`, `toBranch`, `webURL`).
 6. **`--jq` works correctly** when paired with `--json`. Output is valid JSON-derived.
 7. **`pr view abc`** validates client-side: "invalid PR ID 'abc': must be a positive integer". ✅
 8. **`--limit 0` / `--limit -1`** validated client-side: "--limit must be at least 1, got 0". ✅

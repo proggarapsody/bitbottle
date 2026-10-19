@@ -73,6 +73,94 @@ def local_case():
 
 
 class EvidenceAssessment(unittest.TestCase):
+    def test_approved_critical_baseline_rejects_paired_operation_removal(self):
+        approved = json.loads(qa.CRITICAL_PROFILE.read_text())
+        del approved["operations"]["cli:bitbottle branch list"]
+        with self.assertRaisesRegex(ValueError, "differs from approved profile"):
+            qa.load_critical_profile(json.dumps(approved).encode())
+
+    def test_approved_critical_baseline_rejects_named_test_removal(self):
+        approved = json.loads(qa.CRITICAL_PROFILE.read_text())
+        approved["required_tests"] = approved["required_tests"][:1]
+        with self.assertRaisesRegex(ValueError, "differs from approved profile"):
+            qa.load_critical_profile(json.dumps(approved).encode())
+
+    def test_critical_profile_accepts_only_named_missing_merge_inputs(self):
+        public, manifest = catalog(), contracts()
+        merge_op = "cli:bitbottle pr merge"
+        public["cli"][0]["id"] = merge_op
+        public["cli"][0]["flags"] = [{"name": "rebase"}]
+        merge_contract = manifest["operations"].pop(OP)
+        merge_contract["important_flags"] = ["--rebase"]
+        manifest["operations"][merge_op] = merge_contract
+        profile = {"schema": 1, "required_tests": [PKG + "/TestPublicBehavior"],
+                   "operations": {merge_op: {
+            "important_flags": ["--rebase"], "important_parameters": [],
+            "providers": {"server": {"status": "supported", "deferred_inputs": {
+                "--rebase": "Release follow-up: rebase variant"}},
+                "cloud": {"status": "unsupported", "deferred_inputs": {}}}}}}
+        success = scenario("success", operation=merge_op)
+        success["flags"] = []
+        error = scenario("error", operation=merge_op)
+        error["flags"] = []
+        unsupported = scenario("unsupported", operation=merge_op, backend="cloud")
+        unsupported["flags"] = []
+        report = qa.assess(public, manifest, observed([success, error, unsupported]))
+        report["scope_complete"] = True
+        self.assertFalse(report["complete"])
+        critical = qa.assess_critical(report, public, manifest, profile)
+        self.assertTrue(critical["passed"], critical["issues"])
+        self.assertEqual(critical["selected_verified_pairs"], 2)
+        self.assertEqual(critical["full_incomplete_pairs"], 1)
+        self.assertEqual(critical["deferred_inputs"], [
+            {"operation": merge_op, "backend": "server", "input": "--rebase",
+             "reason": "Release follow-up: rebase variant"}])
+
+    def test_critical_profile_rejects_missing_evidence_even_with_deferral(self):
+        public, manifest = catalog(), contracts()
+        profile = {"schema": 1, "required_tests": [PKG + "/TestPublicBehavior"],
+                   "operations": {OP: {
+            "important_flags": ["--limit"], "important_parameters": [],
+            "providers": {"server": {"status": "supported", "deferred_inputs": {
+                "--limit": "Release follow-up"}},
+                "cloud": {"status": "unsupported", "deferred_inputs": {}}}}}}
+        report = qa.assess(public, manifest, observed([scenario("success")]))
+        critical = qa.assess_critical(report, public, manifest, profile)
+        self.assertFalse(critical["passed"])
+        self.assertTrue(any("error: no passed scenario" in x for x in critical["issues"]))
+
+    def test_critical_profile_rejects_contract_drift_and_unreviewed_provider(self):
+        public, manifest = catalog(), contracts()
+        profile = {"schema": 1, "required_tests": [PKG + "/TestPublicBehavior"],
+                   "operations": {OP: {
+            "important_flags": [], "important_parameters": [],
+            "providers": {"server": {"status": "supported", "deferred_inputs": {}}}}}}
+        report = qa.assess(public, manifest, observed([
+            scenario("success"), scenario("error"), scenario("unsupported", backend="cloud")]))
+        critical = qa.assess_critical(report, public, manifest, profile)
+        self.assertFalse(critical["passed"])
+        self.assertTrue(any("important inputs changed" in x for x in critical["issues"]))
+        self.assertTrue(any("provider selection changed" in x for x in critical["issues"]))
+
+    def test_critical_named_test_requires_exact_passed_test_and_package(self):
+        public, manifest = catalog(), contracts()
+        profile = {"schema": 1, "required_tests": [PKG + "/TestAuthToken_PrintsToken"],
+                   "operations": {OP: {
+                       "important_flags": ["--limit"], "important_parameters": [],
+                       "providers": {"server": {"status": "supported", "deferred_inputs": {}},
+                                     "cloud": {"status": "unsupported", "deferred_inputs": {}}}}}}
+        records = [scenario("success"), scenario("error"),
+                   scenario("unsupported", backend="cloud")]
+        events = observed(records)
+        report = qa.assess(public, manifest, events)
+        report["scope_complete"] = True
+        self.assertFalse(qa.assess_critical(report, public, manifest, profile, events)["passed"])
+        exact = qa.parse_events([event("pass", test="TestAuthToken_PrintsToken"),
+                                 event("pass", test=None)])
+        self.assertTrue(qa.assess_critical(report, public, manifest, profile, exact)["passed"])
+        orphan = qa.parse_events([event("pass", test="TestAuthToken_PrintsToken")])
+        self.assertFalse(qa.assess_critical(report, public, manifest, profile, orphan)["passed"])
+
     def test_tested_local_operation_derives_both_remote_not_applicable_pairs(self):
         public, manifest, success, error = local_case()
         report = qa.assess(public, manifest, observed([success, error]))
@@ -340,6 +428,7 @@ class EvidenceAssessment(unittest.TestCase):
             manifest = {"source": {"source_digest": "old"},
                         "source_before": {"source_digest": "old"},
                         "contracts_sha256": qa.sha((qa.ROOT / "test/qamatrix/contracts.json").read_bytes()),
+                        "critical_profile_sha256": qa.sha(qa.CRITICAL_PROFILE.read_bytes()),
                         "test_exit_code": 0}
             for name, key in (("catalog.json", "catalog_sha256"),
                               ("scenarios.json", "scenarios_sha256"),

@@ -1,4 +1,4 @@
-.PHONY: build test test-script test-scripts test-acceptance coverage coverage-report qa-matrix qa-matrix-check lint clean setup gen record-cassettes
+.PHONY: build test test-script test-scripts test-acceptance coverage coverage-report qa-matrix qa-matrix-check qa-critical-check lint clean setup gen record-cassettes
 
 BIN := bitbottle
 GO  := go
@@ -26,6 +26,9 @@ qa-matrix:
 
 qa-matrix-check:
 	python3 scripts/qa_matrix.py --check --output "$(QA_MATRIX_DIR)"
+
+qa-critical-check:
+	python3 scripts/qa_matrix.py --check-critical --output "$(QA_MATRIX_DIR)"
 
 test-script:
 	$(GO) test $(GO_TEST_FLAGS) ./test/script/...
