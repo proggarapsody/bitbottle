@@ -407,7 +407,19 @@ func TestMCPChildEnvProbe(t *testing.T) {
 	if path == "" {
 		return
 	}
-	if err := os.WriteFile(path, []byte(strings.Join(os.Environ(), "\n")), 0600); err != nil {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".child-env-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Remove(tmp.Name()) }()
+	if _, err := tmp.Write([]byte(strings.Join(os.Environ(), "\n"))); err != nil {
+		_ = tmp.Close()
+		t.Fatal(err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(tmp.Name(), path); err != nil {
 		t.Fatal(err)
 	}
 }
