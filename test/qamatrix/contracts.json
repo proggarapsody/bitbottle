@@ -720,6 +720,1128 @@
         "uuid",
         "interval"
       ]
+    },
+    "mcp:list_prs": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "state",
+        "limit"
+      ]
+    },
+    "mcp:get_pr": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ]
+    },
+    "mcp:create_pr": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "title",
+        "body",
+        "from_branch",
+        "to_branch",
+        "draft"
+      ]
+    },
+    "mcp:update_pr": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "title",
+        "body"
+      ]
+    },
+    "mcp:merge_pr": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "strategy",
+        "auto",
+        "auto_strategy"
+      ]
+    },
+    "mcp:decline_pr": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ]
+    },
+    "mcp:approve_pr": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ]
+    },
+    "mcp:unapprove_pr": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ]
+    },
+    "mcp:request_review": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "reviewers"
+      ]
+    },
+    "mcp:list_repos": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "namespace",
+        "limit"
+      ]
+    },
+    "mcp:get_repo": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug"
+      ]
+    },
+    "mcp:list_branches": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "limit"
+      ]
+    },
+    "mcp:create_branch": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "name",
+        "start_at"
+      ]
+    },
+    "mcp:delete_branch": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "branch"
+      ]
+    },
+    "cli:bitbottle alias set": {
+      "scope": "local",
+      "providers": {
+        "server": {
+          "status": "not_applicable",
+          "reason": "Alias preferences are stored locally; no Server operation is called."
+        },
+        "cloud": {
+          "status": "not_applicable",
+          "reason": "Alias preferences are stored locally; no Cloud operation is called."
+        },
+        "local": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "effect",
+          "input"
+        ],
+        "error": [
+          "error",
+          "effect",
+          "input"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "name",
+        "expansion"
+      ]
+    },
+    "cli:bitbottle alias list": {
+      "scope": "local",
+      "providers": {
+        "server": {
+          "status": "not_applicable",
+          "reason": "Alias preferences are read locally; no Server operation is called."
+        },
+        "cloud": {
+          "status": "not_applicable",
+          "reason": "Alias preferences are read locally; no Cloud operation is called."
+        },
+        "local": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "effect",
+          "input"
+        ],
+        "error": [
+          "error",
+          "effect",
+          "input"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": []
+    },
+    "cli:bitbottle alias delete": {
+      "scope": "local",
+      "providers": {
+        "server": {
+          "status": "not_applicable",
+          "reason": "Alias preferences are stored locally; no Server operation is called."
+        },
+        "cloud": {
+          "status": "not_applicable",
+          "reason": "Alias preferences are stored locally; no Cloud operation is called."
+        },
+        "local": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "effect",
+          "input"
+        ],
+        "error": [
+          "error",
+          "effect",
+          "input"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "name"
+      ]
+    },
+    "cli:bitbottle config get": {
+      "scope": "local",
+      "providers": {
+        "server": {
+          "status": "not_applicable",
+          "reason": "User preferences are read locally; no Server operation is called."
+        },
+        "cloud": {
+          "status": "not_applicable",
+          "reason": "User preferences are read locally; no Cloud operation is called."
+        },
+        "local": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "effect",
+          "input"
+        ],
+        "error": [
+          "error",
+          "effect",
+          "input"
+        ]
+      },
+      "important_flags": [
+        "--host"
+      ],
+      "important_parameters": [
+        "key"
+      ]
+    },
+    "cli:bitbottle config set": {
+      "scope": "local",
+      "providers": {
+        "server": {
+          "status": "not_applicable",
+          "reason": "User preferences are stored locally; no Server operation is called."
+        },
+        "cloud": {
+          "status": "not_applicable",
+          "reason": "User preferences are stored locally; no Cloud operation is called."
+        },
+        "local": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "effect",
+          "input"
+        ],
+        "error": [
+          "error",
+          "effect",
+          "input"
+        ]
+      },
+      "important_flags": [
+        "--host"
+      ],
+      "important_parameters": [
+        "key",
+        "value"
+      ]
+    },
+    "cli:bitbottle config list": {
+      "scope": "local",
+      "providers": {
+        "server": {
+          "status": "not_applicable",
+          "reason": "User preferences are read locally; no Server operation is called."
+        },
+        "cloud": {
+          "status": "not_applicable",
+          "reason": "User preferences are read locally; no Cloud operation is called."
+        },
+        "local": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "effect",
+          "input"
+        ],
+        "error": [
+          "error",
+          "effect",
+          "input"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": []
+    },
+    "cli:bitbottle completion": {
+      "scope": "local",
+      "providers": {
+        "server": {
+          "status": "not_applicable",
+          "reason": "Shell scripts are generated locally from Cobra commands; no Server operation is called."
+        },
+        "cloud": {
+          "status": "not_applicable",
+          "reason": "Shell scripts are generated locally from Cobra commands; no Cloud operation is called."
+        },
+        "local": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "effect",
+          "input"
+        ],
+        "error": [
+          "error",
+          "effect",
+          "input"
+        ]
+      },
+      "important_flags": [
+        "--shell",
+        "-s"
+      ],
+      "important_parameters": [
+        "bash|zsh|fish|powershell"
+      ]
+    },
+    "mcp:list_commits": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "branch",
+        "limit"
+      ]
+    },
+    "mcp:get_commit": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "hash"
+      ]
+    },
+    "mcp:list_commit_files": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "repo",
+        "hash"
+      ]
+    },
+    "mcp:list_pr_commits": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id"
+      ]
+    },
+    "mcp:list_pr_comments": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "inline_only",
+        "include_reactions"
+      ]
+    },
+    "mcp:add_pr_comment": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "body",
+        "inline_path",
+        "inline_line",
+        "inline_side",
+        "inline_start_line",
+        "parent_id"
+      ]
+    },
+    "mcp:edit_pr_comment": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "comment_id",
+        "body"
+      ]
+    },
+    "mcp:delete_pr_comment": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id",
+        "comment_id"
+      ]
+    },
+    "mcp:list_tags": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "limit"
+      ]
+    },
+    "mcp:create_tag": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "name",
+        "start_at",
+        "message"
+      ]
+    },
+    "mcp:delete_tag": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "name"
+      ]
+    },
+    "mcp:list_pr_tasks": {
+      "providers": {
+        "cloud": {
+          "status": "supported",
+          "reason": "The current Cloud adapter returns ordinary PR comments without task filtering; the state parameter is ignored for this fallback. This does not certify native Cloud task support."
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "state"
+      ]
+    },
+    "mcp:create_pr_task": {
+      "providers": {
+        "cloud": {
+          "status": "unsupported",
+          "reason": "The current Cloud adapter does not implement PRCommentStateSetter; its generic AddPRComment ignores BLOCKER severity. Cloud has a native task API, but bitbottle has not integrated it."
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "body",
+        "parent_comment_id"
+      ]
+    },
+    "mcp:resolve_pr_task": {
+      "providers": {
+        "cloud": {
+          "status": "unsupported",
+          "reason": "The current Cloud adapter does not implement PRCommentStateSetter; its generic AddPRComment ignores BLOCKER severity. Cloud has a native task API, but bitbottle has not integrated it."
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "task_id"
+      ]
+    },
+    "mcp:reopen_pr_task": {
+      "providers": {
+        "cloud": {
+          "status": "unsupported",
+          "reason": "The current Cloud adapter does not implement PRCommentStateSetter; its generic AddPRComment ignores BLOCKER severity. Cloud has a native task API, but bitbottle has not integrated it."
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "pr_id",
+        "task_id"
+      ]
+    },
+    "cli:bitbottle pr task create": {
+      "providers": {
+        "cloud": {
+          "status": "unsupported",
+          "reason": "The current Cloud adapter does not implement PRCommentStateSetter; its generic AddPRComment ignores BLOCKER severity. Cloud has a native task API, but bitbottle has not integrated it."
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--repo",
+        "--body",
+        "--parent"
+      ],
+      "important_parameters": []
     }
   }
 }

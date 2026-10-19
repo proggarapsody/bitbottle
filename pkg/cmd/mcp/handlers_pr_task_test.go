@@ -49,7 +49,7 @@ func TestMCP_ListPRTasks_ServerReturnsBlockerTasks(t *testing.T) {
 			}, nil
 		},
 	}
-	h := newHandlersWithFake(t, singleHostConfig, fake)
+	h := newServerHandlers(t, &serverFakeClient{FakeClient: fake})
 	result, err := h.listPRTasks(context.Background(), makeReq(map[string]any{
 		"project": "myproj",
 		"slug":    "my-repo",
@@ -72,7 +72,7 @@ func TestMCP_ListPRTasks_FilterResolved(t *testing.T) {
 			}, nil
 		},
 	}
-	h := newHandlersWithFake(t, singleHostConfig, fake)
+	h := newServerHandlers(t, &serverFakeClient{FakeClient: fake})
 	result, err := h.listPRTasks(context.Background(), makeReq(map[string]any{
 		"project": "myproj",
 		"slug":    "my-repo",
@@ -114,7 +114,7 @@ func TestMCP_ListPRTasks_BackendError(t *testing.T) {
 			return nil, errors.New("upstream failure")
 		},
 	}
-	h := newHandlersWithFake(t, singleHostConfig, fake)
+	h := newServerHandlers(t, &serverFakeClient{FakeClient: fake})
 	result, err := h.listPRTasks(context.Background(), makeReq(map[string]any{
 		"project": "myproj",
 		"slug":    "my-repo",
@@ -135,7 +135,7 @@ func TestMCP_CreatePRTask_OK(t *testing.T) {
 			return backend.PRComment{ID: 99, Text: in.Text, Severity: "BLOCKER"}, nil
 		},
 	}
-	h := newHandlersWithFake(t, singleHostConfig, fake)
+	h := newServerHandlers(t, &serverFakeClient{FakeClient: fake})
 	result, err := h.createPRTask(context.Background(), makeReq(map[string]any{
 		"project": "myproj",
 		"slug":    "my-repo",
@@ -158,7 +158,7 @@ func TestMCP_CreatePRTask_WithParent(t *testing.T) {
 			return backend.PRComment{ID: 100, Text: in.Text}, nil
 		},
 	}
-	h := newHandlersWithFake(t, singleHostConfig, fake)
+	h := newServerHandlers(t, &serverFakeClient{FakeClient: fake})
 	result, err := h.createPRTask(context.Background(), makeReq(map[string]any{
 		"project":           "myproj",
 		"slug":              "my-repo",
@@ -191,7 +191,7 @@ func TestMCP_CreatePRTask_BackendError(t *testing.T) {
 			return backend.PRComment{}, errors.New("server error")
 		},
 	}
-	h := newHandlersWithFake(t, singleHostConfig, fake)
+	h := newServerHandlers(t, &serverFakeClient{FakeClient: fake})
 	result, err := h.createPRTask(context.Background(), makeReq(map[string]any{
 		"project": "myproj",
 		"slug":    "my-repo",

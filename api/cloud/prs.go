@@ -100,7 +100,12 @@ func (c *Client) CreatePR(ns, slug string, in backend.CreatePRInput) (backend.Pu
 func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (backend.PullRequest, error) {
 	body := cloudgen.CloudMergePullRequest{}
 	if in.Strategy != "" {
-		body.MergeStrategy = &in.Strategy
+		strategy := in.Strategy
+		switch strategy {
+		case "merge", "merge-commit", "rebase":
+			strategy = backend.ToCloudMergeStrategy(strategy)
+		}
+		body.MergeStrategy = &strategy
 	}
 	var w cloudgen.CloudPullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/merge", ns, slug, id)

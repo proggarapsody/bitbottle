@@ -36,38 +36,30 @@ func (h *handlers) listPRTasks(_ context.Context, req mcplib.CallToolRequest) (*
 		return errResultErr(err), nil
 	}
 
-	// Filter to BLOCKER tasks only (Server). Cloud returns no severity, so
-	// fall back to returning all comments when none have severity set.
-	hasTasks := false
-	for _, c := range cmts {
-		if c.Severity == "BLOCKER" {
-			hasTasks = true
-			break
-		}
+	// The current Cloud adapter exposes ordinary comments without task
+	// severity. Keep that fallback tied to capability, not to whether this
+	// particular response happens to contain a BLOCKER comment.
+	if _, supportsTaskState := client.(backend.PRCommentStateSetter); !supportsTaskState {
+		return jsonResult(cmts)
 	}
-
-	var result []backend.PRComment
-	if hasTasks {
-		sf := strings.ToLower(stateFilter)
-		for _, c := range cmts {
-			if c.Severity != "BLOCKER" {
-				continue
-			}
-			switch sf {
-			case "resolved":
-				if strings.EqualFold(c.State, "RESOLVED") {
-					result = append(result, c)
-				}
-			case "all":
+	result := make([]backend.PRComment, 0)
+	sf := strings.ToLower(stateFilter)
+	for _, c := range cmts {
+		if c.Severity != "BLOCKER" {
+			continue
+		}
+		switch sf {
+		case "resolved":
+			if strings.EqualFold(c.State, "RESOLVED") {
 				result = append(result, c)
-			default: // "open"
-				if c.State == "" || strings.EqualFold(c.State, "OPEN") {
-					result = append(result, c)
-				}
+			}
+		case "all":
+			result = append(result, c)
+		default: // "open"
+			if c.State == "" || strings.EqualFold(c.State, "OPEN") {
+				result = append(result, c)
 			}
 		}
-	} else {
-		result = cmts
 	}
 
 	return jsonResult(result)
@@ -94,6 +86,11 @@ func (h *handlers) createPRTask(_ context.Context, req mcplib.CallToolRequest) (
 
 	client, err := h.resolveBackend(hostname)
 	if err != nil {
+		return errResultErr(err), nil
+	}
+	// Cloud currently ignores AddPRCommentInput.Severity. Check the current
+	// adapter's task capability before writing an ordinary comment as a task.
+	if _, err := backend.AsPRCommentStateSetter(client, hostname); err != nil {
 		return errResultErr(err), nil
 	}
 

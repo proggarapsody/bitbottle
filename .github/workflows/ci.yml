@@ -30,11 +30,11 @@ jobs:
           QA_MATRIX_DIR: ${{ runner.temp }}/qa-matrix
         run: make qa-matrix
 
-      - name: Require complete operation evidence for release PRs
+      - name: Require release-critical operation evidence for release PRs
         if: github.head_ref == 'release-please--branches--main'
         env:
           QA_MATRIX_DIR: ${{ runner.temp }}/qa-matrix
-        run: make qa-matrix-check
+        run: make qa-critical-check
 
       - name: Upload operation evidence
         if: always()

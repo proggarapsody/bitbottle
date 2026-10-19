@@ -47,8 +47,12 @@ same options and also writes `coverage.out` through `make qa-matrix`; use
 is diagnostic data, not a merge threshold. Run `make test-scripts` when shell
 tooling or its paths change. The matrix run replaces the full test invocation;
 do not repeat it through `make test` or `make coverage`. Ordinary PRs may have
-an explicitly incomplete matrix; release PRs and publication require the strict
-`make qa-matrix-check` gate. See [the matrix workflow](qa-matrix.md).
+an explicitly incomplete catalog. Release PRs and publication require
+`make qa-critical-check` on the frozen reviewed profile, with every other
+catalog gap reported explicitly. `make qa-matrix-check` still requires the
+entire catalog and remains the exhaustive follow-up. A critical pass does not
+replace final-SHA CI, live Cloud acceptance, artifact checks, or publication
+binding. See [the matrix workflow](qa-matrix.md).
 For documentation-only changes, verify links, path references, and preservation
 of any moved records; code design review is skipped. Report exact failures.
 

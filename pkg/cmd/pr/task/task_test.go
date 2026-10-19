@@ -147,7 +147,7 @@ func TestPRTaskCreate_PostsBlockerComment(t *testing.T) {
 			return backend.PRComment{ID: 77, Text: in.Text, Severity: "BLOCKER", State: "OPEN"}, nil
 		},
 	}
-	f, out, _ := newTaskFactory(t, fake, newTaskRunner())
+	f, out, _ := newTaskFactory(t, &fakeStateSetterClient{FakeClient: fake}, newTaskRunner())
 	cmd := task.NewCmdPRTaskCreate(f)
 	cmd.SetArgs([]string{"42", "--body", "fix the bug"})
 	require.NoError(t, cmd.Execute())
@@ -167,7 +167,7 @@ func TestPRTaskCreate_WithParentFlag(t *testing.T) {
 			return backend.PRComment{ID: 78}, nil
 		},
 	}
-	f, _, _ := newTaskFactory(t, fake, newTaskRunner())
+	f, _, _ := newTaskFactory(t, &fakeStateSetterClient{FakeClient: fake}, newTaskRunner())
 	cmd := task.NewCmdPRTaskCreate(f)
 	cmd.SetArgs([]string{"42", "--body", "sub-task", "--parent", "5"})
 	require.NoError(t, cmd.Execute())
@@ -185,7 +185,7 @@ func TestPRTaskCreate_PropagatesAPIError(t *testing.T) {
 			return backend.PRComment{}, errors.New("500 server error")
 		},
 	}
-	f, _, _ := newTaskFactory(t, fake, newTaskRunner())
+	f, _, _ := newTaskFactory(t, &fakeStateSetterClient{FakeClient: fake}, newTaskRunner())
 	cmd := task.NewCmdPRTaskCreate(f)
 	cmd.SetArgs([]string{"42", "--body", "x"})
 	err := cmd.Execute()

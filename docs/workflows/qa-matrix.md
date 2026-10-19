@@ -8,6 +8,7 @@ alone do not establish a verified operation.
 
 ```sh
 make qa-matrix
+make qa-critical-check
 make qa-matrix-check
 ```
 
@@ -22,8 +23,17 @@ gap. `catalog.json` preserves flags, input schemas, and declared backend
 metadata. Application `--version` is probed separately through `app.Run` so
 root-constructor inventory cannot silently omit it.
 
-`qa-matrix-check` verifies the saved run against its source fingerprint,
-contracts, raw test events, and hashes before requiring complete evidence.
+`qa-critical-check` verifies the saved full `./...` run against its source
+fingerprint, contracts, raw test events, and hashes, then requires every pair
+and named public test in the frozen
+[`release-critical.json`](../../test/qamatrix/release-critical.json) profile.
+The profile freezes the 59 reviewed operations, provider statuses, important
+inputs, and four explicitly deferred merge flags. A missing, failed, skipped,
+or stale critical proof fails this gate. Run `make qa-matrix` first to create
+fresh saved evidence, or use the release workflow's single-run critical check.
+`qa-matrix-check` applies the same evidence validation and additionally
+requires completion of every catalog row. It remains the exhaustive QA
+completion check.
 Narrow package runs are useful during development but cannot satisfy the
 full `./...` gate. Missing, skipped, stale, unsupported-without-proof, and
 unknown cases remain incomplete.
@@ -41,6 +51,12 @@ it never proves Cloud or DC acceptance. Other skipped test cases block the run.
    A reason-only `not_applicable` provider remains incomplete. Missing MCP
    backend metadata is reported separately; an explicitly reviewed provider
    contract supplies applicability evidence, while absence alone supplies none.
+   For a local command, use `scope: local`, reviewed reasons for both remote
+   providers, and a supported `local` pair. Only a complete local success/error
+   proof (including important inputs) establishes remote non-applicability.
+   Contradictory remote scenarios still block it. Reports count these derived
+   classifications separately from supported and unsupported provider outcomes;
+   each local command adds one local proof row to the two default remote rows.
 2. Assert known output, request inputs or observable effects, error behavior,
    important flags/parameters, and pagination where applicable. Record only
    assertions actually made by the test, after those assertions.
@@ -59,18 +75,27 @@ adapters against local HTTP fixtures. MCP scenarios use the public SDK and
 a real stdio child with stateful synthetic backend clients. The latter
 prove the MCP/domain contract, not provider HTTP compatibility or native
 release artifact installation. Preserve those distinctions in QA claims.
+For reads, an effect assertion identifies the observed backend request and
+its independently expected routing/inputs; it does not imply mutated state.
+For generated local output, the effect is the validated artifact (for example,
+the selected shell's completion program), with settings preserved on errors.
 
 ## CI and release behavior
 
-Ordinary PR CI publishes the matrix and fails on test or evidence errors;
-valid but incomplete coverage is reported as incomplete. Release Please
-PRs additionally run the complete-matrix check. The release workflow runs
-the same strict gate before registry login or publication. A green ordinary
-PR therefore does not mean release-ready.
+Ordinary PR CI publishes the complete catalog report and fails on test or
+evidence errors; valid but incomplete coverage is reported as incomplete.
+Release Please PRs and the publishing workflow additionally require
+`qa-critical-check` before publication. Their critical pass does not mark the
+remaining catalog rows complete. Keep the unresolved rows in the QA backlog
+and use `qa-matrix-check` to verify eventual exhaustive completion. A green
+ordinary PR or a critical-only pass therefore does not mean release-ready.
 
-The full matrix remains work in progress. This gate intentionally blocks
-publication while operation/provider pairs or important input checks are
-missing. Cloud live acceptance, native/npm/Docker candidate checks, and
-artifact digest/publication binding remain separate release requirements.
+The full matrix remains work in progress. The current release profile and its
+four named merge deferrals are documented in
+[`2026-10-19-critical-release-scenarios.md`](../quality/2026-10-19-critical-release-scenarios.md).
+Final-SHA CI and Cloud live acceptance, native/npm/Docker candidate checks,
+artifact digest/publication binding, and Release Please credentials remain
+separate release requirements. Live acceptance must prove provisioning,
+readback, and independently verified cleanup on the final SHA.
 **DC не проверен live** must remain visible in QA reports and release notes;
 the exception does not waive hermetic Server/DC failures.

@@ -12,7 +12,7 @@ func init() {
 func registerPRTaskTools(s *mcpserver.MCPServer, h *handlers) {
 	s.AddTool(
 		mcplib.NewTool("list_pr_tasks",
-			mcplib.WithDescription("List tasks (BLOCKER-severity comments) on a pull request. On Bitbucket Cloud tasks are not supported; all comments are returned without severity filtering."),
+			mcplib.WithDescription("List tasks (BLOCKER-severity comments) on a pull request. The current Cloud adapter returns ordinary PR comments without task filtering."),
 			mcplib.WithString("hostname",
 				mcplib.Description("Bitbucket hostname (omit when only one host is configured)"),
 			),

@@ -119,11 +119,16 @@ make test-acceptance
 make lint
 ```
 
-For public CLI/MCP coverage, run `make qa-matrix`; use `make qa-matrix-check`
-to require the full operation matrix. Ordinary PRs publish incomplete results
-while retaining test gates. Release PRs and the publishing workflow require a
-complete matrix. See [`docs/workflows/qa-matrix.md`](docs/workflows/qa-matrix.md)
-for scenario claims, provider applicability, and evidence verification.
+For public CLI/MCP coverage, run `make qa-matrix`. The mandatory release gate
+is `make qa-critical-check`, which verifies the reviewed release-critical
+profile against a complete test run and its saved evidence. Run
+`make qa-matrix-check` to require completion of the entire catalog; it remains
+available for exhaustive QA follow-up. Ordinary PRs publish incomplete catalog
+results while retaining test gates. See
+[`docs/workflows/qa-matrix.md`](docs/workflows/qa-matrix.md) for the gate,
+scenario claims, provider applicability, and gap reporting. Local commands
+require explicit local success/error proof before their remote
+non-applicability can be counted; derived classifications are not provider passes.
 
 Cloud acceptance reads secrets only from the `cloud-acceptance` GitHub
 Environment restricted to `main`. Keep bootstrap and actor credentials

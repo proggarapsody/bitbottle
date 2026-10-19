@@ -37,7 +37,7 @@ func toPRDomain(w servergen.RestPullRequest) backend.PullRequest {
 	if w.AutoMerge != nil {
 		pr.AutoMerge = &backend.AutoMergeState{
 			Enabled:  true,
-			Strategy: serverStrategyToCLI(w.AutoMerge.MergeStrategy),
+			Strategy: serverStrategyToCLI(w.AutoMerge.StrategyID),
 		}
 	}
 	return pr
@@ -48,10 +48,26 @@ func serverStrategyToCLI(s string) string {
 	switch s {
 	case "squash":
 		return "squash"
+	case "no-ff":
+		return "merge"
 	case "fast-forward":
 		return "rebase"
 	default:
-		return "merge"
+		return s
+	}
+}
+
+// serverStrategyID preserves raw repository IDs while translating CLI names.
+// The rebase mapping retains the existing adapter value; its upstream ID still
+// needs provider verification before public matrix coverage claims it.
+func serverStrategyID(strategy string) string {
+	switch strategy {
+	case "merge", "merge-commit":
+		return "no-ff"
+	case "rebase":
+		return backend.ToServerMergeStrategy(strategy)
+	default:
+		return strategy
 	}
 }
 
@@ -128,7 +144,8 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 		body.Message = &in.Message
 	}
 	if in.Strategy != "" {
-		body.Strategy = &in.Strategy
+		strategyID := serverStrategyID(in.Strategy)
+		body.StrategyID = &strategyID
 	}
 	var w servergen.RestPullRequest
 	if err := c.postJSON(prPath+"/merge", body, &w); err != nil {
@@ -151,15 +168,23 @@ func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 	return c.getText(path)
 }
 
-// EnableAutoMerge queues a PR for automatic merge on Bitbucket Server / DC.
-// The Server API uses POST (not PUT) for this endpoint.
+// EnableAutoMerge queues a PR through the merge endpoint. The separate
+// auto-merge endpoint retries or cancels an existing queued merge.
 func (c *Client) EnableAutoMerge(ns, slug string, id int, strategy string) error {
-	body := servergen.RestAutoMergeRequest{
-		MergeStrategy: backend.ToServerMergeStrategy(strategy),
+	prPath := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d", ns, slug, id)
+	var current servergen.RestPullRequest
+	if err := c.getJSON(prPath, &current); err != nil {
+		return stampPRNotFound(err, id)
+	}
+	strategyID := serverStrategyID(strategy)
+	autoMerge := true
+	body := servergen.RestMergePullRequestRequest{
+		Version:    current.Version,
+		StrategyID: &strategyID,
+		AutoMerge:  &autoMerge,
 	}
 	var result struct{}
-	path := fmt.Sprintf("/projects/%s/repos/%s/pull-requests/%d/auto-merge", ns, slug, id)
-	return c.postJSON(path, body, &result)
+	return c.postJSON(prPath+"/merge", body, &result)
 }
 
 // DisableAutoMerge cancels a queued auto-merge on Bitbucket Server / DC.

@@ -127,6 +127,7 @@ func TestPublicMatrixPRCreateAndView(t *testing.T) {
 			var created bool
 			var posted map[string]any
 			var requests []string
+			prResponse := strings.TrimSuffix(matrixPR(p, 47, "Ship QA"), "}") + `,"draft":true}`
 			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				requests = append(requests, r.Method+" "+r.URL.RequestURI())
 				w.Header().Set("Content-Type", "application/json")
@@ -136,9 +137,9 @@ func TestPublicMatrixPRCreateAndView(t *testing.T) {
 					_ = json.Unmarshal(body, &posted)
 					created = true
 					w.WriteHeader(http.StatusCreated)
-					fmt.Fprint(w, matrixPR(p, 47, "Ship QA"))
+					fmt.Fprint(w, prResponse)
 				case r.Method == http.MethodGet && r.URL.Path == p.apiRoot+p.prPath+"/47" && created:
-					fmt.Fprint(w, matrixPR(p, 47, "Ship QA"))
+					fmt.Fprint(w, prResponse)
 				default:
 					w.WriteHeader(http.StatusNotFound)
 					fmt.Fprint(w, matrixErrorBody(p, "unexpected route"))
@@ -146,18 +147,26 @@ func TestPublicMatrixPRCreateAndView(t *testing.T) {
 			}))
 			t.Cleanup(srv.Close)
 			repo := p.host + "/TEAM/service"
-			out, err := matrixCLI(t, p, srv, "pr", "create", "--repo", repo, "--title", "Ship QA", "--body", "Review body", "--base", "main", "--head", "feature/qa", "--no-default-reviewers", "--json")
+			out, err := matrixCLI(t, p, srv, "pr", "create", "--repo", repo, "--title", "Ship QA", "--body", "Review body", "--base", "main", "--head", "feature/qa", "--draft", "--reviewer", "qa-reviewer", "--reviewer", "second-reviewer", "--no-default-reviewers", "--json")
 			require.NoError(t, err)
 			require.True(t, created)
 			require.JSONEq(t, `{"id":47,"title":"Ship QA"}`, selectMatrixFields(t, out, "id", "title"))
 			require.Equal(t, "Ship QA", posted["title"])
 			require.Equal(t, "Review body", posted["description"])
+			require.Equal(t, true, posted["draft"])
+			reviewers, ok := posted["reviewers"].([]any)
+			require.True(t, ok)
+			require.Len(t, reviewers, 2)
 			if p.name == "cloud" {
 				require.Equal(t, "feature/qa", nestedMatrixString(t, posted, "source", "branch", "name"))
 				require.Equal(t, "main", nestedMatrixString(t, posted, "destination", "branch", "name"))
+				require.Equal(t, "qa-reviewer", nestedMatrixString(t, reviewers[0].(map[string]any), "username"))
+				require.Equal(t, "second-reviewer", nestedMatrixString(t, reviewers[1].(map[string]any), "username"))
 			} else {
 				require.Equal(t, "refs/heads/feature/qa", nestedMatrixString(t, posted, "fromRef", "id"))
 				require.Equal(t, "refs/heads/main", nestedMatrixString(t, posted, "toRef", "id"))
+				require.Equal(t, "qa-reviewer", nestedMatrixString(t, reviewers[0].(map[string]any), "user", "name"))
+				require.Equal(t, "second-reviewer", nestedMatrixString(t, reviewers[1].(map[string]any), "user", "name"))
 			}
 			require.Equal(t, "POST "+p.apiRoot+p.prPath, requests[0])
 			view, err := matrixCLI(t, p, srv, "pr", "view", "47", "--repo", repo)
@@ -165,16 +174,21 @@ func TestPublicMatrixPRCreateAndView(t *testing.T) {
 			require.Contains(t, view, "#47 Ship QA")
 			require.Contains(t, view, "Review body")
 			require.Contains(t, view, "From:   feature/qa")
+			require.Contains(t, view, "State:  OPEN (draft)")
 			require.Len(t, requests, 2)
 			require.Equal(t, "GET "+p.apiRoot+p.prPath+"/47", requests[1])
-			qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr create", Backend: p.name, Outcome: "success", Assertions: []string{"output", "effect", "input"}, Flags: []string{"--repo", "--title", "--body", "--base", "--head", "--json", "--no-default-reviewers"}})
+			qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr create", Backend: p.name, Outcome: "success", Assertions: []string{"output", "effect", "input"}, Flags: []string{"--repo", "--title", "--body", "--base", "--head", "--draft", "--reviewer", "--json", "--no-default-reviewers"}})
 			qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr view", Backend: p.name, Outcome: "success", Assertions: []string{"output", "input", "effect"}, Flags: []string{"--repo"}})
 		})
 
 		t.Run(p.name+"/create-error", func(t *testing.T) {
-			var request string
+			var requests []string
 			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				request = r.Method + " " + r.URL.RequestURI()
+				requests = append(requests, r.Method+" "+r.URL.RequestURI())
+				if r.Method == http.MethodGet && r.URL.Path == p.apiRoot+p.prPath+"/47" {
+					fmt.Fprint(w, matrixPR(p, 47, "Existing title"))
+					return
+				}
 				w.WriteHeader(http.StatusConflict)
 				fmt.Fprint(w, matrixErrorBody(p, "pull request already exists"))
 			}))
@@ -182,9 +196,13 @@ func TestPublicMatrixPRCreateAndView(t *testing.T) {
 			out, err := matrixCLI(t, p, srv, "pr", "create", "--repo", p.host+"/TEAM/service", "--title", "Ship QA", "--base", "main", "--head", "feature/qa", "--no-default-reviewers")
 			require.Error(t, err)
 			require.Empty(t, out)
-			require.Equal(t, "POST "+p.apiRoot+p.prPath, request)
+			require.Equal(t, "POST "+p.apiRoot+p.prPath, requests[0])
 			checkMatrixError(t, err, backend.CodePRCreateDuplicateBranch, "already exists", "Hint:")
-			qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr create", Backend: p.name, Outcome: "error", Assertions: []string{"input", "error"}, Flags: []string{"--repo", "--title", "--base", "--head", "--no-default-reviewers"}})
+			view, err := matrixCLI(t, p, srv, "pr", "view", "47", "--repo", p.host+"/TEAM/service")
+			require.NoError(t, err)
+			require.Contains(t, view, "#47 Existing title")
+			require.Equal(t, "GET "+p.apiRoot+p.prPath+"/47", requests[1])
+			qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr create", Backend: p.name, Outcome: "error", Assertions: []string{"input", "effect", "error"}, Flags: []string{"--repo", "--title", "--base", "--head", "--no-default-reviewers"}})
 		})
 
 		t.Run(p.name+"/view-error", func(t *testing.T) {
@@ -493,9 +511,17 @@ func TestPublicMatrixBranchWrites(t *testing.T) {
 
 		for _, operation := range []string{"create", "delete"} {
 			t.Run(p.name+"/"+operation+"-error", func(t *testing.T) {
-				var request string
+				var requests []string
 				srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					request = r.Method + " " + r.URL.RequestURI()
+					requests = append(requests, r.Method+" "+r.URL.RequestURI())
+					if r.Method == http.MethodGet && r.URL.Path == p.apiRoot+matrixBranchPath(p) {
+						items := []string(nil)
+						if operation == "delete" {
+							items = []string{matrixBranch(p, "feature/qa")}
+						}
+						fmt.Fprint(w, matrixListPage(p, items, ""))
+						return
+					}
 					if operation == "create" {
 						w.WriteHeader(http.StatusUnauthorized)
 					} else {
@@ -516,9 +542,17 @@ func TestPublicMatrixBranchWrites(t *testing.T) {
 				out, err := matrixCLI(t, p, srv, args...)
 				require.Error(t, err)
 				require.Empty(t, out)
-				require.Contains(t, request, method+p.apiRoot+matrixBranchPath(p))
+				require.Contains(t, requests[0], method+p.apiRoot+matrixBranchPath(p))
 				checkMatrixError(t, err, code, title, "Hint:")
-				qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle branch " + operation, Backend: p.name, Outcome: "error", Assertions: []string{"input", "error"}, Flags: flags})
+				listed, err := matrixCLI(t, p, srv, "branch", "list", "--repo", p.host+"/TEAM/service", "--json")
+				require.NoError(t, err)
+				if operation == "create" {
+					require.NotContains(t, listed, `"name":"feature/qa"`)
+				} else {
+					require.Contains(t, listed, `"name":"feature/qa"`)
+				}
+				require.Contains(t, requests[1], "GET "+p.apiRoot+matrixBranchPath(p))
+				qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle branch " + operation, Backend: p.name, Outcome: "error", Assertions: []string{"input", "effect", "error"}, Flags: flags})
 			})
 		}
 	}
@@ -626,7 +660,8 @@ func TestPublicMatrixPREditAndMerge(t *testing.T) {
 					if p.name == "cloud" {
 						require.Equal(t, "squash", body["merge_strategy"])
 					} else {
-						require.Equal(t, "squash", body["strategy"])
+						require.Equal(t, "squash", body["strategyId"])
+						require.NotContains(t, body, "strategy")
 					}
 				}
 				if p.name == "server" {
@@ -680,7 +715,12 @@ func TestPublicMatrixPREditAndMerge(t *testing.T) {
 				require.Equal(t, "GET "+p.apiRoot+p.prPath+"/47", requests[0])
 				require.Equal(t, method+" "+path, requests[len(requests)-1])
 				checkMatrixError(t, err, code, title, "Hint:")
-				qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr " + operation, Backend: p.name, Outcome: "error", Assertions: []string{"input", "error"}, Flags: flags})
+				view, err := matrixCLI(t, p, srv, "pr", "view", "47", "--repo", p.host+"/TEAM/service")
+				require.NoError(t, err)
+				require.Contains(t, view, "#47 Original title")
+				require.Contains(t, view, "State:  OPEN")
+				require.Equal(t, "GET "+p.apiRoot+p.prPath+"/47", requests[len(requests)-1])
+				qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr " + operation, Backend: p.name, Outcome: "error", Assertions: []string{"input", "effect", "error"}, Flags: flags})
 			})
 		}
 	}

@@ -114,16 +114,16 @@ const FeaturePRCommentStateSet Feature = "pr-task"
 
 // PRCommentStateSetter sets the state of a PR comment (task). Implemented only
 // by Bitbucket Server / Data Center (where tasks are BLOCKER comments with an
-// OPEN/RESOLVED state). Bitbucket Cloud has no equivalent concept, so callers
-// route through AsPRCommentStateSetter to surface the constraint as a typed
-// ErrUnsupportedOnHost.
+// OPEN/RESOLVED state). The current Cloud adapter does not implement its
+// native task API; callers route through AsPRCommentStateSetter to surface
+// that adapter constraint as a typed ErrUnsupportedOnHost.
 type PRCommentStateSetter interface {
 	SetPRCommentState(ns, slug string, id, commentID int, state string) error
 }
 
 // AsPRCommentStateSetter returns the PRCommentStateSetter view of c, or a typed
 // *DomainError (Kind=ErrUnsupportedOnHost) when the backend has no task-state
-// primitive (currently Bitbucket Cloud).
+// primitive (currently the Bitbucket Cloud adapter).
 func AsPRCommentStateSetter(c Client, host string) (PRCommentStateSetter, error) {
 	return requireFeature[PRCommentStateSetter](c, host, specFor(FeaturePRCommentStateSet))
 }

@@ -21,10 +21,25 @@ OUTCOMES = {"success", "error", "unsupported"}
 ASSERTIONS = {"output", "effect", "input", "error", "pagination"}
 PROVIDERS = {"server", "cloud", "local"}
 STATUSES = {"supported", "unsupported", "not_applicable"}
+CRITICAL_PROFILE = ROOT / "test/qamatrix/release-critical.json"
+# Approved release baseline: policy edits must update this digest in reviewed code.
+APPROVED_CRITICAL_PROFILE_SHA256 = "97faa92afa5ff00f145e79c0fc6266d4257d6cfec5c0ef158d2c37dfdd06fd8b"
+ALLOWED_CRITICAL_DEFERRALS = {
+    ("cli:bitbottle pr merge", "cloud"): {"--auto", "--auto-off", "--rebase"},
+    ("cli:bitbottle pr merge", "server"): {"--rebase"},
+}
+SUPPORTED_MINIMUM = {"success": {"output", "input", "effect"},
+                     "error": {"error", "input", "effect"}}
 
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def load_critical_profile(data):
+    if sha(data) != APPROVED_CRITICAL_PROFILE_SHA256:
+        raise ValueError("critical release baseline differs from approved profile")
+    return json.loads(data)
 
 
 def is_behavior_input(name):
@@ -122,6 +137,8 @@ def parse_events(lines):
         else:
             skipped.append(f"{package}/{test or '<package>'}")
     return {"records": records, "failed": failed, "skipped": skipped,
+            "passed_tests": sorted({f"{package}/{test}" for package, test in passed_tests
+                                    if package in passed_packages}),
             "no_test_packages": no_test_packages,
             "live_acceptance_skipped": live_acceptance_skipped,
             "live_acceptance_passed": any(test == "TestAcceptance" and package.endswith("/acceptance")
@@ -214,6 +231,9 @@ def assess(catalog, contracts, events):
             issues.append(f"{op}: contract must be an object")
             contract = {}
         providers = contract.get("providers", {})
+        scope = contract.get("scope", "remote")
+        if scope not in ("remote", "local"):
+            issues.append(f"{op}: invalid scope {scope!r}")
         required = contract.get("required_assertions", {})
         important_flags = contract.get("important_flags", [])
         important_parameters = contract.get("important_parameters", [])
@@ -233,6 +253,14 @@ def assess(catalog, contracts, events):
         if not isinstance(providers, dict):
             issues.append(f"{op}: providers must be an object")
             providers = {}
+        if scope == "local" and any(
+            not isinstance(providers.get(backend), dict) or
+            providers[backend].get("status") != expected
+            for backend, expected in (("server", "not_applicable"),
+                                      ("cloud", "not_applicable"),
+                                      ("local", "supported"))
+        ):
+            issues.append(f"{op}: local scope requires server/cloud not_applicable and local supported")
         for backend in ("server", "cloud", "local"):
             if backend == "local" and backend not in providers:
                 continue
@@ -241,8 +269,10 @@ def assess(catalog, contracts, events):
             reasons = []
             if status not in STATUSES:
                 reasons.append("provider support unreviewed")
-            if status in ("unsupported", "not_applicable") and not str(p.get("reason", "")).strip():
-                reasons.append("provider classification lacks reason")
+            if status in ("unsupported", "not_applicable"):
+                reason = p.get("reason") if isinstance(p, dict) else None
+                if not isinstance(reason, str) or not reason.strip():
+                    reasons.append("provider classification lacks reason")
             present_outcomes = {key[2] for key in grouped if key[:2] == (op, backend)}
             if status == "supported":
                 outcomes = ("success", "error")
@@ -262,6 +292,8 @@ def assess(catalog, contracts, events):
                     ):
                         reasons.append(f"{outcome}: missing/invalid required assertions")
                         continue
+                    if status == "supported" and not SUPPORTED_MINIMUM[outcome].issubset(needed):
+                        reasons.append(f"{outcome}: required assertions omit supported minimum")
                 candidates = grouped.get((op, backend, outcome), [])
                 if not candidates:
                     reasons.append(f"{outcome}: no passed scenario")
@@ -280,6 +312,19 @@ def assess(catalog, contracts, events):
                          "verified": status in ("supported", "unsupported") and not reasons,
                          "reasons": sorted(set(reasons))})
         operation_rows = [row for row in rows if row["operation"] == op]
+        by_backend = {row["backend"]: row for row in operation_rows}
+        if (scope == "local" and all(
+            by_backend.get(remote, {}).get("status") == "not_applicable" and
+            by_backend[remote]["reasons"] == ["applicability lacks public outcome proof"] and
+            isinstance(providers.get(remote), dict) and
+            isinstance(providers[remote].get("reason"), str) and
+            providers[remote]["reason"].strip()
+            for remote in ("server", "cloud")
+        ) and by_backend.get("local", {}).get("status") == "supported" and
+                by_backend["local"]["verified"]):
+            for remote in ("server", "cloud"):
+                by_backend[remote]["reasons"] = []
+                by_backend[remote]["verified"] = True
         if operation_rows and all(row["status"] == "not_applicable" for row in operation_rows):
             issues.append(f"{op}: every provider is not_applicable; no operation was exercised")
     if not events["passed_packages"]:
@@ -292,12 +337,17 @@ def assess(catalog, contracts, events):
         issues.append("live acceptance unexpectedly passed in hermetic lane")
     missing = [r for r in rows if not r["verified"]]
     reviewed_rows = [r for r in rows if r["status"] in STATUSES]
+    verified_status = lambda status: sum(r["verified"] and r["status"] == status for r in rows)
     declaration_unknown = sum("declared_meta_backends" not in t for t in mcp)
     return {"schema": 1, "complete": not missing and not issues,
             "counts": {"cli_nodes": len(catalog["cli"]), "cli_runnable": len(cli),
                        "mcp_tools": len(mcp), "operations": len(operations),
                        "provider_pairs": len(rows), "reviewed_pairs": len(reviewed_rows),
                        "verified_pairs": sum(r["verified"] for r in rows),
+                       "verified_supported_pairs": verified_status("supported"),
+                       "verified_unsupported_pairs": verified_status("unsupported"),
+                       "verified_not_applicable_pairs": verified_status("not_applicable"),
+                       "verified_local_pairs": sum(r["verified"] and r["backend"] == "local" for r in rows),
                        "unverified_pairs": len(missing),
                        "mcp_declaration_unknown": declaration_unknown,
                        "passed_scenario_records": len(valid_records),
@@ -313,6 +363,97 @@ def assess(catalog, contracts, events):
                                "verified_pairs": sum(r["verified"] for r in reviewed_rows)}}
 
 
+def assess_critical(report, catalog, contracts, profile, events=None):
+    """Require a frozen, reviewed release subset without changing full DoD rows."""
+    issues, selected, deferred = [], [], []
+    operations = {x["id"]: x for x in catalog["cli"] if x["runnable"]}
+    operations.update({x["id"]: x for x in catalog["mcp"]})
+    reviewed = contracts.get("operations", {})
+    chosen = profile.get("operations", {}) if isinstance(profile, dict) else {}
+    if not isinstance(profile, dict) or profile.get("schema") != 1 or not isinstance(chosen, dict) or not chosen:
+        issues.append("critical profile schema or operation selection invalid")
+        chosen = {}
+    if set(chosen) != set(reviewed):
+        issues.append("critical operation selection changed from reviewed contracts: "
+                      f"missing={sorted(set(reviewed) - set(chosen))}, "
+                      f"unknown={sorted(set(chosen) - set(reviewed))}")
+    required_tests = profile.get("required_tests", []) if isinstance(profile, dict) else []
+    if (not isinstance(required_tests, list) or not required_tests or
+            any(not isinstance(x, str) or "/Test" not in x for x in required_tests) or
+            len(required_tests) != len(set(required_tests))):
+        issues.append("critical required_tests invalid")
+        required_tests = []
+    passed_tests = set(events.get("passed_tests", [])) if events is not None else set()
+    if events is not None:
+        issues.extend(f"required public test did not pass: {name}" for name in required_tests
+                      if name not in passed_tests)
+    rows = {(r["operation"], r["backend"]): r for r in report["pairs"]}
+    for op, selection in sorted(chosen.items()):
+        contract, entry = reviewed.get(op), operations.get(op)
+        if not isinstance(selection, dict) or not isinstance(contract, dict) or entry is None:
+            issues.append(f"{op}: critical operation absent or invalid in catalog/contracts")
+            continue
+        for key in ("important_flags", "important_parameters"):
+            values = selection.get(key)
+            if (not isinstance(values, list) or
+                    any(not isinstance(x, str) or not x for x in values) or
+                    len(values) != len(set(values)) or values != contract.get(key, [])):
+                issues.append(f"{op}: important inputs changed ({key})")
+        provider_selection = selection.get("providers")
+        providers = contract.get("providers", {})
+        if not isinstance(provider_selection, dict) or set(provider_selection) != set(providers):
+            issues.append(f"{op}: provider selection changed")
+            continue
+        for backend, chosen_provider in sorted(provider_selection.items()):
+            contract_provider = providers[backend]
+            if (not isinstance(chosen_provider, dict) or
+                    not isinstance(contract_provider, dict) or
+                    chosen_provider.get("status") != contract_provider.get("status") or
+                    chosen_provider.get("status") not in STATUSES):
+                issues.append(f"{op}/{backend}: provider status changed or unreviewed")
+                continue
+            exemptions = chosen_provider.get("deferred_inputs")
+            if not isinstance(exemptions, dict):
+                issues.append(f"{op}/{backend}: deferred_inputs must be an object")
+                continue
+            allowed = ALLOWED_CRITICAL_DEFERRALS.get((op, backend), set())
+            important_flags = selection.get("important_flags", [])
+            if not isinstance(important_flags, list) or any(not isinstance(x, str) for x in important_flags):
+                important_flags = []
+            if (set(exemptions) - allowed or
+                    set(exemptions) - set(important_flags) or
+                    (exemptions and chosen_provider["status"] != "supported") or
+                    any(not isinstance(reason, str) or not reason.strip()
+                        for reason in exemptions.values())):
+                issues.append(f"{op}/{backend}: unapproved or unexplained deferred input")
+            for name, reason in sorted(exemptions.items()):
+                deferred.append({"operation": op, "backend": backend,
+                                 "input": name, "reason": reason})
+            row = rows.get((op, backend))
+            if row is None:
+                issues.append(f"{op}/{backend}: selected provider pair missing")
+                continue
+            remaining = [reason for reason in row["reasons"]
+                         if reason not in {f"important input {name} untested" for name in exemptions}]
+            verified = row["status"] == chosen_provider["status"] and not remaining
+            selected.append({"operation": op, "backend": backend, "status": row["status"],
+                             "verified": verified, "reasons": remaining,
+                             "deferred_inputs": sorted(exemptions)})
+            if not verified:
+                issues.extend(f"{op}/{backend}: {reason}" for reason in remaining or
+                              ["provider status mismatch"])
+    if report["issues"]:
+        issues.extend(report["issues"])
+    if not report.get("scope_complete"):
+        issues.append("full package scope ./... was not tested")
+    return {"passed": not issues, "selected_pairs": len(selected),
+            "selected_verified_pairs": sum(row["verified"] for row in selected),
+            "full_incomplete_pairs": report["counts"]["unverified_pairs"],
+            "required_tests": required_tests,
+            "passed_required_tests": sorted(set(required_tests) & passed_tests),
+            "deferred_inputs": deferred, "pairs": selected, "issues": issues}
+
+
 def markdown(report):
     c = report["counts"]
     lines = ["# QA matrix", "", f"Complete: **{'yes' if report['complete'] else 'NO'}**", "",
@@ -321,13 +462,31 @@ def markdown(report):
              f"{c['mcp_tools']} MCP tools; {c['operations']} runnable operations.", "",
              f"Full DoD: {c['verified_pairs']}/{c['provider_pairs']} provider pairs verified; "
              f"{c['unverified_pairs']} incomplete.",
+             f"Verified outcomes: {c['verified_supported_pairs']} supported, "
+             f"{c['verified_unsupported_pairs']} unsupported, "
+             f"{c['verified_not_applicable_pairs']} locally proven not applicable "
+             f"({c['verified_local_pairs']} verified local pairs).",
              f"Reviewed pilot: {report['reviewed_pilot']['verified_pairs']}/"
              f"{report['reviewed_pilot']['reviewed_pairs']} reviewed pairs verified.",
              f"MCP provider declaration absent: {c['mcp_declaration_unknown']}. "
              "Declaration absence is unknown; an explicit reviewed contract may classify support.", "",
              f"Live acceptance: {report['live_acceptance']['status']} "
-             "(separate from hermetic QA coverage).", "",
-             "## Blocking issues", ""]
+             "(separate from hermetic QA coverage).", ""]
+    critical = report.get("release_critical")
+    if critical:
+        lines += ["## Release critical profile", "",
+                  f"Passed: **{'yes' if critical['passed'] else 'NO'}**; "
+                  f"{critical['selected_verified_pairs']}/{critical['selected_pairs']} "
+                  "selected provider pairs verified with stated deferrals.",
+                  f"Full matrix still has {critical['full_incomplete_pairs']} incomplete pairs.",
+                  "DC не проверен live (hermetic tests only).", "",
+                  "Deferred important inputs:"]
+        lines += [f"- {x['operation']} / {x['backend']} / {x['input']}: {x['reason']}"
+                  for x in critical["deferred_inputs"]] or ["- None"]
+        lines += ["", "Critical issues:"]
+        lines += [f"- {x}" for x in critical["issues"][:30]] or ["- None"]
+        lines += [""]
+    lines += ["## Blocking issues", ""]
     lines += [f"- {x}" for x in report["issues"][:30]] or ["- None"]
     if len(report["issues"]) > 30:
         lines.append(f"- … {len(report['issues']) - 30} more in report.json")
@@ -371,6 +530,9 @@ def run(output, packages, coverprofile=None):
         report["issues"].append(f"go test exited {result.returncode}: {result.stderr.decode('utf-8', 'replace')[:1000]}")
     if report["issues"]:
         report["complete"] = False
+    profile_bytes = CRITICAL_PROFILE.read_bytes()
+    report["release_critical"] = assess_critical(
+        report, catalog, contracts, load_critical_profile(profile_bytes), events)
     save_json(output / "catalog.json", catalog)
     save_json(output / "scenarios.json", events)
     save_json(output / "report.json", report)
@@ -381,6 +543,7 @@ def run(output, packages, coverprofile=None):
               "catalog_sha256": sha((output / "catalog.json").read_bytes()),
               "scenarios_sha256": sha((output / "scenarios.json").read_bytes()),
               "events_sha256": sha(event_bytes), "contracts_sha256": sha(contract_bytes),
+              "critical_profile_sha256": sha(profile_bytes),
               "report_sha256": sha((output / "report.json").read_bytes()),
               "test_exit_code": result.returncode})
     (output / "run.sha256").write_text(sha((output / "run.json").read_bytes()) + "\n")
@@ -390,7 +553,7 @@ def run(output, packages, coverprofile=None):
     return report
 
 
-def check(output):
+def check(output, critical=False):
     if sha((output / "run.json").read_bytes()) != (output / "run.sha256").read_text().strip():
         raise ValueError("run manifest SHA mismatch")
     manifest = json.loads((output / "run.json").read_text())
@@ -402,6 +565,9 @@ def check(output):
             raise ValueError(f"saved {name} differs from run manifest")
     if sha((ROOT / "test/qamatrix/contracts.json").read_bytes()) != manifest["contracts_sha256"]:
         raise ValueError("contracts changed since run")
+    profile_bytes = CRITICAL_PROFILE.read_bytes()
+    if sha(profile_bytes) != manifest["critical_profile_sha256"]:
+        raise ValueError("critical profile changed since run")
     if source_identity()["source_digest"] != manifest["source"]["source_digest"]:
         raise ValueError("source changed since run")
     if manifest["source_before"]["source_digest"] != manifest["source"]["source_digest"]:
@@ -419,8 +585,17 @@ def check(output):
     contracts = json.loads((ROOT / "test/qamatrix/contracts.json").read_text())
     report = assess(catalog, contracts, events)
     report["scope_complete"] = True
+    report["release_critical"] = assess_critical(
+        report, catalog, contracts, load_critical_profile(profile_bytes), events)
     if report != json.loads((output / "report.json").read_text()):
         raise ValueError("saved report does not match execution evidence")
+    if critical:
+        if not report["release_critical"]["passed"]:
+            raise ValueError("critical profile incomplete: " +
+                             "; ".join(report["release_critical"]["issues"][:5]))
+        print("Release critical profile complete and evidence current; full matrix "
+              f"has {report['counts']['unverified_pairs']} incomplete pairs")
+        return
     if not report["complete"]:
         raise ValueError(f"matrix incomplete: {report['counts']['unverified_pairs']} provider pairs")
     print("QA matrix complete and evidence current")
@@ -430,12 +605,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--check", "--require-complete", action="store_true")
+    parser.add_argument("--check-critical", "--require-critical", action="store_true")
     parser.add_argument("--packages", nargs="+", default=["./..."])
     parser.add_argument("--coverprofile", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if not args.run and not args.check:
-        parser.error("select --run or --check")
+    if not args.run and not args.check and not args.check_critical:
+        parser.error("select --run, --check, or --check-critical")
     try:
         if args.run:
             report = run(args.output, args.packages, args.coverprofile)
@@ -443,6 +619,8 @@ def main():
                 raise ValueError("run contains invalid, failed, skipped, or empty evidence; see report.md")
         if args.check:
             check(args.output)
+        if args.check_critical:
+            check(args.output, critical=True)
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as exc:
         print(f"QA matrix: {exc}", file=sys.stderr)
         return 1

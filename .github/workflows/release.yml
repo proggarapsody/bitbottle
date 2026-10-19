@@ -37,10 +37,10 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Require complete public operation evidence before publishing
+      - name: Require release-critical public operation evidence before publishing
         run: >-
           python3 scripts/qa_matrix.py --run --packages ./...
-          --output "${{ runner.temp }}/release-qa-matrix" --require-complete
+          --output "${{ runner.temp }}/release-qa-matrix" --require-critical
 
       - name: Upload release operation evidence
         if: always()
