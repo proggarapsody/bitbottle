@@ -85,36 +85,41 @@ class EvidenceAssessment(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "differs from approved profile"):
             qa.load_critical_profile(json.dumps(approved).encode())
 
-    def test_critical_profile_accepts_only_named_missing_merge_inputs(self):
+    def test_critical_profile_rejects_missing_cloud_auto_merge_inputs(self):
         public, manifest = catalog(), contracts()
         merge_op = "cli:bitbottle pr merge"
         public["cli"][0]["id"] = merge_op
-        public["cli"][0]["flags"] = [{"name": "rebase"}]
+        public["cli"][0]["flags"] = [{"name": "auto"}, {"name": "auto-off"}]
         merge_contract = manifest["operations"].pop(OP)
-        merge_contract["important_flags"] = ["--rebase"]
+        merge_contract["important_flags"] = ["--auto", "--auto-off"]
+        merge_contract["providers"] = {
+            "cloud": {"status": "supported"},
+            "server": {"status": "unsupported", "reason": "fixture scope"},
+        }
         manifest["operations"][merge_op] = merge_contract
         profile = {"schema": 1, "required_tests": [PKG + "/TestPublicBehavior"],
                    "operations": {merge_op: {
-            "important_flags": ["--rebase"], "important_parameters": [],
-            "providers": {"server": {"status": "supported", "deferred_inputs": {
-                "--rebase": "Release follow-up: rebase variant"}},
-                "cloud": {"status": "unsupported", "deferred_inputs": {}}}}}}
-        success = scenario("success", operation=merge_op)
+            "important_flags": ["--auto", "--auto-off"], "important_parameters": [],
+            "providers": {"cloud": {"status": "supported", "deferred_inputs": {}},
+                "server": {"status": "unsupported", "deferred_inputs": {}}}}}}
+        success = scenario("success", operation=merge_op, backend="cloud")
         success["flags"] = []
-        error = scenario("error", operation=merge_op)
+        error = scenario("error", operation=merge_op, backend="cloud")
         error["flags"] = []
-        unsupported = scenario("unsupported", operation=merge_op, backend="cloud")
+        unsupported = scenario("unsupported", operation=merge_op, backend="server")
         unsupported["flags"] = []
         report = qa.assess(public, manifest, observed([success, error, unsupported]))
         report["scope_complete"] = True
         self.assertFalse(report["complete"])
         critical = qa.assess_critical(report, public, manifest, profile)
-        self.assertTrue(critical["passed"], critical["issues"])
-        self.assertEqual(critical["selected_verified_pairs"], 2)
+        self.assertFalse(critical["passed"])
+        self.assertEqual(critical["selected_verified_pairs"], 1)
         self.assertEqual(critical["full_incomplete_pairs"], 1)
-        self.assertEqual(critical["deferred_inputs"], [
-            {"operation": merge_op, "backend": "server", "input": "--rebase",
-             "reason": "Release follow-up: rebase variant"}])
+        self.assertEqual(critical["deferred_inputs"], [])
+        self.assertTrue(any("important input --auto untested" in issue
+                            for issue in critical["issues"]))
+        self.assertTrue(any("important input --auto-off untested" in issue
+                            for issue in critical["issues"]))
 
     def test_critical_profile_rejects_missing_evidence_even_with_deferral(self):
         public, manifest = catalog(), contracts()

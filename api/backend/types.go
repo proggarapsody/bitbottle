@@ -151,27 +151,26 @@ type SSHKeyInput struct {
 	Key   string
 }
 
-// ToCloudMergeStrategy translates CLI strategy names to Bitbucket Cloud API
-// values used on the auto-merge endpoint.
+// ToCloudMergeStrategy translates CLI strategy names to Bitbucket Cloud merge IDs.
 func ToCloudMergeStrategy(s string) string {
 	switch s {
 	case "squash":
 		return "squash"
 	case "rebase":
-		return "fast_forward"
+		return "rebase_fast_forward"
 	default:
 		return "merge_commit"
 	}
 }
 
 // ToServerMergeStrategy translates CLI strategy names to Bitbucket Server /
-// Data Center API values used on the auto-merge endpoint.
+// Data Center merge IDs.
 func ToServerMergeStrategy(s string) string {
 	switch s {
 	case "squash":
 		return "squash"
 	case "rebase":
-		return "fast-forward"
+		return "rebase-ff-only"
 	default:
 		return "merge-commit"
 	}

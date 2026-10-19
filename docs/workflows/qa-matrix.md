@@ -27,8 +27,9 @@ root-constructor inventory cannot silently omit it.
 fingerprint, contracts, raw test events, and hashes, then requires every pair
 and named public test in the frozen
 [`release-critical.json`](../../test/qamatrix/release-critical.json) profile.
-The profile freezes the 59 reviewed operations, provider statuses, important
-inputs, and four explicitly deferred merge flags. A missing, failed, skipped,
+The profile freezes the 59 reviewed operations, provider statuses, and important
+inputs. Cloud `--auto` and `--auto-off` remain required release blockers until
+their provider contracts and public behavior are verified. A missing, failed, skipped,
 or stale critical proof fails this gate. Run `make qa-matrix` first to create
 fresh saved evidence, or use the release workflow's single-run critical check.
 `qa-matrix-check` applies the same evidence validation and additionally
@@ -91,7 +92,7 @@ and use `qa-matrix-check` to verify eventual exhaustive completion. A green
 ordinary PR or a critical-only pass therefore does not mean release-ready.
 
 The full matrix remains work in progress. The current release profile and its
-four named merge deferrals are documented in
+two Cloud auto-merge blockers are documented in
 [`2026-10-19-critical-release-scenarios.md`](../quality/2026-10-19-critical-release-scenarios.md).
 Final-SHA CI and Cloud live acceptance, native/npm/Docker candidate checks,
 artifact digest/publication binding, and Release Please credentials remain

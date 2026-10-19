@@ -59,7 +59,7 @@ type CloudAddPRComment struct {
 
 // CloudAutoMerge Auto-merge configuration for a Cloud pull request
 type CloudAutoMerge struct {
-	// MergeStrategy Merge strategy: merge_commit, squash, or fast_forward. Maps to CLI vocabulary: merge, squash, rebase.
+	// MergeStrategy Merge strategy ID. rebase_fast_forward maps to the CLI rebase strategy; fast_forward does not rebase commits.
 	MergeStrategy string `json:"merge_strategy"`
 }
 

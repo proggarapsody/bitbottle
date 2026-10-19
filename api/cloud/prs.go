@@ -43,10 +43,12 @@ func cloudStrategyToCLI(s string) string {
 	switch s {
 	case "squash":
 		return "squash"
-	case "fast_forward":
+	case "rebase_fast_forward":
 		return "rebase"
-	default:
+	case "merge_commit":
 		return "merge"
+	default:
+		return s
 	}
 }
 

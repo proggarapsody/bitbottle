@@ -1,6 +1,7 @@
 package pr_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -64,4 +65,45 @@ func TestPRMerge_Integration_ServerEndToEnd(t *testing.T) {
 	assert.Contains(t, gotPath, "/projects/MYPROJ/repos/myrepo/pull-requests/42/merge")
 	assert.Contains(t, out.String(), "Merged pull request")
 	assert.Contains(t, out.String(), "#42")
+}
+
+func TestPRMerge_Integration_RebaseUsesProviderStrategy(t *testing.T) {
+	for _, tc := range []struct {
+		name, config, remote, expectedPath, expectedStrategy string
+	}{
+		{"cloud", "bitbucket.org:\n  oauth_token: tok\n  git_protocol: ssh\n", "git@bitbucket.org:myworkspace/myrepo.git\n", "/repositories/MYWORKSPACE/myrepo/pullrequests/42/merge", "rebase_fast_forward"},
+		{"data-center", "bb.example.com:\n  oauth_token: tok\n  git_protocol: ssh\n", "ssh://git@bb.example.com:7999/myproj/myrepo.git\n", "/projects/MYPROJ/repos/myrepo/pull-requests/42/merge", "rebase-ff-only"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotPath string
+			var gotBody map[string]any
+			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				if r.Method == http.MethodPost {
+					gotPath = r.URL.Path
+					body, _ := io.ReadAll(r.Body)
+					_ = json.Unmarshal(body, &gotBody)
+				}
+				_, _ = io.WriteString(w, `{"id":42,"version":3,"state":"MERGED"}`)
+			}))
+			t.Cleanup(srv.Close)
+
+			runner := testhelpers.NewFakeRunner(testhelpers.RunResponse{Stdout: tc.remote})
+			f, out, _ := factorytest.New(t, factorytest.Opts{InitialConfig: tc.config})
+			f.HTTPClient = factorytest.StubHTTPClient(srv.Client())
+			f.BaseURL = func(hostname string) string { return srv.URL }
+			f.GitRunner = func() run.Runner { return runner }
+
+			root := pr.NewCmdPR(f)
+			root.SetArgs([]string{"merge", "42", "--rebase"})
+			require.NoError(t, root.Execute())
+			assert.Equal(t, tc.expectedPath, gotPath)
+			if tc.name == "cloud" {
+				assert.Equal(t, tc.expectedStrategy, gotBody["merge_strategy"])
+			} else {
+				assert.Equal(t, tc.expectedStrategy, gotBody["strategyId"])
+			}
+			assert.Contains(t, out.String(), "Merged pull request #42")
+		})
+	}
 }

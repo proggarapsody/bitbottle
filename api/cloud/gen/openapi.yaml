@@ -102,8 +102,8 @@ components:
         merge_strategy:
           type: string
           description: >
-            Merge strategy: merge_commit, squash, or fast_forward.
-            Maps to CLI vocabulary: merge, squash, rebase.
+            Merge strategy ID. rebase_fast_forward maps to the CLI rebase strategy;
+            fast_forward does not rebase commits.
 
     CloudPullRequest:
       type: object

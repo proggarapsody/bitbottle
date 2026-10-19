@@ -8,6 +8,8 @@ on:
       - '.github/workflows/release-dryrun.yml'
       - '.github/workflows/scorecard.yml'
       - 'packages/mcp-npm/**'
+      - 'scripts/smoke-release-candidate.py'
+      - 'Dockerfile'
 
 permissions:
   contents: read
@@ -46,39 +48,66 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Pack npm wrapper
+        working-directory: packages/mcp-npm
+        run: |
+          cp ../../README.md README.md
+          snapshot_version="$(node -p "require('../../dist/metadata.json').version")"
+          npm version "$snapshot_version" --no-git-tag-version
+          npm pack
+
+      - name: Select GoReleaser Linux image
+        id: image
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import re
+          artifacts = json.load(open('dist/artifacts.json'))
+          images = [item['name'] for item in artifacts
+                    if item.get('type') == 'Docker Image'
+                    and item.get('goos') == 'linux'
+                    and item.get('goarch') == 'amd64'
+                    and re.fullmatch(r'proggarapsody/bitbottle:(?!latest)[^:]+-amd64', item.get('name', ''))]
+          if len(images) != 1:
+              raise SystemExit(f'expected one GoReleaser Linux image, found {images!r}')
+          print('image=' + images[0])
+          PY
+
+      - name: Smoke Linux archive, npm install, and GoReleaser Docker MCP
+        run: >-
+          python3 scripts/smoke-release-candidate.py
+          --archive dist/bitbottle_linux_amd64.tar.gz
+          --checksums dist/checksums.txt
+          --metadata dist/metadata.json
+          --npm-tarball packages/mcp-npm/proggarapsody-bitbottle-*.tgz
+          --artifacts dist/artifacts.json
+          --docker-image "${{ steps.image.outputs.image }}"
+          > "${{ runner.temp }}/candidate-smoke.json"
+
+      # This proves the PR snapshot bytes only. release.yml rebuilds at the tag;
+      # its published bytes need their own digest and post-publication binding.
+      - name: Bind snapshot smoke evidence to workflow SHA
+        run: |
+          python3 -c 'import json,os; p=os.environ["RUNNER_TEMP"]+"/candidate-smoke.json"; d=json.load(open(p)); d["commit_sha"]=os.environ["GITHUB_SHA"]; d["go_version"]=os.popen("go version").read().strip(); open(p,"w").write(json.dumps(d,indent=2)+"\n")'
+          cat "${{ runner.temp }}/candidate-smoke.json" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.3.4
+        with:
+          name: candidate-smoke
+          path: ${{ runner.temp }}/candidate-smoke.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Upload snapshot artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.3.4
         with:
           name: goreleaser-snapshot
           path: dist/
           retention-days: 3
-
-  npm-dryrun:
-    name: npm publish dry-run
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
-        with:
-          egress-policy: audit
-
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version: "24"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Copy README (mirrors real release step)
-        working-directory: packages/mcp-npm
-        run: cp ../../README.md README.md
-
-      # npm pack validates the package.json fields and files list without the
-      # strict publication checks that npm publish --dry-run enforces in npm v11.
-      # Proves the tarball is buildable and contains the expected files.
-      - name: npm pack (dry-run equivalent)
-        working-directory: packages/mcp-npm
-        run: |
-          npm pack
-          tar tf ./*.tgz

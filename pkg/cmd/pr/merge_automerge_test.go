@@ -113,6 +113,23 @@ func TestPRMerge_AutoAndAutoOff_Errors(t *testing.T) {
 	assert.Contains(t, err.Error(), "--auto-off")
 }
 
+func TestPRMerge_RejectsConflictingStrategies(t *testing.T) {
+	for _, flags := range [][]string{
+		{"--merge", "--squash"},
+		{"--merge", "--rebase"},
+		{"--squash", "--rebase"},
+	} {
+		t.Run(flags[0]+"/"+flags[1], func(t *testing.T) {
+			f, _, _ := newPRFactory(t, &testhelpers.FakeClient{T: t}, newPRRunner())
+			cmd := pr.NewCmdPRMerge(f)
+			cmd.SetArgs(append([]string{"42"}, flags...))
+			err := cmd.Execute()
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "choose only one")
+		})
+	}
+}
+
 // TestPRMerge_AutoMergeQueued_NonTTY_DoesNotPrompt tests that when the PR has
 // auto-merge enabled and we're not on a TTY, the command proceeds without
 // prompting (non-interactive path: auto-merge is silently cancelled and
