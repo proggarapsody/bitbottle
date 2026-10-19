@@ -141,7 +141,72 @@ func TestServerClient_MergePR_SendsStrategy(t *testing.T) {
 	client, _ := newServerClient(t, newMergePRHandler(t, &gotBody))
 	_, err := client.MergePR("MYPROJ", "my-service", 42, backend.MergePRInput{Strategy: "squash"})
 	require.NoError(t, err)
-	assert.Contains(t, string(gotBody), `"strategy":"squash"`)
+	assert.Contains(t, string(gotBody), `"strategyId":"squash"`)
+	assert.NotContains(t, string(gotBody), `"strategy":`)
+}
+
+func TestServerClient_MergePR_StrategyIDs(t *testing.T) {
+	for _, tc := range []struct{ input, expected string }{
+		{"merge", "no-ff"},
+		{"merge-commit", "no-ff"},
+		{"squash", "squash"},
+		{"rebase", "fast-forward"},
+		{"custom-id", "custom-id"},
+	} {
+		t.Run(tc.input, func(t *testing.T) {
+			var body []byte
+			client, _ := newServerClient(t, newMergePRHandler(t, &body))
+			_, err := client.MergePR("MYPROJ", "my-service", 42, backend.MergePRInput{Strategy: tc.input})
+			require.NoError(t, err)
+			assert.Contains(t, string(body), `"strategyId":"`+tc.expected+`"`)
+		})
+	}
+}
+
+func TestServerClient_EnableAutoMerge_StrategyIDs(t *testing.T) {
+	for _, tc := range []struct{ input, expected string }{
+		{"merge", "no-ff"},
+		{"merge-commit", "no-ff"},
+		{"squash", "squash"},
+		{"rebase", "fast-forward"},
+		{"custom-id", "custom-id"},
+	} {
+		t.Run(tc.input, func(t *testing.T) {
+			var body []byte
+			client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				if r.Method == http.MethodGet {
+					_, _ = io.WriteString(w, `{"version":3}`)
+					return
+				}
+				body, _ = io.ReadAll(r.Body)
+				_, _ = io.WriteString(w, `{}`)
+			})
+			err := client.EnableAutoMerge("MYPROJ", "my-service", 42, tc.input)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{"version":3,"autoMerge":true,"strategyId":"`+tc.expected+`"}`, string(body))
+		})
+	}
+}
+
+func TestServerClient_GetPR_AutoMergeStrategyVocabulary(t *testing.T) {
+	for _, tc := range []struct{ wire, expected string }{
+		{"no-ff", "merge"},
+		{"squash", "squash"},
+		{"fast-forward", "rebase"},
+		{"custom-id", "custom-id"},
+	} {
+		t.Run(tc.wire, func(t *testing.T) {
+			client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":42,"autoMerge":{"strategyId":"`+tc.wire+`"}}`)
+			})
+			pr, err := client.GetPR("MYPROJ", "my-service", 42)
+			require.NoError(t, err)
+			require.NotNil(t, pr.AutoMerge)
+			assert.Equal(t, tc.expected, pr.AutoMerge.Strategy)
+		})
+	}
 }
 
 func TestServerClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
@@ -150,7 +215,7 @@ func TestServerClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
 	client, _ := newServerClient(t, newMergePRHandler(t, &gotBody))
 	_, err := client.MergePR("MYPROJ", "my-service", 42, backend.MergePRInput{})
 	require.NoError(t, err)
-	assert.NotContains(t, string(gotBody), `"strategy"`)
+	assert.NotContains(t, string(gotBody), `"strategyId"`)
 }
 
 // TestServerClient_MergePR_SendsCurrentVersion verifies that MergePR fetches
@@ -196,26 +261,25 @@ func TestServerClient_DeleteBranch_SendsDeleteWithBody(t *testing.T) {
 	assert.Contains(t, string(gotBody), `"name"`)
 }
 
-// TestServerClient_EnableAutoMerge_SendsPOST verifies that EnableAutoMerge uses POST
-// (not PUT) on the Server auto-merge endpoint. The Bitbucket Server/DC API
-// requires POST to queue auto-merge; PUT returns a 405 Method Not Allowed.
-func TestServerClient_EnableAutoMerge_SendsPOST(t *testing.T) {
+// Queueing auto-merge reads the current version and posts to the merge endpoint.
+func TestServerClient_EnableAutoMerge_SendsVersionedMerge(t *testing.T) {
 	t.Parallel()
-	var gotMethod string
-	var gotPath string
+	var requests []string
 	var gotBody []byte
 	client, _ := newServerClient(t, func(w http.ResponseWriter, r *http.Request) {
-		gotMethod = r.Method
-		gotPath = r.URL.Path
-		gotBody, _ = io.ReadAll(r.Body)
+		requests = append(requests, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `{"version":3}`)
+			return
+		}
+		gotBody, _ = io.ReadAll(r.Body)
 		_, _ = io.WriteString(w, `{}`)
 	})
 	err := client.EnableAutoMerge("MYPROJ", "my-service", 42, "squash")
 	require.NoError(t, err)
-	assert.Equal(t, http.MethodPost, gotMethod, "EnableAutoMerge must POST, not PUT")
-	assert.Equal(t, "/projects/MYPROJ/repos/my-service/pull-requests/42/auto-merge", gotPath)
-	assert.Contains(t, string(gotBody), `"mergeStrategy"`)
+	assert.Equal(t, []string{"GET /projects/MYPROJ/repos/my-service/pull-requests/42", "POST /projects/MYPROJ/repos/my-service/pull-requests/42/merge"}, requests)
+	assert.JSONEq(t, `{"version":3,"autoMerge":true,"strategyId":"squash"}`, string(gotBody))
 }
 
 func TestServerClient_GetCurrentUser_MapsSlug(t *testing.T) {

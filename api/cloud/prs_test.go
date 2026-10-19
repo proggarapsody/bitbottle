@@ -133,6 +133,28 @@ func TestCloudClient_MergePR_MapsSquashStrategy(t *testing.T) {
 	assert.Contains(t, string(gotBody), `"merge_strategy":"squash"`)
 }
 
+func TestCloudClient_MergePR_MapsCLIAndPreservesProviderStrategy(t *testing.T) {
+	for _, tc := range []struct{ input, expected string }{
+		{"merge", "merge_commit"},
+		{"merge-commit", "merge_commit"},
+		{"rebase", "fast_forward"},
+		{"fast_forward", "fast_forward"},
+	} {
+		t.Run(tc.input, func(t *testing.T) {
+			var gotBody []byte
+			client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
+				gotBody, _ = io.ReadAll(r.Body)
+				body, _ := os.ReadFile("testdata/pr_get.json")
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write(body)
+			})
+			_, err := client.MergePR("myworkspace", "my-service", 42, backend.MergePRInput{Strategy: tc.input})
+			require.NoError(t, err)
+			assert.Contains(t, string(gotBody), `"merge_strategy":"`+tc.expected+`"`)
+		})
+	}
+}
+
 func TestCloudClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
 	t.Parallel()
 	var gotBody []byte

@@ -78,6 +78,11 @@ func NewCmdPRTaskCreate(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// The current Cloud adapter ignores BLOCKER severity, so require
+			// the task-state capability before creating a task comment.
+			if _, err := backend.AsPRCommentStateSetter(client, ref.Host); err != nil {
+				return err
+			}
 
 			in := backend.AddPRCommentInput{
 				Text:     body,

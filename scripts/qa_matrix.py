@@ -21,6 +21,8 @@ OUTCOMES = {"success", "error", "unsupported"}
 ASSERTIONS = {"output", "effect", "input", "error", "pagination"}
 PROVIDERS = {"server", "cloud", "local"}
 STATUSES = {"supported", "unsupported", "not_applicable"}
+SUPPORTED_MINIMUM = {"success": {"output", "input", "effect"},
+                     "error": {"error", "input", "effect"}}
 
 
 def sha(data):
@@ -214,6 +216,9 @@ def assess(catalog, contracts, events):
             issues.append(f"{op}: contract must be an object")
             contract = {}
         providers = contract.get("providers", {})
+        scope = contract.get("scope", "remote")
+        if scope not in ("remote", "local"):
+            issues.append(f"{op}: invalid scope {scope!r}")
         required = contract.get("required_assertions", {})
         important_flags = contract.get("important_flags", [])
         important_parameters = contract.get("important_parameters", [])
@@ -233,6 +238,14 @@ def assess(catalog, contracts, events):
         if not isinstance(providers, dict):
             issues.append(f"{op}: providers must be an object")
             providers = {}
+        if scope == "local" and any(
+            not isinstance(providers.get(backend), dict) or
+            providers[backend].get("status") != expected
+            for backend, expected in (("server", "not_applicable"),
+                                      ("cloud", "not_applicable"),
+                                      ("local", "supported"))
+        ):
+            issues.append(f"{op}: local scope requires server/cloud not_applicable and local supported")
         for backend in ("server", "cloud", "local"):
             if backend == "local" and backend not in providers:
                 continue
@@ -241,8 +254,10 @@ def assess(catalog, contracts, events):
             reasons = []
             if status not in STATUSES:
                 reasons.append("provider support unreviewed")
-            if status in ("unsupported", "not_applicable") and not str(p.get("reason", "")).strip():
-                reasons.append("provider classification lacks reason")
+            if status in ("unsupported", "not_applicable"):
+                reason = p.get("reason") if isinstance(p, dict) else None
+                if not isinstance(reason, str) or not reason.strip():
+                    reasons.append("provider classification lacks reason")
             present_outcomes = {key[2] for key in grouped if key[:2] == (op, backend)}
             if status == "supported":
                 outcomes = ("success", "error")
@@ -262,6 +277,8 @@ def assess(catalog, contracts, events):
                     ):
                         reasons.append(f"{outcome}: missing/invalid required assertions")
                         continue
+                    if status == "supported" and not SUPPORTED_MINIMUM[outcome].issubset(needed):
+                        reasons.append(f"{outcome}: required assertions omit supported minimum")
                 candidates = grouped.get((op, backend, outcome), [])
                 if not candidates:
                     reasons.append(f"{outcome}: no passed scenario")
@@ -280,6 +297,19 @@ def assess(catalog, contracts, events):
                          "verified": status in ("supported", "unsupported") and not reasons,
                          "reasons": sorted(set(reasons))})
         operation_rows = [row for row in rows if row["operation"] == op]
+        by_backend = {row["backend"]: row for row in operation_rows}
+        if (scope == "local" and all(
+            by_backend.get(remote, {}).get("status") == "not_applicable" and
+            by_backend[remote]["reasons"] == ["applicability lacks public outcome proof"] and
+            isinstance(providers.get(remote), dict) and
+            isinstance(providers[remote].get("reason"), str) and
+            providers[remote]["reason"].strip()
+            for remote in ("server", "cloud")
+        ) and by_backend.get("local", {}).get("status") == "supported" and
+                by_backend["local"]["verified"]):
+            for remote in ("server", "cloud"):
+                by_backend[remote]["reasons"] = []
+                by_backend[remote]["verified"] = True
         if operation_rows and all(row["status"] == "not_applicable" for row in operation_rows):
             issues.append(f"{op}: every provider is not_applicable; no operation was exercised")
     if not events["passed_packages"]:
@@ -292,12 +322,17 @@ def assess(catalog, contracts, events):
         issues.append("live acceptance unexpectedly passed in hermetic lane")
     missing = [r for r in rows if not r["verified"]]
     reviewed_rows = [r for r in rows if r["status"] in STATUSES]
+    verified_status = lambda status: sum(r["verified"] and r["status"] == status for r in rows)
     declaration_unknown = sum("declared_meta_backends" not in t for t in mcp)
     return {"schema": 1, "complete": not missing and not issues,
             "counts": {"cli_nodes": len(catalog["cli"]), "cli_runnable": len(cli),
                        "mcp_tools": len(mcp), "operations": len(operations),
                        "provider_pairs": len(rows), "reviewed_pairs": len(reviewed_rows),
                        "verified_pairs": sum(r["verified"] for r in rows),
+                       "verified_supported_pairs": verified_status("supported"),
+                       "verified_unsupported_pairs": verified_status("unsupported"),
+                       "verified_not_applicable_pairs": verified_status("not_applicable"),
+                       "verified_local_pairs": sum(r["verified"] and r["backend"] == "local" for r in rows),
                        "unverified_pairs": len(missing),
                        "mcp_declaration_unknown": declaration_unknown,
                        "passed_scenario_records": len(valid_records),
@@ -321,6 +356,10 @@ def markdown(report):
              f"{c['mcp_tools']} MCP tools; {c['operations']} runnable operations.", "",
              f"Full DoD: {c['verified_pairs']}/{c['provider_pairs']} provider pairs verified; "
              f"{c['unverified_pairs']} incomplete.",
+             f"Verified outcomes: {c['verified_supported_pairs']} supported, "
+             f"{c['verified_unsupported_pairs']} unsupported, "
+             f"{c['verified_not_applicable_pairs']} locally proven not applicable "
+             f"({c['verified_local_pairs']} verified local pairs).",
              f"Reviewed pilot: {report['reviewed_pilot']['verified_pairs']}/"
              f"{report['reviewed_pilot']['reviewed_pairs']} reviewed pairs verified.",
              f"MCP provider declaration absent: {c['mcp_declaration_unknown']}. "

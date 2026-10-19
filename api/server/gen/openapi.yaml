@@ -67,11 +67,11 @@ components:
       type: object
       description: Auto-merge configuration for a pull request on Bitbucket Server/DC
       required:
-        - mergeStrategy
+        - strategyId
       properties:
-        mergeStrategy:
+        strategyId:
           type: string
-          description: Merge strategy (merge, squash, fast-forward)
+          description: Repository merge strategy ID
 
     RestPullRequestAuthor:
       type: object
@@ -198,19 +198,12 @@ components:
         message:
           type: string
           description: Custom merge commit message
-        strategy:
+        strategyId:
           type: string
-          description: Merge strategy
-
-    RestAutoMergeRequest:
-      type: object
-      description: Request body for enabling auto-merge on a pull request
-      required:
-        - mergeStrategy
-      properties:
-        mergeStrategy:
-          type: string
-          description: Merge strategy to use when auto-merging
+          description: Repository merge strategy ID (for example no-ff or squash)
+        autoMerge:
+          type: boolean
+          description: Queue merge when checks pass
 
     # ── Admin ─────────────────────────────────────────────────────────────────
     RestLoggingConfig:

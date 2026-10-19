@@ -24,8 +24,8 @@ def event(action, test=TEST, output=""):
 
 def scenario(outcome, operation=OP, backend="server"):
     return {"operation": operation, "backend": backend, "outcome": outcome,
-            "assertions": ["output"] if outcome == "success" else
-            (["error", "effect"] if outcome == "unsupported" else ["error"]),
+            "assertions": ["output", "input", "effect"] if outcome == "success" else
+            (["error", "effect"] if outcome == "unsupported" else ["error", "input", "effect"]),
             "flags": ["--limit"]}
 
 
@@ -46,11 +46,128 @@ def contracts():
     return {"schema": 1, "operations": {OP: {
         "providers": {"server": {"status": "supported"},
                       "cloud": {"status": "unsupported", "reason": "fixture has no Cloud behavior"}},
-        "required_assertions": {"success": ["output"], "error": ["error"]},
+        "required_assertions": {"success": ["output", "input", "effect"],
+                                "error": ["error", "input", "effect"]},
         "important_flags": ["--limit"], "important_parameters": []}}}
 
 
+def local_case():
+    op = "cli:bitbottle alias set"
+    public = {"schema": 1, "cli": [{"id": op, "runnable": True,
+              "parameters": ["name", "expansion"], "flags": []}], "mcp": [],
+              "global_version": {"observed": "v1"}}
+    manifest = {"schema": 1, "operations": {op: {
+        "scope": "local",
+        "providers": {
+            "server": {"status": "not_applicable", "reason": "local config only"},
+            "cloud": {"status": "not_applicable", "reason": "local config only"},
+            "local": {"status": "supported"}},
+        "required_assertions": {"success": ["output", "effect", "input"],
+                                "error": ["error", "effect", "input"]},
+        "important_flags": [], "important_parameters": ["name", "expansion"]}}}
+    success = {"operation": op, "backend": "local", "outcome": "success",
+               "assertions": ["output", "effect", "input"], "flags": ["name", "expansion"]}
+    error = {"operation": op, "backend": "local", "outcome": "error",
+             "assertions": ["error", "effect", "input"], "flags": ["name", "expansion"]}
+    return public, manifest, success, error
+
+
 class EvidenceAssessment(unittest.TestCase):
+    def test_tested_local_operation_derives_both_remote_not_applicable_pairs(self):
+        public, manifest, success, error = local_case()
+        report = qa.assess(public, manifest, observed([success, error]))
+        self.assertTrue(report["complete"], report["issues"])
+        self.assertEqual(report["counts"]["provider_pairs"], 3)
+        self.assertEqual(report["counts"]["verified_local_pairs"], 1)
+        self.assertEqual(report["counts"]["verified_not_applicable_pairs"], 2)
+
+    def test_untested_local_operation_does_not_derive_remote_applicability(self):
+        public, manifest, _, _ = local_case()
+        report = qa.assess(public, manifest, observed([]))
+        self.assertFalse(report["complete"])
+        self.assertTrue(all(not row["verified"] for row in report["pairs"]))
+
+    def test_one_sided_remote_not_applicable_does_not_inherit_local_proof(self):
+        public, manifest, success, error = local_case()
+        manifest["operations"][success["operation"]]["providers"]["cloud"] = {"status": "supported"}
+        report = qa.assess(public, manifest, observed([success, error]))
+        self.assertFalse(report["complete"])
+        self.assertFalse(next(r for r in report["pairs"] if r["backend"] == "server")["verified"])
+
+    def test_remote_scope_cannot_use_local_proof_to_claim_not_applicable(self):
+        public, manifest, success, error = local_case()
+        manifest["operations"][success["operation"]]["scope"] = "remote"
+        report = qa.assess(public, manifest, observed([success, error]))
+        self.assertFalse(report["complete"])
+        self.assertFalse(next(r for r in report["pairs"] if r["backend"] == "server")["verified"])
+
+    def test_local_proof_needs_required_assertions_and_important_inputs(self):
+        public, manifest, success, error = local_case()
+        success["assertions"] = ["output", "input"]
+        success["flags"] = ["name"]
+        report = qa.assess(public, manifest, observed([success, error]))
+        self.assertFalse(report["complete"])
+        self.assertTrue(all(not r["verified"] for r in report["pairs"]))
+
+    def test_local_contract_cannot_weaken_minimum_assertions(self):
+        public, manifest, success, error = local_case()
+        contract = manifest["operations"][success["operation"]]
+        contract["required_assertions"] = {"success": ["output"], "error": ["error"]}
+        contract["important_parameters"] = []
+        success["assertions"] = ["output"]
+        error["assertions"] = ["error"]
+        success["flags"] = []
+        error["flags"] = []
+        report = qa.assess(public, manifest, observed([success, error]))
+        self.assertFalse(report["complete"])
+        self.assertTrue(all(not row["verified"] for row in report["pairs"]))
+
+    def test_remote_supported_contract_cannot_weaken_minimum_assertions(self):
+        manifest = contracts()
+        manifest["operations"][OP]["required_assertions"] = {"success": ["output"], "error": ["error"]}
+        manifest["operations"][OP]["important_flags"] = []
+        report = qa.assess(catalog(), manifest, observed([
+            {**scenario("success"), "flags": []},
+            {**scenario("error"), "flags": []},
+            scenario("unsupported", backend="cloud")]))
+        self.assertFalse(report["complete"])
+        server = next(row for row in report["pairs"] if row["backend"] == "server")
+        self.assertFalse(server["verified"])
+
+    def test_non_string_provider_reasons_are_rejected(self):
+        for bad_reason in (None, 17, {"detail": "claimed gap"}):
+            with self.subTest(reason=bad_reason):
+                public, manifest, success, error = local_case()
+                contract = manifest["operations"][success["operation"]]
+                contract["providers"]["server"]["reason"] = bad_reason
+                report = qa.assess(public, manifest, observed([success, error]))
+                self.assertFalse(report["complete"])
+                server = next(row for row in report["pairs"] if row["backend"] == "server")
+                self.assertIn("provider classification lacks reason", server["reasons"])
+                unsupported = contracts()
+                unsupported["operations"][OP]["providers"]["cloud"]["reason"] = bad_reason
+                remote = qa.assess(catalog(), unsupported, observed([
+                    scenario("success"), scenario("error"),
+                    scenario("unsupported", backend="cloud")]))
+                cloud = next(row for row in remote["pairs"] if row["backend"] == "cloud")
+                self.assertFalse(cloud["verified"])
+
+    def test_local_scope_with_supported_remote_provider_is_invalid(self):
+        public, manifest, success, error = local_case()
+        manifest["operations"][success["operation"]]["providers"]["server"] = {"status": "supported"}
+        report = qa.assess(public, manifest, observed([success, error]))
+        self.assertFalse(report["complete"])
+        self.assertTrue(any("local scope" in issue for issue in report["issues"]))
+
+    def test_local_proof_does_not_erase_remote_scenario_contradiction(self):
+        public, manifest, success, error = local_case()
+        remote = dict(success, backend="server")
+        report = qa.assess(public, manifest, observed([success, error, remote]))
+        self.assertFalse(report["complete"])
+        server = next(r for r in report["pairs"] if r["backend"] == "server")
+        self.assertFalse(server["verified"])
+        self.assertTrue(any("contradicts" in reason for reason in server["reasons"]))
+
     def test_fingerprint_includes_fixture_inputs_but_excludes_dated_reports(self):
         self.assertTrue(qa.is_behavior_input("test/script/testdata/pr_view.txtar"))
         self.assertTrue(qa.is_behavior_input("api/cloud/openapi.yaml"))
@@ -110,8 +227,8 @@ class EvidenceAssessment(unittest.TestCase):
 
     def test_split_success_assertions_cannot_combine_into_proof(self):
         manifest = contracts()
-        manifest["operations"][OP]["required_assertions"]["success"] = ["output", "input"]
         output_only = scenario("success")
+        output_only["assertions"] = ["output"]
         input_only = scenario("success")
         input_only["assertions"] = ["input"]
         report = qa.assess(catalog(), manifest, observed([

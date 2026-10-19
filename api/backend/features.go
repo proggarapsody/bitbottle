@@ -265,7 +265,8 @@ var AllFeatureSpecs = []FeatureSpec{
 	},
 	{
 		Name:          "PRCommentStateSetter",
-		HumanLabel:    "pr task resolve/reopen",
+		HumanLabel:    "pull request tasks",
+		Plural:        true,
 		Check:         func(c Client) bool { _, ok := c.(PRCommentStateSetter); return ok },
 		Feature:       FeaturePRCommentStateSet,
 		CloudSupport:  false,

@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/internal/format"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/internal/repoarg"
 )
@@ -39,12 +40,19 @@ func NewCmdBranchCreate(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			_, err = client.CreateBranch(ref.Project, ref.Slug, backend.CreateBranchInput{
+			branch, err := client.CreateBranch(ref.Project, ref.Slug, backend.CreateBranchInput{
 				Name:    name,
 				StartAt: startAt,
 			})
 			if err != nil {
 				return err
+			}
+			cfg := format.ConfigFromCmd(cmd)
+			if cfg.Format != format.FormatTable {
+				printer := branchFields(f, cfg)
+				printer.SetSingleItem()
+				printer.AddItem(branch)
+				return printer.Render()
 			}
 
 			fmt.Fprintf(f.IOStreams.Out, "Created branch %s\n", name)

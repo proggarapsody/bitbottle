@@ -41,6 +41,12 @@ it never proves Cloud or DC acceptance. Other skipped test cases block the run.
    A reason-only `not_applicable` provider remains incomplete. Missing MCP
    backend metadata is reported separately; an explicitly reviewed provider
    contract supplies applicability evidence, while absence alone supplies none.
+   For a local command, use `scope: local`, reviewed reasons for both remote
+   providers, and a supported `local` pair. Only a complete local success/error
+   proof (including important inputs) establishes remote non-applicability.
+   Contradictory remote scenarios still block it. Reports count these derived
+   classifications separately from supported and unsupported provider outcomes;
+   each local command adds one local proof row to the two default remote rows.
 2. Assert known output, request inputs or observable effects, error behavior,
    important flags/parameters, and pagination where applicable. Record only
    assertions actually made by the test, after those assertions.
@@ -59,6 +65,10 @@ adapters against local HTTP fixtures. MCP scenarios use the public SDK and
 a real stdio child with stateful synthetic backend clients. The latter
 prove the MCP/domain contract, not provider HTTP compatibility or native
 release artifact installation. Preserve those distinctions in QA claims.
+For reads, an effect assertion identifies the observed backend request and
+its independently expected routing/inputs; it does not imply mutated state.
+For generated local output, the effect is the validated artifact (for example,
+the selected shell's completion program), with settings preserved on errors.
 
 ## CI and release behavior
 

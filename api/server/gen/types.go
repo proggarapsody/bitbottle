@@ -68,14 +68,8 @@ type RestApplicationProperties struct {
 
 // RestAutoMerge Auto-merge configuration for a pull request on Bitbucket Server/DC
 type RestAutoMerge struct {
-	// MergeStrategy Merge strategy (merge, squash, fast-forward)
-	MergeStrategy string `json:"mergeStrategy"`
-}
-
-// RestAutoMergeRequest Request body for enabling auto-merge on a pull request
-type RestAutoMergeRequest struct {
-	// MergeStrategy Merge strategy to use when auto-merging
-	MergeStrategy string `json:"mergeStrategy"`
+	// StrategyID Repository merge strategy ID
+	StrategyID string `json:"strategyId"`
 }
 
 // RestBranch A Bitbucket Server branch
@@ -411,11 +405,14 @@ type RestMergeCheck struct {
 
 // RestMergePullRequestRequest Request body for merging a pull request
 type RestMergePullRequestRequest struct {
+	// AutoMerge Queue merge when checks pass
+	AutoMerge *bool `json:"autoMerge,omitempty"`
+
 	// Message Custom merge commit message
 	Message *string `json:"message,omitempty"`
 
-	// Strategy Merge strategy
-	Strategy *string `json:"strategy,omitempty"`
+	// StrategyID Repository merge strategy ID (for example no-ff or squash)
+	StrategyID *string `json:"strategyId,omitempty"`
 
 	// Version Current PR version for optimistic concurrency
 	Version int `json:"version"`

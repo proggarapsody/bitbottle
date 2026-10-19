@@ -123,7 +123,9 @@ For public CLI/MCP coverage, run `make qa-matrix`; use `make qa-matrix-check`
 to require the full operation matrix. Ordinary PRs publish incomplete results
 while retaining test gates. Release PRs and the publishing workflow require a
 complete matrix. See [`docs/workflows/qa-matrix.md`](docs/workflows/qa-matrix.md)
-for scenario claims, provider applicability, and evidence verification.
+for scenario claims, provider applicability, and evidence verification. Local
+commands require explicit local success/error proof before their remote
+non-applicability can be counted; derived classifications are not provider passes.
 
 Cloud acceptance reads secrets only from the `cloud-acceptance` GitHub
 Environment restricted to `main`. Keep bootstrap and actor credentials
