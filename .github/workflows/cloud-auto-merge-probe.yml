@@ -1,0 +1,155 @@
+name: Cloud auto-merge diagnostic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-auto-merge-probe
+  cancel-in-progress: false
+
+jobs:
+  trust-check:
+    name: Validate trusted workflow ref
+    runs-on: ubuntu-latest
+    outputs:
+      trusted: ${{ steps.check.outputs.trusted }}
+    steps:
+      - id: check
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" != "refs/heads/main" ]]; then
+            echo "Only refs/heads/main may run the Cloud diagnostic." >&2
+            exit 1
+          fi
+          echo "trusted=true" >> "$GITHUB_OUTPUT"
+
+  probe:
+    name: Observe Cloud auto-merge
+    needs: trust-check
+    if: needs.trust-check.outputs.trusted == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: cloud-acceptance
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build CLI and diagnostic from selected commit
+        run: |
+          go build -o "$RUNNER_TEMP/bitbottle" ./cmd/bitbottle
+          go build -o "$RUNNER_TEMP/cloud-auto-merge-probe" ./cmd/qa-cloud-auto-merge-probe
+      - name: Prepare per-run evidence directory
+        run: mkdir -p "$RUNNER_TEMP/cloud-auto-merge-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+      - name: Run Cloud auto-merge diagnostic
+        id: live
+        env:
+          BITBOTTLE_BIN: ${{ runner.temp }}/bitbottle
+          BB_TOKEN: ${{ secrets.BB_CLOUD_TOKEN }}
+          BB_CLOUD_BOOTSTRAP_TOKEN: ${{ secrets.BB_CLOUD_BOOTSTRAP_TOKEN }}
+          BB_CLOUD_EMAIL: ${{ secrets.BB_CLOUD_EMAIL }}
+          BB_CLOUD_WORKSPACE: bitbottle-qa-lab
+          BB_CLOUD_PROJECT: BBQA
+          BB_ACCEPTANCE_SHA: ${{ github.sha }}
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/cloud-auto-merge-${{ github.run_id }}-${{ github.run_attempt }}
+        run: "$RUNNER_TEMP/cloud-auto-merge-probe"
+      - name: Always verify manifest-owned cleanup
+        id: cleanup
+        if: always() && steps.live.outcome != 'skipped'
+        env:
+          BB_CLOUD_BOOTSTRAP_TOKEN: ${{ secrets.BB_CLOUD_BOOTSTRAP_TOKEN }}
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/cloud-auto-merge-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          manifest="$BB_ACCEPTANCE_REPORT_DIR/manifest.json"
+          if [[ -s "$manifest" ]]; then
+            if go run ./cmd/qa-cloud-cleanup --manifest "$manifest"; then
+              echo "state=verified" >> "$GITHUB_OUTPUT"
+            else
+              echo "state=failed" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          else
+            echo "state=no_manifest" >> "$GITHUB_OUTPUT"
+            echo "No manifest was written; the probe failed before resource creation or could not persist ownership evidence." >&2
+            if [[ '${{ steps.live.outcome }}' == 'success' ]]; then
+              exit 1
+            fi
+          fi
+      - name: Check sanitized evidence
+        id: evidence
+        if: always()
+        env:
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/cloud-auto-merge-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          if [[ -s "$BB_ACCEPTANCE_REPORT_DIR/probe.json" || -s "$BB_ACCEPTANCE_REPORT_DIR/manifest.json" ]]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ '${{ steps.live.outcome }}' == 'success' && ! -s "$BB_ACCEPTANCE_REPORT_DIR/probe.json" ]]; then
+            echo "Successful probe did not produce probe.json." >&2
+            exit 1
+          fi
+      - name: Upload sanitized diagnostic evidence
+        if: always() && steps.evidence.outputs.upload == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-auto-merge-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/cloud-auto-merge-${{ github.run_id }}-${{ github.run_attempt }}/probe.json
+            ${{ runner.temp }}/cloud-auto-merge-${{ github.run_id }}-${{ github.run_attempt }}/manifest.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Summarize diagnostic observation
+        if: always()
+        env:
+          PROBE_OUTCOME: ${{ steps.live.outcome }}
+          CLEANUP_STATE: ${{ steps.cleanup.outputs.state }}
+          EVIDENCE_UPLOAD: ${{ steps.evidence.outputs.upload }}
+          PROBE_PATH: ${{ runner.temp }}/cloud-auto-merge-${{ github.run_id }}-${{ github.run_attempt }}/probe.json
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+
+          try:
+              with open(os.environ["PROBE_PATH"], encoding="utf-8") as stream:
+                  probe = json.load(stream)
+          except (OSError, json.JSONDecodeError):
+              probe = {}
+
+          def fixed(value, allowed, fallback="unknown"):
+              return value if isinstance(value, str) and value in allowed else fallback
+
+          outcome = fixed(probe.get("outcome"), {"unconfirmed", "infrastructure_failure", "cleanup_failure"}, "unavailable")
+          checks = probe.get("observations", {})
+          if not isinstance(checks, dict):
+              checks = {}
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Cloud auto-merge diagnostic\n")
+              summary.write(f"- Provider observation: `{outcome}`\n")
+              summary.write(f"- Probe command: `{fixed(os.environ.get('PROBE_OUTCOME'), {'success', 'failure', 'skipped', 'cancelled'})}`\n")
+              summary.write(f"- Manifest-owned cleanup: `{fixed(os.environ.get('CLEANUP_STATE'), {'verified', 'failed', 'no_manifest'}, 'not_run')}`\n")
+              summary.write(f"- Sanitized evidence files found: `{fixed(os.environ.get('EVIDENCE_UPLOAD'), {'true', 'false'})}`\n")
+              for name, check in sorted(checks.items())[:20]:
+                  if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,48}", name) or not isinstance(check, dict):
+                      continue
+                  status = check.get("status")
+                  status = str(status) if isinstance(status, int) and 100 <= status <= 599 else "unknown"
+                  exit_code = check.get("exit_code")
+                  exit_code = str(exit_code) if isinstance(exit_code, int) and 0 <= exit_code <= 255 else "unknown"
+                  state = fixed(check.get("pr_state"), {"OPEN", "MERGED", "DECLINED", "SUPERSEDED"})
+                  present = check.get("auto_merge_present")
+                  present = str(present).lower() if isinstance(present, bool) else "unknown"
+                  enabled = check.get("auto_merge_enabled")
+                  enabled = str(enabled).lower() if isinstance(enabled, bool) else "unknown"
+                  summary.write(f"- `{name}`: HTTP `{status}`, CLI exit `{exit_code}`, PR `{state}`, auto-merge object `{present}`, enabled field `{enabled}`\n")
+              summary.write("- This diagnostic is an observation, not a release pass. Inspect probe.json for details.\n")
+          PY

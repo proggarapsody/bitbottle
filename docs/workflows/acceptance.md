@@ -110,6 +110,22 @@ Cloud evidence does not establish Server/DC compatibility. The workflow
 reports `DC не проверен live` until a licensed, configured Data Center live
 lane is separately implemented and run.
 
+## Cloud auto-merge diagnostic
+
+`.github/workflows/cloud-auto-merge-probe.yml` is a manual, main-branch-only
+diagnostic for Bitbucket Cloud auto-merge behavior. Dispatch it from `main`
+after the workflow is merged. It uses the same `cloud-acceptance` Environment,
+fixed QA workspace and project, separate bootstrap and actor credentials,
+and manifest-owned cleanup as the Cloud acceptance lane. The workflow builds
+the CLI and probe from the selected commit and uploads sanitized probe evidence
+after cleanup. Inspect `probe.json` and the workflow summary for the observed
+provider result and cleanup state.
+
+This probe is an observation, not a release pass or a replacement for the
+frozen critical profile. Keep the release gate and nightly acceptance results
+separate. A failed, skipped, or cleanup-incomplete probe cannot establish a
+provider pass.
+
 ## Adding new scripts
 
 1. Create `acceptance/testdata/<domain>/<name>.txtar`.
