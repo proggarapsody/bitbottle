@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -12,11 +13,13 @@ type repoIdentity struct {
 	UUID        string `json:"uuid"`
 	Description string `json:"description"`
 }
+type openPullRequest struct {
+	ID    int    `json:"id"`
+	State string `json:"state"`
+}
 type prList struct {
-	Values []struct {
-		ID    int    `json:"id"`
-		State string `json:"state"`
-	} `json:"values"`
+	Next   string            `json:"next"`
+	Values []openPullRequest `json:"values"`
 }
 
 func cleanup(ctx context.Context, m Manifest, token, base string) error {
@@ -45,14 +48,11 @@ func cleanup(ctx context.Context, m Manifest, token, base string) error {
 	if m.Resource.UUID != "" && repo.UUID != m.Resource.UUID {
 		return errors.New("repository UUID mismatch; cleanup refused")
 	}
-	var prs prList
-	if _, err = c.json(ctx, http.MethodGet, path+"/pullrequests?state=OPEN&pagelen=100", nil, &prs); err != nil {
+	prs, err := listOpenPRs(ctx, c, path)
+	if err != nil {
 		return fmt.Errorf("list PRs before cleanup: %w", err)
 	}
-	for _, p := range prs.Values {
-		if p.State != "OPEN" {
-			continue
-		}
+	for _, p := range prs {
 		if _, err = c.json(ctx, http.MethodPost, path+fmt.Sprintf("/pullrequests/%d/decline", p.ID), map[string]any{}, nil); err != nil {
 			return fmt.Errorf("decline PR before cleanup: %w", err)
 		}
@@ -69,4 +69,38 @@ func cleanup(ctx context.Context, m Manifest, token, base string) error {
 		return fmt.Errorf("verify repository deletion: %w", err)
 	}
 	return nil
+}
+
+func listOpenPRs(ctx context.Context, c *apiClient, repoPath string) ([]openPullRequest, error) {
+	const maxPages = 10
+	baseURL, err := url.Parse(c.base)
+	if err != nil {
+		return nil, errors.New("invalid API base URL")
+	}
+	basePath := strings.TrimRight(baseURL.Path, "/")
+	pagePath := repoPath + "/pullrequests?state=OPEN&pagelen=10"
+	var result []openPullRequest
+	for page := 0; page < maxPages; page++ {
+		var response prList
+		if _, err := c.json(ctx, http.MethodGet, pagePath, nil, &response); err != nil {
+			return nil, err
+		}
+		for _, pr := range response.Values {
+			if pr.State == "OPEN" {
+				result = append(result, pr)
+			}
+		}
+		if response.Next == "" {
+			return result, nil
+		}
+		nextURL, err := url.Parse(response.Next)
+		if err != nil || nextURL.Scheme != baseURL.Scheme || nextURL.Host != baseURL.Host || nextURL.User != nil || nextURL.Fragment != "" || nextURL.Path != basePath+repoPath+"/pullrequests" || nextURL.Query().Get("state") != "OPEN" {
+			return nil, errors.New("PR pagination link left the owned repository endpoint; cleanup refused")
+		}
+		pagePath = strings.TrimPrefix(nextURL.EscapedPath(), basePath) + "?" + nextURL.RawQuery
+		if page == maxPages-1 {
+			return nil, errors.New("PR listing exceeded the cleanup page limit; repository deletion refused")
+		}
+	}
+	return result, nil
 }

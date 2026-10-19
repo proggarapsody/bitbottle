@@ -160,7 +160,7 @@ func run(ctx context.Context, cfg Config) (report Report, retErr error) {
 		}
 		defer cleanupHome()
 		prTitle := "Acceptance " + manifest.RunID
-		cmd := exec.CommandContext(ctx, cfg.Binary, "pr", "create", "--repo", cfg.Workspace+"/"+slug, "--title", prTitle, "--body", marker, "--base", "main", "--head", sourceBranch(manifest.RunID), "--json", "id")
+		cmd := exec.CommandContext(ctx, cfg.Binary, "pr", "create", "--repo", cfg.Workspace+"/"+slug, "--title", prTitle, "--body", marker, "--base", "main", "--head", sourceBranch(manifest.RunID), "--json")
 		cmd.Env = env
 		out, e := cmd.CombinedOutput()
 		if e != nil {
@@ -179,7 +179,7 @@ func run(ctx context.Context, cfg Config) (report Report, retErr error) {
 		return report, err
 	}
 	if err = step("cli_repo_view", func() error {
-		return runCLI(ctx, cfg, manifest.Resource, "repo", "view", cfg.Workspace+"/"+slug, "--json", "slug,description")
+		return runCLI(ctx, cfg, manifest.Resource, "repo", "view", cfg.Workspace+"/"+slug, "--json")
 	}); err != nil {
 		return report, err
 	}
@@ -336,7 +336,7 @@ func mcpTextContains(result *mcp.CallToolResult, part string) bool {
 }
 func verifyComment(ctx context.Context, c *apiClient, r Resource, id int, body string) error {
 	var p commentsData
-	_, e := c.json(ctx, "GET", repoPath(r.Workspace, r.Slug)+fmt.Sprintf("/pullrequests/%d/comments?pagelen=100", id), nil, &p)
+	_, e := c.json(ctx, "GET", repoPath(r.Workspace, r.Slug)+fmt.Sprintf("/pullrequests/%d/comments?pagelen=10", id), nil, &p)
 	if e != nil {
 		return e
 	}

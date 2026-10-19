@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -94,6 +95,9 @@ func TestRun_SeedFailureCleansManifestOwnedRepository(t *testing.T) {
 				case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/repositories/") && strings.HasSuffix(r.URL.Path, "/commit/main"):
 					_, _ = io.WriteString(w, `{"hash":"seed-hash"}`)
 				case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/repositories/") && r.URL.Query().Get("state") == "OPEN":
+					if r.URL.Query().Get("pagelen") != "10" {
+						t.Errorf("PR cleanup requested unsupported page length %q", r.URL.Query().Get("pagelen"))
+					}
 					_, _ = io.WriteString(w, `{"values":[{"id":55,"state":"OPEN"}]}`)
 				case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/repositories/"):
 					if !created || deleted {
@@ -172,6 +176,97 @@ func TestRun_SeedFailureCleansManifestOwnedRepository(t *testing.T) {
 	}
 }
 
+func TestRun_CLIUsesUnfilteredJSONAndKeepsRepoViewTargetPositional(t *testing.T) {
+	dir := t.TempDir()
+	createArgsPath := filepath.Join(dir, "create-args")
+	cliPath := filepath.Join(dir, "fake-bitbottle")
+	script := "#!/bin/sh\n" +
+		"if [ \"$1\" = pr ]; then\n" +
+		"  printf '%s\\n' \"$@\" > " + shellQuote(createArgsPath) + "\n" +
+		"  printf '{\"id\":55}\\n'\n" +
+		"  exit 0\n" +
+		"fi\n" +
+		"printf '%s\\n' \"$@\" >&2\n" +
+		"exit 1\n"
+	if err := os.WriteFile(cliPath, []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	created, deleted := false, false
+	marker, uuid := "", "{qa-repo}"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer bootstrap" {
+			http.Error(w, "wrong credential", http.StatusUnauthorized)
+			return
+		}
+		switch {
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/commit/main"):
+			_, _ = io.WriteString(w, `{"hash":"seed-hash"}`)
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/src"):
+			w.WriteHeader(http.StatusCreated)
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/refs/branches"):
+			w.WriteHeader(http.StatusCreated)
+		case r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/repositories/"):
+			var input struct {
+				Description string `json:"description"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+				t.Errorf("decode repository create: %v", err)
+			}
+			created, marker = true, input.Description
+			w.WriteHeader(http.StatusCreated)
+			_, _ = fmt.Fprintf(w, `{"uuid":%q,"description":%q}`, uuid, marker)
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/pullrequests"):
+			if r.URL.Query().Get("pagelen") != "10" {
+				t.Errorf("cleanup PR page length = %q, want 10", r.URL.Query().Get("pagelen"))
+			}
+			_, _ = io.WriteString(w, `{"values":[]}`)
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/repositories/"):
+			if !created || deleted {
+				http.NotFound(w, r)
+				return
+			}
+			_, _ = fmt.Fprintf(w, `{"uuid":%q,"description":%q}`, uuid, marker)
+		case r.Method == http.MethodDelete:
+			deleted = true
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			http.Error(w, "unexpected request", http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	report, err := Run(context.Background(), Config{BootstrapToken: "bootstrap", ActorToken: "actor", Email: "qa@example.test", Workspace: "bitbottle-qa-lab", Project: "BBQA", ReportDir: dir, Binary: cliPath, BaseURL: server.URL})
+	if err == nil || report.Status != "product_failure" || !deleted {
+		t.Fatalf("Run() = status %q, err %v, deleted %v", report.Status, err, deleted)
+	}
+	runErr := err
+	args, err := os.ReadFile(createArgsPath)
+	if err != nil {
+		t.Fatalf("PR create command was not invoked: %v", err)
+	}
+	lines := strings.Fields(string(args))
+	if len(lines) == 0 || lines[len(lines)-1] != "--json" {
+		t.Fatalf("PR create must request full JSON without a field positional, args=%q", args)
+	}
+	manifest, readErr := ReadManifest(report.Manifest)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if !strings.Contains(runErr.Error(), "repo") || !strings.Contains(runErr.Error(), "view") || !strings.Contains(runErr.Error(), cfgWorkspaceSlug(manifest)) || !strings.Contains(runErr.Error(), "--json") {
+		t.Fatalf("repo view did not use the positional repository target and JSON output: %v", runErr)
+	}
+	if len(manifest.Resource.PRIDs) != 1 || manifest.Resource.PRIDs[0] != 55 {
+		t.Fatalf("full public PR JSON id was not parsed and persisted: %+v", manifest.Resource.PRIDs)
+	}
+}
+
+func cfgWorkspaceSlug(m Manifest) string {
+	return m.Resource.Workspace + "/" + m.Resource.Slug
+}
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
+}
+
 func TestCleanup_RefusesRepositoryWithMismatchedUUID(t *testing.T) {
 	deleted := false
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -194,6 +289,83 @@ func TestCleanup_RefusesRepositoryWithMismatchedUUID(t *testing.T) {
 	}
 	if deleted {
 		t.Fatal("Cleanup() deleted a repository with a different UUID")
+	}
+}
+
+func TestCleanup_PaginatesOpenPRsAndRefusesExternalNextLink(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		next       string
+		wantErr    bool
+		wantDelete bool
+	}{
+		{name: "same-origin next page", next: "same-origin", wantDelete: true},
+		{name: "external next page", next: "external", wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			deleted := false
+			declined := make(map[int]bool)
+			var server *httptest.Server
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Authorization") != "Bearer bootstrap-secret" {
+					t.Errorf("request carried wrong credential")
+				}
+				switch {
+				case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/pullrequests"):
+					if r.URL.Query().Get("state") != "OPEN" || r.URL.Query().Get("pagelen") != "10" {
+						t.Errorf("unexpected PR query: %s", r.URL.RawQuery)
+					}
+					if r.URL.Query().Get("page") == "2" {
+						_, _ = io.WriteString(w, `{"values":[{"id":2,"state":"OPEN"}]}`)
+						return
+					}
+					next := ""
+					switch tc.next {
+					case "same-origin":
+						next = server.URL + r.URL.Path + "?state=OPEN&pagelen=10&page=2"
+					case "external":
+						next = "https://attacker.invalid" + r.URL.Path + "?state=OPEN&pagelen=10&page=2"
+					}
+					b, _ := json.Marshal(map[string]any{"next": next, "values": []map[string]any{{"id": 1, "state": "OPEN"}}})
+					_, _ = w.Write(b)
+				case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/decline"):
+					idPart := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/2.0/repositories/bitbottle-qa-lab/bbqa-run-0000000000001234/pullrequests/"), "/decline")
+					id, _ := strconv.Atoi(idPart)
+					declined[id] = true
+					w.WriteHeader(http.StatusOK)
+				case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/repositories/bitbottle-qa-lab/bbqa-run-0000000000001234"):
+					if deleted {
+						http.NotFound(w, r)
+						return
+					}
+					_, _ = io.WriteString(w, `{"uuid":"{expected}","description":"bitbottle-qa-run:0000000000001234"}`)
+				case r.Method == http.MethodDelete:
+					deleted = true
+					w.WriteHeader(http.StatusNoContent)
+				default:
+					http.Error(w, "unexpected request", http.StatusNotFound)
+				}
+			}))
+			defer server.Close()
+			manifest := Manifest{Version: 1, RunID: "0000000000001234", Resource: Resource{Workspace: "bitbottle-qa-lab", Slug: "bbqa-run-0000000000001234", UUID: "{expected}", Marker: "bitbottle-qa-run:0000000000001234"}}
+			path := filepath.Join(t.TempDir(), "manifest.json")
+			if err := manifest.Write(path); err != nil {
+				t.Fatal(err)
+			}
+			err := Cleanup(context.Background(), path, "bootstrap-secret", server.URL+"/2.0")
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("Cleanup() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if deleted != tc.wantDelete {
+				t.Fatalf("repository deleted = %v, want %v", deleted, tc.wantDelete)
+			}
+			if tc.next == "same-origin" && (!declined[1] || !declined[2]) {
+				t.Fatalf("did not decline all paginated open PRs: %v", declined)
+			}
+			if tc.next == "external" && len(declined) != 0 {
+				t.Fatalf("declined PRs before rejecting external pagination link: %v", declined)
+			}
+		})
 	}
 }
 
