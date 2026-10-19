@@ -6,7 +6,7 @@
 bitbottle pr list   [PROJ/repo] [--state open|closed|merged]   # default: open
 bitbottle pr view   42 [--web]
 bitbottle pr create --title "x" --base main [--body "x"] [--draft] [--head BRANCH]
-bitbottle pr merge  42 [--merge|--squash] [--delete-branch]
+bitbottle pr merge  42 [--merge|--squash|--rebase] [--delete-branch]
 bitbottle pr merge  42 --auto [--squash|--rebase]          # queue for auto-merge when checks pass
 bitbottle pr merge  42 --auto-off                          # cancel a queued auto-merge
 bitbottle pr approve   42
@@ -141,7 +141,7 @@ Flags: `--user ACCOUNT_ID` (required), plus exactly one of `--approve`,
 - No `--author`, `--mine`, or `--reviewer @me` filter — Bitbucket's
   REST API doesn't expose those.
 - `pr create --head` defaults to the current local branch.
-- `pr merge` supports `--merge`, `--squash`, and (with `--auto`) `--rebase`.
+- `pr merge` supports `--merge`, `--squash`, and `--rebase` for immediate merges.
   `--delete-branch` removes the source branch on the remote after an
   immediate merge (Cloud only auto-deletes locally; Server/DC needs a
   separate `git push`).

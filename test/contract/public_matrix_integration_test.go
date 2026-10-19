@@ -726,6 +726,56 @@ func TestPublicMatrixPREditAndMerge(t *testing.T) {
 	}
 }
 
+func TestPublicMatrixPRMergeRebase(t *testing.T) {
+	for _, p := range matrixProviders {
+		t.Run(p.name, func(t *testing.T) {
+			state := "OPEN"
+			var posted map[string]any
+			var requests []string
+			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests = append(requests, r.Method+" "+r.URL.Path)
+				w.Header().Set("Content-Type", "application/json")
+				base := p.apiRoot + p.prPath + "/47"
+				switch {
+				case r.Method == http.MethodGet && r.URL.Path == base:
+					fmt.Fprint(w, matrixPRState(p, "Rebase PR", state))
+				case r.Method == http.MethodPost && r.URL.Path == base+"/merge":
+					data, _ := io.ReadAll(r.Body)
+					_ = json.Unmarshal(data, &posted)
+					state = "MERGED"
+					fmt.Fprint(w, matrixPRState(p, "Rebase PR", state))
+				default:
+					w.WriteHeader(http.StatusNotFound)
+					fmt.Fprint(w, matrixErrorBody(p, "unexpected route"))
+				}
+			}))
+			t.Cleanup(srv.Close)
+
+			repo := p.host + "/TEAM/service"
+			out, err := matrixCLI(t, p, srv, "pr", "merge", "47", "--repo", repo, "--rebase")
+			require.NoError(t, err)
+			require.Equal(t, "Merged pull request #47\n", out)
+			require.Equal(t, "MERGED", state)
+			expectedRequests := []string{"GET " + p.apiRoot + p.prPath + "/47"}
+			if p.name == "server" {
+				expectedRequests = append(expectedRequests, "GET "+p.apiRoot+p.prPath+"/47")
+			}
+			expectedRequests = append(expectedRequests, "POST "+p.apiRoot+p.prPath+"/47/merge")
+			require.Equal(t, expectedRequests, requests)
+			if p.name == "cloud" {
+				require.Equal(t, "rebase_fast_forward", posted["merge_strategy"])
+			} else {
+				require.Equal(t, "rebase-ff-only", posted["strategyId"])
+				require.Equal(t, float64(3), posted["version"])
+			}
+			view, err := matrixCLI(t, p, srv, "pr", "view", "47", "--repo", repo)
+			require.NoError(t, err)
+			require.Contains(t, view, "State:  MERGED")
+			qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr merge", Backend: p.name, Outcome: "success", Assertions: []string{"output", "input", "effect"}, Flags: []string{"--repo", "--rebase"}})
+		})
+	}
+}
+
 func matrixPRState(p matrixProvider, title, state string) string {
 	return strings.Replace(matrixPR(p, 47, title), `"state":"OPEN"`, `"state":"`+state+`"`, 1)
 }

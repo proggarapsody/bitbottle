@@ -23,11 +23,8 @@ PROVIDERS = {"server", "cloud", "local"}
 STATUSES = {"supported", "unsupported", "not_applicable"}
 CRITICAL_PROFILE = ROOT / "test/qamatrix/release-critical.json"
 # Approved release baseline: policy edits must update this digest in reviewed code.
-APPROVED_CRITICAL_PROFILE_SHA256 = "97faa92afa5ff00f145e79c0fc6266d4257d6cfec5c0ef158d2c37dfdd06fd8b"
-ALLOWED_CRITICAL_DEFERRALS = {
-    ("cli:bitbottle pr merge", "cloud"): {"--auto", "--auto-off", "--rebase"},
-    ("cli:bitbottle pr merge", "server"): {"--rebase"},
-}
+APPROVED_CRITICAL_PROFILE_SHA256 = "d26c420b4fadbadb3e82f815a36aadbf5a50db1ca0ec5bb90788945334461830"
+ALLOWED_CRITICAL_DEFERRALS = {}
 SUPPORTED_MINIMUM = {"success": {"output", "input", "effect"},
                      "error": {"error", "input", "effect"}}
 

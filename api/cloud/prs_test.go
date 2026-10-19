@@ -137,7 +137,7 @@ func TestCloudClient_MergePR_MapsCLIAndPreservesProviderStrategy(t *testing.T) {
 	for _, tc := range []struct{ input, expected string }{
 		{"merge", "merge_commit"},
 		{"merge-commit", "merge_commit"},
-		{"rebase", "fast_forward"},
+		{"rebase", "rebase_fast_forward"},
 		{"fast_forward", "fast_forward"},
 	} {
 		t.Run(tc.input, func(t *testing.T) {

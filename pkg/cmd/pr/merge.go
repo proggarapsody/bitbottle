@@ -19,8 +19,8 @@ func NewCmdPRMerge(f *factory.Factory) *cobra.Command {
 		Short: "Merge a pull request",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if merge && squash {
-				return fmt.Errorf("cannot use --merge and --squash together")
+			if (merge && squash) || (merge && rebase) || (squash && rebase) {
+				return fmt.Errorf("choose only one of --merge, --squash, or --rebase")
 			}
 			if auto && autoOff {
 				return fmt.Errorf("cannot use --auto and --auto-off together")
@@ -87,6 +87,8 @@ func NewCmdPRMerge(f *factory.Factory) *cobra.Command {
 				strategy = "merge-commit"
 			case squash:
 				strategy = "squash"
+			case rebase:
+				strategy = "rebase"
 			default:
 				strategy = ""
 			}
@@ -111,7 +113,7 @@ func NewCmdPRMerge(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&merge, "merge", false, "Merge commit strategy")
 	cmd.Flags().BoolVar(&squash, "squash", false, "Squash merge strategy")
-	cmd.Flags().BoolVar(&rebase, "rebase", false, "Rebase merge strategy (used with --auto)")
+	cmd.Flags().BoolVar(&rebase, "rebase", false, "Rebase and fast-forward merge strategy")
 	cmd.Flags().BoolVar(&deleteBranch, "delete-branch", false, "Delete source branch after merge")
 	cmd.Flags().BoolVar(&auto, "auto", false, "Queue PR for auto-merge when all checks pass")
 	cmd.Flags().BoolVar(&autoOff, "auto-off", false, "Cancel a queued auto-merge")

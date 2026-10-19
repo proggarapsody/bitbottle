@@ -285,17 +285,11 @@
       "important_parameters": [],
       "providers": {
         "cloud": {
-          "deferred_inputs": {
-            "--auto": "Cloud auto-merge contract is unconfirmed; manual merge remains covered.",
-            "--auto-off": "Cloud auto-merge cancellation contract is unconfirmed; manual merge remains covered.",
-            "--rebase": "Cloud rebase strategy contract is unconfirmed; other merge strategies remain covered."
-          },
+          "deferred_inputs": {},
           "status": "supported"
         },
         "server": {
-          "deferred_inputs": {
-            "--rebase": "Server rebase wire strategy is unconfirmed; other merge strategies remain covered."
-          },
+          "deferred_inputs": {},
           "status": "supported"
         }
       }

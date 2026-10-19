@@ -150,7 +150,7 @@ func TestServerClient_MergePR_StrategyIDs(t *testing.T) {
 		{"merge", "no-ff"},
 		{"merge-commit", "no-ff"},
 		{"squash", "squash"},
-		{"rebase", "fast-forward"},
+		{"rebase", "rebase-ff-only"},
 		{"custom-id", "custom-id"},
 	} {
 		t.Run(tc.input, func(t *testing.T) {
@@ -168,7 +168,7 @@ func TestServerClient_EnableAutoMerge_StrategyIDs(t *testing.T) {
 		{"merge", "no-ff"},
 		{"merge-commit", "no-ff"},
 		{"squash", "squash"},
-		{"rebase", "fast-forward"},
+		{"rebase", "rebase-ff-only"},
 		{"custom-id", "custom-id"},
 	} {
 		t.Run(tc.input, func(t *testing.T) {
@@ -193,7 +193,7 @@ func TestServerClient_GetPR_AutoMergeStrategyVocabulary(t *testing.T) {
 	for _, tc := range []struct{ wire, expected string }{
 		{"no-ff", "merge"},
 		{"squash", "squash"},
-		{"fast-forward", "rebase"},
+		{"rebase-ff-only", "rebase"},
 		{"custom-id", "custom-id"},
 	} {
 		t.Run(tc.wire, func(t *testing.T) {

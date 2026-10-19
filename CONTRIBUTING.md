@@ -77,6 +77,14 @@ Merging the Release Please PR triggers the release workflow, which:
 - Pushes multi-arch Docker images to `proggarapsody/bitbottle` on Docker Hub
 - Publishes `@proggarapsody/bitbottle` to npm (with README bundled)
 
+Before release, the [dry-run workflow](.github/workflows/release-dryrun.yml)
+builds a GoReleaser snapshot and runs
+[`scripts/smoke-release-candidate.py`](scripts/smoke-release-candidate.py).
+It verifies the exact archive checksum and version, the npm wrapper's version
+and expected release download URL, and the Docker image's binary hash, CA
+bundle, and MCP startup. This checks snapshot bytes; publication still needs
+its own digest and proof that those bytes were published.
+
 **Required secrets** (set in repo Settings → Secrets → Actions):
 
 | Secret | Purpose |

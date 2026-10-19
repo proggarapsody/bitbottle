@@ -50,7 +50,7 @@ func serverStrategyToCLI(s string) string {
 		return "squash"
 	case "no-ff":
 		return "merge"
-	case "fast-forward":
+	case "rebase-ff-only":
 		return "rebase"
 	default:
 		return s
@@ -58,8 +58,6 @@ func serverStrategyToCLI(s string) string {
 }
 
 // serverStrategyID preserves raw repository IDs while translating CLI names.
-// The rebase mapping retains the existing adapter value; its upstream ID still
-// needs provider verification before public matrix coverage claims it.
 func serverStrategyID(strategy string) string {
 	switch strategy {
 	case "merge", "merge-commit":
