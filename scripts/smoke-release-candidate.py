@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import ssl
 import subprocess
 import tarfile
 import tempfile
@@ -210,6 +211,11 @@ https.get = (url, callback) => {
                 run("docker", "cp", f"{container_id}:/bitbottle", str(image_binary))
                 if digest(image_binary) != digest(binary):
                     raise RuntimeError("GoReleaser Docker binary differs from release archive")
+                ca_bundle = root / "image-ca-certificates.crt"
+                run("docker", "cp", f"{container_id}:/etc/ssl/certs/ca-certificates.crt",
+                    str(ca_bundle))
+                if not ssl.create_default_context(cafile=str(ca_bundle)).get_ca_certs():
+                    raise RuntimeError("GoReleaser Docker image has no trusted CA certificates")
             finally:
                 run("docker", "rm", "-f", container_id)
             mcp(["docker", "run", "--rm", "-i", "--pull=never", args.docker_image], env)
