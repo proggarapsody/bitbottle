@@ -25,8 +25,25 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Run tests
-        run: make coverage
+      - name: Run tests and collect the public operation matrix
+        env:
+          QA_MATRIX_DIR: ${{ runner.temp }}/qa-matrix
+        run: make qa-matrix
+
+      - name: Require complete operation evidence for release PRs
+        if: github.head_ref == 'release-please--branches--main'
+        env:
+          QA_MATRIX_DIR: ${{ runner.temp }}/qa-matrix
+        run: make qa-matrix-check
+
+      - name: Upload operation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-matrix-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/qa-matrix/
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload coverage
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1

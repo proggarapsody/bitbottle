@@ -32,6 +32,7 @@ procedures and command adapters are retained as historical evidence.
 - [`docs/agent-primer.md`](docs/agent-primer.md) — required architectural reading for any subagent implementing a new scope.
 - [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — required merge gate.
 - [`docs/workflows/acceptance.md`](docs/workflows/acceptance.md) — live acceptance setup and safety rules.
+- For CLI/MCP scenario coverage or release readiness, use [`docs/workflows/qa-matrix.md`](docs/workflows/qa-matrix.md): count executed public scenarios; unknown matrix rows remain release blockers.
 - [`docs/history/README.md`](docs/history/README.md) — past designs, iteration reports, and ignored local records.
 
 Read relevant current docs before implementing. Read historical records only

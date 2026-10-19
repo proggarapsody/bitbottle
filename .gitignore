@@ -1,6 +1,7 @@
 # Build output (root-level binary only)
 /bitbottle
 /coverage.out
+/.qa-matrix/
 
 # GoReleaser output
 /dist/

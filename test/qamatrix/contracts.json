@@ -1,0 +1,725 @@
+{
+  "schema": 1,
+  "operations": {
+    "cli:bitbottle pr list": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect",
+          "pagination"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--repo",
+        "--json",
+        "--jq",
+        "--limit",
+        "--state"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle pr create": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--repo",
+        "--json",
+        "--title",
+        "--body",
+        "--base",
+        "--head",
+        "--draft",
+        "--reviewer",
+        "--no-default-reviewers"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle pr view": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--repo",
+        "--json"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle repo list": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect",
+          "pagination"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--json",
+        "--limit"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle repo view": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--json"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle branch list": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect",
+          "pagination"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--json",
+        "--limit"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle branch create": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--json",
+        "--start-at"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle branch delete": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": []
+    },
+    "cli:bitbottle commit files": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--json"
+      ],
+      "important_parameters": []
+    },
+    "mcp:get_issue": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "unsupported",
+          "reason": "Cloud issue tracker capability; Server/DC adapter does not implement IssueClient (tools_issue.go and backend optional interfaces)."
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ]
+    },
+    "mcp:create_issue": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "unsupported",
+          "reason": "Cloud issue tracker capability; Server/DC adapter does not implement IssueClient (tools_issue.go and backend optional interfaces)."
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "title",
+        "body",
+        "kind",
+        "priority"
+      ]
+    },
+    "mcp:close_issue": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "unsupported",
+          "reason": "Cloud issue tracker capability; Server/DC adapter does not implement IssueClient (tools_issue.go and backend optional interfaces)."
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ]
+    },
+    "mcp:create_branch_protection": {
+      "providers": {
+        "server": {
+          "status": "supported"
+        },
+        "cloud": {
+          "status": "unsupported",
+          "reason": "Server/DC BranchProtector capability; Cloud branch rules are a distinct operation (tools_branch_protect.go)."
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "type",
+        "branch",
+        "pattern",
+        "users",
+        "groups"
+      ]
+    },
+    "mcp:delete_branch_protection": {
+      "providers": {
+        "server": {
+          "status": "supported"
+        },
+        "cloud": {
+          "status": "unsupported",
+          "reason": "Server/DC BranchProtector capability; Cloud branch rules are a distinct operation (tools_branch_protect.go)."
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "id"
+      ]
+    },
+    "mcp:list_commit_statuses": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "slug",
+        "hash"
+      ]
+    },
+    "cli:bitbottle pr edit": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--repo",
+        "--title",
+        "--body",
+        "--remove-reviewer"
+      ],
+      "important_parameters": []
+    },
+    "cli:bitbottle pr merge": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [
+        "--repo",
+        "--squash",
+        "--merge",
+        "--rebase",
+        "--delete-branch",
+        "--auto",
+        "--auto-off"
+      ],
+      "important_parameters": []
+    },
+    "mcp:pr_checks": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo",
+        "pr_id"
+      ]
+    },
+    "mcp:pr_update_branch": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo",
+        "pr_id"
+      ]
+    },
+    "mcp:pr_status": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo"
+      ]
+    },
+    "mcp:status": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "supported"
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo"
+      ]
+    },
+    "mcp:pipeline_watch": {
+      "providers": {
+        "cloud": {
+          "status": "supported"
+        },
+        "server": {
+          "status": "unsupported",
+          "reason": "Cloud Pipelines watcher capability; Server adapter has no PipelineWatcher implementation."
+        }
+      },
+      "required_assertions": {
+        "success": [
+          "output",
+          "input",
+          "effect"
+        ],
+        "error": [
+          "error",
+          "input",
+          "effect"
+        ],
+        "unsupported": [
+          "error",
+          "effect"
+        ]
+      },
+      "important_flags": [],
+      "important_parameters": [
+        "project",
+        "repo",
+        "uuid",
+        "interval"
+      ]
+    }
+  }
+}

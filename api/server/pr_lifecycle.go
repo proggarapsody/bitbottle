@@ -14,17 +14,16 @@ func (c *Client) UpdatePR(ns, slug string, id int, in backend.UpdatePRInput) (ba
 	if err := c.getJSON(path, &current); err != nil {
 		return backend.PullRequest{}, stampPRNotFound(err, id)
 	}
-	body := struct {
-		Version     int    `json:"version"`
-		Title       string `json:"title"`
-		Description string `json:"description"`
-	}{
-		Version:     current.Version,
-		Title:       in.Title,
-		Description: in.Description,
+	// Server replaces the PR on PUT. Preserve the complete fetched object,
+	// including reviewers and refs, when only one editable field changes.
+	if in.Title != "" {
+		current.Title = in.Title
+	}
+	if in.Description != "" {
+		current.Description = in.Description
 	}
 	var w servergen.RestPullRequest
-	if err := c.putJSON(path, body, &w); err != nil {
+	if err := c.putJSON(path, current, &w); err != nil {
 		return backend.PullRequest{}, err
 	}
 	return toPRDomain(w), nil
