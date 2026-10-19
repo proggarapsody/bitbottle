@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"fmt"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -51,9 +50,9 @@ func (h *handlers) listIssues(_ context.Context, req mcplib.CallToolRequest) (*m
 }
 
 func (h *handlers) getIssue(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResultErr(fmt.Errorf("missing required parameter: id")), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	ic, project, slug, err := h.resolveIssueClient(req)
 	if err != nil {
@@ -91,9 +90,9 @@ func (h *handlers) createIssue(_ context.Context, req mcplib.CallToolRequest) (*
 }
 
 func (h *handlers) closeIssue(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResultErr(fmt.Errorf("missing required parameter: id")), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	ic, project, slug, err := h.resolveIssueClient(req)
 	if err != nil {
@@ -107,9 +106,9 @@ func (h *handlers) closeIssue(_ context.Context, req mcplib.CallToolRequest) (*m
 }
 
 func (h *handlers) updateIssue(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResultErr(fmt.Errorf("missing required parameter: id")), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	ic, project, slug, err := h.resolveIssueClient(req)
 	if err != nil {
@@ -131,9 +130,9 @@ func (h *handlers) updateIssue(_ context.Context, req mcplib.CallToolRequest) (*
 }
 
 func (h *handlers) reopenIssue(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResultErr(fmt.Errorf("missing required parameter: id")), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	ic, project, slug, err := h.resolveIssueClient(req)
 	if err != nil {
@@ -146,9 +145,9 @@ func (h *handlers) reopenIssue(_ context.Context, req mcplib.CallToolRequest) (*
 }
 
 func (h *handlers) assignIssue(_ context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-	id := req.GetInt("id", 0)
-	if id == 0 {
-		return errResultErr(fmt.Errorf("missing required parameter: id")), nil
+	id, idErr := requireIntArg(req, "id")
+	if idErr != nil {
+		return idErr, nil
 	}
 	assignee, err := requireString(req, "assignee")
 	if err != nil {

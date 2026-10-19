@@ -26,11 +26,16 @@ import (
 )
 
 const stdioChildEnv = "BITBOTTLE_TEST_MCP_STDIO_CHILD"
+const matrixChildEnv = "BITBOTTLE_TEST_MCP_MATRIX_CHILD"
 
 // TestMCPStdioChild re-executes this test binary so the command owns real
 // process stdin/stdout, while only the Bitbucket backend is replaced.
 func TestMCPStdioChild(t *testing.T) {
 	if os.Getenv(stdioChildEnv) != "1" {
+		return
+	}
+	if os.Getenv(matrixChildEnv) == "1" {
+		runMatrixChild(t)
 		return
 	}
 
@@ -69,60 +74,11 @@ func TestMCPStdioChild(t *testing.T) {
 }
 
 func TestMCPStdioContract(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
+	s := startStdioSession(t, false)
+	ctx := s.ctx
+	protocolClient := s.client
 
-	configDir := t.TempDir()
-	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestMCPStdioChild$")
-	cmd.Env = []string{
-		"PATH=/usr/bin:/bin",
-		"HOME=" + configDir,
-		"TMPDIR=" + configDir,
-		stdioChildEnv + "=1",
-		"BITBOTTLE_TEST_MCP_CONFIG_DIR=" + configDir,
-	}
-	stdin, err := cmd.StdinPipe()
-	require.NoError(t, err)
-	stdout, err := cmd.StdoutPipe()
-	require.NoError(t, err)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	require.NoError(t, cmd.Start())
-	waited := false
-	t.Cleanup(func() {
-		_ = stdin.Close()
-		if !waited {
-			_ = cmd.Process.Kill()
-			_ = cmd.Wait()
-		}
-	})
-
-	// Relay every byte from real child stdout into the SDK and a separate
-	// capture. The SDK silently skips malformed lines, so the capture is
-	// independently checked after the process exits.
-	clientInput, relayOutput := io.Pipe()
-	var rawStdout bytes.Buffer
-	relayDone := make(chan error, 1)
-	go func() {
-		_, copyErr := io.Copy(io.MultiWriter(relayOutput, &rawStdout), stdout)
-		_ = relayOutput.CloseWithError(copyErr)
-		relayDone <- copyErr
-	}()
-	protocolClient := client.NewClient(transport.NewIO(clientInput, stdin, io.NopCloser(strings.NewReader(""))))
-	t.Cleanup(func() {
-		_ = protocolClient.Close()
-		_ = clientInput.Close()
-		_ = relayOutput.Close()
-	})
-	require.NoError(t, protocolClient.Start(ctx))
-
-	initialized, err := protocolClient.Initialize(ctx, mcplib.InitializeRequest{
-		Params: mcplib.InitializeParams{
-			ProtocolVersion: mcplib.LATEST_PROTOCOL_VERSION,
-			ClientInfo:      mcplib.Implementation{Name: "bitbottle-stdio-contract-test", Version: "1"},
-		},
-	})
-	require.NoError(t, err)
+	initialized := s.initialized
 	require.Equal(t, "bitbottle", initialized.ServerInfo.Name)
 	require.Contains(t, mcplib.ValidProtocolVersions, initialized.ProtocolVersion)
 	require.NotNil(t, initialized.Capabilities.Tools)
@@ -146,9 +102,7 @@ func TestMCPStdioContract(t *testing.T) {
 	}, "project", "slug", "id", "body")
 
 	call := func(name string, args map[string]any) (*mcplib.CallToolResult, error) {
-		return protocolClient.CallTool(ctx, mcplib.CallToolRequest{
-			Params: mcplib.CallToolParams{Name: name, Arguments: args},
-		})
+		return s.call(name, args)
 	}
 	validArgs := map[string]any{"hostname": "git.example.com", "project": "PROJ", "slug": "repo", "id": 42}
 	result, err := call("get_pr", validArgs)
@@ -203,17 +157,126 @@ func TestMCPStdioContract(t *testing.T) {
 	require.Nil(t, result)
 	require.True(t, errors.Is(err, mcplib.ErrInvalidParams), "unknown tool must be a JSON-RPC invalid-params error: %v", err)
 	require.ErrorContains(t, err, "not found")
-
-	require.NoError(t, stdin.Close())
-	select {
-	case err := <-relayDone:
-		require.NoError(t, err)
-	case <-ctx.Done():
-		t.Fatalf("MCP child stdout did not close: %v; stderr: %s", ctx.Err(), stderr.String())
+	for _, tc := range []struct {
+		name string
+		args map[string]any
+	}{
+		{"update_issue", map[string]any{"project": "PROJ", "slug": "repo", "id": "forty-two", "title": "Updated"}},
+		{"reopen_issue", map[string]any{"project": "PROJ", "slug": "repo", "id": "forty-two"}},
+		{"assign_issue", map[string]any{"project": "PROJ", "slug": "repo", "id": "forty-two", "assignee": "alice"}},
+	} {
+		t.Run(tc.name+" rejects string id", func(t *testing.T) {
+			result, err := call(tc.name, tc.args)
+			require.NoError(t, err)
+			require.True(t, result.IsError)
+			var failure struct {
+				Code  string `json:"code"`
+				Field string `json:"field"`
+			}
+			require.NoError(t, json.Unmarshal([]byte(resultText(t, result)), &failure))
+			require.Equal(t, "arg.invalid_type", failure.Code)
+			require.Equal(t, "id", failure.Field)
+		})
 	}
-	require.NoError(t, cmd.Wait(), "MCP child stderr: %s", stderr.String())
-	waited = true
-	assertJSONRPCStdout(t, rawStdout.Bytes(), len(listed.Tools))
+
+	s.close(t, len(listed.Tools))
+}
+
+type stdioSession struct {
+	ctx         context.Context
+	client      *client.Client
+	initialized *mcplib.InitializeResult
+	cmd         *exec.Cmd
+	stdin       io.WriteCloser
+	clientInput *io.PipeReader
+	relayOutput *io.PipeWriter
+	relayDone   chan error
+	rawStdout   *bytes.Buffer
+	stderr      *bytes.Buffer
+	waited      bool
+}
+
+func startStdioSession(t *testing.T, matrix bool) *stdioSession {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	t.Cleanup(cancel)
+
+	configDir := t.TempDir()
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestMCPStdioChild$")
+	cmd.Env = []string{
+		"PATH=/usr/bin:/bin",
+		"HOME=" + configDir,
+		"TMPDIR=" + configDir,
+		stdioChildEnv + "=1",
+		"BITBOTTLE_TEST_MCP_CONFIG_DIR=" + configDir,
+	}
+	if matrix {
+		cmd.Env = append(cmd.Env, matrixChildEnv+"=1")
+	}
+	stdin, err := cmd.StdinPipe()
+	require.NoError(t, err)
+	stdout, err := cmd.StdoutPipe()
+	require.NoError(t, err)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	require.NoError(t, cmd.Start())
+	s := &stdioSession{ctx: ctx, cmd: cmd, stdin: stdin, relayDone: make(chan error, 1), rawStdout: &bytes.Buffer{}, stderr: &stderr}
+	t.Cleanup(func() {
+		_ = stdin.Close()
+		if !s.waited {
+			_ = cmd.Process.Kill()
+			_ = cmd.Wait()
+		}
+	})
+
+	// Relay every byte from real child stdout into the SDK and a separate
+	// capture. The SDK silently skips malformed lines, so the capture is
+	// independently checked after the process exits.
+	clientInput, relayOutput := io.Pipe()
+	s.clientInput, s.relayOutput = clientInput, relayOutput
+	go func() {
+		_, copyErr := io.Copy(io.MultiWriter(relayOutput, s.rawStdout), stdout)
+		_ = relayOutput.CloseWithError(copyErr)
+		s.relayDone <- copyErr
+	}()
+	protocolClient := client.NewClient(transport.NewIO(clientInput, stdin, io.NopCloser(strings.NewReader(""))))
+	s.client = protocolClient
+	t.Cleanup(func() {
+		_ = protocolClient.Close()
+		_ = clientInput.Close()
+		_ = relayOutput.Close()
+	})
+	require.NoError(t, protocolClient.Start(ctx))
+
+	initialized, err := protocolClient.Initialize(ctx, mcplib.InitializeRequest{
+		Params: mcplib.InitializeParams{
+			ProtocolVersion: mcplib.LATEST_PROTOCOL_VERSION,
+			ClientInfo:      mcplib.Implementation{Name: "bitbottle-stdio-contract-test", Version: "1"},
+		},
+	})
+	require.NoError(t, err)
+	s.initialized = initialized
+	return s
+}
+
+func (s *stdioSession) call(name string, args map[string]any) (*mcplib.CallToolResult, error) {
+	return s.client.CallTool(s.ctx, mcplib.CallToolRequest{
+		Params: mcplib.CallToolParams{Name: name, Arguments: args},
+	})
+}
+
+func (s *stdioSession) close(t *testing.T, wantTools int) {
+	t.Helper()
+	require.NoError(t, s.stdin.Close())
+	select {
+	case err := <-s.relayDone:
+		require.NoError(t, err)
+	case <-s.ctx.Done():
+		t.Fatalf("MCP child stdout did not close: %v; stderr: %s", s.ctx.Err(), s.stderr.String())
+	}
+	require.NoError(t, s.cmd.Wait(), "MCP child stderr: %s", s.stderr.String())
+	s.waited = true
+	assertJSONRPCStdout(t, s.rawStdout.Bytes(), wantTools)
 }
 
 func assertToolFields(t *testing.T, tools map[string]mcplib.Tool, name string, fields map[string]string, required ...string) {

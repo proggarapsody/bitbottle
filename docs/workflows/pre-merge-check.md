@@ -41,11 +41,14 @@ without a new change or unresolved concern.
 
 Without a PR, run `make lint` and `make test` for code changes. `make test` enables
 the race detector, shuffles tests, and disables the Go test cache. CI uses the
-same options and also writes `coverage.out` through `make coverage`; use
+same options and also writes `coverage.out` through `make qa-matrix`; use
 `make coverage-report` to inspect an existing profile. Set
 `GO_COVERPROFILE=path/to/profile.out` to choose another profile path. Coverage
 is diagnostic data, not a merge threshold. Run `make test-scripts` when shell
-tooling or its paths change.
+tooling or its paths change. The matrix run replaces the full test invocation;
+do not repeat it through `make test` or `make coverage`. Ordinary PRs may have
+an explicitly incomplete matrix; release PRs and publication require the strict
+`make qa-matrix-check` gate. See [the matrix workflow](qa-matrix.md).
 For documentation-only changes, verify links, path references, and preservation
 of any moved records; code design review is skipped. Report exact failures.
 

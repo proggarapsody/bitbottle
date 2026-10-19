@@ -37,6 +37,20 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Require complete public operation evidence before publishing
+        run: >-
+          python3 scripts/qa_matrix.py --run --packages ./...
+          --output "${{ runner.temp }}/release-qa-matrix" --require-complete
+
+      - name: Upload release operation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-qa-matrix-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-qa-matrix/
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
 
@@ -48,10 +62,6 @@ jobs:
         with:
           username: proggarapsody
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      # No `go test` here — the tag was cut from a SHA whose CI was already
-      # green on the merge into main. Re-testing duplicates that gate and
-      # adds ~30s per release.
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 # v7

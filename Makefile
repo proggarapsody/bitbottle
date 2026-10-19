@@ -1,9 +1,10 @@
-.PHONY: build test test-script test-scripts test-acceptance coverage coverage-report lint clean setup gen record-cassettes
+.PHONY: build test test-script test-scripts test-acceptance coverage coverage-report qa-matrix qa-matrix-check lint clean setup gen record-cassettes
 
 BIN := bitbottle
 GO  := go
 GO_TEST_FLAGS := -race -shuffle=on -count=1
 GO_COVERPROFILE ?= coverage.out
+QA_MATRIX_DIR ?= .qa-matrix
 
 # Pinned oapi-codegen version — update here and re-run `make gen` when bumping.
 OAPI_CODEGEN_VERSION := v2.4.1
@@ -20,11 +21,18 @@ coverage:
 coverage-report:
 	$(GO) tool cover -func="$(GO_COVERPROFILE)"
 
+qa-matrix:
+	python3 scripts/qa_matrix.py --run --packages ./... --coverprofile "$(GO_COVERPROFILE)" --output "$(QA_MATRIX_DIR)"
+
+qa-matrix-check:
+	python3 scripts/qa_matrix.py --check --output "$(QA_MATRIX_DIR)"
+
 test-script:
 	$(GO) test $(GO_TEST_FLAGS) ./test/script/...
 
 test-scripts:
 	@set -e; for t in auto-iter/scripts/*_test.sh scripts/run-acceptance_test.sh; do echo "--- $$t ---"; bash "$$t" || exit 1; done
+	python3 -m unittest discover -s scripts -p 'qa_matrix_test.py'
 
 test-acceptance:
 	bash scripts/run-acceptance.sh
