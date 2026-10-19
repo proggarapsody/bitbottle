@@ -14,7 +14,40 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
 )
+
+func TestFactory_Integration_BBTokenOverridesHostsConfig(t *testing.T) {
+	var gotAuth []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = append(gotAuth, r.Header.Get("Authorization"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"account_id":"u123","display_name":"User"}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	configHome := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configHome)
+	t.Setenv("BB_CLOUD_BASE_URL", srv.URL)
+	t.Setenv("BB_TOKEN", "environment-token")
+
+	configDir := filepath.Join(configHome, "bitbottle")
+	require.NoError(t, os.MkdirAll(configDir, 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "hosts.yml"), []byte(
+		"bitbucket.org:\n  oauth_token: config-token\n  git_protocol: ssh\n"), 0o600))
+
+	f := factory.New()
+	client, err := f.Backend("bitbucket.org")
+	require.NoError(t, err)
+	_, err = client.GetCurrentUser()
+	require.NoError(t, err)
+
+	loginClient, err := f.BackendWithOptions("bitbucket.org", backend.Options{Token: "stdin-token"})
+	require.NoError(t, err)
+	_, err = loginClient.GetCurrentUser()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"Bearer environment-token", "Bearer stdin-token"}, gotAuth)
+}
 
 // TestFactory_Integration_ConfigLoadsFromDiskAndWiresClient verifies that:
 //  1. hosts.yml written to disk is accessible via Config().Get(), and

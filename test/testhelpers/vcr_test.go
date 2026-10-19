@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -169,22 +170,40 @@ func TestRedact_StripsAuthAndInternalHost(t *testing.T) {
 	}
 }
 
-// --- Skip tests ------------------------------------------------------------
+// TestNewVCRDoer_MissingCassetteFails verifies an absent cassette fails the
+// test process instead of being reported as a successful skip.
+func TestNewVCRDoer_MissingCassetteFails(t *testing.T) {
+	const helperEnv = "BITBOTTLE_VCR_MISSING_CASSETTE_HELPER"
+	if os.Getenv(helperEnv) == "1" {
+		t.Setenv("BITBOTTLE_RECORD", "")
+		_, _ = testhelpers.NewVCRDoer(t, filepath.Join(t.TempDir(), "missing.yaml"), "")
+		return
+	}
 
-// TestNewVCRDoer_SkipsWhenNoCassette verifies that NewVCRDoer calls t.Skip
-// when the cassette file does not exist and BITBOTTLE_RECORD is unset.
-// We use a sub-test with a fake *testing.T to intercept the skip signal.
-func TestNewVCRDoer_SkipsWhenNoCassette(t *testing.T) {
-	// Ensure record mode is off.
-	t.Setenv("BITBOTTLE_RECORD", "")
+	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestNewVCRDoer_MissingCassetteFails$")
+	cmd.Env = vcrTestEnv(helperEnv + "=1")
+	output, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatalf("missing cassette subprocess succeeded; output:\n%s", output)
+	}
+	if strings.Contains(string(output), "--- SKIP") {
+		t.Fatalf("missing cassette subprocess skipped; output:\n%s", output)
+	}
+	if !strings.Contains(string(output), "run make record-cassettes") {
+		t.Fatalf("missing cassette error omitted the recovery command; output:\n%s", output)
+	}
+}
 
-	// Run in a sub-test so that the outer test is not itself skipped.
-	t.Run("inner", func(t *testing.T) {
-		_, _ = testhelpers.NewVCRDoer(t, "/nonexistent/path/that/does/not/exist.yaml", "")
-		// The skip signal appears in test output; Go's testing API does not
-		// expose sub-test skip state to the parent. The sub-test will show
-		// "--- SKIP" in the verbose output, which is the observable contract.
-	})
+func vcrTestEnv(helper string) []string {
+	var env []string
+	for _, entry := range os.Environ() {
+		key, _, _ := strings.Cut(entry, "=")
+		if key == "BITBOTTLE_RECORD" || key == "BITBOTTLE_VCR_MISSING_CASSETTE_HELPER" {
+			continue
+		}
+		env = append(env, entry)
+	}
+	return append(env, "BITBOTTLE_RECORD=", helper)
 }
 
 // TestNewVCRDoer_ReplaysCassette checks that NewVCRDoer returns a functional

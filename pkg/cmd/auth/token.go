@@ -21,11 +21,12 @@ func NewCmdAuthToken(f *factory.Factory) *cobra.Command {
 			}
 
 			hostCfg, _ := cfg.Get(host)
-			if hostCfg.OAuthToken == "" {
+			token := factory.ResolveToken(hostCfg, f.Keyring)
+			if token == "" {
 				return fmt.Errorf("no token stored for %s", host)
 			}
 
-			fmt.Fprintln(f.IOStreams.Out, hostCfg.OAuthToken)
+			fmt.Fprintln(f.IOStreams.Out, token)
 			return nil
 		},
 	}

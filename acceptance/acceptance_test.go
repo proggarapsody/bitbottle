@@ -14,38 +14,122 @@
 package acceptance
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/rogpeppe/go-internal/testscript"
+
+	"github.com/proggarapsody/bitbottle/internal/acceptancecloud"
+	"github.com/proggarapsody/bitbottle/internal/bbinstance"
 )
 
 // TestAcceptance runs all acceptance testscript scripts under testdata/pr/.
-// It skips cleanly (t.Skip, not t.Fatal) when:
-//   - BITBOTTLE_E2E is not set to "1"
-//   - BB_E2E_REPO is absent
-//   - BB_E2E_REPO contains "prod" (safety guard against accidentally hitting production)
+// Ordinary test runs skip; an explicit live opt-in must have a complete,
+// safe configuration and at least one discovered scenario.
 func TestAcceptance(t *testing.T) {
 	if os.Getenv("BITBOTTLE_E2E") != "1" {
 		t.Skip("acceptance tests skipped: set BITBOTTLE_E2E=1 to run")
 	}
 
-	repo := os.Getenv("BB_E2E_REPO")
-	if repo == "" {
-		t.Skip("acceptance tests skipped: BB_E2E_REPO is not set")
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("BB_E2E_BACKEND")), "cloud") {
+		t.Run(acceptancecloud.ScenarioID, func(t *testing.T) {
+			report, err := acceptancecloud.Run(t.Context(), acceptancecloud.Config{
+				BootstrapToken: os.Getenv("BB_CLOUD_BOOTSTRAP_TOKEN"), ActorToken: os.Getenv("BB_TOKEN"),
+				Email: os.Getenv("BB_CLOUD_EMAIL"), Workspace: os.Getenv("BB_CLOUD_WORKSPACE"), Project: os.Getenv("BB_CLOUD_PROJECT"),
+				ReportDir: os.Getenv("BB_ACCEPTANCE_REPORT_DIR"), Binary: os.Getenv("BITBOTTLE_BIN"),
+			})
+			if err != nil {
+				t.Fatalf("Cloud acceptance %s: %v", report.Status, err)
+			}
+			if report.Status != "pass" {
+				t.Fatalf("Cloud acceptance status = %s", report.Status)
+			}
+		})
+		return
 	}
-
-	if strings.Contains(strings.ToLower(repo), "prod") {
-		t.Skipf("acceptance tests skipped: BB_E2E_REPO=%q contains 'prod' — refusing to run against a production repo", repo)
+	scripts, err := validateAcceptanceConfig(os.Getenv, filepath.Join("testdata", "pr"))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	testscript.Run(t, testscript.Params{
-		Dir:   "testdata/pr",
+		Files: scripts,
 		Setup: setup,
 		Cmds:  customCmds(),
 	})
+}
+
+func validateAcceptanceConfig(getenv func(string) string, scenarioDir string) ([]string, error) {
+	backend := strings.ToLower(strings.TrimSpace(getenv("BB_E2E_BACKEND")))
+	if backend != "cloud" && backend != "server" {
+		return nil, fmt.Errorf("acceptance configuration: BB_E2E_BACKEND must be cloud or server")
+	}
+
+	required := []string{
+		"BB_TOKEN",
+		"BB_HOST",
+		"BB_E2E_REPO",
+		"BITBOTTLE_BIN",
+		"BB_E2E_BRANCH",
+		"BB_REVIEWER",
+	}
+	var missing []string
+	for _, name := range required {
+		if strings.TrimSpace(getenv(name)) == "" {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("acceptance configuration: required values are empty: %s", strings.Join(missing, ", "))
+	}
+
+	host := getenv("BB_HOST")
+	if bbinstance.IsCloud(host, "") != (backend == "cloud") {
+		return nil, fmt.Errorf("acceptance configuration: BB_E2E_BACKEND does not match the adapter selected by BB_HOST")
+	}
+
+	repo := getenv("BB_E2E_REPO")
+	repoParts := strings.Split(repo, "/")
+	if len(repoParts) != 2 || repoParts[0] == "" || repoParts[1] == "" {
+		return nil, fmt.Errorf("acceptance configuration: BB_E2E_REPO must be WORKSPACE/REPO or PROJECT/REPO")
+	}
+	if strings.Contains(strings.ToLower(repo), "prod") {
+		return nil, fmt.Errorf("acceptance configuration: BB_E2E_REPO is blocked by the production safety guard")
+	}
+
+	if _, err := exec.LookPath(getenv("BITBOTTLE_BIN")); err != nil {
+		return nil, fmt.Errorf("acceptance configuration: BITBOTTLE_BIN must point to an executable")
+	}
+
+	scripts, err := acceptanceScenarioFiles(scenarioDir)
+	if err != nil {
+		return nil, fmt.Errorf("acceptance configuration: cannot inspect scenario set: %w", err)
+	}
+	if len(scripts) == 0 {
+		return nil, fmt.Errorf("acceptance configuration: no .txt or .txtar scenarios found")
+	}
+	return scripts, nil
+}
+
+func acceptanceScenarioFiles(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var scripts []string
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || (!strings.HasSuffix(name, ".txt") && !strings.HasSuffix(name, ".txtar")) {
+			continue
+		}
+		scripts = append(scripts, filepath.Join(dir, name))
+	}
+	return scripts, nil
 }
 
 // setup passes through all BB_* and BITBOTTLE_* env vars from the real

@@ -89,8 +89,15 @@ Merging the Release Please PR triggers the release workflow, which:
 
 ## Development setup
 
+The Go 1.26.9 toolchain pin includes the macOS arm64 fork/pre-exec crash fix
+backported in Go 1.26.5 ([upstream issue #79804](https://github.com/golang/go/issues/79804),
+[fix #79806](https://github.com/golang/go/issues/79806)). Keep the
+`go 1.25.5` language minimum separate from the selected toolchain. Do not work
+around this runtime crash by disabling the race detector or retrying tests.
+
 ```bash
-# Install Go 1.21+
+# The Go toolchain is selected by go.mod (`toolchain go1.26.9`). The language
+# compatibility minimum remains Go 1.25.5 (`go 1.25.5`).
 go version
 
 # Fetch dependencies
@@ -105,9 +112,20 @@ make build
 # Run tests (with race detector)
 make test
 
+# Run strict live acceptance checks (requires configured credentials/backend)
+make test-acceptance
+
 # Lint
 make lint
 ```
+
+Cloud acceptance reads secrets only from the `cloud-acceptance` GitHub
+Environment restricted to `main`. Keep bootstrap and actor credentials
+separate; cleanup is limited to resources owned by the run manifest and must
+be independently verified. A skipped live run is not a pass, and the actor
+account cannot serve as an independent reviewer. See
+[`docs/workflows/acceptance.md`](docs/workflows/acceptance.md) for the
+configuration and workflow details.
 
 ---
 

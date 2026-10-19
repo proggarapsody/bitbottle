@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -47,6 +48,10 @@ func TestExecCmd_NotInstalled(t *testing.T) {
 }
 
 func TestExecCmd_TokenInjectedInEnv(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("extension fixture requires a Unix shell")
+	}
+
 	configDir := t.TempDir()
 	writeExtension(t, configDir, "hello")
 
@@ -73,12 +78,13 @@ func TestExecCmd_TokenInjectedInEnv(t *testing.T) {
 	cmd.SetErr(errOut)
 	cmd.SetArgs([]string{"exec", "hello"})
 
-	// Execute; ignore errors from the script itself (some CI envs might not have sh).
-	_ = cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute extension: %v", err)
+	}
 
 	data, err := os.ReadFile(envFile)
 	if err != nil {
-		t.Skip("shell script runner not available in this environment")
+		t.Fatalf("read extension environment: %v", err)
 	}
 
 	output := string(data)

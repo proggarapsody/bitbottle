@@ -1,5 +1,6 @@
 # Build output (root-level binary only)
 /bitbottle
+/coverage.out
 
 # GoReleaser output
 /dist/

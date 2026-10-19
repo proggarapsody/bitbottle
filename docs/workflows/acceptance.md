@@ -17,30 +17,57 @@ and `pr request-review` failing with a 400 because `version` was omitted.
 
 ## Running locally
 
+Build the binary first with `go build -o /tmp/bb ./cmd/bitbottle`. Server/DC
+uses the existing sandbox configuration below. Cloud creates a unique
+temporary repository and does not require a pre-existing repository, branch,
+or reviewer:
+
 ```sh
 BITBOTTLE_E2E=1 \
-BB_HOST=bb.example.com \
-BB_TOKEN=<your-token> \
-BB_E2E_REPO=TEST/acceptance-sandbox \
-BB_E2E_BRANCH=acceptance/test-branch \
-BB_REVIEWER=someuser \
-BITBOTTLE_BIN=$(go build -o /tmp/bb ./cmd/bitbottle && echo /tmp/bb) \
-go test ./acceptance/... -v -timeout 20m -run TestAcceptance
+BB_E2E_BACKEND=cloud \
+BB_TOKEN=<actor-token> \
+BB_CLOUD_BOOTSTRAP_TOKEN=<bootstrap-token> \
+BB_CLOUD_EMAIL=<actor-email> \
+BB_CLOUD_WORKSPACE=bitbottle-qa-lab \
+BB_CLOUD_PROJECT=BBQA \
+BB_ACCEPTANCE_SHA="$(git rev-parse HEAD)" \
+BB_ACCEPTANCE_REPORT_DIR=/tmp/bitbottle-acceptance \
+BITBOTTLE_BIN=/tmp/bb \
+bash scripts/run-acceptance.sh
 ```
 
-## Safety guard
+The bootstrap token provisions and removes the temporary repository. The
+separate `BB_TOKEN` actor token exercises the public CLI. Keep both scoped to
+the dedicated QA workspace. The distinct-token setup does not prove that the
+tokens belong to different Atlassian accounts; the run report records that
+identity separation as unverified until it is independently confirmed.
 
-The test runner enforces three `t.Skip` (never `t.Fatal`) guards so offline
-runs and misconfigured environments stay green:
+## Configuration and safety
 
-| Guard | Trigger |
+Ordinary test runs skip the acceptance test unless `BITBOTTLE_E2E=1` is set.
+Once opted in, incomplete or unsafe configuration fails before any scenario
+starts. Required values are:
+
+| Variable | Requirement |
 |---|---|
-| `BITBOTTLE_E2E != "1"` | All acceptance tests skipped |
-| `BB_E2E_REPO` absent | All acceptance tests skipped |
-| `BB_E2E_REPO` contains `"prod"` (case-insensitive) | All acceptance tests skipped with a clear message |
+| `BB_E2E_BACKEND` | Exactly `cloud` or `server` |
+| `BB_TOKEN` | Nonempty actor token with the rights required by the scenarios |
+| `BITBOTTLE_BIN` | Path or command name resolving to an executable Bitbottle binary |
+| Cloud: `BB_CLOUD_BOOTSTRAP_TOKEN` | Separate bootstrap token used to create and remove only the temporary Cloud repository |
+| Cloud: `BB_CLOUD_EMAIL` | Email for the configured actor token |
+| Cloud: `BB_CLOUD_WORKSPACE` | Must be the dedicated `bitbottle-qa-lab` workspace |
+| Cloud: `BB_CLOUD_PROJECT` | Must be `BBQA` |
+| Cloud: `BB_ACCEPTANCE_REPORT_DIR` | Writable, per-run directory for `manifest.json` and `report.json` |
+| Server/DC: `BB_HOST` | Server/DC hostname matching the adapter selected by the CLI |
+| Server/DC: `BB_E2E_REPO` | Nonempty `PROJECT/REPO`; values containing `prod` case-insensitively are rejected |
+| Server/DC: `BB_E2E_BRANCH` | Existing source branch in the sandbox repository |
+| Server/DC: `BB_REVIEWER` | Existing reviewer username |
 
-The third guard prevents accidentally running destructive operations against a
-production repository even if someone mis-sets the env var.
+The suite also fails if it discovers no `.txt` or `.txtar` scenario. The CI
+runner, `scripts/run-acceptance.sh`, checks `go test` JSON output and fails if
+the opted-in run skips tests or completes with zero scenario subtests. Use that
+runner for mandatory live acceptance; a direct `go test` invocation does not
+enforce the runner-level skip and scenario-count check.
 
 ## BB_ACCEPTANCE_SKIP_DEFER
 
@@ -51,17 +78,37 @@ scripts that want to honour it should check it explicitly.
 
 ## CI wiring
 
-`nightly-e2e.yml` runs `go test ./acceptance/... -v -timeout 20m -run TestAcceptance`
-as a second step after the existing testscript run. Required secrets:
+`.github/workflows/nightly-e2e.yml` builds the binary from the workflow SHA,
+runs the hermetic testscript suite, then runs the selected live backend. The
+Cloud job reads secrets from the `cloud-acceptance` GitHub Environment and
+always invokes `go run ./cmd/qa-cloud-cleanup` with the run's persisted
+manifest, even after a product failure. It uploads only the report and
+manifest; neither file may contain credentials. Configure the environment
+secrets `BB_CLOUD_TOKEN`, `BB_CLOUD_BOOTSTRAP_TOKEN`, and `BB_CLOUD_EMAIL`,
+plus the repository variable `CLOUD_ACCEPTANCE_ENABLED=true` to enable the
+scheduled Cloud lane. The Cloud workspace and project are fixed to
+`bitbottle-qa-lab` and `BBQA`.
 
-| Secret | Used for |
+The workflow dispatch input selects `cloud`, `server`, or `both`. An explicit
+Server/DC selection with missing credentials fails configuration validation.
+The scheduled run executes Cloud only when `CLOUD_ACCEPTANCE_ENABLED=true`;
+otherwise its status summary says the lane is unavailable. Live jobs run only
+from `main`. Dispatches from other refs fail in a secret-free trust check.
+The Cloud environment must also restrict deployment branches to `main`.
+
+Server/DC credentials remain repository secrets:
+
+| Secret | Purpose |
 |---|---|
-| `BB_E2E_REPO` | `PROJECT/REPO` slug of the throwaway sandbox repo |
-| `BB_E2E_BRANCH` | Source branch that already exists in the sandbox repo |
-| `BB_E2E_REVIEWER` | Username to add as reviewer in reviewer-safety scripts |
+| `BB_SERVER_TOKEN` | Actor token |
+| `BB_SERVER_HOST` | Server/DC hostname |
+| `BB_SERVER_E2E_REPO` | `PROJECT/REPO` sandbox |
+| `BB_SERVER_E2E_BRANCH` | Existing source branch |
+| `BB_SERVER_E2E_REVIEWER` | Reviewer username |
 
-The acceptance step inherits the same `BB_TOKEN` / `BB_HOST` as the testscript
-step (already wired per matrix backend).
+Cloud evidence does not establish Server/DC compatibility. The workflow
+reports `DC не проверен live` until a licensed, configured Data Center live
+lane is separately implemented and run.
 
 ## Adding new scripts
 

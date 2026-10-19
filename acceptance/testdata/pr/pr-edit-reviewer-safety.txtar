@@ -10,7 +10,7 @@
 #   BB_TOKEN         — API token with repo write access
 #   BB_E2E_REPO      — PROJECT/REPO slug (e.g. TEST/acceptance-sandbox)
 #   BB_E2E_BRANCH    — source branch that already exists in the repo
-#   BB_REVIEWER      — username to add as reviewer; if unset, reviewer steps are skipped
+#   BB_REVIEWER      — username to add as reviewer (required)
 #   BB_ACCEPTANCE_SKIP_DEFER — set to "1" to skip PR cleanup (useful for debugging)
 #
 # Run locally:

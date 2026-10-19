@@ -2,6 +2,8 @@ module github.com/proggarapsody/bitbottle
 
 go 1.25.5
 
+toolchain go1.26.9
+
 require (
 	github.com/fatih/color v1.19.0
 	github.com/getkin/kin-openapi v0.140.0
