@@ -31,7 +31,7 @@ procedures and command adapters are retained as historical evidence.
 - [`docs/agents/README.md`](docs/agents/README.md) — current knowledge map, skill setup status, and where new knowledge belongs.
 - [`docs/agent-primer.md`](docs/agent-primer.md) — required architectural reading for any subagent implementing a new scope.
 - [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — required merge gate.
-- [`docs/workflows/acceptance.md`](docs/workflows/acceptance.md) — live acceptance setup, safety rules, and the manual Cloud auto-merge diagnostic; its observation does not change release readiness.
+- [`docs/workflows/acceptance.md`](docs/workflows/acceptance.md) — live acceptance setup, safety rules, and the manual Cloud auto-merge diagnostic, including an internal-route authentication probe; its observation does not change release readiness.
 - For CLI/MCP scenario coverage or release readiness, use [`docs/workflows/qa-matrix.md`](docs/workflows/qa-matrix.md): run the frozen critical release profile and track full-matrix gaps separately.
 - For release candidate checks, run the snapshot workflow in [`.github/workflows/release-dryrun.yml`](.github/workflows/release-dryrun.yml); [`scripts/smoke-release-candidate.py`](scripts/smoke-release-candidate.py) checks the exact archive, npm wrapper, and Docker image. The snapshot is not proof of published bytes.
 - Local command applicability needs explicit local success/error proof; a provider non-applicability reason alone is never coverage.

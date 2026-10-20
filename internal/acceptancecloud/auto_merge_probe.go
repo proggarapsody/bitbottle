@@ -3,6 +3,7 @@ package acceptancecloud
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,17 +19,22 @@ import (
 
 // ProbeObservation records bounded, credential-free evidence from one request.
 type ProbeObservation struct {
-	Method            string `json:"method"`
-	Path              string `json:"path,omitempty"`
-	Status            int    `json:"status,omitempty"`
-	ExitCode          *int   `json:"exit_code,omitempty"`
-	Message           string `json:"message,omitempty"`
-	PRState           string `json:"pr_state,omitempty"`
-	AutoMergePresent  *bool  `json:"auto_merge_present,omitempty"`
-	AutoMergeEnabled  *bool  `json:"auto_merge_enabled,omitempty"`
-	AutoMergeStrategy string `json:"auto_merge_strategy,omitempty"`
-	AutoMergeShape    string `json:"auto_merge_shape,omitempty"`
+	Method                  string `json:"method"`
+	Path                    string `json:"path,omitempty"`
+	Role                    string `json:"role,omitempty"`
+	AuthScheme              string `json:"auth_scheme,omitempty"`
+	Status                  int    `json:"status,omitempty"`
+	ExitCode                *int   `json:"exit_code,omitempty"`
+	Message                 string `json:"message,omitempty"`
+	PRState                 string `json:"pr_state,omitempty"`
+	AutoMergePresent        *bool  `json:"auto_merge_present,omitempty"`
+	AutoMergeEnabled        *bool  `json:"auto_merge_enabled,omitempty"`
+	AutoMergeStrategy       string `json:"auto_merge_strategy,omitempty"`
+	AutoMergeShape          string `json:"auto_merge_shape,omitempty"`
+	CanCreatePostBuildMerge *bool  `json:"can_create_post_build_merge,omitempty"`
 }
+
+const internalProbeOrigin = "https://bitbucket.org"
 
 // AutoMergeProbeReport is diagnostic evidence, never an acceptance result.
 type AutoMergeProbeReport struct {
@@ -54,14 +60,20 @@ type probePR struct {
 // RunAutoMergeProbe performs an isolated, manual Cloud diagnostic. Its zero
 // exit status means the diagnostic and cleanup completed, not that auto-merge works.
 func RunAutoMergeProbe(ctx context.Context, cfg Config) (report AutoMergeProbeReport, retErr error) {
+	return runAutoMergeProbe(ctx, cfg, internalProbeOrigin)
+}
+
+// internalOrigin is injected only by hermetic tests. Live callers always use
+// the fixed bitbucket.org origin above.
+func runAutoMergeProbe(ctx context.Context, cfg Config, internalOrigin string) (report AutoMergeProbeReport, retErr error) {
 	report = AutoMergeProbeReport{Version: 1, Scenario: "cloud-auto-merge-manual-probe", Outcome: "infrastructure_failure", Observations: map[string]ProbeObservation{}, Cleanup: Check{Status: "not_started"}}
 	defer func() {
 		if retErr != nil {
-			report.Error = sanitize(retErr.Error(), cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
+			report.Error = sanitizeProbe(retErr.Error(), cfg)
 		}
 		for name, observation := range report.Observations {
-			observation.Message = sanitize(observation.Message, cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
-			observation.AutoMergeStrategy = sanitize(observation.AutoMergeStrategy, cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
+			observation.Message = sanitizeProbe(observation.Message, cfg)
+			observation.AutoMergeStrategy = sanitizeProbe(observation.AutoMergeStrategy, cfg)
 			report.Observations[name] = observation
 		}
 		if cfg.ReportDir != "" {
@@ -100,7 +112,7 @@ func RunAutoMergeProbe(ctx context.Context, cfg Config) (report AutoMergeProbeRe
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 		defer cancel()
 		if e := cleanup(cleanupCtx, manifest, cfg.BootstrapToken, cfg.BaseURL); e != nil {
-			report.Cleanup = Check{Status: "fail", Detail: sanitize(e.Error(), cfg.BootstrapToken, cfg.ActorToken, cfg.Email)}
+			report.Cleanup = Check{Status: "fail", Detail: sanitizeProbe(e.Error(), cfg)}
 			report.Outcome = "cleanup_failure"
 			retErr = errors.Join(retErr, fmt.Errorf("cleanup failed: %w", e))
 		} else {
@@ -221,8 +233,94 @@ func RunAutoMergeProbe(ctx context.Context, cfg Config) (report AutoMergeProbeRe
 			return report, errors.New("PR readback failed or PR merged after bootstrap auto-merge DELETE")
 		}
 	}
+	internalPath := "/!api/internal/repositories/" + esc(cfg.Workspace) + "/" + esc(slug) + "/pullrequests/" + strconv.Itoa(pr.ID)
+	postBody := map[string]any{"close_source_branch": false, "message": marker, "merge_strategy": "merge_commit", "newstatus": "fulfilled"}
+	internalHTTP := internalProbeHTTPClient()
+	for _, role := range []struct {
+		name, token string
+		client      *apiClient
+	}{
+		{"actor", cfg.ActorToken, actor},
+		{"bootstrap", cfg.BootstrapToken, bootstrap},
+	} {
+		for _, scheme := range []string{"bearer", "basic"} {
+			prefix := role.name + "_internal_" + scheme
+			pending := probeInternalRequest(ctx, internalHTTP, internalOrigin, internalPath+"/pending_merge", http.MethodGet, nil, role.name, scheme, cfg.Email, role.token, cfg)
+			report.Observations[prefix+"_pending_get"] = pending
+			if pending.Status == 0 {
+				return report, errors.New("internal pending_merge did not receive a response")
+			}
+			post := probeInternalRequest(ctx, internalHTTP, internalOrigin, internalPath+"/post-build-merge", http.MethodPost, postBody, role.name, scheme, cfg.Email, role.token, cfg)
+			report.Observations[prefix+"_post_build_merge"] = post
+			if post.Status == 0 {
+				return report, errors.New("internal post-build-merge did not receive a response")
+			}
+			state, readErr := probeReadPR(ctx, role.client, prPath, pr.ID)
+			report.Observations[prefix+"_pr_readback"] = state
+			if readErr != nil || state.PRState != "OPEN" {
+				return report, errors.New("PR readback failed or PR merged after internal post-build-merge")
+			}
+		}
+	}
 	report.Outcome = "unconfirmed"
 	return report, nil
+}
+
+func internalProbeHTTPClient() *http.Client {
+	return &http.Client{Timeout: 25 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+}
+
+func sanitizeProbe(s string, cfg Config) string {
+	return sanitize(s,
+		cfg.BootstrapToken, cfg.ActorToken, cfg.Email,
+		base64.StdEncoding.EncodeToString([]byte(cfg.Email+":"+cfg.BootstrapToken)),
+		base64.StdEncoding.EncodeToString([]byte(cfg.Email+":"+cfg.ActorToken)),
+	)
+}
+
+func probeInternalRequest(ctx context.Context, client *http.Client, origin, path, method string, payload any, role, scheme, email, token string, cfg Config) ProbeObservation {
+	o := ProbeObservation{Method: method, Path: path, Role: role, AuthScheme: scheme}
+	var body io.Reader
+	if payload != nil {
+		encoded, err := json.Marshal(payload)
+		if err != nil {
+			o.Message = "invalid diagnostic payload"
+			return o
+		}
+		body = bytes.NewReader(encoded)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, origin+path, body)
+	if err != nil {
+		o.Message = sanitizeProbe(err.Error(), cfg)
+		return o
+	}
+	if scheme == "basic" {
+		req.SetBasicAuth(email, token)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	if payload != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		o.Message = sanitizeProbe(err.Error(), cfg)
+		return o
+	}
+	defer func() { _ = resp.Body.Close() }()
+	o.Status = resp.StatusCode
+	limited, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	var fields struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+		CanCreatePostBuildMerge *bool `json:"can_create_post_build_merge"`
+	}
+	if json.Unmarshal(limited, &fields) == nil {
+		o.Message = sanitizeProbe(fields.Error.Message, cfg)
+		o.CanCreatePostBuildMerge = fields.CanCreatePostBuildMerge
+	}
+	return o
 }
 
 func probeReadPR(ctx context.Context, c *apiClient, path string, id int) (ProbeObservation, error) {
@@ -260,7 +358,7 @@ func probeCLI(ctx context.Context, cfg Config, args []string) ProbeObservation {
 	o := ProbeObservation{Method: "CLI " + strings.Join(args[:2], " ")}
 	env, done, err := actorEnv(cfg)
 	if err != nil {
-		o.Message = sanitize(err.Error(), cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
+		o.Message = sanitizeProbe(err.Error(), cfg)
 		return o
 	}
 	defer done()
@@ -278,7 +376,7 @@ func probeCLI(ctx context.Context, cfg Config, args []string) ProbeObservation {
 		}
 	}
 	o.ExitCode = &code
-	o.Message = sanitize(strings.TrimSpace(string(out)), cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
+	o.Message = sanitizeProbe(strings.TrimSpace(string(out)), cfg)
 	return o
 }
 
@@ -291,7 +389,7 @@ func probeRequest(ctx context.Context, c *apiClient, method, path string, payloa
 	}
 	req, err := http.NewRequestWithContext(ctx, method, c.base+path, body)
 	if err != nil {
-		o.Message = sanitize(err.Error(), cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
+		o.Message = sanitizeProbe(err.Error(), cfg)
 		return o
 	}
 	req.Header.Set("Authorization", "Bearer "+c.token)
@@ -300,7 +398,7 @@ func probeRequest(ctx context.Context, c *apiClient, method, path string, payloa
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		o.Message = sanitize(err.Error(), cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
+		o.Message = sanitizeProbe(err.Error(), cfg)
 		return o
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -312,7 +410,7 @@ func probeRequest(ctx context.Context, c *apiClient, method, path string, payloa
 		} `json:"error"`
 	}
 	if json.Unmarshal(limited, &envelope) == nil {
-		o.Message = sanitize(envelope.Error.Message, cfg.BootstrapToken, cfg.ActorToken, cfg.Email)
+		o.Message = sanitizeProbe(envelope.Error.Message, cfg)
 	}
 	return o
 }
