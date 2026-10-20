@@ -57,18 +57,6 @@ type CloudAddPRComment struct {
 	Parent *CloudParentRef `json:"parent,omitempty"`
 }
 
-// CloudAutoMerge Auto-merge configuration for a Cloud pull request
-type CloudAutoMerge struct {
-	// MergeStrategy Merge strategy ID. rebase_fast_forward maps to the CLI rebase strategy; fast_forward does not rebase commits.
-	MergeStrategy string `json:"merge_strategy"`
-}
-
-// CloudAutoMergeRequest Request body for enabling auto-merge on a Bitbucket Cloud pull request
-type CloudAutoMergeRequest struct {
-	// MergeStrategy Merge strategy to apply when auto-merging
-	MergeStrategy *string `json:"merge_strategy,omitempty"`
-}
-
 // CloudBranch A Bitbucket Cloud branch
 type CloudBranch struct {
 	Name string `json:"name"`
@@ -469,6 +457,17 @@ type CloudMergePullRequest struct {
 	MergeStrategy *string `json:"merge_strategy,omitempty"`
 }
 
+// CloudMergeQueue defines model for CloudMergeQueue.
+type CloudMergeQueue struct {
+	State string `json:"state"`
+	UUID  string `json:"uuid"`
+}
+
+// CloudMergeQueueReference defines model for CloudMergeQueueReference.
+type CloudMergeQueueReference struct {
+	UUID *string `json:"uuid,omitempty"`
+}
+
 // CloudPRComment A comment on a Bitbucket Cloud pull request
 type CloudPRComment struct {
 	Content   CloudPRCommentContent `json:"content"`
@@ -621,9 +620,6 @@ type CloudPullRequest struct {
 	// Author A Bitbucket Cloud user reference
 	Author CloudUser `json:"author"`
 
-	// AutoMerge Auto-merge configuration for a Cloud pull request
-	AutoMerge *CloudAutoMerge `json:"auto_merge,omitempty"`
-
 	// Description Pull request description
 	Description string `json:"description"`
 
@@ -636,6 +632,7 @@ type CloudPullRequest struct {
 	// ID Pull request ID
 	ID        int                        `json:"id"`
 	Links     CloudPullRequestLinks      `json:"links"`
+	Queued    *bool                      `json:"queued,omitempty"`
 	Reviewers []CloudPullRequestReviewer `json:"reviewers"`
 
 	// Source A reference to a branch and its latest commit
@@ -657,6 +654,15 @@ type CloudPullRequestLinks struct {
 type CloudPullRequestReviewer struct {
 	// AccountID Atlassian account ID
 	AccountID string `json:"account_id"`
+}
+
+// CloudQueuedPullRequest defines model for CloudQueuedPullRequest.
+type CloudQueuedPullRequest struct {
+	MergeQueue *CloudMergeQueueReference `json:"merge_queue,omitempty"`
+
+	// Pullrequest A Bitbucket Cloud pull request
+	Pullrequest *CloudPullRequest `json:"pullrequest,omitempty"`
+	Status      *string           `json:"status,omitempty"`
 }
 
 // CloudRepo A Bitbucket Cloud repository

@@ -73,8 +73,20 @@ var catalogue = map[backend.ErrorCode]entry{
 		hints: []string{"Check the slug spelling; users must already exist on the host."},
 	},
 	backend.CodePRAutoMergeBetaDisabled: {
-		title: "Auto-merge is not enabled for this workspace on {{.Host}}.",
-		hints: []string{"Ask your workspace admin to enable auto-merge in workspace settings."},
+		title: "Automatic merge is unavailable on {{.Host}}.",
+		hints: []string{"Ask a repository admin to configure and activate a Bitbucket merge queue for the destination branch."},
+	},
+	backend.CodePRMergeQueueRequired: {
+		title: "An active merge queue is required for automatic merge on {{.Host}}.",
+		hints: []string{"Ask a repository admin to configure and activate a Bitbucket merge queue for the destination branch. Merge queues require a paid Bitbucket plan and Pipelines."},
+	},
+	backend.CodePRMergePending: {
+		title: "The pull request has not finished merging on {{.Host}}.",
+		hints: []string{"Check `bitbottle pr view` before retrying. A queued pull request can still merge automatically."},
+	},
+	backend.CodePRMergeQueueUnconfirmed: {
+		title: "The merge queue change could not be confirmed on {{.Host}}.",
+		hints: []string{"Check `bitbottle pr view` and the repository merge queue before retrying; the pull request may still merge automatically."},
 	},
 	backend.CodePRTerminalState: {
 		title: "Pull request cannot be modified in its current state.",

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -29,27 +30,10 @@ func toPRDomain(w cloudgen.CloudPullRequest) backend.PullRequest {
 		WebURL:         w.Links.HTML.Href,
 		HeadCommitHash: w.Source.Commit.Hash,
 	}
-	if w.AutoMerge != nil {
-		pr.AutoMerge = &backend.AutoMergeState{
-			Enabled:  true,
-			Strategy: cloudStrategyToCLI(w.AutoMerge.MergeStrategy),
-		}
+	if w.Queued != nil && *w.Queued {
+		pr.AutoMerge = &backend.AutoMergeState{Enabled: true}
 	}
 	return pr
-}
-
-// cloudStrategyToCLI maps Cloud API strategy values back to CLI vocabulary.
-func cloudStrategyToCLI(s string) string {
-	switch s {
-	case "squash":
-		return "squash"
-	case "rebase_fast_forward":
-		return "rebase"
-	case "merge_commit":
-		return "merge"
-	default:
-		return s
-	}
 }
 
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
@@ -111,10 +95,21 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 	}
 	var w cloudgen.CloudPullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/merge", ns, slug, id)
-	if err := c.postJSON(path, body, &w); err != nil {
+	if err := c.postJSON(path, body, &w); err != nil && !errors.Is(err, io.EOF) {
 		return backend.PullRequest{}, stampPRMerge(err, id)
 	}
-	return toPRDomain(w), nil
+	pr := toPRDomain(w)
+	if pr.State == "" {
+		var err error
+		pr, err = c.GetPR(ns, slug, id)
+		if err != nil {
+			return backend.PullRequest{}, err
+		}
+	}
+	if pr.State != "MERGED" {
+		return pr, c.queueError(backend.CodePRMergePending, id, "the pull request has not finished merging")
+	}
+	return pr, nil
 }
 
 // ApprovePR approves a PR on behalf of the authenticated user.
@@ -131,44 +126,6 @@ func (c *Client) ApprovePR(ns, slug string, id int) error {
 func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/diff", ns, slug, id)
 	return c.getText(path)
-}
-
-// EnableAutoMerge queues a PR for automatic merge on Bitbucket Cloud.
-// The auto-merge endpoint is currently in beta; workspaces must have opted in.
-// A 404 response whose message mentions "auto-merge" or "auto_merge" surfaces as
-// a dedicated error rather than a generic pr.not_found.
-func (c *Client) EnableAutoMerge(ns, slug string, id int, strategy string) error {
-	body := struct {
-		MergeStrategy string `json:"merge_strategy"`
-	}{
-		MergeStrategy: backend.ToCloudMergeStrategy(strategy),
-	}
-	var result struct{}
-	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/auto-merge", ns, slug, id)
-	if err := c.postJSON(path, body, &result); err != nil {
-		return stampAutoMergeBeta(err)
-	}
-	return nil
-}
-
-// DisableAutoMerge cancels a queued auto-merge on Bitbucket Cloud.
-func (c *Client) DisableAutoMerge(ns, slug string, id int) error {
-	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/auto-merge", ns, slug, id)
-	return c.delete(path)
-}
-
-// stampAutoMergeBeta maps a 404 on the auto-merge endpoint to a
-// user-friendly error when the workspace hasn't enabled the beta feature.
-func stampAutoMergeBeta(err error) error {
-	var de *backend.DomainError
-	if !errors.As(err, &de) || de.HTTPStatus() != 404 {
-		return err
-	}
-	msg := strings.ToLower(de.Message)
-	if strings.Contains(msg, "auto-merge") || strings.Contains(msg, "auto_merge") {
-		return backend.StampCode(err, backend.CodePRAutoMergeBetaDisabled, "", "", "")
-	}
-	return err
 }
 
 func (c *Client) DeleteBranch(ns, slug, branch string) error {

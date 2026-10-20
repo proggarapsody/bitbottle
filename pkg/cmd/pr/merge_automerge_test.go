@@ -41,7 +41,7 @@ func TestPRMerge_AutoFlag_EnablesAutoMerge(t *testing.T) {
 	assert.Equal(t, "my-service", gotSlug)
 	assert.Equal(t, 42, gotID)
 	assert.Equal(t, "merge", gotStrategy)
-	assert.Contains(t, out.String(), "auto-merge")
+	assert.Contains(t, out.String(), "Auto-merge requested")
 	assert.Contains(t, out.String(), "#42")
 }
 

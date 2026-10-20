@@ -102,6 +102,28 @@ A row needs: backend it applies to · the rule · the symptom when violated
 - **How to honor:** route every `List*` through `paging.Collect` with the
   adapter's `Paginator`. Never hand-roll page-walking.
 
+## BQ-6 — Cloud automatic merge requires an active merge queue
+
+- **Applies to:** Bitbucket Cloud `pr merge --auto` and `--auto-off`.
+- **Rule:** use the public merge-queue API. Before submitting a merge request,
+  confirm that the destination branch has an `ACTIVE` queue; after submitting,
+  confirm that the PR appears in that queue or that it has already merged.
+  Cancellation must inspect queues in every state, including `DRAINING`, and
+  confirm the PR is absent while still open.
+- **Symptom when violated:** the former Cloud `/pullrequests/{id}/auto-merge`
+  route returned 404 in the diagnostic run, and an unguarded POST to the
+  ordinary merge endpoint can merge immediately when no queue is active.
+- **Evidence:** the dated public API research at
+  `docs/quality/2026-10-20-cloud-auto-merge-api.md` records the official
+  queue contract and the unresolved live boundary. The implementation guards
+  the POST and reads queue membership back in `api/cloud/pr_merge_queue.go`;
+  hermetic HTTP tests do not establish provider behavior.
+- **How to honor:** keep the active-queue check, queue membership verification,
+  and cancellation readback. Treat `pr.merge.queue_required` as a pre-mutation
+  error. Live Cloud acceptance remains unverified until the QA workspace
+  permits queue setup and the bootstrap credential passes its Pipelines read
+  preflight. Server/DC retains its separate classic `autoMerge` request field.
+
 ---
 
 ## Planned hardening (tracked)

@@ -16,7 +16,7 @@ func NewCmdPRMerge(f *factory.Factory) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "merge PR_ID",
-		Short: "Merge a pull request",
+		Short: "Merge a pull request or request automatic merge",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if (merge && squash) || (merge && rebase) || (squash && rebase) {
@@ -54,7 +54,7 @@ func NewCmdPRMerge(f *factory.Factory) *cobra.Command {
 				if err := client.EnableAutoMerge(ref.Project, ref.Slug, prID, strategy); err != nil {
 					return err
 				}
-				fmt.Fprintf(f.IOStreams.Out, "Queued pull request #%d for auto-merge (%s)\n", prID, strategy)
+				fmt.Fprintf(f.IOStreams.Out, "Auto-merge requested for pull request #%d (%s)\n", prID, strategy)
 				return nil
 			}
 
@@ -115,7 +115,7 @@ func NewCmdPRMerge(f *factory.Factory) *cobra.Command {
 	cmd.Flags().BoolVar(&squash, "squash", false, "Squash merge strategy")
 	cmd.Flags().BoolVar(&rebase, "rebase", false, "Rebase and fast-forward merge strategy")
 	cmd.Flags().BoolVar(&deleteBranch, "delete-branch", false, "Delete source branch after merge")
-	cmd.Flags().BoolVar(&auto, "auto", false, "Queue PR for auto-merge when all checks pass")
-	cmd.Flags().BoolVar(&autoOff, "auto-off", false, "Cancel a queued auto-merge")
+	cmd.Flags().BoolVar(&auto, "auto", false, "Request auto-merge (Cloud: active queue)")
+	cmd.Flags().BoolVar(&autoOff, "auto-off", false, "Cancel auto-merge (Cloud: remove from queue)")
 	return cmd
 }

@@ -7,8 +7,8 @@ bitbottle pr list   [PROJ/repo] [--state open|closed|merged]   # default: open
 bitbottle pr view   42 [--web]
 bitbottle pr create --title "x" --base main [--body "x"] [--draft] [--head BRANCH]
 bitbottle pr merge  42 [--merge|--squash|--rebase] [--delete-branch]
-bitbottle pr merge  42 --auto [--squash|--rebase]          # queue for auto-merge when checks pass
-bitbottle pr merge  42 --auto-off                          # cancel a queued auto-merge
+bitbottle pr merge  42 --auto [--squash|--rebase]          # request auto-merge (Cloud: active queue)
+bitbottle pr merge  42 --auto-off                          # cancel request (Cloud: remove from queue)
 bitbottle pr approve   42
 bitbottle pr unapprove 42
 bitbottle pr diff      42                       # unified diff; pipes to pager on TTY
@@ -145,15 +145,21 @@ Flags: `--user ACCOUNT_ID` (required), plus exactly one of `--approve`,
   `--delete-branch` removes the source branch on the remote after an
   immediate merge (Cloud only auto-deletes locally; Server/DC needs a
   separate `git push`).
-- `pr merge --auto` queues the PR for auto-merge; strategy defaults to
-  `merge`. Pass `--squash` or `--rebase` to override. On Bitbucket Cloud
-  the feature is currently in beta — if the workspace hasn't opted in you
-  get a `pr.automerge.beta_disabled` error with a hint to ask the admin.
-- `pr merge --auto-off` cancels a queued auto-merge without merging.
+- `pr merge --auto` requests automatic merge; strategy defaults to `merge`.
+  Pass `--squash` or `--rebase` to override. On Bitbucket Cloud, it adds the
+  PR to an active merge queue; the destination branch must have an active queue
+  configured. Merge queues require a paid Standard or Premium plan, Pipelines,
+  and queue configuration in `bitbucket-pipelines.yml`. Without an active
+  queue, the command returns `pr.merge.queue_required` before submitting a merge.
+- On Server/DC, `--auto` uses the classic `autoMerge` field in the versioned
+  merge request to ask the server to merge when checks pass. `--auto-off`
+  cancels that request. On Cloud, `--auto-off` removes the PR from its merge
+  queue. Check the PR state because a queued merge may already have completed.
 - Running `pr merge` (immediate) when the PR already has auto-merge queued
   prompts "PR is queued for auto-merge. Cancel and merge now? [y/N]" on a
   TTY; on non-TTY the auto-merge is silently cancelled first.
-- `pr view` shows `Auto-merge: enabled (strategy)` when auto-merge is queued.
+- `pr view` shows queue membership when the provider exposes it. Bitbucket
+  Cloud does not expose the queued merge strategy through the PR read API.
 - `pr request-changes` is Cloud-only — Server/DC has no API for it.
 
 ## Automation pattern

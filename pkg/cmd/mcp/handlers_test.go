@@ -385,6 +385,31 @@ func TestMergePR_CallsClientWithStrategy(t *testing.T) {
 	assertJSONContains(t, result, "MERGED", "")
 }
 
+func TestMergePR_AutoReportsVerifiedQueueMembershipAndRequestedStrategy(t *testing.T) {
+	t.Parallel()
+	var enabled, readBack bool
+	fake := &testhelpers.FakeClient{
+		EnableAutoMergeFn: func(ns, slug string, id int, strategy string) error {
+			enabled = true
+			return nil
+		},
+		GetPRFn: func(ns, slug string, id int) (backend.PullRequest, error) {
+			readBack = true
+			return backend.PullRequest{ID: id, State: "OPEN", AutoMerge: &backend.AutoMergeState{Enabled: true}}, nil
+		},
+	}
+	h := newHandlersWithFake(t, singleHostConfig, fake)
+	result, err := h.mergePR(context.Background(), makeReq(map[string]any{
+		"project": "MYPROJ", "slug": "my-repo", "id": float64(7), "auto": true,
+		"auto_strategy": "rebase",
+	}))
+	require.NoError(t, err)
+	assert.True(t, enabled)
+	assert.True(t, readBack)
+	text := extractText(t, result)
+	assert.JSONEq(t, `{"queued":true,"strategy":"rebase","state":"OPEN"}`, text)
+}
+
 // ---- approve_pr ----
 
 func TestApprovePR_CallsClientAndReturnsEmpty(t *testing.T) {
