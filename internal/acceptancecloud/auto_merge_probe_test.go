@@ -96,6 +96,13 @@ func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 	if report.Observations["functional_get_before"].Path != "/internal/repositories/"+report.Repository+"/pullrequests/2/post-build-merge" {
 		t.Fatalf("wrong functional route: %+v", report.Observations["functional_get_before"])
 	}
+	manifest, err := ReadManifest(filepath.Join(cfg.ReportDir, "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := report.Observations["functional_source_commit"].Path, "/repositories/"+report.Repository+"/refs/branches/auto-probe%2F"+manifest.RunID; got != want {
+		t.Fatalf("functional branch read path=%q want=%q", got, want)
+	}
 	b, err := os.ReadFile(filepath.Join(cfg.ReportDir, "probe.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -110,9 +117,6 @@ func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 		if strings.Contains(string(b), encoded) {
 			t.Fatal("probe persisted encoded Basic credentials")
 		}
-	}
-	if _, err := ReadManifest(filepath.Join(cfg.ReportDir, "manifest.json")); err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -334,12 +338,12 @@ func probeFixture(t *testing.T, denyActorRead bool, modes ...string) (Config, *h
 			w.WriteHeader(http.StatusCreated)
 		case suffix == "/src" && r.Method == "POST":
 			w.WriteHeader(201)
-		case strings.HasPrefix(suffix, "/commit/") && r.Method == "GET":
-			if strings.Contains(suffix, "auto-probe") {
-				fmt.Fprint(w, `{"hash":"source-hash"}`)
-			} else {
-				fmt.Fprint(w, `{"hash":"abc"}`)
-			}
+		case strings.HasPrefix(suffix, "/commit/auto-probe/") && r.Method == http.MethodGet:
+			w.WriteHeader(http.StatusNotFound)
+		case strings.HasPrefix(suffix, "/refs/branches/auto-probe/") && r.Method == http.MethodGet:
+			fmt.Fprint(w, `{"target":{"hash":"source-hash"}}`)
+		case suffix == "/commit/main" && r.Method == http.MethodGet:
+			fmt.Fprint(w, `{"hash":"abc"}`)
 		case suffix == "/refs/branches" && r.Method == "POST":
 			var branch struct {
 				Name   string `json:"name"`
