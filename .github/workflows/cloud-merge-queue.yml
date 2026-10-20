@@ -1,0 +1,108 @@
+name: Cloud merge queue acceptance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-merge-queue
+  cancel-in-progress: false
+
+jobs:
+  trust-check:
+    name: Validate trusted workflow ref
+    runs-on: ubuntu-latest
+    outputs:
+      trusted: ${{ steps.check.outputs.trusted }}
+    steps:
+      - id: check
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" != "refs/heads/main" ]]; then
+            echo "Only refs/heads/main may run the Cloud merge queue acceptance." >&2
+            exit 1
+          fi
+          echo "trusted=true" >> "$GITHUB_OUTPUT"
+
+  acceptance:
+    name: Verify official Cloud merge queue
+    needs: trust-check
+    if: needs.trust-check.outputs.trusted == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: cloud-acceptance
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build CLI and acceptance runner from selected commit
+        run: |
+          go build -o "$RUNNER_TEMP/bitbottle" ./cmd/bitbottle
+          go build -o "$RUNNER_TEMP/cloud-merge-queue" ./cmd/qa-cloud-merge-queue
+      - name: Prepare per-run evidence directory
+        run: mkdir -p "$RUNNER_TEMP/cloud-merge-queue-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+      - name: Run Cloud merge queue acceptance
+        id: live
+        env:
+          BITBOTTLE_BIN: ${{ runner.temp }}/bitbottle
+          BB_TOKEN: ${{ secrets.BB_CLOUD_TOKEN }}
+          BB_CLOUD_BOOTSTRAP_TOKEN: ${{ secrets.BB_CLOUD_BOOTSTRAP_TOKEN }}
+          BB_CLOUD_EMAIL: ${{ secrets.BB_CLOUD_EMAIL }}
+          BB_CLOUD_WORKSPACE: bitbottle-qa-lab
+          BB_CLOUD_PROJECT: BBQA
+          # Bootstrap credential additionally needs read:pipeline:bitbucket for live evidence.
+          BB_ACCEPTANCE_SHA: ${{ github.sha }}
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/cloud-merge-queue-${{ github.run_id }}-${{ github.run_attempt }}
+        run: "$RUNNER_TEMP/cloud-merge-queue"
+      - name: Always verify manifest-owned cleanup
+        id: cleanup
+        if: always() && steps.live.outcome != 'skipped'
+        env:
+          BB_CLOUD_BOOTSTRAP_TOKEN: ${{ secrets.BB_CLOUD_BOOTSTRAP_TOKEN }}
+          BB_ACCEPTANCE_REPORT_DIR: ${{ runner.temp }}/cloud-merge-queue-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          manifest="$BB_ACCEPTANCE_REPORT_DIR/manifest.json"
+          if [[ -s "$manifest" ]]; then
+            if go run ./cmd/qa-cloud-cleanup --manifest "$manifest"; then
+              echo "state=verified" >> "$GITHUB_OUTPUT"
+            else
+              echo "state=failed" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          else
+            echo "state=no_manifest" >> "$GITHUB_OUTPUT"
+            echo "No manifest was written; acceptance failed before resource creation or could not persist ownership evidence." >&2
+            if [[ '${{ steps.live.outcome }}' == 'success' ]]; then
+              exit 1
+            fi
+          fi
+      - name: Require a passing report
+        if: steps.live.outcome == 'success'
+        env:
+          REPORT: ${{ runner.temp }}/cloud-merge-queue-${{ github.run_id }}-${{ github.run_attempt }}/report.json
+        run: |
+          python3 - <<'PYCODE'
+          import json, os
+          with open(os.environ['REPORT'], encoding='utf-8') as stream:
+              report = json.load(stream)
+          assert report['status'] == 'pass'
+          assert report['cleanup']['status'] == 'pass'
+          assert report['skip_count'] == 0
+          assert report['pass_count'] == 1
+          PYCODE
+      - name: Upload sanitized acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-merge-queue-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/cloud-merge-queue-${{ github.run_id }}-${{ github.run_attempt }}/report.json
+            ${{ runner.temp }}/cloud-merge-queue-${{ github.run_id }}-${{ github.run_attempt }}/manifest.json
+          if-no-files-found: error
+          retention-days: 30

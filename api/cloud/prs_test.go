@@ -124,7 +124,7 @@ func TestCloudClient_MergePR_MapsSquashStrategy(t *testing.T) {
 	var gotBody []byte
 	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
 		gotBody, _ = io.ReadAll(r.Body)
-		body, _ := os.ReadFile("testdata/pr_get.json")
+		body := []byte(`{"id":42,"state":"MERGED"}`)
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(body)
 	})
@@ -144,7 +144,7 @@ func TestCloudClient_MergePR_MapsCLIAndPreservesProviderStrategy(t *testing.T) {
 			var gotBody []byte
 			client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
 				gotBody, _ = io.ReadAll(r.Body)
-				body, _ := os.ReadFile("testdata/pr_get.json")
+				body := []byte(`{"id":42,"state":"MERGED"}`)
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write(body)
 			})
@@ -160,7 +160,7 @@ func TestCloudClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
 	var gotBody []byte
 	client, _ := newCloudClient(t, func(w http.ResponseWriter, r *http.Request) {
 		gotBody, _ = io.ReadAll(r.Body)
-		body, _ := os.ReadFile("testdata/pr_get.json")
+		body := []byte(`{"id":42,"state":"MERGED"}`)
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(body)
 	})

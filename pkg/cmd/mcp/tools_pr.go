@@ -87,7 +87,7 @@ func registerPRTools(s *mcpserver.MCPServer, h *handlers) {
 
 	s.AddTool(
 		mcplib.NewTool("merge_pr",
-			mcplib.WithDescription("Merge a pull request (destructive), or queue it for auto-merge"),
+			mcplib.WithDescription("Merge a pull request, or add it to an active merge queue"),
 			optHostname,
 			reqProject,
 			reqSlug,
@@ -100,10 +100,10 @@ func registerPRTools(s *mcpserver.MCPServer, h *handlers) {
 				mcplib.Enum("merge", "squash", "rebase"),
 			),
 			mcplib.WithBoolean("auto",
-				mcplib.Description("Queue PR for auto-merge when all checks pass instead of merging immediately"),
+				mcplib.Description("Add the PR to an active merge queue instead of merging immediately"),
 			),
 			mcplib.WithString("auto_strategy",
-				mcplib.Description("Merge strategy for auto-merge: merge, squash, rebase (default: merge)"),
+				mcplib.Description("Merge queue strategy: merge, squash, rebase (default: merge)"),
 			),
 		),
 		h.mergePR,

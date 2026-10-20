@@ -141,6 +141,41 @@ frozen critical profile. Keep the release gate and nightly acceptance results
 separate. A failed, skipped, or cleanup-incomplete probe cannot establish a
 provider pass.
 
+## Official Cloud merge queue acceptance
+
+`.github/workflows/cloud-merge-queue.yml` is the live acceptance for the
+public Bitbucket Cloud merge queue API and the CLI queue flow. Dispatch it from
+`main`; it uses the `cloud-acceptance` Environment, fixed `bitbottle-qa-lab`
+workspace and `BBQA` project, separate actor and bootstrap credentials, and a
+manifest containing only resources owned by that run. Cleanup is independently
+verified and the uploaded report is sanitized.
+
+Before provisioning, the bootstrap credential must pass a read-only Pipelines
+permission check against the fixed QA workspace. A `403` here is an
+infrastructure failure before resource creation; grant the bootstrap QA
+credential the `read:pipeline:bitbucket` permission and rerun. The actor
+credential's scopes do not change. The workflow currently has no live pass to
+report; the QA workspace must first allow queue setup for its plan.
+
+The run first proves that `pr merge --auto` fails clearly and leaves a PR open
+when no active queue exists. It then prints the temporary repository and queue
+settings URLs. An operator must activate the printed `bbqa-queue` for `main`
+within 15 minutes. The harness verifies queueing and cancellation, confirms the
+cancelled PR remains open for 90 seconds, then requeues it and waits for its
+real queue pipeline to pass and merge. A second PR deliberately fails its queue
+pipeline; it must remain open and leave the queue. The pipeline waits 60
+seconds before reading the fixture result file, so queue builds exercise the
+same public pipeline path as other runs. A missing queue, unexpected merge,
+failed positive pipeline, passing negative pipeline, timeout, or cleanup
+failure fails acceptance.
+
+This Cloud lane covers merge queues, not Server/DC's classic auto-merge request
+field and not the former internal `post-build-merge` route. The diagnostic above
+remains a separate historical investigation and does not count as queue
+acceptance. A successful live run is provider and CLI evidence for the selected
+workflow commit; it does not replace hermetic checks or the frozen release
+profile.
+
 ## Adding new scripts
 
 1. Create `acceptance/testdata/<domain>/<name>.txtar`.

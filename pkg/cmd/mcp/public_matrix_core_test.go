@@ -222,7 +222,7 @@ func newCoreFixture(t *testing.T, host string) *testhelpers.FakeClient {
 			return fmt.Errorf("unexpected auto merge %d %s", id, strategy)
 		}
 		pr := prs[id]
-		pr.AutoMerge = &backend.AutoMergeState{Enabled: true, Strategy: strategy}
+		pr.AutoMerge = &backend.AutoMergeState{Enabled: true}
 		prs[id] = pr
 		return nil
 	}
@@ -452,8 +452,9 @@ func coreProviderScenario(t *testing.T, s *stdioSession, host string) {
 	coreRecord(t, "merge_pr", host, "error", "id", "strategy")
 	queued := matrixCallOK[map[string]any](t, s, "merge_pr", matrixWith(matrixWith(prArgs(77), "auto", true), "auto_strategy", "rebase"))
 	require.Equal(t, true, queued["queued"])
+	require.Equal(t, "OPEN", queued["state"])
 	require.Equal(t, "rebase", queued["strategy"])
-	require.Equal(t, &backend.AutoMergeState{Enabled: true, Strategy: "rebase"}, getPR(77).AutoMerge)
+	require.Equal(t, &backend.AutoMergeState{Enabled: true}, getPR(77).AutoMerge)
 	coreRecord(t, "merge_pr", host, "success", "project", "slug", "id", "auto", "auto_strategy")
 	require.Empty(t, matrixCallOK[map[string]any](t, s, "decline_pr", prArgs(43)))
 	require.Equal(t, "DECLINED", getPR(43).State)

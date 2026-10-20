@@ -148,7 +148,10 @@ configuration and workflow details, including the separate manual Cloud
 auto-merge diagnostic. It checks authentication on the Cloud `post-build-merge`
 route, then exercises a disposable pending-merge fixture with synthetic build
 statuses. The report records provider behavior and does not change the release
-gate.
+gate. The separate manual [`cloud-merge-queue.yml`](.github/workflows/cloud-merge-queue.yml)
+workflow exercises the official Cloud merge queue through the CLI, including
+no-queue rejection, cancellation, a successful queue pipeline, and a failed
+queue pipeline; see [Cloud merge queue acceptance](docs/workflows/acceptance.md#official-cloud-merge-queue-acceptance).
 
 ---
 

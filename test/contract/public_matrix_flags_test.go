@@ -299,7 +299,7 @@ func TestPublicMatrixPRAutoMergeSquashAndCancel(t *testing.T) {
 		repo := p.host + "/TEAM/service"
 		out, err := matrixCLI(t, p, srv, "pr", "merge", "47", "--repo", repo, "--auto", "--squash")
 		require.NoError(t, err)
-		require.Equal(t, "Queued pull request #47 for auto-merge (squash)\n", out)
+		require.Equal(t, "Auto-merge requested for pull request #47 (squash)\n", out)
 		require.Equal(t, "squash", queued["strategyId"])
 		require.Equal(t, true, queued["autoMerge"])
 		require.Equal(t, float64(3), queued["version"])

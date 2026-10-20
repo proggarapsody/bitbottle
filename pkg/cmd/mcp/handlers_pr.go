@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"fmt"
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 
@@ -144,7 +143,12 @@ func (h *handlers) mergePR(_ context.Context, req mcplib.CallToolRequest) (*mcpl
 		if err := client.EnableAutoMerge(project, slug, id, autoStrategy); err != nil {
 			return errResultErr(err), nil
 		}
-		return mcplib.NewToolResultText(fmt.Sprintf(`{"queued":true,"strategy":%q}`, autoStrategy)), nil
+		pr, err := client.GetPR(project, slug, id)
+		if err != nil {
+			return errResultErr(err), nil
+		}
+		queued := pr.AutoMerge != nil && pr.AutoMerge.Enabled
+		return jsonResult(map[string]any{"queued": queued, "strategy": autoStrategy, "state": pr.State})
 	}
 
 	pr, err := client.MergePR(project, slug, id, backend.MergePRInput{Strategy: strategy})

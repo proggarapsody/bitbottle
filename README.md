@@ -148,6 +148,11 @@ bitbottle pr checkout 42
 bitbottle pr approve 42
 bitbottle pr merge 42 --squash --delete-branch
 
+# Cloud: add a PR to the destination branch's active merge queue
+bitbottle pr merge 42 --auto --squash
+# Cloud: remove a queued PR; check its state because the merge may have completed
+bitbottle pr merge 42 --auto-off
+
 # Add reviewers
 bitbottle pr request-review 42 --reviewer alice --reviewer bob
 
@@ -199,6 +204,11 @@ bitbottle pr participants 42 --json role,display_name,username,approved
 bitbottle pr suggestion apply 42 COMMENT_ID SUGGESTION_ID
 bitbottle pr suggestion apply 42 COMMENT_ID SUGGESTION_ID --preview   # show without applying
 ```
+
+Bitbucket Cloud merge queues require a paid Standard or Premium plan, Pipelines,
+and queue configuration in `bitbucket-pipelines.yml`. `--auto` requires an
+active queue on the destination branch; it does not wait for an existing build
+to pass. See [PR lifecycle](skills/references/pr.md) for queue behavior.
 
 ### Repos & Branches
 
