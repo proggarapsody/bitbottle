@@ -286,7 +286,7 @@ func matrixCallOK[T any](t *testing.T, s *stdioSession, tool string, args map[st
 	return got
 }
 
-func matrixCallError(t *testing.T, s *stdioSession, tool string, args map[string]any, code, host string, wantID ...string) {
+func matrixCallError(t *testing.T, s *stdioSession, tool string, args map[string]any, code, host string, wantID ...string) []string {
 	t.Helper()
 	result, err := s.call(tool, args)
 	require.NoError(t, err, tool)
@@ -299,13 +299,18 @@ func matrixCallError(t *testing.T, s *stdioSession, tool string, args map[string
 	}
 	require.NoError(t, json.Unmarshal([]byte(resultText(t, result)), &got), tool)
 	require.Equal(t, code, got.Code, tool)
-	require.Equal(t, host, got.Host, tool)
+	if host != "" {
+		require.Equal(t, host, got.Host, tool)
+	} else {
+		require.NotEmpty(t, got.Host, tool)
+	}
 	if len(wantID) > 0 {
 		require.Equal(t, wantID[0], got.ID, tool)
 	}
 	if code != "host.unsupported" {
 		require.NotEmpty(t, got.Hints, tool)
 	}
+	return got.Hints
 }
 
 func matrixCallPlainError(t *testing.T, s *stdioSession, tool string, args map[string]any, contains string) {

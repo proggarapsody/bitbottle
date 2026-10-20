@@ -1134,7 +1134,12 @@
     "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestAPIClient_RefusesRedirects",
     "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestFilteredEnv_DropsInheritedCloudAndPrivilegedValues",
     "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestMCPTransport_SpawnedChildReceivesOnlyAllowlistedEnvironment",
-    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalCommitFilesFromCurrentRepo"
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalCommitFilesFromCurrentRepo",
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalCloudAutoMergeUnavailable",
+    "github.com/proggarapsody/bitbottle/pkg/cmd/mcp/TestMCPPublicCoreMatrix"
   ],
-  "schema": 1
+  "schema": 1,
+  "deferred_features": {
+    "cloud_auto_merge": "User-approved release deferral. CLI --auto/--auto-off and MCP auto=true must return pr.automerge.unavailable with actionable hints and zero HTTP. Ordinary merges and Server/DC behavior remain mandatory."
+  }
 }

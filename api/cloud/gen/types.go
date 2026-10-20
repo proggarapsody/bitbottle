@@ -57,18 +57,6 @@ type CloudAddPRComment struct {
 	Parent *CloudParentRef `json:"parent,omitempty"`
 }
 
-// CloudAutoMerge Auto-merge configuration for a Cloud pull request
-type CloudAutoMerge struct {
-	// MergeStrategy Merge strategy ID. rebase_fast_forward maps to the CLI rebase strategy; fast_forward does not rebase commits.
-	MergeStrategy string `json:"merge_strategy"`
-}
-
-// CloudAutoMergeRequest Request body for enabling auto-merge on a Bitbucket Cloud pull request
-type CloudAutoMergeRequest struct {
-	// MergeStrategy Merge strategy to apply when auto-merging
-	MergeStrategy *string `json:"merge_strategy,omitempty"`
-}
-
 // CloudBranch A Bitbucket Cloud branch
 type CloudBranch struct {
 	Name string `json:"name"`
@@ -620,9 +608,6 @@ type CloudProjectLinks struct {
 type CloudPullRequest struct {
 	// Author A Bitbucket Cloud user reference
 	Author CloudUser `json:"author"`
-
-	// AutoMerge Auto-merge configuration for a Cloud pull request
-	AutoMerge *CloudAutoMerge `json:"auto_merge,omitempty"`
 
 	// Description Pull request description
 	Description string `json:"description"`

@@ -133,6 +133,13 @@ All listing commands support `--json fields`, `--jq expr`, `--limit N`, `--hostn
 
 ### Pull Requests
 
+Cloud auto-merge is deferred for this release. `pr merge --auto`,
+`pr merge --auto-off`, and MCP `merge_pr` with `auto=true` return
+`pr.automerge.unavailable` with an actionable hint before any HTTP request.
+Ordinary merge, squash, and rebase remain available. Server/DC auto-merge
+behavior is unchanged; **DC не проверен live**.
+
+
 ```bash
 # Open PRs in current repo
 bitbottle pr list

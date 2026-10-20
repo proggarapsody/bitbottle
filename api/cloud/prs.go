@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -29,27 +30,7 @@ func toPRDomain(w cloudgen.CloudPullRequest) backend.PullRequest {
 		WebURL:         w.Links.HTML.Href,
 		HeadCommitHash: w.Source.Commit.Hash,
 	}
-	if w.AutoMerge != nil {
-		pr.AutoMerge = &backend.AutoMergeState{
-			Enabled:  true,
-			Strategy: cloudStrategyToCLI(w.AutoMerge.MergeStrategy),
-		}
-	}
 	return pr
-}
-
-// cloudStrategyToCLI maps Cloud API strategy values back to CLI vocabulary.
-func cloudStrategyToCLI(s string) string {
-	switch s {
-	case "squash":
-		return "squash"
-	case "rebase_fast_forward":
-		return "rebase"
-	case "merge_commit":
-		return "merge"
-	default:
-		return s
-	}
 }
 
 func (c *Client) ListPRs(ns, slug, state string, limit int) ([]backend.PullRequest, error) {
@@ -111,10 +92,29 @@ func (c *Client) MergePR(ns, slug string, id int, in backend.MergePRInput) (back
 	}
 	var w cloudgen.CloudPullRequest
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/merge", ns, slug, id)
-	if err := c.postJSON(path, body, &w); err != nil {
+	err := c.postJSON(path, body, &w)
+	// An empty successful response does not confirm completion. Read the PR
+	// once; malformed JSON and other transport errors must still surface.
+	if err == io.EOF {
+		pr, readErr := c.GetPR(ns, slug, id)
+		if readErr != nil {
+			return backend.PullRequest{}, readErr
+		}
+		if pr.State == "MERGED" {
+			return pr, nil
+		}
+	} else if err != nil {
 		return backend.PullRequest{}, stampPRMerge(err, id)
+	} else if w.State == "MERGED" {
+		return toPRDomain(w), nil
 	}
-	return toPRDomain(w), nil
+	return backend.PullRequest{}, &backend.DomainError{
+		Kind:     backend.ErrConflict,
+		Code:     backend.CodePRMergePending,
+		Host:     hostFromURL(c.baseURL),
+		Resource: "pull request", ID: strconv.Itoa(id),
+		Message: "merge completion is not confirmed",
+	}
 }
 
 // ApprovePR approves a PR on behalf of the authenticated user.
@@ -133,42 +133,26 @@ func (c *Client) GetPRDiff(ns, slug string, id int) (string, error) {
 	return c.getText(path)
 }
 
-// EnableAutoMerge queues a PR for automatic merge on Bitbucket Cloud.
-// The auto-merge endpoint is currently in beta; workspaces must have opted in.
-// A 404 response whose message mentions "auto-merge" or "auto_merge" surfaces as
-// a dedicated error rather than a generic pr.not_found.
+// EnableAutoMerge reports that Cloud auto-merge is unavailable in this release.
 func (c *Client) EnableAutoMerge(ns, slug string, id int, strategy string) error {
-	body := struct {
-		MergeStrategy string `json:"merge_strategy"`
-	}{
-		MergeStrategy: backend.ToCloudMergeStrategy(strategy),
-	}
-	var result struct{}
-	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/auto-merge", ns, slug, id)
-	if err := c.postJSON(path, body, &result); err != nil {
-		return stampAutoMergeBeta(err)
-	}
-	return nil
+	return c.autoMergeUnavailable(id)
 }
 
-// DisableAutoMerge cancels a queued auto-merge on Bitbucket Cloud.
+// DisableAutoMerge reports that Cloud auto-merge is unavailable in this release.
 func (c *Client) DisableAutoMerge(ns, slug string, id int) error {
-	path := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/auto-merge", ns, slug, id)
-	return c.delete(path)
+	return c.autoMergeUnavailable(id)
 }
 
-// stampAutoMergeBeta maps a 404 on the auto-merge endpoint to a
-// user-friendly error when the workspace hasn't enabled the beta feature.
-func stampAutoMergeBeta(err error) error {
-	var de *backend.DomainError
-	if !errors.As(err, &de) || de.HTTPStatus() != 404 {
-		return err
+func (c *Client) autoMergeUnavailable(id int) error {
+	return &backend.DomainError{
+		Kind:     backend.ErrUnsupportedOnHost,
+		Code:     backend.CodePRAutoMergeUnavailable,
+		Host:     hostFromURL(c.baseURL),
+		Resource: "pull request",
+		ID:       strconv.Itoa(id),
+		Feature:  "auto-merge",
+		Message:  "cloud auto-merge is unavailable in this release",
 	}
-	msg := strings.ToLower(de.Message)
-	if strings.Contains(msg, "auto-merge") || strings.Contains(msg, "auto_merge") {
-		return backend.StampCode(err, backend.CodePRAutoMergeBetaDisabled, "", "", "")
-	}
-	return err
 }
 
 func (c *Client) DeleteBranch(ns, slug, branch string) error {

@@ -61,11 +61,13 @@ const (
 	CodePRNotFound              ErrorCode = "pr.not_found"
 	CodePRMergeConflict         ErrorCode = "pr.merge.conflict"
 	CodePRMergeBehind           ErrorCode = "pr.merge.behind"
+	CodePRMergePending          ErrorCode = "pr.merge.pending"
 	CodePRCreateDuplicateBranch ErrorCode = "pr.create.duplicate_branch"
 	CodePRReviewerUnknown       ErrorCode = "pr.reviewer.unknown"
-	// CodePRAutoMergeBetaDisabled is returned by Bitbucket Cloud when the
-	// auto-merge beta endpoint is unavailable because the workspace has not
-	// opted into the feature.
+	// CodePRAutoMergeUnavailable identifies the deferred Cloud auto-merge capability.
+	CodePRAutoMergeUnavailable ErrorCode = "pr.automerge.unavailable"
+	// CodePRAutoMergeBetaDisabled is retained for error-code compatibility.
+	// Its name does not establish the availability or requirements of a Cloud API.
 	CodePRAutoMergeBetaDisabled ErrorCode = "pr.automerge.beta_disabled"
 	// CodePRTerminalState is returned when a mutation is attempted on a pull
 	// request that is already in a terminal state (DECLINED, MERGED, SUPERSEDED).
@@ -108,9 +110,11 @@ var AllCodes = []ErrorCode{
 	CodePRNotFound,
 	CodePRMergeConflict,
 	CodePRMergeBehind,
+	CodePRMergePending,
 	CodePRCreateDuplicateBranch,
 	CodePRReviewerUnknown,
 	CodePRAutoMergeBetaDisabled,
+	CodePRAutoMergeUnavailable,
 	CodePRTerminalState,
 	CodeBranchProtected,
 	CodeHostUnsupported,
