@@ -2,6 +2,7 @@ package acceptancecloud
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 	cfg, server, deleted := probeFixture(t, false)
 	defer server.Close()
-	report, err := RunAutoMergeProbe(context.Background(), cfg)
+	report, err := runAutoMergeProbe(context.Background(), cfg, server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,6 +34,32 @@ func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 	if report.Observations["bootstrap_auto_delete_pr_readback"].PRState != "OPEN" {
 		t.Fatal("bootstrap DELETE did not verify the PR stayed open")
 	}
+	for _, role := range []string{"actor", "bootstrap"} {
+		for _, scheme := range []string{"bearer", "basic"} {
+			prefix := role + "_internal_" + scheme
+			pending := report.Observations[prefix+"_pending_get"]
+			if pending.Status != http.StatusUnauthorized || pending.Role != role || pending.AuthScheme != scheme || pending.CanCreatePostBuildMerge == nil || *pending.CanCreatePostBuildMerge {
+				t.Fatalf("internal pending observation=%+v", pending)
+			}
+			post := report.Observations[prefix+"_post_build_merge"]
+			if post.Status != http.StatusUnauthorized || !strings.Contains(post.Message, "[redacted]") {
+				t.Fatalf("internal POST observation=%+v", post)
+			}
+			if scheme == "basic" {
+				token := cfg.ActorToken
+				if role == "bootstrap" {
+					token = cfg.BootstrapToken
+				}
+				encoded := base64.StdEncoding.EncodeToString([]byte(cfg.Email + ":" + token))
+				if strings.Contains(post.Message, encoded) || strings.Contains(pending.Message, encoded) {
+					t.Fatal("returned observation exposed encoded Basic credentials")
+				}
+			}
+			if report.Observations[prefix+"_pr_readback"].PRState != "OPEN" {
+				t.Fatalf("internal POST did not verify OPEN PR for %s", prefix)
+			}
+		}
+	}
 	if !strings.Contains(report.Observations["actor_pr_get_before"].Message, "[redacted]") {
 		t.Fatal("provider PR title was not sanitized in the returned report")
 	}
@@ -45,6 +72,12 @@ func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 			t.Fatalf("probe persisted secret %q", secret)
 		}
 	}
+	for _, token := range []string{cfg.ActorToken, cfg.BootstrapToken} {
+		encoded := base64.StdEncoding.EncodeToString([]byte(cfg.Email + ":" + token))
+		if strings.Contains(string(b), encoded) {
+			t.Fatal("probe persisted encoded Basic credentials")
+		}
+	}
 	if _, err := ReadManifest(filepath.Join(cfg.ReportDir, "manifest.json")); err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +86,7 @@ func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 func TestAutoMergeProbe_InvalidActorReadControlFailsAndCleans(t *testing.T) {
 	cfg, server, deleted := probeFixture(t, true)
 	defer server.Close()
-	report, err := RunAutoMergeProbe(context.Background(), cfg)
+	report, err := runAutoMergeProbe(context.Background(), cfg, server.URL)
 	if err == nil || report.Outcome != "infrastructure_failure" || report.Cleanup.Status != "pass" || !*deleted {
 		t.Fatalf("report=%+v err=%v deleted=%v", report, err, *deleted)
 	}
@@ -77,6 +110,32 @@ func probeFixture(t *testing.T, denyActorRead bool) (Config, *httptest.Server, *
 	prState := "OPEN"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if strings.HasPrefix(r.URL.Path, "/!api/internal/repositories/") {
+			if !strings.HasSuffix(r.URL.Path, "/pending_merge") && !strings.HasSuffix(r.URL.Path, "/post-build-merge") {
+				t.Errorf("unexpected internal path %s", r.URL.Path)
+			}
+			auth := r.Header.Get("Authorization")
+			if strings.HasPrefix(auth, "Basic ") {
+				email, token, ok := r.BasicAuth()
+				if !ok || email != "actor@example.test" || (token != "actor-secret" && token != "bootstrap-secret") {
+					t.Errorf("wrong basic authentication")
+				}
+			} else if auth != "Bearer actor-secret" && auth != "Bearer bootstrap-secret" {
+				t.Errorf("wrong bearer authentication")
+			}
+			if r.Method == http.MethodPost {
+				var body map[string]any
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body["close_source_branch"] != false || body["merge_strategy"] != "merge_commit" || body["newstatus"] != "fulfilled" || body["message"] != marker {
+					t.Errorf("wrong post-build-merge payload: %v", body)
+				}
+				w.WriteHeader(http.StatusUnauthorized)
+				fmt.Fprintf(w, `{"error":{"message":"Internal endpoint denied %s"}}`, auth)
+				return
+			}
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintf(w, `{"error":{"message":"Internal endpoint denied %s"},"can_create_post_build_merge":false}`, auth)
+			return
+		}
 		if !strings.HasPrefix(r.URL.Path, "/repositories/bitbottle-qa-lab/") {
 			http.Error(w, "bad path", 400)
 			return
@@ -223,3 +282,33 @@ func TestProbeReadPR_SeparatesPresenceFromExplicitEnabled(t *testing.T) {
 }
 
 func boolPtr(v bool) *bool { return &v }
+
+func TestProbeInternalRequest_AuthAndRedirectBoundary(t *testing.T) {
+	redirected := false
+	target := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { redirected = true }))
+	defer target.Close()
+	for _, scheme := range []string{"bearer", "basic"} {
+		t.Run(scheme, func(t *testing.T) {
+			origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/!api/internal/pending_merge" || r.Header.Get("Cookie") != "" {
+					t.Errorf("unexpected request path or cookie")
+				}
+				if scheme == "basic" {
+					email, token, ok := r.BasicAuth()
+					if !ok || email != "actor@example.test" || token != "actor-secret" {
+						t.Errorf("incorrect basic auth")
+					}
+				} else if r.Header.Get("Authorization") != "Bearer actor-secret" {
+					t.Errorf("incorrect bearer auth")
+				}
+				http.Redirect(w, r, target.URL, http.StatusFound)
+			}))
+			defer origin.Close()
+			cfg := Config{ActorToken: "actor-secret", Email: "actor@example.test"}
+			got := probeInternalRequest(context.Background(), internalProbeHTTPClient(), origin.URL, "/!api/internal/pending_merge", http.MethodGet, nil, "actor", scheme, cfg.Email, cfg.ActorToken, cfg)
+			if got.Status != http.StatusFound || got.Role != "actor" || got.AuthScheme != scheme || redirected {
+				t.Fatalf("redirect escaped boundary: %+v, redirected=%v", got, redirected)
+			}
+		})
+	}
+}

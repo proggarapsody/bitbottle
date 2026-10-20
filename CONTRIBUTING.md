@@ -145,7 +145,8 @@ be independently verified. A skipped live run is not a pass, and the actor
 account cannot serve as an independent reviewer. See
 [`docs/workflows/acceptance.md`](docs/workflows/acceptance.md) for the
 configuration and workflow details, including the separate manual Cloud
-auto-merge diagnostic. That diagnostic records provider behavior but does not
+auto-merge diagnostic. It includes bounded authentication checks against
+previously reported internal routes, records provider behavior, and does not
 change the release gate.
 
 ---

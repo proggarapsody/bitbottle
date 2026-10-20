@@ -138,7 +138,7 @@ jobs:
               summary.write(f"- Probe command: `{fixed(os.environ.get('PROBE_OUTCOME'), {'success', 'failure', 'skipped', 'cancelled'})}`\n")
               summary.write(f"- Manifest-owned cleanup: `{fixed(os.environ.get('CLEANUP_STATE'), {'verified', 'failed', 'no_manifest'}, 'not_run')}`\n")
               summary.write(f"- Sanitized evidence files found: `{fixed(os.environ.get('EVIDENCE_UPLOAD'), {'true', 'false'})}`\n")
-              for name, check in sorted(checks.items())[:20]:
+              for name, check in sorted(checks.items())[:40]:
                   if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,48}", name) or not isinstance(check, dict):
                       continue
                   status = check.get("status")
@@ -150,6 +150,8 @@ jobs:
                   present = str(present).lower() if isinstance(present, bool) else "unknown"
                   enabled = check.get("auto_merge_enabled")
                   enabled = str(enabled).lower() if isinstance(enabled, bool) else "unknown"
-                  summary.write(f"- `{name}`: HTTP `{status}`, CLI exit `{exit_code}`, PR `{state}`, auto-merge object `{present}`, enabled field `{enabled}`\n")
+                  can_create = check.get("can_create_post_build_merge")
+                  can_create = str(can_create).lower() if isinstance(can_create, bool) else "unknown"
+                  summary.write(f"- `{name}`: HTTP `{status}`, CLI exit `{exit_code}`, PR `{state}`, auto-merge object `{present}`, enabled field `{enabled}`, post-build capability `{can_create}`\n")
               summary.write("- This diagnostic is an observation, not a release pass. Inspect probe.json for details.\n")
           PY
