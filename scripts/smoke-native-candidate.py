@@ -52,6 +52,7 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--expected-sha", required=True)
     parser.add_argument("--target", required=True)
+    parser.add_argument("--candidate-manifest", type=Path)
     args = parser.parse_args()
     native_os = {"Linux": "linux", "Darwin": "darwin", "Windows": "windows"}[platform.system()]
     native_arch = {"x86_64": "amd64", "AMD64": "amd64", "arm64": "arm64", "aarch64": "arm64"}[platform.machine()]
@@ -59,6 +60,10 @@ def main():
         raise RuntimeError("runner architecture differs from declared native target")
     metadata = json.loads(args.metadata.read_text())
     validate(args.archive, args.checksums, metadata, args.expected_sha)
+    manifest_digest = None
+    if args.candidate_manifest:
+        manifest_digest = candidate.validate_sealed_manifest(args.candidate_manifest, args.archive,
+                                                              metadata, args.target)
     with tempfile.TemporaryDirectory(prefix="bitbottle-native-") as scratch:
         root = Path(scratch)
         binary = unpack(args.archive, root)
@@ -78,8 +83,10 @@ def main():
     args.output.write_text(json.dumps({
         "commit_sha": args.expected_sha, "target": args.target,
         "archive_sha256": candidate.digest(args.archive), "version": version,
+        "candidate_version": metadata.get("version"),
+        "candidate_manifest_sha256": manifest_digest,
         "fixture_calls": calls, "mcp_tools": tools,
-        "evidence_scope": "snapshot-only; publication rebuilds separately",
+        "evidence_scope": "sealed-candidate; publish consumes same files" if args.candidate_manifest else "snapshot-only; publication rebuilds separately",
     }, indent=2) + "\n")
 
 

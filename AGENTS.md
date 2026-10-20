@@ -33,7 +33,7 @@ procedures and command adapters are retained as historical evidence.
 - [`docs/workflows/pre-merge-check.md`](docs/workflows/pre-merge-check.md) — required merge gate.
 - [`docs/workflows/acceptance.md`](docs/workflows/acceptance.md) — live acceptance setup, safety rules, and the manual Cloud auto-merge diagnostic, including an internal-route authentication probe; its observation does not change release readiness.
 - For CLI/MCP scenario coverage or release readiness, use [`docs/workflows/qa-matrix.md`](docs/workflows/qa-matrix.md): run the frozen critical release profile and track full-matrix gaps separately.
-- For release candidate checks, run the snapshot workflow in [`.github/workflows/release-dryrun.yml`](.github/workflows/release-dryrun.yml); [`scripts/smoke-release-candidate.py`](scripts/smoke-release-candidate.py) checks the exact archive, npm wrapper, and Docker image. Dispatch explicitly against fresh `main` after CI changes merge (`gh workflow run release-dryrun.yml --ref main`). All five native jobs (Linux amd64/arm64, macOS amd64/arm64, Windows amd64) must pass. Require full metadata SHA parity. The snapshot is not proof of published bytes.
+- For release candidate verification or publication, follow [`docs/release-process.md`](docs/release-process.md). Require the sealed candidate and all five native plus two Linux npm/Docker receipts; publish only those verified files after the exact-SHA Cloud gate passes.
 - Local command applicability needs explicit local success/error proof; a provider non-applicability reason alone is never coverage.
 - [`docs/history/README.md`](docs/history/README.md) — past designs, iteration reports, and ignored local records.
 
@@ -106,11 +106,10 @@ add the schema to the corresponding `openapi.yaml`, run `make gen`, and use the
 generated type. The gen packages are adapter-internal: `api/backend/`, `api/internal/`,
 and `pkg/cmd/` must never import them (enforced by `depguard`).
 
-## Release pipeline (automated)
+## Release pipeline
 
-1. Merge `feat:`/`fix:` PR to `main`
-2. Release Please opens a release PR automatically
-3. Merge release PR → GoReleaser builds binaries, publishes GitHub release, pushes Docker images, publishes to npm (with `README.md` bundled)
+Release Please manages version PRs. For verification dispatches, publication guards,
+and evidence requirements, follow [`docs/release-process.md`](docs/release-process.md).
 
 ## paging.Collect[T]
 

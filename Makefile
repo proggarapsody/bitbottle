@@ -36,7 +36,7 @@ test-script:
 test-scripts:
 	@set -e; for t in auto-iter/scripts/*_test.sh scripts/run-acceptance_test.sh; do echo "--- $$t ---"; bash "$$t" || exit 1; done
 	python3 -m unittest discover -s scripts -p 'qa_matrix_test.py'
-	python3 -m unittest discover -s scripts -p 'test_smoke_native_candidate.py'
+	python3 -m unittest discover -s scripts -p 'test_*.py'
 
 test-acceptance:
 	bash scripts/run-acceptance.sh

@@ -3,9 +3,11 @@
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
+import platform
 import re
 import ssl
 import subprocess
@@ -115,6 +117,46 @@ def read_only_provider_call(command, env, config_dir):
         thread.join(timeout=5)
 
 
+
+def verify_oci_identity(layout, target, image_id):
+    spec = importlib.util.spec_from_file_location("release_oci", Path(__file__).with_name("release_oci.py"))
+    oci = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(oci)
+    info = oci.inspect_layout(layout)
+    selected = info["manifests"][target.split("_")[1]]
+    if image_id != selected["config_digest"]:
+        raise RuntimeError("Docker image ID differs from sealed OCI config digest")
+    return info
+
+
+def validate_sealed_manifest(path, archive, metadata, target, npm_tarball=None, oci_info=None):
+    manifest = json.loads(path.read_text())
+    if manifest.get("commit") != metadata.get("commit") or manifest.get("version") != metadata.get("version"):
+        raise RuntimeError("sealed candidate identity differs from release metadata")
+    root = path.resolve().parent
+    def pinned(file):
+        try:
+            relative = file.resolve().relative_to(root).as_posix()
+        except ValueError as exc:
+            raise RuntimeError("candidate artifact is outside sealed directory") from exc
+        if manifest.get("files", {}).get(relative) != digest(file):
+            raise RuntimeError("candidate artifact differs from sealed manifest")
+        return relative
+    relative = pinned(archive)
+    entry = manifest.get("archives", {}).get(target.replace("_", "/"), {})
+    if entry.get("path") != relative or entry.get("sha256") != digest(archive):
+        raise RuntimeError("archive differs from sealed target")
+    if npm_tarball and pinned(npm_tarball) != manifest.get("npm"):
+        raise RuntimeError("npm package differs from sealed manifest")
+    if oci_info:
+        if manifest.get("docker_digest") != oci_info["index_digest"]:
+            raise RuntimeError("OCI index differs from sealed manifest")
+        expected = {"linux/" + arch: item["manifest_digest"] for arch, item in oci_info["manifests"].items()}
+        if manifest.get("docker_manifests") != expected:
+            raise RuntimeError("OCI platforms differ from sealed manifest")
+    return digest(path)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Smoke a GoReleaser snapshot archive and its packed npm wrapper.",
@@ -127,13 +169,29 @@ def main():
     parser.add_argument("--metadata", type=Path, required=True)
     parser.add_argument("--docker-image")
     parser.add_argument("--artifacts", type=Path)
+    parser.add_argument("--target", choices=("linux_amd64", "linux_arm64"), default="linux_amd64")
+    parser.add_argument("--expected-sha")
+    parser.add_argument("--oci-layout", type=Path)
+    parser.add_argument("--candidate-manifest", type=Path)
     args = parser.parse_args()
+    native_arch = {"x86_64": "amd64", "AMD64": "amd64", "arm64": "arm64", "aarch64": "arm64"}.get(platform.machine())
+    if platform.system() != "Linux" or args.target != f"linux_{native_arch}":
+        raise RuntimeError("runner architecture differs from declared Linux target")
     archive = args.archive.resolve()
     npm_tarball = args.npm_tarball.resolve()
     release_metadata = json.loads(args.metadata.read_text())
     expected_version = release_metadata.get("version")
     if not isinstance(expected_version, str) or not expected_version:
         raise RuntimeError("GoReleaser metadata lacks a snapshot version")
+    if args.expected_sha and (not re.fullmatch(r"[a-f0-9]{40}", args.expected_sha)
+                              or release_metadata.get("commit") != args.expected_sha):
+        raise RuntimeError("release metadata commit differs from full workflow SHA")
+    if args.oci_layout and not args.docker_image:
+        raise RuntimeError("OCI verification requires --docker-image")
+    manifest_digest = None
+    if args.candidate_manifest:
+        manifest_digest = validate_sealed_manifest(args.candidate_manifest, archive, release_metadata,
+                                                  args.target, npm_tarball)
     with tarfile.open(npm_tarball, "r:gz") as bundle:
         names = {member.name for member in bundle.getmembers() if member.isfile()}
         expected = {"package/package.json", "package/install.js", "package/bin/run.js", "package/README.md"}
@@ -193,18 +251,24 @@ https.get = (url, callback) => {
         mcp(["node", str(wrapper), "mcp", "serve"], env)
 
         image_digest = None
+        oci_info = None
         if args.docker_image:
             if args.artifacts:
                 artifacts = json.loads(args.artifacts.read_text())
                 matches = [item for item in artifacts if item.get("type") == "Docker Image"
                            and item.get("name") == args.docker_image
-                           and item.get("goos") == "linux" and item.get("goarch") == "amd64"]
+                           and item.get("goos") == "linux" and item.get("goarch") == args.target.split("_")[1]]
                 if len(matches) != 1:
-                    raise RuntimeError("Docker image is not the Linux amd64 GoReleaser artifact")
+                    raise RuntimeError("Docker image is not the selected Linux GoReleaser artifact")
             image_digest = run("docker", "image", "inspect", "--format", "{{.Id}}",
                                args.docker_image).strip()
             if not image_digest.startswith("sha256:"):
                 raise RuntimeError(f"invalid Docker image ID: {image_digest!r}")
+            if args.oci_layout:
+                oci_info = verify_oci_identity(args.oci_layout, args.target, image_digest)
+                if args.candidate_manifest:
+                    validate_sealed_manifest(args.candidate_manifest, archive, release_metadata,
+                                             args.target, npm_tarball, oci_info)
             container_id = run("docker", "create", args.docker_image).strip()
             try:
                 image_binary = root / "image-bitbottle"
@@ -222,11 +286,15 @@ https.get = (url, callback) => {
         print(json.dumps({"archive": archive.name, "archive_sha256": digest(archive),
                           "npm_sha256": digest(npm_tarball), "binary_sha256": digest(binary),
                           "version": version, "candidate_version": expected_version,
+                          "commit_sha": release_metadata.get("commit"), "target": args.target,
+                          "candidate_manifest_sha256": manifest_digest,
+                          "oci_manifest_sha256": oci_info["manifests"][args.target.split("_")[1]]["manifest_digest"] if oci_info else None,
+                          "oci_index_sha256": oci_info["index_digest"] if oci_info else None,
                           "mcp_tools": tools,
                           "read_only_fixture_calls": provider_calls,
                           "docker_image": args.docker_image,
                           "docker_image_id": image_digest,
-                          "evidence_scope": "snapshot-only; publication rebuilds separately"}))
+                          "evidence_scope": "sealed-candidate; publish consumes same files" if args.oci_layout and args.candidate_manifest else "snapshot-only; publication rebuilds separately"}))
 
 
 if __name__ == "__main__":
