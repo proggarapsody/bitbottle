@@ -34,7 +34,7 @@ type ProbeObservation struct {
 	CanCreatePostBuildMerge *bool  `json:"can_create_post_build_merge,omitempty"`
 }
 
-const internalProbeOrigin = "https://bitbucket.org"
+const internalProbeOrigin = "https://api.bitbucket.org"
 
 // AutoMergeProbeReport is diagnostic evidence, never an acceptance result.
 type AutoMergeProbeReport struct {
@@ -64,7 +64,7 @@ func RunAutoMergeProbe(ctx context.Context, cfg Config) (report AutoMergeProbeRe
 }
 
 // internalOrigin is injected only by hermetic tests. Live callers always use
-// the fixed bitbucket.org origin above.
+// the fixed api.bitbucket.org origin above.
 func runAutoMergeProbe(ctx context.Context, cfg Config, internalOrigin string) (report AutoMergeProbeReport, retErr error) {
 	report = AutoMergeProbeReport{Version: 1, Scenario: "cloud-auto-merge-manual-probe", Outcome: "infrastructure_failure", Observations: map[string]ProbeObservation{}, Cleanup: Check{Status: "not_started"}}
 	defer func() {
@@ -233,7 +233,7 @@ func runAutoMergeProbe(ctx context.Context, cfg Config, internalOrigin string) (
 			return report, errors.New("PR readback failed or PR merged after bootstrap auto-merge DELETE")
 		}
 	}
-	internalPath := "/!api/internal/repositories/" + esc(cfg.Workspace) + "/" + esc(slug) + "/pullrequests/" + strconv.Itoa(pr.ID)
+	internalPath := "/internal/repositories/" + esc(cfg.Workspace) + "/" + esc(slug) + "/pullrequests/" + strconv.Itoa(pr.ID)
 	postBody := map[string]any{"close_source_branch": false, "message": marker, "merge_strategy": "merge_commit", "newstatus": "fulfilled"}
 	internalHTTP := internalProbeHTTPClient()
 	for _, role := range []struct {
@@ -245,10 +245,10 @@ func runAutoMergeProbe(ctx context.Context, cfg Config, internalOrigin string) (
 	} {
 		for _, scheme := range []string{"bearer", "basic"} {
 			prefix := role.name + "_internal_" + scheme
-			pending := probeInternalRequest(ctx, internalHTTP, internalOrigin, internalPath+"/pending_merge", http.MethodGet, nil, role.name, scheme, cfg.Email, role.token, cfg)
-			report.Observations[prefix+"_pending_get"] = pending
-			if pending.Status == 0 {
-				return report, errors.New("internal pending_merge did not receive a response")
+			mergeGet := probeInternalRequest(ctx, internalHTTP, internalOrigin, internalPath+"/post-build-merge", http.MethodGet, nil, role.name, scheme, cfg.Email, role.token, cfg)
+			report.Observations[prefix+"_merge_get"] = mergeGet
+			if mergeGet.Status == 0 {
+				return report, errors.New("internal post-build-merge GET did not receive a response")
 			}
 			post := probeInternalRequest(ctx, internalHTTP, internalOrigin, internalPath+"/post-build-merge", http.MethodPost, postBody, role.name, scheme, cfg.Email, role.token, cfg)
 			report.Observations[prefix+"_post_build_merge"] = post
