@@ -121,15 +121,20 @@ the CLI and probe from the selected commit and uploads sanitized probe evidence
 after cleanup. Inspect `probe.json` and the workflow summary for the observed
 provider result and cleanup state.
 
-The probe tries `https://api.bitbucket.org/internal/repositories/.../post-build-merge`
-with GET and POST on the same manifest-owned, conflicting PR. It tests actor
-and bootstrap tokens with Bearer and email/token Basic authentication, then
-reads the PR after each POST to verify it remains open. The internal origin is
-fixed in the diagnostic; redirects are not followed and cookies are not sent.
-The report stores only HTTP status, bounded sanitized `error.message`, and the
-boolean `can_create_post_build_merge` field when present. This internal route
-may have changed or disappeared, so its responses are evidence about this run,
-not a supported API contract or proof of auto-merge readiness.
+The probe first checks `https://api.bitbucket.org/internal/repositories/.../post-build-merge`
+with GET and POST on a manifest-owned conflicting PR using actor and bootstrap
+credentials with Bearer and email/token Basic authentication. It then prepares
+a separate non-conflicting PR in the same temporary repository. Bootstrap
+creates main-only `allow_auto_merge_when_builds_pass` and
+`require_passing_builds_to_merge` rules, creates the PR and an `INPROGRESS`
+build status, and the actor token records GET/POST/DELETE behavior on the exact
+internal route. If the route accepts cancellation, the probe marks that build
+successful and checks that the PR stays open, then recreates the pending merge
+and marks a new build successful to observe the final PR state. Every created
+PR is recorded in the manifest for cleanup. Redirects are not followed, cookies
+are not sent, and the report stores only status, bounded sanitized error text,
+and selected presence fields. Responses are diagnostic evidence, not a
+supported API contract, token-native confirmation, or release pass.
 
 This probe is an observation, not a release pass or a replacement for the
 frozen critical profile. Keep the release gate and nightly acceptance results
