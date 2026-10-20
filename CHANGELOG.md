@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.136.0](https://github.com/proggarapsody/bitbottle/compare/v1.135.0...v1.136.0) (2026-10-20)
+
+
+### Features
+
+* publish Bitbucket CLI documentation and discovery site ([#683](https://github.com/proggarapsody/bitbottle/issues/683)) ([9b028bf](https://github.com/proggarapsody/bitbottle/commit/9b028bf0d65f4a00fd986dfe1cd47888d9a77309))
+
+
+### Bug Fixes
+
+* defer Cloud auto-merge with explicit unsupported errors ([#696](https://github.com/proggarapsody/bitbottle/issues/696)) ([2b3f0d5](https://github.com/proggarapsody/bitbottle/commit/2b3f0d5e17926b6668c82fa9fbd71d85bacb0a98))
+* honor task capabilities and gate critical QA ([#687](https://github.com/proggarapsody/bitbottle/issues/687)) ([3743ee8](https://github.com/proggarapsody/bitbottle/commit/3743ee83581ccf92624939eb3cc23a4c4efe1bea))
+* make Cloud acceptance self-contained and resolve keyring tokens ([#684](https://github.com/proggarapsody/bitbottle/issues/684)) ([dacde3b](https://github.com/proggarapsody/bitbottle/commit/dacde3b48d8223e6146fdd83d4146453029bac56))
+* preserve PR edits and enforce public QA evidence ([#686](https://github.com/proggarapsody/bitbottle/issues/686)) ([9134a0a](https://github.com/proggarapsody/bitbottle/commit/9134a0a7f916cf95aa778c62e770854311038375))
+* **qa:** redact returned errors and strengthen critical tests ([#697](https://github.com/proggarapsody/bitbottle/issues/697)) ([c1f0359](https://github.com/proggarapsody/bitbottle/commit/c1f0359511a86da5897baab1fd23245f764e1c8a))
+* verify rebase strategies and release candidate packages ([#689](https://github.com/proggarapsody/bitbottle/issues/689)) ([19716cf](https://github.com/proggarapsody/bitbottle/commit/19716cf196a1d377ada59e8530f265297f95efc5))
+* verify sealed release artifacts before publication ([#698](https://github.com/proggarapsody/bitbottle/issues/698)) ([8c38db9](https://github.com/proggarapsody/bitbottle/commit/8c38db9052fc518c6b876d01daaf6de07d61dd92))
+
 ## [1.135.0](https://github.com/proggarapsody/bitbottle/compare/v1.134.0...v1.135.0) (2026-06-01)
 
 
