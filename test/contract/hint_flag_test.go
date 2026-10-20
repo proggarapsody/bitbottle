@@ -3,59 +3,94 @@
 package contract_test
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/require"
 
-	"github.com/proggarapsody/bitbottle/pkg/cmd/factory"
+	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/root"
 	"github.com/proggarapsody/bitbottle/pkg/errfmt"
 )
 
-// backtickSpan matches the content between a pair of backticks.
 var backtickSpan = regexp.MustCompile("`[^`]*`")
-
-// flagToken matches --long-flag and -f short-flag tokens.
 var flagToken = regexp.MustCompile(`--[\w-]+|-[a-zA-Z]`)
 
-// flagsInHint returns flag tokens (--flag / -f) that appear inside backtick
-// spans of a hint string. Restricting to backtick spans avoids false positives
-// from hyphenated words like "auto-merge" or "self-signed".
-func flagsInHint(hint string) []string {
-	var flags []string
-	for _, span := range backtickSpan.FindAllString(hint, -1) {
-		flags = append(flags, flagToken.FindAllString(span, -1)...)
-	}
-	return flags
-}
-
-// TestHintFlagContract asserts that every --flag / -f token mentioned inside
-// backtick spans of errfmt catalogue hints is registered as a root persistent
-// flag. This catches hint drift where a flag is promised to the user but not
-// wired on the command path (e.g. #387 `-k` missing, #394 phantom --debug).
-//
-// Scope note: this only checks root persistent flags (inherited by every
-// subcommand). Per-command flag coverage — where a hint references a flag that
-// is only present on a specific subcommand — is not yet covered here.
-func TestHintFlagContract(t *testing.T) {
-	cmd := root.NewCmdRoot(factory.New())
-
-	registered := map[string]struct{}{}
-	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
-		registered["--"+f.Name] = struct{}{}
-		if f.Shorthand != "" {
-			registered["-"+f.Shorthand] = struct{}{}
+// Standalone flag spans promise inherited root flags. A full inline invocation
+// supplies a command context, so command-specific flags must exist on that path.
+func validateHintFlags(cmd *cobra.Command, hint string) error {
+	for _, quoted := range backtickSpan.FindAllString(hint, -1) {
+		span := strings.Trim(quoted, "`")
+		flags := flagToken.FindAllString(span, -1)
+		if len(flags) == 0 {
+			continue
 		}
-	})
-
-	for code, hints := range errfmt.CatalogueHints() {
-		for _, hint := range hints {
-			for _, flag := range flagsInHint(hint) {
-				if _, ok := registered[flag]; !ok {
-					t.Errorf("code %s: hint %q references flag %q which is not a root persistent flag", code, hint, flag)
+		sets := []*pflag.FlagSet{cmd.PersistentFlags()}
+		words := strings.Fields(span)
+		if len(words) > 1 && words[0] == "bitbottle" {
+			target, _, err := cmd.Find(words[1:])
+			if err != nil {
+				return fmt.Errorf("invalid command in %q: %w", span, err)
+			}
+			sets = []*pflag.FlagSet{target.Flags(), target.PersistentFlags(), target.InheritedFlags()}
+		}
+		for _, flag := range flags {
+			found := false
+			for _, set := range sets {
+				if strings.HasPrefix(flag, "--") {
+					found = found || set.Lookup(strings.TrimPrefix(flag, "--")) != nil
+				} else {
+					found = found || set.ShorthandLookup(strings.TrimPrefix(flag, "-")) != nil
 				}
 			}
+			if !found {
+				return fmt.Errorf("flag %q is not registered for %q", flag, span)
+			}
 		}
+	}
+	return nil
+}
+
+func TestHintFlagContract(t *testing.T) {
+	f, _, _ := factorytest.New(t, factorytest.Opts{})
+	cmd := root.NewCmdRoot(f)
+	for code, hints := range errfmt.CatalogueHints() {
+		for _, hint := range hints {
+			if err := validateHintFlags(cmd, hint); err != nil {
+				t.Errorf("code %s: hint %q: %v", code, hint, err)
+			}
+		}
+	}
+}
+
+func TestHintFlagCommandContext(t *testing.T) {
+	for _, tt := range []struct {
+		name, hint string
+		valid      bool
+	}{
+		{"merge strategy", "Use `bitbottle pr merge --merge`.", true},
+		{"merge with ID", "Use `bitbottle pr merge 42 --squash`.", true},
+		{"inherited flag", "Use `bitbottle pr merge --skip-tls-verify`.", true},
+		{"standalone inherited flag", "Use `-k`.", true},
+		{"unknown flag", "Use `bitbottle pr merge --imaginary`.", false},
+		{"wrong command", "Use `bitbottle pr list --merge`.", false},
+		{"standalone local flag", "Use `--merge`.", false},
+		{"real debug flag", "Use `--debug`.", true},
+		{"phantom debug flag", "Use `--debug-imaginary`.", false},
+		{"unknown command", "Use `bitbottle invented --skip-tls-verify`.", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			f, _, _ := factorytest.New(t, factorytest.Opts{})
+			err := validateHintFlags(root.NewCmdRoot(f), tt.hint)
+			if tt.valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
 	}
 }

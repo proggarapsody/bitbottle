@@ -115,7 +115,7 @@ func NewCmdPRMerge(f *factory.Factory) *cobra.Command {
 	cmd.Flags().BoolVar(&squash, "squash", false, "Squash merge strategy")
 	cmd.Flags().BoolVar(&rebase, "rebase", false, "Rebase and fast-forward merge strategy")
 	cmd.Flags().BoolVar(&deleteBranch, "delete-branch", false, "Delete source branch after merge")
-	cmd.Flags().BoolVar(&auto, "auto", false, "Queue PR for auto-merge when all checks pass")
-	cmd.Flags().BoolVar(&autoOff, "auto-off", false, "Cancel a queued auto-merge")
+	cmd.Flags().BoolVar(&auto, "auto", false, "Queue PR when checks pass (Server/DC; unavailable on Cloud this release)")
+	cmd.Flags().BoolVar(&autoOff, "auto-off", false, "Cancel a queued auto-merge (Server/DC; unavailable on Cloud this release)")
 	return cmd
 }

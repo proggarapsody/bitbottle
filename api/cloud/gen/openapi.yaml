@@ -93,18 +93,6 @@ components:
           type: string
           description: Atlassian account ID
 
-    CloudAutoMerge:
-      type: object
-      description: Auto-merge configuration for a Cloud pull request
-      required:
-        - merge_strategy
-      properties:
-        merge_strategy:
-          type: string
-          description: >
-            Merge strategy ID. rebase_fast_forward maps to the CLI rebase strategy;
-            fast_forward does not rebase commits.
-
     CloudPullRequest:
       type: object
       description: A Bitbucket Cloud pull request
@@ -147,8 +135,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CloudPullRequestReviewer"
-        auto_merge:
-          $ref: "#/components/schemas/CloudAutoMerge"
 
 
     CloudCreatePullRequest:
@@ -202,14 +188,6 @@ components:
         merge_strategy:
           type: string
           description: Merge strategy override
-
-    CloudAutoMergeRequest:
-      type: object
-      description: Request body for enabling auto-merge on a Bitbucket Cloud pull request
-      properties:
-        merge_strategy:
-          type: string
-          description: Merge strategy to apply when auto-merging
 
     # ── Branch rules ──────────────────────────────────────────────────────────
     CloudBranchRule:

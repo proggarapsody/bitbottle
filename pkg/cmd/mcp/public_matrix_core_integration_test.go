@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"reflect"
@@ -18,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/proggarapsody/bitbottle/api/backend"
+	"github.com/proggarapsody/bitbottle/api/cloud"
 	"github.com/proggarapsody/bitbottle/pkg/cmd/factory/factorytest"
 	cmdmcp "github.com/proggarapsody/bitbottle/pkg/cmd/mcp"
 	"github.com/proggarapsody/bitbottle/test/qamatrix"
@@ -215,6 +218,19 @@ func newCoreFixture(t *testing.T, host string) *testhelpers.FakeClient {
 		return prs[id], nil
 	}
 	c.EnableAutoMergeFn = func(ns, slug string, id int, strategy string) error {
+		if host == matrixCloudHost {
+			requests := 0
+			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				w.WriteHeader(http.StatusInternalServerError)
+			}))
+			defer srv.Close()
+			client := cloud.NewClient(srv.Client(), srv.URL+"/2.0", "test-token", "")
+			err := client.EnableAutoMerge(ns, slug, id, strategy)
+			require.Zero(t, requests, "Cloud auto-merge rejection must not make HTTP requests")
+			return err
+		}
+
 		if err := checkPR(ns, slug, id); err != nil {
 			return err
 		}
@@ -450,11 +466,18 @@ func coreProviderScenario(t *testing.T, s *stdioSession, host string) {
 	matrixCallError(t, s, "merge_pr", matrixWith(prArgs(404), "strategy", "squash"), "perm.write_required", host, "404")
 	require.Equal(t, merged, getPR(42))
 	coreRecord(t, "merge_pr", host, "error", "id", "strategy")
-	queued := matrixCallOK[map[string]any](t, s, "merge_pr", matrixWith(matrixWith(prArgs(77), "auto", true), "auto_strategy", "rebase"))
-	require.Equal(t, true, queued["queued"])
-	require.Equal(t, "rebase", queued["strategy"])
-	require.Equal(t, &backend.AutoMergeState{Enabled: true, Strategy: "rebase"}, getPR(77).AutoMerge)
-	coreRecord(t, "merge_pr", host, "success", "project", "slug", "id", "auto", "auto_strategy")
+	if host == matrixCloudHost {
+		hints := matrixCallError(t, s, "merge_pr", matrixWith(matrixWith(prArgs(77), "auto", true), "auto_strategy", "rebase"), "pr.automerge.unavailable", "", "77")
+		require.Contains(t, strings.Join(hints, " "), "--merge")
+		require.Nil(t, getPR(77).AutoMerge)
+		coreRecord(t, "merge_pr", host, "error", "auto", "auto_strategy")
+	} else {
+		queued := matrixCallOK[map[string]any](t, s, "merge_pr", matrixWith(matrixWith(prArgs(77), "auto", true), "auto_strategy", "rebase"))
+		require.Equal(t, true, queued["queued"])
+		require.Equal(t, "rebase", queued["strategy"])
+		require.Equal(t, &backend.AutoMergeState{Enabled: true, Strategy: "rebase"}, getPR(77).AutoMerge)
+		coreRecord(t, "merge_pr", host, "success", "project", "slug", "id", "auto", "auto_strategy")
+	}
 	require.Empty(t, matrixCallOK[map[string]any](t, s, "decline_pr", prArgs(43)))
 	require.Equal(t, "DECLINED", getPR(43).State)
 	require.Equal(t, []backend.PullRequest{getPR(43)}, listPR("DECLINED"))

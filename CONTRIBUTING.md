@@ -84,6 +84,14 @@ It verifies the exact archive checksum and version, the npm wrapper's version
 and expected release download URL, and the Docker image's binary hash, CA
 bundle, and MCP startup. This checks snapshot bytes; publication still needs
 its own digest and proof that those bytes were published.
+Run it explicitly against current `main` after merging CI changes with
+`gh workflow run release-dryrun.yml --ref main`; this dispatch never publishes.
+The native jobs download the same snapshot and verify its archive checksum,
+full metadata commit against the workflow SHA, version/help, a local read-only
+provider fixture, and MCP startup on all five declared native targets: Linux
+amd64/arm64, macOS amd64/arm64, and Windows amd64. Every native job must pass;
+cross-compilation alone is not runtime evidence. A successful older SHA does
+not validate current `main`.
 
 **Required secrets** (set in repo Settings → Secrets → Actions):
 

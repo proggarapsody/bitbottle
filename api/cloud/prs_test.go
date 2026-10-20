@@ -1,6 +1,7 @@
 package cloud_test
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -126,7 +127,7 @@ func TestCloudClient_MergePR_MapsSquashStrategy(t *testing.T) {
 		gotBody, _ = io.ReadAll(r.Body)
 		body, _ := os.ReadFile("testdata/pr_get.json")
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(body)
+		_, _ = w.Write(bytes.Replace(body, []byte(`"OPEN"`), []byte(`"MERGED"`), 1))
 	})
 	_, err := client.MergePR("myworkspace", "my-service", 42, backend.MergePRInput{Strategy: "squash"})
 	require.NoError(t, err)
@@ -146,7 +147,7 @@ func TestCloudClient_MergePR_MapsCLIAndPreservesProviderStrategy(t *testing.T) {
 				gotBody, _ = io.ReadAll(r.Body)
 				body, _ := os.ReadFile("testdata/pr_get.json")
 				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write(body)
+				_, _ = w.Write(bytes.Replace(body, []byte(`"OPEN"`), []byte(`"MERGED"`), 1))
 			})
 			_, err := client.MergePR("myworkspace", "my-service", 42, backend.MergePRInput{Strategy: tc.input})
 			require.NoError(t, err)
@@ -162,7 +163,7 @@ func TestCloudClient_MergePR_EmptyStrategyOmitted(t *testing.T) {
 		gotBody, _ = io.ReadAll(r.Body)
 		body, _ := os.ReadFile("testdata/pr_get.json")
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(body)
+		_, _ = w.Write(bytes.Replace(body, []byte(`"OPEN"`), []byte(`"MERGED"`), 1))
 	})
 	_, err := client.MergePR("myworkspace", "my-service", 42, backend.MergePRInput{})
 	require.NoError(t, err)

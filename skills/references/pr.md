@@ -7,8 +7,8 @@ bitbottle pr list   [PROJ/repo] [--state open|closed|merged]   # default: open
 bitbottle pr view   42 [--web]
 bitbottle pr create --title "x" --base main [--body "x"] [--draft] [--head BRANCH]
 bitbottle pr merge  42 [--merge|--squash|--rebase] [--delete-branch]
-bitbottle pr merge  42 --auto [--squash|--rebase]          # queue for auto-merge when checks pass
-bitbottle pr merge  42 --auto-off                          # cancel a queued auto-merge
+bitbottle pr merge  42 --auto [--squash|--rebase]          # Server/DC: queue when checks pass
+bitbottle pr merge  42 --auto-off                          # Server/DC: cancel a queued auto-merge
 bitbottle pr approve   42
 bitbottle pr unapprove 42
 bitbottle pr diff      42                       # unified diff; pipes to pager on TTY
@@ -145,11 +145,14 @@ Flags: `--user ACCOUNT_ID` (required), plus exactly one of `--approve`,
   `--delete-branch` removes the source branch on the remote after an
   immediate merge (Cloud only auto-deletes locally; Server/DC needs a
   separate `git push`).
-- `pr merge --auto` queues the PR for auto-merge; strategy defaults to
-  `merge`. Pass `--squash` or `--rebase` to override. On Bitbucket Cloud
-  the feature is currently in beta — if the workspace hasn't opted in you
-  get a `pr.automerge.beta_disabled` error with a hint to ask the admin.
-- `pr merge --auto-off` cancels a queued auto-merge without merging.
+- `pr merge --auto` queues the PR for auto-merge on Server/DC; strategy defaults
+  to `merge`. Pass `--squash` or `--rebase` to override.
+- `pr merge --auto-off` cancels a queued auto-merge on Server/DC.
+- Cloud auto-merge is deferred for this release. Both flags return
+  `pr.automerge.unavailable` with an actionable hint before any HTTP request.
+  Use an immediate `--merge`, `--squash`, or `--rebase` when ready; workspace
+  beta enrollment, administrator changes, and licensing do not enable these
+  CLI paths in this release.
 - Running `pr merge` (immediate) when the PR already has auto-merge queued
   prompts "PR is queued for auto-merge. Cancel and merge now? [y/N]" on a
   TTY; on non-TTY the auto-merge is silently cancelled first.

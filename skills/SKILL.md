@@ -113,6 +113,13 @@ on the host entry in `hosts.yml` (see `references/auth.md`).
 
 ## Cloud vs Server/DC
 
+Cloud auto-merge is deferred for this release. `pr merge --auto`,
+`pr merge --auto-off`, and MCP `merge_pr` with `auto=true` return
+`pr.automerge.unavailable` with an actionable hint before any HTTP request.
+Ordinary merge, squash, and rebase remain available. Server/DC auto-merge
+behavior is unchanged; **DC не проверен live**.
+
+
 | | Cloud (`bitbucket.org`) | Server/DC (self-hosted) |
 |---|---|---|
 | Auth context flag | `--email you@…` | `--username your.user` |

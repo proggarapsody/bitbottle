@@ -60,6 +60,10 @@ var catalogue = map[backend.ErrorCode]entry{
 		title: "Pull request #{{.ID}} cannot be merged: conflicts with the target branch on {{.Host}}.",
 		hints: []string{"Resolve conflicts locally and push, then retry the merge."},
 	},
+	backend.CodePRMergePending: {
+		title: "Merge completion for pull request #{{.ID}} is not confirmed on {{.Host}}.",
+		hints: []string{"The merge request was accepted but completion is not confirmed. Run `bitbottle pr view ID` to check its status before retrying."},
+	},
 	backend.CodePRMergeBehind: {
 		title: "Pull request #{{.ID}} is behind its target branch on {{.Host}}.",
 		hints: []string{"Update the source branch from base and push, then retry the merge."},
@@ -73,8 +77,12 @@ var catalogue = map[backend.ErrorCode]entry{
 		hints: []string{"Check the slug spelling; users must already exist on the host."},
 	},
 	backend.CodePRAutoMergeBetaDisabled: {
-		title: "Auto-merge is not enabled for this workspace on {{.Host}}.",
-		hints: []string{"Ask your workspace admin to enable auto-merge in workspace settings."},
+		title: "Cloud auto-merge is unavailable in this release.",
+		hints: []string{"Use `bitbottle pr merge ID --merge`, `bitbottle pr merge ID --squash`, or `bitbottle pr merge ID --rebase` for a normal merge, or use the Bitbucket web UI."},
+	},
+	backend.CodePRAutoMergeUnavailable: {
+		title: "Cloud auto-merge is unavailable in this release.",
+		hints: []string{"Use `bitbottle pr merge ID --merge`, `bitbottle pr merge ID --squash`, or `bitbottle pr merge ID --rebase` for a normal merge, or use the Bitbucket web UI."},
 	},
 	backend.CodePRTerminalState: {
 		title: "Pull request cannot be modified in its current state.",

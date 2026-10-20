@@ -301,9 +301,12 @@ func TestCatalogue_CoversAllPublishedCodes(t *testing.T) {
 			if got == "" {
 				t.Errorf("code %q produced no output — missing errfmt catalogue entry", code)
 			}
-			// Every existing template includes {{.Host}}; if a future code
-			// legitimately omits it, relax this check.
-			if !strings.Contains(got, "h.example") {
+			// Release-level capability errors do not depend on a host.
+			if code == backend.CodePRAutoMergeUnavailable || code == backend.CodePRAutoMergeBetaDisabled {
+				if !strings.Contains(got, "Cloud auto-merge is unavailable in this release.") {
+					t.Errorf("code %q did not use its catalogue title: %q", code, got)
+				}
+			} else if !strings.Contains(got, "h.example") {
 				t.Errorf("code %q did not appear to use the catalogue path: %q", code, got)
 			}
 		})
@@ -400,5 +403,24 @@ func TestRender_PRNotFound_NeutralHint(t *testing.T) {
 	}
 	if !strings.Contains(got, "No pull request #99999 exists in this repo") {
 		t.Errorf("expected neutral existence hint, got %q", got)
+	}
+}
+
+func TestRender_CloudAutoMergeUnavailableOffersSupportedAlternatives(t *testing.T) {
+	ios := iostreams.Test()
+	errfmt.Render(ios, &backend.DomainError{
+		Kind: backend.ErrUnsupportedOnHost,
+		Code: backend.CodePRAutoMergeUnavailable,
+	})
+	got := ios.ErrOut.(*bytes.Buffer).String()
+	for _, want := range []string{"Cloud auto-merge is unavailable in this release.", "bitbottle pr merge ID --merge", "bitbottle pr merge ID --squash", "bitbottle pr merge ID --rebase", "Bitbucket web UI"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing recovery guidance %q in %q", want, got)
+		}
+	}
+	for _, unsupported := range []string{"admin", "beta", "license"} {
+		if strings.Contains(got, unsupported) {
+			t.Errorf("unsupported recovery advice %q in %q", unsupported, got)
+		}
 	}
 }

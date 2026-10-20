@@ -173,3 +173,25 @@ func TestPublicCriticalCommitFilesFromCurrentRepo(t *testing.T) {
 		})
 	}
 }
+
+// Cloud auto-merge is deliberately unavailable in this release. The complete
+// command tree must return the adapter's typed error without HTTP or success text.
+func TestPublicCriticalCloudAutoMergeUnavailable(t *testing.T) {
+	p := matrixProviders[0]
+	for _, flag := range []string{"--auto", "--auto-off"} {
+		t.Run(flag, func(t *testing.T) {
+			requests := 0
+			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				w.WriteHeader(http.StatusInternalServerError)
+			}))
+			t.Cleanup(srv.Close)
+			out, err := matrixCLI(t, p, srv, "pr", "merge", "47", "--repo", p.host+"/TEAM/service", flag)
+			require.ErrorIs(t, err, backend.ErrUnsupportedOnHost)
+			require.Zero(t, requests)
+			require.Empty(t, out)
+			checkMatrixError(t, err, backend.ErrorCode("pr.automerge.unavailable"), "auto-merge", "--merge")
+			qamatrix.Record(t, qamatrix.Scenario{Operation: "cli:bitbottle pr merge", Backend: "cloud", Outcome: "error", Assertions: []string{"error", "input", "effect"}, Flags: []string{flag}})
+		})
+	}
+}

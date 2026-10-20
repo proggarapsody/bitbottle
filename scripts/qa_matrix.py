@@ -23,7 +23,7 @@ PROVIDERS = {"server", "cloud", "local"}
 STATUSES = {"supported", "unsupported", "not_applicable"}
 CRITICAL_PROFILE = ROOT / "test/qamatrix/release-critical.json"
 # Approved release baseline: policy edits must update this digest in reviewed code.
-APPROVED_CRITICAL_PROFILE_SHA256 = "d26c420b4fadbadb3e82f815a36aadbf5a50db1ca0ec5bb90788945334461830"
+APPROVED_CRITICAL_PROFILE_SHA256 = "5ba90bddb395d9314379bb61feb872fb14deeb087f5ca4d29b104368f50b7781"
 ALLOWED_CRITICAL_DEFERRALS = {}
 SUPPORTED_MINIMUM = {"success": {"output", "input", "effect"},
                      "error": {"error", "input", "effect"}}

@@ -122,3 +122,10 @@ hand-rolled (a bespoke fake would just re-encode our assumptions):
   backend" instead of bare "shipped".
 
 Historical initiative detail is preserved in `docs/history/backlog/2026-10-06-BACKLOG.md`; gates already landed in #658.
+
+## BQ-6 — Cloud auto-merge: diagnostic assumptions do not establish a release contract
+
+- **Applies to:** Cloud `EnableAutoMerge` / `DisableAutoMerge`, CLI `--auto` / `--auto-off`, MCP `merge_pr` with `auto=true`.
+- **Rule:** earlier assumptions that Cloud auto-merge was categorically unsupported, or merely required beta enrollment/admin changes, are superseded. Browser success and internal endpoint responses do not prove token-native CLI behavior. For this release the user approved deferral; return `pr.automerge.unavailable` before HTTP.
+- **Evidence:** [dated API investigation](quality/2026-10-20-cloud-auto-merge-api.md) distinguishes browser behavior, hosted diagnostics and unconfirmed token flow. `api/cloud/prs.go` implements the release boundary; `test/contract/public_critical_release_test.go` and `pkg/cmd/mcp/public_matrix_core_integration_test.go` check public rejection rather than fake success.
+- **How to honor:** preserve typed errors, actionable hints and zero HTTP for both Cloud flags and MCP auto mode; keep ordinary merges and Server/DC unchanged. **DC не проверен live**.
