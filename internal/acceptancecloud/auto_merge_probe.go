@@ -32,6 +32,7 @@ type ProbeObservation struct {
 	AutoMergeStrategy       string `json:"auto_merge_strategy,omitempty"`
 	AutoMergeShape          string `json:"auto_merge_shape,omitempty"`
 	CanCreatePostBuildMerge *bool  `json:"can_create_post_build_merge,omitempty"`
+	PendingMergePresent     *bool  `json:"pending_merge_present,omitempty"`
 }
 
 const internalProbeOrigin = "https://api.bitbucket.org"
@@ -50,11 +51,12 @@ type AutoMergeProbeReport struct {
 }
 
 type probePR struct {
-	ID          int             `json:"id"`
-	Title       string          `json:"title"`
-	Description string          `json:"description"`
-	State       string          `json:"state"`
-	AutoMerge   json.RawMessage `json:"auto_merge,omitempty"`
+	ID           int             `json:"id"`
+	Title        string          `json:"title"`
+	Description  string          `json:"description"`
+	State        string          `json:"state"`
+	AutoMerge    json.RawMessage `json:"auto_merge,omitempty"`
+	PendingMerge json.RawMessage `json:"pending_merge,omitempty"`
 }
 
 // RunAutoMergeProbe performs an isolated, manual Cloud diagnostic. Its zero
@@ -262,6 +264,9 @@ func runAutoMergeProbe(ctx context.Context, cfg Config, internalOrigin string) (
 			}
 		}
 	}
+	if err := probeFunctionalAutoMerge(ctx, cfg, internalOrigin, actor, bootstrap, slug, runID, marker, &manifest, path, report.Observations); err != nil {
+		return report, err
+	}
 	report.Outcome = "unconfirmed"
 	return report, nil
 }
@@ -314,11 +319,14 @@ func probeInternalRequest(ctx context.Context, client *http.Client, origin, path
 		Error struct {
 			Message string `json:"message"`
 		} `json:"error"`
-		CanCreatePostBuildMerge *bool `json:"can_create_post_build_merge"`
+		CanCreatePostBuildMerge *bool           `json:"can_create_post_build_merge"`
+		PendingMerge            json.RawMessage `json:"pending_merge"`
 	}
 	if json.Unmarshal(limited, &fields) == nil {
 		o.Message = sanitizeProbe(fields.Error.Message, cfg)
 		o.CanCreatePostBuildMerge = fields.CanCreatePostBuildMerge
+		present := len(fields.PendingMerge) > 0 && string(fields.PendingMerge) != "null"
+		o.PendingMergePresent = &present
 	}
 	return o
 }
@@ -332,6 +340,8 @@ func probeReadPR(ctx context.Context, c *apiClient, path string, id int) (ProbeO
 	}
 	present := len(p.AutoMerge) > 0 && string(p.AutoMerge) != "null"
 	o.AutoMergePresent = &present
+	pendingPresent := len(p.PendingMerge) > 0 && string(p.PendingMerge) != "null"
+	o.PendingMergePresent = &pendingPresent
 	if present {
 		var fields map[string]json.RawMessage
 		if e := json.Unmarshal(p.AutoMerge, &fields); e != nil || fields == nil {
