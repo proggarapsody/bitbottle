@@ -23,3 +23,6 @@ For updates, inspect a new upstream commit in a temporary directory, compare
 against `sources.json`, preserve intentional local edits, and replace selected
 folders explicitly. This installation does not use a skills.sh update lockfile.
 Do not run upstream's global maintainer linking script.
+
+Local extension: for Go test changes, read [tdd/go-testing.md](tdd/go-testing.md)
+for public CLI/MCP contracts, fixture boundaries, and targeted negative controls.

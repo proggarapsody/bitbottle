@@ -1136,7 +1136,13 @@
     "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestMCPTransport_SpawnedChildReceivesOnlyAllowlistedEnvironment",
     "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalCommitFilesFromCurrentRepo",
     "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalCloudAutoMergeUnavailable",
-    "github.com/proggarapsody/bitbottle/pkg/cmd/mcp/TestMCPPublicCoreMatrix"
+    "github.com/proggarapsody/bitbottle/pkg/cmd/mcp/TestMCPPublicCoreMatrix",
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalPRMergeRejectsInvalidInput",
+    "github.com/proggarapsody/bitbottle/test/contract/TestPublicCriticalPRMergeFailurePreservesSourceBranch",
+    "github.com/proggarapsody/bitbottle/pkg/cmd/mcp/TestMCPPublicCriticalHTTP_CloudCommentLifecycle",
+    "github.com/proggarapsody/bitbottle/pkg/cmd/mcp/TestMCPPublicCriticalHTTP_ServerCommentConcurrency",
+    "github.com/proggarapsody/bitbottle/pkg/cmd/mcp/TestMCPPublicCriticalHTTP_OrdinaryMerge",
+    "github.com/proggarapsody/bitbottle/internal/acceptancecloud/TestRun_SanitizesCredentialsFromReturnedAndPersistedReport"
   ],
   "schema": 1,
   "deferred_features": {
