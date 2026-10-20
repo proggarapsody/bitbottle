@@ -1,4 +1,5 @@
 {
+  "pull-request-footer": "This PR was generated with [Release Please](https://github.com/googleapis/release-please).\n\n## QA limitations\n\n**DC не проверен live**. Cloud auto-merge is deferred; ordinary merge, squash, and rebase remain available.",
   "packages": {
     ".": {
       "release-type": "simple",

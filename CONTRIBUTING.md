@@ -58,40 +58,22 @@ gh pr merge <N> --squash --delete-branch
 
 ## Release workflow
 
-Releases are fully automated via [Release Please](https://github.com/googleapis/release-please).
+[Release Please](https://github.com/googleapis/release-please) opens version PRs
+from conventional commits: `fix:` bumps patch, `feat:` bumps minor, and `feat!:`
+or `BREAKING CHANGE` bumps major. Merging the version PR creates the release tag.
 
-After a PR with a `feat:` or `fix:` commit merges to `main`, Release Please automatically opens a versioned release PR. Merge that PR to trigger the full release — no manual tagging needed.
+The shared [candidate workflow](.github/workflows/release-candidate.yml) builds
+once at the exact tag version, seals the binaries, packages, npm tarball, Docker
+OCI layout, and release notes, then verifies those files on all five native
+targets. Both Linux targets also install the packed npm wrapper and run the sealed
+Docker image. Publication consumes the same files after all receipts and the
+exact-SHA live Cloud evidence pass. Manual release dispatch defaults to
+`publish=false`.
 
-**Version bumps follow conventional commits:**
-
-| Commit prefix | Bump |
-|---|---|
-| `fix:` | patch (1.0.0 → 1.0.1) |
-| `feat:` | minor (1.0.0 → 1.1.0) |
-| `feat!:` or `BREAKING CHANGE` | major (1.0.0 → 2.0.0) |
-
-Merging the Release Please PR triggers the release workflow, which:
-- Builds binaries for Linux, macOS (arm64 + amd64), and Windows
-- Creates a GitHub release with changelog and checksums
-- Builds `.deb`, `.rpm`, and `.apk` packages
-- Pushes multi-arch Docker images to `proggarapsody/bitbottle` on Docker Hub
-- Publishes `@proggarapsody/bitbottle` to npm (with README bundled)
-
-Before release, the [dry-run workflow](.github/workflows/release-dryrun.yml)
-builds a GoReleaser snapshot and runs
-[`scripts/smoke-release-candidate.py`](scripts/smoke-release-candidate.py).
-It verifies the exact archive checksum and version, the npm wrapper's version
-and expected release download URL, and the Docker image's binary hash, CA
-bundle, and MCP startup. This checks snapshot bytes; publication still needs
-its own digest and proof that those bytes were published.
-Run it explicitly against current `main` after merging CI changes with
-`gh workflow run release-dryrun.yml --ref main`; this dispatch never publishes.
-The native jobs download the same snapshot and verify its archive checksum,
-full metadata commit against the workflow SHA, version/help, a local read-only
-provider fixture, and MCP startup on all five declared native targets: Linux
-amd64/arm64, macOS amd64/arm64, and Windows amd64. Every native job must pass;
-cross-compilation alone is not runtime evidence. A successful older SHA does
-not validate current `main`.
+Follow [Release process](docs/release-process.md) for the verification command,
+publication guards, and recovery when Cloud proof is missing. Candidate CI is
+runtime evidence only after its jobs pass at the intended SHA; local validator
+tests and older workflow runs do not establish that result.
 
 **Required secrets** (set in repo Settings → Secrets → Actions):
 
