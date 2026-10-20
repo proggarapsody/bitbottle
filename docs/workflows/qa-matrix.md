@@ -42,6 +42,14 @@ Packages without tests are listed separately. The exact live opt-in
 `acceptance/TestAcceptance` skip is reported as `not_run` in this hermetic lane;
 it never proves Cloud or DC acceptance. Other skipped test cases block the run.
 
+Scenario counts measure recorded coverage, not assertion quality. MCP tests with
+synthetic backend clients prove handler and protocol behavior; the required
+public HTTP tests additionally exercise chosen adapter routes against local
+fixtures. The full `./...` run also includes unit tests, which may catch defects
+that a selected public-test slice misses. See the
+[critical test quality audit](../quality/2026-10-20-critical-test-audit.md)
+for the reviewed boundaries and negative-control evidence.
+
 ## Add a public scenario
 
 1. Review the operation/provider applicability in
@@ -72,10 +80,11 @@ every flag combination is unnecessary. A per-scenario non-applicability
 comment cannot clear an operation's reviewed important input by itself.
 
 CLI scenarios currently use the registered command tree and concrete
-adapters against local HTTP fixtures. MCP scenarios use the public SDK and
-a real stdio child with stateful synthetic backend clients. The latter
-prove the MCP/domain contract, not provider HTTP compatibility or native
-release artifact installation. Preserve those distinctions in QA claims.
+adapters against local HTTP fixtures. The MCP core matrix uses the public SDK
+and a real stdio child with stateful synthetic backend clients. Those core
+matrix scenarios prove the MCP/domain contract; adapter HTTP behavior is
+covered separately by the required public HTTP tests above. Neither proves
+native release artifact installation. Preserve those distinctions in QA claims.
 For reads, an effect assertion identifies the observed backend request and
 its independently expected routing/inputs; it does not imply mutated state.
 For generated local output, the effect is the validated artifact (for example,

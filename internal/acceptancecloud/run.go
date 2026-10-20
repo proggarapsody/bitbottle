@@ -73,6 +73,7 @@ func run(ctx context.Context, cfg Config) (report Report, retErr error) {
 			report.Error = sanitize(retErr.Error(), cfg.BootstrapToken, cfg.ActorToken)
 			countReport(&report)
 		}
+		retErr = sanitizeError(retErr, cfg.BootstrapToken, cfg.ActorToken)
 	}()
 	if err := validate(cfg); err != nil {
 		return report, err
@@ -463,6 +464,26 @@ func sanitize(s string, secrets ...string) string {
 	}
 	return s
 }
+
+type sanitizedError struct {
+	message string
+	cause   error
+}
+
+func (e *sanitizedError) Error() string { return e.message }
+func (e *sanitizedError) Unwrap() error { return e.cause }
+
+func sanitizeError(err error, secrets ...string) error {
+	if err == nil {
+		return nil
+	}
+	message := sanitize(err.Error(), secrets...)
+	if message == err.Error() {
+		return err
+	}
+	return &sanitizedError{message: message, cause: err}
+}
+
 func writeReport(dir string, r Report) error {
 	if dir == "" {
 		return nil

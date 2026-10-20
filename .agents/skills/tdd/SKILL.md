@@ -15,6 +15,8 @@ Tests verify behavior through public interfaces, not implementation details. Cod
 
 See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
 
+For Go code, also read [go-testing.md](go-testing.md) for Go-specific test organization, CLI/MCP contracts, and evidence boundaries.
+
 ## Seams: where tests go
 
 A **seam** is the public boundary you test at: the interface where you observe behavior without reaching inside. Tests live at seams, never against internals.
