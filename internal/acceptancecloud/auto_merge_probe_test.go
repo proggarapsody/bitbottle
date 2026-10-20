@@ -14,6 +14,9 @@ import (
 )
 
 func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
+	if internalProbeOrigin != "https://api.bitbucket.org" {
+		t.Fatalf("internal probe origin = %q", internalProbeOrigin)
+	}
 	cfg, server, deleted := probeFixture(t, false)
 	defer server.Close()
 	report, err := runAutoMergeProbe(context.Background(), cfg, server.URL)
@@ -37,9 +40,12 @@ func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 	for _, role := range []string{"actor", "bootstrap"} {
 		for _, scheme := range []string{"bearer", "basic"} {
 			prefix := role + "_internal_" + scheme
-			pending := report.Observations[prefix+"_pending_get"]
-			if pending.Status != http.StatusUnauthorized || pending.Role != role || pending.AuthScheme != scheme || pending.CanCreatePostBuildMerge == nil || *pending.CanCreatePostBuildMerge {
-				t.Fatalf("internal pending observation=%+v", pending)
+			mergeGet := report.Observations[prefix+"_merge_get"]
+			if mergeGet.Status != http.StatusUnauthorized || mergeGet.Role != role || mergeGet.AuthScheme != scheme || mergeGet.CanCreatePostBuildMerge == nil || *mergeGet.CanCreatePostBuildMerge {
+				t.Fatalf("internal merge GET observation=%+v", mergeGet)
+			}
+			if mergeGet.Method != http.MethodGet || !strings.HasSuffix(mergeGet.Path, "/post-build-merge") {
+				t.Fatalf("unexpected internal GET request: %+v", mergeGet)
 			}
 			post := report.Observations[prefix+"_post_build_merge"]
 			if post.Status != http.StatusUnauthorized || !strings.Contains(post.Message, "[redacted]") {
@@ -51,7 +57,7 @@ func TestAutoMergeProbe_RecordsBothRoles404AndVerifiesCleanup(t *testing.T) {
 					token = cfg.BootstrapToken
 				}
 				encoded := base64.StdEncoding.EncodeToString([]byte(cfg.Email + ":" + token))
-				if strings.Contains(post.Message, encoded) || strings.Contains(pending.Message, encoded) {
+				if strings.Contains(post.Message, encoded) || strings.Contains(mergeGet.Message, encoded) {
 					t.Fatal("returned observation exposed encoded Basic credentials")
 				}
 			}
@@ -110,8 +116,9 @@ func probeFixture(t *testing.T, denyActorRead bool) (Config, *httptest.Server, *
 	prState := "OPEN"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.HasPrefix(r.URL.Path, "/!api/internal/repositories/") {
-			if !strings.HasSuffix(r.URL.Path, "/pending_merge") && !strings.HasSuffix(r.URL.Path, "/post-build-merge") {
+		if strings.HasPrefix(r.URL.Path, "/internal/repositories/") {
+			expectedPath := "/internal/repositories/bitbottle-qa-lab/" + slug + "/pullrequests/1/post-build-merge"
+			if r.URL.Path != expectedPath || (r.Method != http.MethodGet && r.Method != http.MethodPost) {
 				t.Errorf("unexpected internal path %s", r.URL.Path)
 			}
 			auth := r.Header.Get("Authorization")
@@ -290,7 +297,7 @@ func TestProbeInternalRequest_AuthAndRedirectBoundary(t *testing.T) {
 	for _, scheme := range []string{"bearer", "basic"} {
 		t.Run(scheme, func(t *testing.T) {
 			origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path != "/!api/internal/pending_merge" || r.Header.Get("Cookie") != "" {
+				if r.URL.Path != "/internal/repositories/workspace/repo/pullrequests/1/post-build-merge" || r.Method != http.MethodGet || r.Header.Get("Cookie") != "" {
 					t.Errorf("unexpected request path or cookie")
 				}
 				if scheme == "basic" {
@@ -305,7 +312,7 @@ func TestProbeInternalRequest_AuthAndRedirectBoundary(t *testing.T) {
 			}))
 			defer origin.Close()
 			cfg := Config{ActorToken: "actor-secret", Email: "actor@example.test"}
-			got := probeInternalRequest(context.Background(), internalProbeHTTPClient(), origin.URL, "/!api/internal/pending_merge", http.MethodGet, nil, "actor", scheme, cfg.Email, cfg.ActorToken, cfg)
+			got := probeInternalRequest(context.Background(), internalProbeHTTPClient(), origin.URL, "/internal/repositories/workspace/repo/pullrequests/1/post-build-merge", http.MethodGet, nil, "actor", scheme, cfg.Email, cfg.ActorToken, cfg)
 			if got.Status != http.StatusFound || got.Role != "actor" || got.AuthScheme != scheme || redirected {
 				t.Fatalf("redirect escaped boundary: %+v, redirected=%v", got, redirected)
 			}

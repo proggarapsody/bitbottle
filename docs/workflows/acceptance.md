@@ -121,15 +121,14 @@ the CLI and probe from the selected commit and uploads sanitized probe evidence
 after cleanup. Inspect `probe.json` and the workflow summary for the observed
 provider result and cleanup state.
 
-The probe also tries the previously reported `bitbucket.org/!api/internal`
-`pending_merge` and `post-build-merge` routes on the same manifest-owned,
-conflicting PR. It tests actor and bootstrap tokens with Bearer and
-email/token Basic authentication, then reads the PR after each POST to verify
-it remains open. The internal origin is fixed in the diagnostic; redirects are
-not followed and cookies are not sent. The report stores only HTTP status,
-bounded sanitized `error.message`, and the boolean
-`can_create_post_build_merge` field when present. These internal routes may
-have changed or disappeared, so their responses are evidence about this run,
+The probe tries `https://api.bitbucket.org/internal/repositories/.../post-build-merge`
+with GET and POST on the same manifest-owned, conflicting PR. It tests actor
+and bootstrap tokens with Bearer and email/token Basic authentication, then
+reads the PR after each POST to verify it remains open. The internal origin is
+fixed in the diagnostic; redirects are not followed and cookies are not sent.
+The report stores only HTTP status, bounded sanitized `error.message`, and the
+boolean `can_create_post_build_merge` field when present. This internal route
+may have changed or disappeared, so its responses are evidence about this run,
 not a supported API contract or proof of auto-merge readiness.
 
 This probe is an observation, not a release pass or a replacement for the
