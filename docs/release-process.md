@@ -21,8 +21,9 @@ publishes, creates remote tags, or receives publication credentials.
 The preparation job pins the source SHA, runs candidate-validator tests and the
 full hermetic public-operation suite with `--require-critical`, then invokes
 GoReleaser once using the real version and `--skip=publish`. A local temporary tag
-supplies the proposed version; this is not a snapshot build. Build hooks must
-leave tracked source files unchanged.
+supplies the proposed version; this is not a snapshot build. Changelog generation
+uses local Git history so a proposed tag need not exist remotely. Build hooks
+must leave tracked source files unchanged.
 
 The candidate contains the original GoReleaser archives, checksums, metadata,
 `.deb`/`.rpm`/`.apk` packages, one packed npm tarball, both Docker architectures in
