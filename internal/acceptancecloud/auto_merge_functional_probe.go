@@ -42,13 +42,15 @@ func probeFunctionalAutoMerge(ctx context.Context, cfg Config, internalOrigin st
 	if err = bootstrap.upload(ctx, repo+"/src", branch, "Functional auto-merge diagnostic", "functional-probe.txt", "Functional auto-merge diagnostic "+runID+"\n"); err != nil {
 		return fmt.Errorf("upload functional probe commit: %w", err)
 	}
-	commitPath := repo + "/commit/" + esc(branch)
+	commitPath := repo + "/refs/branches/" + esc(branch)
 	var source struct {
-		Hash string `json:"hash"`
+		Target struct {
+			Hash string `json:"hash"`
+		} `json:"target"`
 	}
 	status, err = bootstrap.json(ctx, http.MethodGet, commitPath, nil, &source)
 	observations["functional_source_commit"] = ProbeObservation{Method: http.MethodGet, Path: commitPath, Status: status}
-	if err != nil || source.Hash == "" {
+	if err != nil || source.Target.Hash == "" {
 		return errors.New("read functional probe source commit")
 	}
 	prCollection := repo + "/pullrequests"
@@ -71,7 +73,7 @@ func probeFunctionalAutoMerge(ctx context.Context, cfg Config, internalOrigin st
 	prPath := repo + "/pullrequests/" + strconv.Itoa(pr.ID)
 	internalPath := "/internal/repositories/" + esc(cfg.Workspace) + "/" + esc(slug) + "/pullrequests/" + strconv.Itoa(pr.ID) + "/post-build-merge"
 	buildURL := "https://bitbucket.org/" + cfg.Workspace + "/" + slug + "/pull-requests/" + strconv.Itoa(pr.ID)
-	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Hash, runID, "INPROGRESS", buildURL, observations, "functional_build_inprogress"); err != nil {
+	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Target.Hash, runID, "INPROGRESS", buildURL, observations, "functional_build_inprogress"); err != nil {
 		return err
 	}
 	internalHTTP := internalProbeHTTPClient()
@@ -97,14 +99,14 @@ func probeFunctionalAutoMerge(ctx context.Context, cfg Config, internalOrigin st
 	if observations["functional_delete_cancel"].Status != http.StatusNoContent {
 		return nil
 	}
-	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Hash, runID, "SUCCESSFUL", buildURL, observations, "functional_cancel_build_success"); err != nil {
+	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Target.Hash, runID, "SUCCESSFUL", buildURL, observations, "functional_cancel_build_success"); err != nil {
 		return err
 	}
 	state, err = pollFunctionalPR(ctx, actor, prPath, pr.ID, false, 3, 0, observations, "functional_pr_after_cancel_build")
 	if err != nil || state.PRState != "OPEN" {
 		return errors.New("functional cancellation did not keep the PR open after build success")
 	}
-	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Hash, runID, "INPROGRESS", buildURL, observations, "functional_final_build_inprogress"); err != nil {
+	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Target.Hash, runID, "INPROGRESS", buildURL, observations, "functional_final_build_inprogress"); err != nil {
 		return err
 	}
 	secondPost := probeInternalRequest(ctx, internalHTTP, internalOrigin, internalPath, http.MethodPost, map[string]any{"close_source_branch": false, "message": marker, "merge_strategy": "merge_commit", "newstatus": "fulfilled"}, "actor", "bearer", cfg.Email, cfg.ActorToken, cfg)
@@ -118,7 +120,7 @@ func probeFunctionalAutoMerge(ctx context.Context, cfg Config, internalOrigin st
 	if readErr != nil || state.PRState != "OPEN" {
 		return errors.New("functional diagnostic PR was not open after final POST")
 	}
-	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Hash, runID, "SUCCESSFUL", buildURL, observations, "functional_final_build_success"); err != nil {
+	if err = setFunctionalBuildStatus(ctx, bootstrap, repo, source.Target.Hash, runID, "SUCCESSFUL", buildURL, observations, "functional_final_build_success"); err != nil {
 		return err
 	}
 	if _, err = pollFunctionalPR(ctx, actor, prPath, pr.ID, true, 30, 30*time.Second, observations, "functional_pr_final"); err != nil {
