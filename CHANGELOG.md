@@ -2,6 +2,12 @@
 
 ## [1.136.0](https://github.com/proggarapsody/bitbottle/compare/v1.135.0...v1.136.0) (2026-10-20)
 
+### QA limitations
+
+**DC не проверен live**. Server/DC is covered by hermetic tests; this release has no live Data Center acceptance result.
+
+Cloud auto-merge is deferred. Cloud `--auto`, `--auto-off`, and MCP `auto=true` return `pr.automerge.unavailable`.
+
 
 ### Features
 
