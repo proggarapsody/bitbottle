@@ -234,6 +234,10 @@ elif tool == 'gh' and args[:2] == ['release', 'upload']:
 elif tool == 'npm' and args[:1] == ['view']:
     state['npm_views'] += 1
     mode = os.environ.get('NPM_VIEW_MODE')
+    if mode == 'structured-404' and state['npm'] is None:
+        save()
+        print(json.dumps({'error': {'code': 'E404', 'summary': 'not found'}}))
+        sys.exit(1)
     if mode in ('E401', 'E403', 'registry-error') or (isinstance(mode, str) and mode.startswith('after-') and state['npm'] is not None):
         code = mode.removeprefix('after-') if mode.startswith('after-') else mode
         if code.startswith('E'):
@@ -286,6 +290,16 @@ save()
         self.seal()
         self.fake_publishers()
         self.execute_env['DELAY_NPM_VISIBILITY'] = '1'
+        result = self.run_cli('publish', '--execute', '--npm-wait-timeout', '0.25',
+                              '--npm-poll-interval', '0.01')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+        self.assertEqual(len([call for call in calls if call[:2] == ['npm', 'publish']]), 1)
+
+    def test_execute_treats_structured_npm_e404_as_transient_absence(self):
+        self.seal()
+        self.fake_publishers()
+        self.execute_env['NPM_VIEW_MODE'] = 'structured-404'
         result = self.run_cli('publish', '--execute', '--npm-wait-timeout', '0.25',
                               '--npm-poll-interval', '0.01')
         self.assertEqual(result.returncode, 0, result.stderr)

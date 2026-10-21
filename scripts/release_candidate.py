@@ -179,26 +179,33 @@ def gh_assets(tag):
     return {item['name']: item.get('digest') for item in assets}
 
 
+def _structured_npm_error_code(value):
+    try:
+        payload = json.loads(value)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    nested = payload.get('error')
+    return payload.get('code') or (nested.get('code') if isinstance(nested, dict) else None)
+
+
+def npm_error_code(stdout, stderr):
+    output = '\n'.join((stdout, stderr)).strip()
+    for value in (stdout, stderr):
+        code = _structured_npm_error_code(value)
+        if code:
+            return code
+    match = re.search(r'(?:^|\n)npm (?:ERR!|error) code (E\d+)(?:\s|$)', output)
+    return match.group(1) if match else None
+
+
 def npm_integrity(version, timeout=30):
     response = subprocess.run(['npm', 'view', '@proggarapsody/bitbottle@' + version,
                                'dist.integrity', '--json'], capture_output=True, text=True, timeout=timeout)
     if response.returncode:
         output = '\n'.join((response.stdout, response.stderr)).strip()
-        code = None
-        for value in (response.stdout, response.stderr):
-            try:
-                payload = json.loads(value)
-            except (ValueError, TypeError):
-                payload = None
-            if isinstance(payload, dict):
-                nested = payload.get('error')
-                code = payload.get('code') or (nested.get('code') if isinstance(nested, dict) else None)
-                if code:
-                    break
-        if code is None:
-            match = re.search(r'(?:^|\n)npm (?:ERR!|error) code (E\d+)(?:\s|$)', output)
-            if match:
-                code = match.group(1)
+        code = npm_error_code(response.stdout, response.stderr)
         if code == 'E404' or output == 'E404':
             return None
         detail = f' ({code})' if isinstance(code, str) and re.fullmatch(r'E\d+', code) else ''
