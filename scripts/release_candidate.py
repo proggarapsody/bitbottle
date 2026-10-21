@@ -200,6 +200,24 @@ def npm_error_code(stdout, stderr):
     return match.group(1) if match else None
 
 
+def _normalize_npm_integrity(output):
+    if not output.strip():
+        return None
+    try:
+        value = json.loads(output)
+    except (ValueError, TypeError) as error:
+        raise ValueError('npm registry returned invalid integrity data') from error
+    if value is None or value == '':
+        return None
+    if isinstance(value, dict):
+        nested = value.get('dist')
+        value = nested.get('integrity') if isinstance(nested, dict) else value.get('integrity')
+    if value is None or value == '':
+        return None
+    require(isinstance(value, str), 'npm registry returned invalid integrity data')
+    return value
+
+
 def npm_integrity(version, timeout=30):
     response = subprocess.run(['npm', 'view', '@proggarapsody/bitbottle@' + version,
                                'dist.integrity', '--json'], capture_output=True, text=True, timeout=timeout)
@@ -210,20 +228,7 @@ def npm_integrity(version, timeout=30):
             return None
         detail = f' ({code})' if isinstance(code, str) and re.fullmatch(r'E\d+', code) else ''
         raise ValueError(f'npm registry lookup failed{detail}')
-    if not response.stdout.strip():
-        return None
-    try:
-        value = json.loads(response.stdout)
-    except (ValueError, TypeError) as error:
-        raise ValueError('npm registry returned invalid integrity data') from error
-    if value is None or value == '':
-        return None
-    if isinstance(value, dict):
-        value = value.get('dist', {}).get('integrity') if isinstance(value.get('dist'), dict) else value.get('integrity')
-    if value is None or value == '':
-        return None
-    require(isinstance(value, str), 'npm registry returned invalid integrity data')
-    return value
+    return _normalize_npm_integrity(response.stdout)
 
 
 def publish_npm(version, integrity, command, wait_timeout, poll_interval, existing_npm):
