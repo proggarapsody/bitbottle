@@ -63,6 +63,22 @@ the existing release assets, publishes the existing npm tarball, and copies the
 sealed OCI images while preserving their digests. It does not rebuild or repack.
 Source or byte changes require a new candidate and new verification receipts.
 
+After npm reports a successful publish, the publisher waits for the package
+version to become visible in the registry before completing. The default
+visibility timeout is 300 seconds, with checks every 5 seconds. Operators may
+override these bounds with `--npm-wait-timeout` and `--npm-poll-interval`.
+During this wait, the publisher only checks registry visibility and integrity;
+it never republishes. If the registry already reports the expected version and
+matching integrity, that result is safely reused. An integrity mismatch, an
+authentication failure, or another registry error stops publication. If the
+visibility timeout expires, check the published version in the registry before
+rerunning the workflow.
+
+Registry visibility checks compare the published version's integrity with the
+sealed npm artifact; they do not download the tarball for verification. This
+wait does not change the sealed candidate bytes, source SHA, or any verification
+gate.
+
 The SBOM is generated before sealing and uploaded unchanged with the release.
 After successful publication, the SLSA workflow attaches provenance whose subjects
 are the candidate manifest, checksums, and SBOM. These asset digests bind the

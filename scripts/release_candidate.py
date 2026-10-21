@@ -4,12 +4,14 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 
 from release_oci import inspect_layout
 
@@ -177,16 +179,72 @@ def gh_assets(tag):
     return {item['name']: item.get('digest') for item in assets}
 
 
-def npm_integrity(version):
+def npm_integrity(version, timeout=30):
     response = subprocess.run(['npm', 'view', '@proggarapsody/bitbottle@' + version,
-                               'dist.integrity', '--json'], capture_output=True, text=True)
+                               'dist.integrity', '--json'], capture_output=True, text=True, timeout=timeout)
     if response.returncode:
-        require('E404' in response.stderr, 'npm registry identity lookup failed')
+        output = '\n'.join((response.stdout, response.stderr)).strip()
+        code = None
+        for value in (response.stdout, response.stderr):
+            try:
+                payload = json.loads(value)
+            except (ValueError, TypeError):
+                payload = None
+            if isinstance(payload, dict):
+                nested = payload.get('error')
+                code = payload.get('code') or (nested.get('code') if isinstance(nested, dict) else None)
+                if code:
+                    break
+        if code is None:
+            match = re.search(r'(?:^|\n)npm (?:ERR!|error) code (E\d+)(?:\s|$)', output)
+            if match:
+                code = match.group(1)
+        if code == 'E404' or output == 'E404':
+            return None
+        detail = f' ({code})' if isinstance(code, str) and re.fullmatch(r'E\d+', code) else ''
+        raise ValueError(f'npm registry lookup failed{detail}')
+    if not response.stdout.strip():
         return None
-    return json.loads(response.stdout)
+    try:
+        value = json.loads(response.stdout)
+    except (ValueError, TypeError) as error:
+        raise ValueError('npm registry returned invalid integrity data') from error
+    if value is None or value == '':
+        return None
+    if isinstance(value, dict):
+        value = value.get('dist', {}).get('integrity') if isinstance(value.get('dist'), dict) else value.get('integrity')
+    if value is None or value == '':
+        return None
+    require(isinstance(value, str), 'npm registry returned invalid integrity data')
+    return value
 
 
-def execute_plan(root, manifest, evidence, commands):
+def publish_npm(version, integrity, command, wait_timeout, poll_interval, existing_npm):
+    if existing_npm is not None:
+        require(existing_npm == integrity, 'existing npm package integrity mismatch')
+    else:
+        subprocess.run(command, check=True)
+    deadline = time.monotonic() + wait_timeout
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError('timed out waiting for npm package to become visible after publish')
+        try:
+            visible = npm_integrity(version, timeout=min(30, remaining))
+        except subprocess.TimeoutExpired as error:
+            if remaining <= 30:
+                raise ValueError('timed out waiting for npm package to become visible after publish') from error
+            raise ValueError('npm registry lookup timed out') from error
+        if visible is not None:
+            require(visible == integrity, 'published npm package integrity mismatch')
+            return
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError('timed out waiting for npm package to become visible after publish')
+        time.sleep(min(poll_interval, remaining))
+
+
+def execute_plan(root, manifest, evidence, commands, npm_wait_timeout, npm_poll_interval):
     expected = {Path(name).name: 'sha256:' + checksum for name, checksum in manifest['files'].items()}
     expected[MANIFEST] = 'sha256:' + digest(root / MANIFEST)
     published = gh_assets(manifest['tag'])
@@ -197,7 +255,10 @@ def execute_plan(root, manifest, evidence, commands):
         require(name not in published or published[name] == expected[name], 'existing GitHub asset digest mismatch')
     npm_path = root / manifest['npm']
     integrity = 'sha512-' + base64.b64encode(hashlib.sha512(npm_path.read_bytes()).digest()).decode()
-    existing_npm = npm_integrity(manifest['version'])
+    try:
+        existing_npm = npm_integrity(manifest['version'], timeout=30)
+    except subprocess.TimeoutExpired as error:
+        raise ValueError('npm registry lookup timed out') from error
     require(existing_npm in (None, integrity), 'existing npm package integrity mismatch')
     for command in commands:
         verify(root, manifest['commit'], manifest['tag'], evidence)
@@ -209,9 +270,8 @@ def execute_plan(root, manifest, evidence, commands):
             require(all(uploaded.get(Path(asset).name) == expected[Path(asset).name] for asset in assets),
                     'uploaded GitHub asset digest mismatch')
         elif command[:2] == ['npm', 'publish']:
-            if existing_npm is None:
-                subprocess.run(command, check=True)
-            require(npm_integrity(manifest['version']) == integrity, 'published npm package integrity mismatch')
+            publish_npm(manifest['version'], integrity, command, npm_wait_timeout,
+                        npm_poll_interval, existing_npm)
         elif command[0] == 'skopeo':
             expected_image = manifest['docker_digest']
             if '--override-arch' in command:
@@ -236,10 +296,17 @@ def main():
     parser.add_argument('--sha', required=True)
     parser.add_argument('--tag', required=True)
     parser.add_argument('--evidence-dir', type=Path)
+    parser.add_argument('--npm-wait-timeout', type=float, default=300,
+                        help='seconds to wait for the published npm package to appear (default: 300)')
+    parser.add_argument('--npm-poll-interval', type=float, default=5,
+                        help='seconds between npm registry checks (default: 5)')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--execute', action='store_true', help='perform publication (default: print plan only)')
     mode.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
+    for name, value in (('--npm-wait-timeout', args.npm_wait_timeout),
+                        ('--npm-poll-interval', args.npm_poll_interval)):
+        require(math.isfinite(value) and value > 0, f'{name} must be a finite positive number')
     root = args.candidate_dir.absolute()
     if args.action == 'seal':
         require(not args.execute, '--execute is only supported for publish')
@@ -254,7 +321,7 @@ def main():
     commands = publish_plan(root, manifest) if args.action == 'publish' else []
     if args.execute:
         require(args.action == 'publish', '--execute is only supported for publish')
-        execute_plan(root, manifest, args.evidence_dir, commands)
+        execute_plan(root, manifest, args.evidence_dir, commands, args.npm_wait_timeout, args.npm_poll_interval)
     print(json.dumps({'commit': args.sha, 'tag': args.tag, 'docker_digest': manifest['docker_digest'],
                       'dry_run': not args.execute, 'commands': commands}, sort_keys=True))
 

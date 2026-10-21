@@ -1,5 +1,6 @@
 """Hermetic public-CLI checks for immutable release promotion."""
 import hashlib
+import base64
 import io
 import json
 import os
@@ -72,10 +73,10 @@ class CandidateTests(unittest.TestCase):
         (self.root / 'docker/blobs/sha256' / sha).write_bytes(data)
         return {'mediaType': media, 'digest': 'sha256:' + sha, 'size': len(data)}
 
-    def run_cli(self, action, *extra):
+    def run_cli(self, action, *extra, timeout=None):
         return subprocess.run([sys.executable, str(SCRIPT), action, '--candidate-dir', str(self.root),
                                '--sha', SHA, '--tag', 'v1.2.3', '--evidence-dir', str(self.evidence), *extra],
-                              capture_output=True, text=True, env=getattr(self, 'execute_env', None))
+                              capture_output=True, text=True, env=getattr(self, 'execute_env', None), timeout=timeout)
 
     def seal(self):
         result = self.run_cli('seal')
@@ -214,7 +215,7 @@ class CandidateTests(unittest.TestCase):
 import base64, hashlib, json, os, pathlib, sys
 root = pathlib.Path(os.environ['PUBLISH_FIXTURE'])
 state_path = root / 'published.json'
-state = json.loads(state_path.read_text()) if state_path.exists() else {'assets': {}, 'npm': None, 'calls': []}
+state = json.loads(state_path.read_text()) if state_path.exists() else {'assets': {}, 'npm': os.environ.get('INITIAL_NPM'), 'calls': [], 'npm_views': 0}
 tool, args = pathlib.Path(sys.argv[0]).name, sys.argv[1:]
 state['calls'].append([tool] + args)
 def save():
@@ -231,6 +232,30 @@ elif tool == 'gh' and args[:2] == ['release', 'upload']:
     if os.environ.get('CORRUPT_RECEIPT') == 'github':
         state['assets']['checksums.txt'] = 'sha256:' + '0' * 64
 elif tool == 'npm' and args[:1] == ['view']:
+    state['npm_views'] += 1
+    mode = os.environ.get('NPM_VIEW_MODE')
+    if mode in ('E401', 'E403', 'registry-error') or (isinstance(mode, str) and mode.startswith('after-') and state['npm'] is not None):
+        code = mode.removeprefix('after-') if mode.startswith('after-') else mode
+        if code.startswith('E'):
+            print(json.dumps({'error': {'code': code, 'summary': 'credential-bearing detail should not escape'}}))
+        else:
+            print('ECONNREFUSED registry', file=sys.stderr)
+        sys.exit(1)
+    if mode == 'hang' or (mode == 'hang-after-publish' and state['npm'] is not None):
+        import time
+        time.sleep(10)
+    if mode in ('empty', 'null') and state['npm'] is not None and state['npm_views'] == 2:
+        save()
+        print('' if mode == 'empty' else 'null')
+        sys.exit(0)
+    if mode == 'persistent-404' and state['npm'] is not None:
+        save()
+        print('E404', file=sys.stderr)
+        sys.exit(1)
+    if state['npm'] is not None and state['npm_views'] <= 2 and os.environ.get('DELAY_NPM_VISIBILITY') == '1':
+        save()
+        print('E404', file=sys.stderr)
+        sys.exit(1)
     if state['npm'] is None:
         save()
         print('E404', file=sys.stderr)
@@ -256,6 +281,115 @@ save()
             (directory / tool).symlink_to(program)
         self.execute_env = dict(os.environ, PATH=str(directory) + os.pathsep + os.defpath,
                                 PUBLISH_FIXTURE=self.temp.name, CORRUPT_RECEIPT=corrupt)
+
+    def test_execute_waits_for_npm_registry_visibility_after_publish(self):
+        self.seal()
+        self.fake_publishers()
+        self.execute_env['DELAY_NPM_VISIBILITY'] = '1'
+        result = self.run_cli('publish', '--execute', '--npm-wait-timeout', '0.25',
+                              '--npm-poll-interval', '0.01')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+        self.assertEqual(len([call for call in calls if call[:2] == ['npm', 'publish']]), 1)
+
+    def test_execute_reuses_matching_npm_package_without_republishing(self):
+        self.seal()
+        self.fake_publishers()
+        npm_digest = hashlib.sha512((self.root / 'npm/package.tgz').read_bytes()).digest()
+        self.execute_env['INITIAL_NPM'] = 'sha512-' + base64.b64encode(npm_digest).decode()
+        result = self.run_cli('publish', '--execute')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+        self.assertFalse(any(call[:2] == ['npm', 'publish'] for call in calls))
+
+    def test_execute_rejects_existing_npm_mismatch_before_publishing(self):
+        self.seal()
+        self.fake_publishers()
+        self.execute_env['INITIAL_NPM'] = 'sha512-wrong'
+        result = self.run_cli('publish', '--execute')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('existing npm package integrity mismatch', result.stderr)
+        self.assertEqual(result.stdout, '')
+        calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+        self.assertFalse(any(call[:2] == ['npm', 'publish'] for call in calls))
+
+    def test_execute_waits_through_empty_and_null_npm_results(self):
+        for mode in ('empty', 'null'):
+            with self.subTest(mode=mode):
+                self.setUp()
+                self.addCleanup(self.temp.cleanup)
+                self.seal()
+                self.fake_publishers()
+                self.execute_env['NPM_VIEW_MODE'] = mode
+                result = self.run_cli('publish', '--execute', '--npm-wait-timeout', '0.25',
+                                      '--npm-poll-interval', '0.01')
+                self.assertEqual(result.returncode, 0, result.stderr)
+                calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+                self.assertEqual(len([call for call in calls if call[:2] == ['npm', 'publish']]), 1)
+
+    def test_execute_times_out_waiting_for_persistent_npm_404_without_docker(self):
+        self.seal()
+        self.fake_publishers()
+        self.execute_env['NPM_VIEW_MODE'] = 'persistent-404'
+        result = self.run_cli('publish', '--execute', '--npm-wait-timeout', '0.05',
+                              '--npm-poll-interval', '0.01')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('timed out waiting for npm package', result.stderr)
+        self.assertEqual(result.stdout, '')
+        calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+        self.assertFalse(any(call[0] == 'skopeo' for call in calls))
+        self.assertEqual(len([call for call in calls if call[:2] == ['npm', 'publish']]), 1)
+
+    def test_execute_fails_closed_on_npm_auth_and_registry_errors(self):
+        for mode in ('E401', 'E403', 'registry-error'):
+            with self.subTest(mode=mode):
+                self.setUp()
+                self.addCleanup(self.temp.cleanup)
+                self.seal()
+                self.fake_publishers()
+                self.execute_env['NPM_VIEW_MODE'] = mode
+                result = self.run_cli('publish', '--execute')
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('npm registry lookup failed', result.stderr)
+                self.assertEqual(result.stdout, '')
+                calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+                self.assertFalse(any(call[0] == 'skopeo' for call in calls))
+                self.assertFalse(any(call[:2] == ['npm', 'publish'] for call in calls))
+
+    def test_execute_fails_closed_on_errors_after_publish(self):
+        for mode, diagnostic in (('after-E401', 'E401'), ('after-E403', 'E403'),
+                                 ('after-E500', 'E500'), ('after-registry-error', 'lookup failed')):
+            with self.subTest(mode=mode):
+                self.setUp()
+                self.addCleanup(self.temp.cleanup)
+                self.seal()
+                self.fake_publishers()
+                self.execute_env['NPM_VIEW_MODE'] = mode
+                result = self.run_cli('publish', '--execute', '--npm-wait-timeout', '0.2',
+                                      '--npm-poll-interval', '0.01')
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(diagnostic, result.stderr)
+                self.assertNotIn('credential-bearing detail', result.stderr)
+                calls = json.loads((Path(self.temp.name) / 'published.json').read_text())['calls']
+                self.assertEqual(len([call for call in calls if call[:2] == ['npm', 'publish']]), 1)
+                self.assertFalse(any(call[0] == 'skopeo' for call in calls))
+
+    def test_execute_bounds_hung_npm_registry_process(self):
+        self.seal()
+        self.fake_publishers()
+        self.execute_env['NPM_VIEW_MODE'] = 'hang-after-publish'
+        result = self.run_cli('publish', '--execute', '--npm-wait-timeout', '0.2', timeout=5)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('timed out waiting for npm package', result.stderr)
+        self.assertEqual(result.stdout, '')
+
+    def test_npm_wait_options_must_be_finite_and_positive(self):
+        for option, value in (('--npm-wait-timeout', '0'), ('--npm-wait-timeout', 'nan'),
+                              ('--npm-poll-interval', '-1'), ('--npm-poll-interval', 'inf')):
+            with self.subTest(option=option, value=value):
+                result = self.run_cli('publish', '--execute', option, value)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(option + ' must be a finite positive number', result.stderr)
 
     def test_execute_promotes_exact_files_verifies_receipts_and_reuses_existing_uploads(self):
         self.seal()
